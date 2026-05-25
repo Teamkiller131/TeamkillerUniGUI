@@ -46,4 +46,9 @@
 #include <unigui/widgets/loadingindicator.h>
 #include <unigui/widgets/notification.h>
 #include <unigui/widgets/hyperlink.h>
+#include <unigui/widgets/tag.h>
+#include <unigui/widgets/breadcrumb.h>
+#include <unigui/widgets/multiline.h>
+#include <unigui/widgets/iconbutton.h>
+#include <unigui/ext/plot.h>
 #include <unigui/app/app.h>

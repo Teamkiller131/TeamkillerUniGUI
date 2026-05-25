@@ -16,8 +16,13 @@ public:
     void Render() override;
     void SetRoot(TreeNode root);
     const TreeNode& GetRoot() const;
+    void SetMultiSelect(bool on);
+    std::vector<int> GetSelectedNodes() const;
 private:
     TreeNode root_;
-    void RenderNode(TreeNode& node);
+    bool multiSelect_ = false;
+    std::vector<int> selected_;
+    int nodeCounter_ = 0;
+    void RenderNode(TreeNode& node, int depth);
 };
 }

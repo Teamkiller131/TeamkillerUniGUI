@@ -24,6 +24,9 @@ endif()
 
 if(UNIGUI_BUILD_EXAMPLES)
     add_subdirectory(examples/hello_unigui)
+    if(UNIGUI_BACKEND STREQUAL "SDL3_VULKAN")
+        add_subdirectory(examples/vulkan_triangle)
+    endif()
 endif()
 
 # ── Installation ─────────────────────────────────────────────────────────────
