@@ -1,6 +1,24 @@
 # Changelog
 
-## v0.3.2 (2026-05-25)
+## v0.4.0 (2026-05-25)
+
+### Added
+- **NodeEditor Groundwork**: `include/unigui/ext/node_editor.h` — RAII wrapper for `ax::NodeEditor` (Begin/End/Node/Pin/Link). Requires `imgui-node-editor` vcpkg dependency.
+- **RichText Widget**: `RichText` — formatted text display with bold/italic/color spans. `SetSpans()` + `AddSpan()` API.
+- **ImageButton Widget**: `ImageButton` — image + label button. `SetImage(textureID, w, h)` + `SetLabel()`.
+- **Markdown Widget**: `Markdown` — inline markdown renderer supporting `#` headers, `**bold**`, `*italic*`, `` `code` ``, `-` bullets, `---` hr, `[links](url)`. No external dependency.
+- **Undo/Redo**: Added to LineEdit and MultiLine (`Undo()`, `Redo()`, `CanUndo()`, `CanRedo()`). 50-level undo stack.
+- **Form Validation**: `SetFieldValidatorRegex(name, pattern, error)` + `SetFieldMinMax(name, min, max)`.
+- **ComboBox Icons**: `SetItemIcon(index, textureID)` — per-item icon rendering in dropdown.
+- **Table Column Widths**: `SaveColumnWidths()` / `RestoreColumnWidths()` for persisting user-adjusted widths.
+- **plot_demo Example**: `examples/plot_demo/` — line/bar/scatter plot demo using ImPlot.
+- **Version bump**: 0.3.2 → 0.4.0
+
+### Changed
+- LineEdit/MultiLine now maintain undo stacks (50-level depth cap)
+- Form::Validate() checks regex and min/max validators in addition to required
+- ComboBox renders icons before item text when set
+- tests/CMakeLists.txt adds richtext, imagebutton, markdown test targets
 
 ### Added
 - **DX12 Renderer**: Full DX12 backend — device/command-queue/swapchain/descriptor-heaps/fence via `CreateDX12DeviceAndSwapChain()`. Wraps `imgui_impl_dx12.h`. Runtime-ready on Windows.

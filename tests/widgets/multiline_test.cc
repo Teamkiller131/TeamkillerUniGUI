@@ -9,3 +9,20 @@ protected:
 };
 TEST_F(MultiLineTest, Render_DoesNotCrash) { unigui::MultiLine ml("ml","Line1\nLine2"); ml.Render(); }
 TEST_F(MultiLineTest, GetText_Works) { unigui::MultiLine ml("ml","Hello"); EXPECT_EQ(ml.GetText(), "Hello"); }
+TEST_F(MultiLineTest, Undo_Redo_Works) {
+    unigui::MultiLine ml("ml", "first");
+    ml.SetText("second");
+    EXPECT_EQ(ml.GetText(), "second");
+    EXPECT_TRUE(ml.CanUndo());
+    ml.Undo();
+    EXPECT_EQ(ml.GetText(), "first");
+    EXPECT_TRUE(ml.CanRedo());
+    ml.Redo();
+    EXPECT_EQ(ml.GetText(), "second");
+}
+TEST_F(MultiLineTest, CanUndo_DefaultsToFalse) {
+    unigui::MultiLine ml("ml", "initial");
+    EXPECT_FALSE(ml.CanUndo());
+    ml.SetText("new");
+    EXPECT_TRUE(ml.CanUndo());
+}

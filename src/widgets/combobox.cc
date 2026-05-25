@@ -16,6 +16,11 @@ void ComboBox::Render() {
                 if (items_[i].find(search_buf_) == std::string::npos) continue;
             }
             bool is_sel = (i == selected_);
+            // Render icon if set
+            if (i < (int)icons_.size() && icons_[i]) {
+                ImGui::Image(icons_[i], ImVec2(16, 16));
+                ImGui::SameLine();
+            }
             if (ImGui::Selectable(items_[i].c_str(), is_sel)) {
                 selected_ = i; if (on_change_) on_change_(i);
             }
@@ -41,4 +46,11 @@ void ComboBox::SetItems(std::vector<std::string> items) { items_ = std::move(ite
 void ComboBox::SetOnChange(std::function<void(int)> callback) { on_change_ = std::move(callback); }
 void ComboBox::SetEditable(bool on) { editable_ = on; }
 void ComboBox::SetSearchable(bool on) { searchable_ = on; }
+void ComboBox::SetItemIcon(int index, ImTextureID textureID) {
+    if (index >= (int)icons_.size()) icons_.resize(index + 1, (ImTextureID)0);
+    icons_[index] = textureID;
+}
+ImTextureID ComboBox::GetItemIcon(int index) const {
+    return index < (int)icons_.size() ? icons_[index] : (ImTextureID)0;
+}
 }

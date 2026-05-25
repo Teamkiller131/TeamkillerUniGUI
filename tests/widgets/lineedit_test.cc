@@ -31,3 +31,22 @@ TEST_F(LineEditTest, Render_DoesNotCrash) {
     le.SetPlaceholder("Enter text...");
     le.Render();
 }
+TEST_F(LineEditTest, Undo_Redo_Works) {
+    unigui::LineEdit le("le", "Field");
+    // Initial value "" is pushed by ctor; SetValue pushes "A" then "B"
+    le.SetValue("A");
+    le.SetValue("B");
+    EXPECT_EQ(le.GetValue(), "B");
+    EXPECT_TRUE(le.CanUndo());
+    le.Undo();
+    EXPECT_EQ(le.GetValue(), "A");
+    EXPECT_TRUE(le.CanRedo());
+    le.Redo();
+    EXPECT_EQ(le.GetValue(), "B");
+}
+TEST_F(LineEditTest, CanUndo_DefaultsToFalse) {
+    unigui::LineEdit le("le", "Field");
+    EXPECT_FALSE(le.CanUndo());
+    le.SetValue("new");
+    EXPECT_TRUE(le.CanUndo()); // Can undo to initial empty value
+}

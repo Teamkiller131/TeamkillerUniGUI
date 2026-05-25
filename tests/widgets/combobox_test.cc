@@ -26,3 +26,10 @@ TEST_F(ComboBoxTest, Render_DoesNotCrash) {
     unigui::ComboBox cb("cb", "Choose", {"A", "B"});
     cb.Render();
 }
+TEST_F(ComboBoxTest, SetItemIcon_DoesNotCrash) {
+    unigui::ComboBox cb("cb", "Icons", {"A", "B"});
+    cb.SetItemIcon(0, (ImTextureID)(uintptr_t)1);
+    EXPECT_NE(cb.GetItemIcon(0), (ImTextureID)0);
+    EXPECT_EQ(cb.GetItemIcon(1), (ImTextureID)0);
+    cb.Render();
+}

@@ -43,8 +43,40 @@ std::vector<FormError> Form::Validate() const {
         if (f.required && f.value.empty()) {
             errors.push_back({f.name, "Required field"});
         }
+        auto it = validators_.find(f.name);
+        if (it != validators_.end()) {
+            if (it->second.hasRegex && !f.value.empty()) {
+                try {
+                    std::regex re(it->second.pattern);
+                    if (!std::regex_match(f.value, re)) {
+                        errors.push_back({f.name, it->second.errorMsg});
+                    }
+                } catch (...) {}
+            }
+            if (it->second.hasRange && (f.type == FormField::Type::Number || f.type == FormField::Type::Slider)) {
+                try {
+                    double val = std::stod(f.value);
+                    if (val < it->second.min || val > it->second.max) {
+                        errors.push_back({f.name, "Value out of range [" +
+                            std::to_string(it->second.min) + ", " + std::to_string(it->second.max) + "]"});
+                    }
+                } catch (...) {}
+            }
+        }
     }
     return errors;
+}
+
+void Form::SetFieldValidatorRegex(const std::string& name, std::string pattern, std::string errorMsg) {
+    auto& v = validators_[name];
+    v.pattern = std::move(pattern);
+    v.errorMsg = std::move(errorMsg);
+    v.hasRegex = true;
+}
+void Form::SetFieldMinMax(const std::string& name, double min, double max) {
+    auto& v = validators_[name];
+    v.min = min; v.max = max;
+    v.hasRange = true;
 }
 
 void Form::SetOnSubmit(std::function<void()> callback) { on_submit_ = std::move(callback); }

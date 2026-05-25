@@ -99,6 +99,9 @@ target_sources(unigui PRIVATE
     widgets/multiline.cc
     widgets/iconbutton.cc
     widgets/space.cc
+    widgets/richtext.cc
+    widgets/imagebutton.cc
+    widgets/markdown.cc
     app/app.cc
 )
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
 #include <string>
+#include <vector>
 #include <functional>
 
 namespace unigui {
@@ -17,7 +18,15 @@ public:
     void SetMultiline(bool on);
     void SetReadOnly(bool on);
     void SetMaxLength(int maxLen);
+    // Undo/redo
+    void Undo();
+    void Redo();
+    bool CanUndo() const;
+    bool CanRedo() const;
+    int GetUndoDepth() const { return undoIndex_ + 1; }
+    int GetRedoDepth() const { return (int)undoStack_.size() - undoIndex_ - 1; }
 private:
+    void PushUndo();
     std::string label_;
     std::string value_;
     std::string placeholder_;
@@ -28,5 +37,7 @@ private:
     bool read_only_ = false;
     int max_length_ = 256;
     char buffer_[1024] = {};
+    std::vector<std::string> undoStack_;
+    int undoIndex_ = -1;
 };
 }
