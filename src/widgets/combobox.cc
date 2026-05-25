@@ -5,14 +5,30 @@ ComboBox::ComboBox(std::string name, std::string label, std::vector<std::string>
     : Widget(std::move(name)), label_(std::move(label)), items_(std::move(items)), selected_(selected) {}
 void ComboBox::Render() {
     if (!IsVisible()) return;
-    if (ImGui::BeginCombo(label_.c_str(), selected_ < (int)items_.size() ? items_[selected_].c_str() : "")) {
+    const char* preview = selected_ < (int)items_.size() ? items_[selected_].c_str() : "";
+    if (searchable_) {
+        ImGui::InputText("##search", search_buf_, sizeof(search_buf_));
+        ImGui::SameLine();
+    }
+    if (ImGui::BeginCombo(label_.c_str(), preview)) {
         for (int i = 0; i < (int)items_.size(); i++) {
+            if (searchable_ && search_buf_[0]) {
+                if (items_[i].find(search_buf_) == std::string::npos) continue;
+            }
             bool is_sel = (i == selected_);
             if (ImGui::Selectable(items_[i].c_str(), is_sel)) {
-                selected_ = i;
-                if (on_change_) on_change_(i);
+                selected_ = i; if (on_change_) on_change_(i);
             }
             if (is_sel) ImGui::SetItemDefaultFocus();
+        }
+        if (editable_) {
+            ImGui::Separator();
+            static char newItem[256] = {};
+            ImGui::InputText("##new", newItem, sizeof(newItem));
+            if (ImGui::Button("Add") && newItem[0]) {
+                items_.push_back(newItem); selected_ = (int)items_.size() - 1;
+                if (on_change_) on_change_(selected_); newItem[0] = 0;
+            }
         }
         ImGui::EndCombo();
     }
@@ -23,4 +39,6 @@ const std::string& ComboBox::GetSelectedValue() const { static std::string empty
 const std::vector<std::string>& ComboBox::GetItems() const { return items_; }
 void ComboBox::SetItems(std::vector<std::string> items) { items_ = std::move(items); }
 void ComboBox::SetOnChange(std::function<void(int)> callback) { on_change_ = std::move(callback); }
+void ComboBox::SetEditable(bool on) { editable_ = on; }
+void ComboBox::SetSearchable(bool on) { searchable_ = on; }
 }

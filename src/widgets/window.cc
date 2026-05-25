@@ -10,9 +10,10 @@ Window::Window(std::string name, std::string title)
 void Window::Render() {
     if (!IsVisible()) return;
 
-    if (width_ > 0 || height_ > 0) {
+    if (pos_x_ >= 0)
+        ImGui::SetNextWindowPos(ImVec2(pos_x_, pos_y_), ImGuiCond_FirstUseEver);
+    if (width_ > 0 || height_ > 0)
         ImGui::SetNextWindowSize(ImVec2(width_, height_), ImGuiCond_FirstUseEver);
-    }
 
     bool open = IsVisible();
     ImGuiWindowFlags flags = ImGuiWindowFlags_None;
@@ -44,5 +45,6 @@ void Window::SetSize(float width, float height) { width_ = width; height_ = heig
 void Window::SetMenuBarEnabled(bool enabled) { menu_bar_enabled_ = enabled; }
 bool Window::HasMenuBar() const { return menu_bar_enabled_; }
 void Window::SetOnClose(std::function<void()> callback) { on_close_ = std::move(callback); }
+void Window::SetPosition(float x, float y) { pos_x_ = x; pos_y_ = y; }
 
 } // namespace unigui

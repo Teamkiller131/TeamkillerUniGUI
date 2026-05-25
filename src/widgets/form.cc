@@ -14,6 +14,15 @@ void Form::AddTextField(std::string name, std::string label, bool required) {
 void Form::AddCheckbox(std::string name, std::string label) {
     fields_.push_back({std::move(name), std::move(label), FormField::Type::Checkbox, false, "0"});
 }
+void Form::AddComboField(std::string name, std::string label, std::vector<std::string>) {
+    fields_.push_back({std::move(name), std::move(label), FormField::Type::Combo, false, "0"});
+}
+void Form::AddSliderField(std::string name, std::string label, float, float) {
+    fields_.push_back({std::move(name), std::move(label), FormField::Type::Slider, false, "0"});
+}
+void Form::AddNumberField(std::string name, std::string label, int, int) {
+    fields_.push_back({std::move(name), std::move(label), FormField::Type::Number, false, "0"});
+}
 
 std::string Form::GetFieldValue(const std::string& name) const {
     for (auto& f : fields_) {
@@ -59,6 +68,21 @@ void Form::Render() {
             if (ImGui::Checkbox(f.label.c_str(), &checked)) {
                 f.value = checked ? "1" : "0";
             }
+            break;
+        }
+        case FormField::Type::Combo: {
+            int idx = f.value.empty() ? 0 : std::stoi(f.value);
+            if (ImGui::Combo(f.label.c_str(), &idx, "Item 0\0Item 1\0Item 2\0")) f.value = std::to_string(idx);
+            break;
+        }
+        case FormField::Type::Slider: {
+            float val = f.value.empty() ? 0.0f : std::stof(f.value);
+            if (ImGui::SliderFloat(f.label.c_str(), &val, 0, 100, "%.1f")) f.value = std::to_string(val);
+            break;
+        }
+        case FormField::Type::Number: {
+            int val = f.value.empty() ? 0 : std::stoi(f.value);
+            if (ImGui::InputInt(f.label.c_str(), &val)) f.value = std::to_string(val);
             break;
         }
         }

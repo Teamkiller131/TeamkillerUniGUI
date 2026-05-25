@@ -6,9 +6,14 @@ void Table::AddRow(std::vector<std::string> row) { rows_.push_back(std::move(row
 void Table::ClearRows() { rows_.clear(); }
 int Table::GetSelectedRow() const { return selected_; }
 void Table::SetOnSelect(std::function<void(int)> callback) { on_select_ = std::move(callback); }
+void Table::SetSortable(bool on) { sortable_ = on; }
+void Table::SetResizable(bool on) { resizable_ = on; }
 void Table::Render() {
     if (!IsVisible()) return;
-    if (ImGui::BeginTable(GetName().c_str(), (int)columns_.size(), ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY)) {
+    ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
+    if (sortable_) flags |= ImGuiTableFlags_Sortable;
+    if (resizable_) flags |= ImGuiTableFlags_Resizable;
+    if (ImGui::BeginTable(GetName().c_str(), (int)columns_.size(), flags)) {
         for (auto& col : columns_) { ImGui::TableSetupColumn(col.c_str()); }
         ImGui::TableHeadersRow();
         for (int r = 0; r < (int)rows_.size(); r++) {

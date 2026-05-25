@@ -10,7 +10,7 @@ namespace unigui {
 struct FormField {
     std::string name;
     std::string label;
-    enum class Type { Text, Checkbox } type = Type::Text;
+    enum class Type { Text, Checkbox, Combo, Slider, Number } type = Type::Text;
     bool required = false;
     std::string value;
 };
@@ -27,6 +27,9 @@ public:
 
     void AddTextField(std::string name, std::string label, bool required = false);
     void AddCheckbox(std::string name, std::string label);
+    void AddComboField(std::string name, std::string label, std::vector<std::string> options);
+    void AddSliderField(std::string name, std::string label, float min = 0, float max = 100);
+    void AddNumberField(std::string name, std::string label, int min = 0, int max = 100);
     std::string GetFieldValue(const std::string& name) const;
     void SetFieldValue(const std::string& name, std::string value);
 

@@ -18,12 +18,14 @@ public:
     void SetMenuBarEnabled(bool enabled);
     bool HasMenuBar() const;
     void SetOnClose(std::function<void()> callback);
+    void SetPosition(float x, float y);
 
 private:
     std::string title_;
     std::vector<std::shared_ptr<Panel>> panels_;
     bool menu_bar_enabled_ = false;
     float width_ = 0, height_ = 0;
+    float pos_x_ = -1, pos_y_ = -1;
     std::function<void()> on_close_;
 };
 
