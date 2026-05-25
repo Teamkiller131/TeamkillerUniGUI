@@ -28,6 +28,9 @@ public:
         UNIGUI_LOG_INFO("OpenGL: {} {} — GLSL {}", (const char*)glGetString(GL_VENDOR),
             (const char*)glGetString(GL_RENDERER), (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+        UNIGUI_LOG_DEBUG("GLAD: glGenVertexArrays=%p glBindVertexArray=%p",
+            (void*)glGenVertexArrays, (void*)glBindVertexArray);
+
         // Core Profile requires a VAO before any draw call.
         // AMD drivers are strict about this.
         glGenVertexArrays(1, &vao_);
