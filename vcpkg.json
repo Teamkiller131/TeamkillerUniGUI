@@ -36,7 +36,10 @@
       ]
     },
     {
-      "name": "gtest"
+      "name":         "gtest"
+    },
+    {
+        "name": "implot"
     }
   ]
 }

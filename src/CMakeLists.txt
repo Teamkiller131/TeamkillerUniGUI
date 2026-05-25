@@ -21,6 +21,7 @@ find_package(imgui CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
+find_package(implot CONFIG REQUIRED)
 
 set(UNIGUI_LIBS
     imgui::imgui
@@ -93,6 +94,10 @@ target_sources(unigui PRIVATE
     widgets/loadingindicator.cc
     widgets/notification.cc
     widgets/hyperlink.cc
+    widgets/tag.cc
+    widgets/breadcrumb.cc
+    widgets/multiline.cc
+    widgets/iconbutton.cc
     app/app.cc
 )
 
