@@ -127,7 +127,18 @@ void Render() {
     }
     g_renderer->SetClearColor(1.0f, 0.0f, 0.0f, 1.0f); // RED for diagnostic
     glClear(GL_COLOR_BUFFER_BIT);
+
+    // Flush any GL errors before rendering
+    while (glGetError() != GL_NO_ERROR) {}
+
     g_renderer->RenderDrawData(dd);
+
+    GLenum err = glGetError();
+    while (err != GL_NO_ERROR) {
+        UNIGUI_LOG_WARN("GL error after RenderDrawData: 0x{:04x}", (unsigned)err);
+        err = glGetError();
+    }
+
     g_platform->SwapBuffers();
 }
 
