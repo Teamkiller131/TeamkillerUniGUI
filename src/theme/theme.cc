@@ -1,10 +1,12 @@
 #include <unigui/theme/theme.h>
+#include <unigui/core/log.h>
 #include <sstream>
 #include <regex>
 
 namespace unigui {
 
 void ApplyTheme(const ThemeConfig& config) {
+    UNIGUI_LOG_DEBUG("ApplyTheme: preset={} dpi={}", (int)config.preset, config.dpi_scale);
     auto& style = ImGui::GetStyle();
     auto& colors = style.Colors;
 

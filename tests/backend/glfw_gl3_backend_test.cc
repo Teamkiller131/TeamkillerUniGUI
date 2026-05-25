@@ -33,26 +33,32 @@ protected:
 
 TEST_F(BackendTest, GLFWPlatform_Init_Default_Succeeds) {
     ASSERT_TRUE(glfw_init_ok_);
+    IMGUI_CHECKVERSION(); ImGui::CreateContext();
     auto platform = unigui::CreateGLFWPlatform();
     EXPECT_TRUE(platform->Init(nullptr));
     EXPECT_FALSE(platform->ShouldClose());
     platform->Shutdown();
+    ImGui::DestroyContext();
 }
 
 TEST_F(BackendTest, GLFWPlatform_PollEvents_DoesNotCrash) {
     ASSERT_TRUE(glfw_init_ok_);
+    IMGUI_CHECKVERSION(); ImGui::CreateContext();
     auto platform = unigui::CreateGLFWPlatform();
     ASSERT_TRUE(platform->Init(nullptr));
     platform->PollEvents();
     platform->Shutdown();
+    ImGui::DestroyContext();
 }
 
 TEST_F(BackendTest, GLFWPlatform_Shutdown_AfterInit_CleansUp) {
     ASSERT_TRUE(glfw_init_ok_);
+    IMGUI_CHECKVERSION(); ImGui::CreateContext();
     auto platform = unigui::CreateGLFWPlatform();
     ASSERT_TRUE(platform->Init(nullptr));
     platform->Shutdown();
     platform->Shutdown();
+    ImGui::DestroyContext();
 }
 
 TEST_F(BackendTest, OpenGL3Renderer_Init_WithoutContext_Succeeds) {
