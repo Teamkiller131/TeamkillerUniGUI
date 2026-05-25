@@ -88,6 +88,11 @@ target_sources(unigui PRIVATE
     widgets/splitter.cc
     widgets/separator.cc
     widgets/scrollarea.cc
+    widgets/datepicker.cc
+    widgets/image.cc
+    widgets/loadingindicator.cc
+    widgets/notification.cc
+    widgets/hyperlink.cc
     app/app.cc
 )
 
