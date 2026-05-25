@@ -26,10 +26,6 @@ int main(int argc, char** argv) {
 
     while (!done && !unigui::ShouldClose()) {
         unigui::NewFrame();
-
-        // Minimal diagnostic: ImGui demo window
-        ImGui::ShowDemoWindow();
-
         {
             static auto window = std::make_shared<unigui::Window>("demo", "UniGUI Demo");
             static bool first = true;
