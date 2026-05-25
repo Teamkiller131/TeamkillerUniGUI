@@ -28,6 +28,11 @@ public:
         UNIGUI_LOG_INFO("OpenGL: {} {} — GLSL {}", (const char*)glGetString(GL_VENDOR),
             (const char*)glGetString(GL_RENDERER), (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+        // Core Profile requires a VAO before any draw call.
+        // AMD drivers are strict about this.
+        glGenVertexArrays(1, &vao_);
+        glBindVertexArray(vao_);
+
         if (!ImGui_ImplOpenGL3_Init("#version 450 core")) {
             UNIGUI_LOG_ERROR("ImGui_ImplOpenGL3_Init(#version 450 core) failed");
             return false;
@@ -43,11 +48,14 @@ public:
         if (!initialized_) return;
         UNIGUI_LOG_DEBUG("OpenGL3 renderer shutdown: ImGui_ImplOpenGL3_Shutdown");
         ImGui_ImplOpenGL3_Shutdown();
+        if (vao_) { glDeleteVertexArrays(1, &vao_); vao_ = 0; }
         initialized_ = false;
     }
 
     void RenderDrawData(ImDrawData* draw_data) override {
         if (draw_data) {
+            // Re-bind VAO — AMD Core Profile requires it before each draw
+            glBindVertexArray(vao_);
             UNIGUI_LOG_TRACE("RenderDrawData: {} lists, {} vtx, {} idx",
                 draw_data->CmdListsCount, draw_data->TotalVtxCount, draw_data->TotalIdxCount);
             ImGui_ImplOpenGL3_RenderDrawData(draw_data);
@@ -60,6 +68,7 @@ public:
 
 private:
     bool initialized_ = false;
+    GLuint vao_ = 0;
 };
 
 } // anonymous namespace
