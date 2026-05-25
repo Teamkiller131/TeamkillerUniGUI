@@ -45,6 +45,9 @@ public:
     void SetSize(int w, int h) override {
         if (window_) glfwSetWindowSize(window_, w, h);
     }
+    void SwapBuffers() override {
+        if (window_) glfwSwapBuffers(window_);
+    }
 
     void Shutdown() override {
         if (!initialized_) return;
