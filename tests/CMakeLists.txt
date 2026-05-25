@@ -142,3 +142,17 @@ foreach(_widget checkbox progressbar radiogroup combobox lineedit groupbox tabwi
     target_compile_features(test_${_widget} PRIVATE cxx_std_23)
     gtest_discover_tests(test_${_widget})
 endforeach()
+
+# v2.9 core tests
+foreach(_core locale settings undo_stack)
+    add_executable(test_${_core} core/${_core}_test.cc)
+    target_link_libraries(test_${_core} PRIVATE GTest::gtest GTest::gtest_main unigui)
+    target_compile_features(test_${_core} PRIVATE cxx_std_23)
+    gtest_discover_tests(test_${_core})
+endforeach()
+
+# v2.9 benchmark tests
+add_executable(test_bench bench/bench_test.cc)
+target_link_libraries(test_bench PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_bench PRIVATE cxx_std_23)
+gtest_discover_tests(test_bench)

@@ -54,3 +54,15 @@ TEST(Widget, GetName_ReturnsGivenName) {
     TestWidget w("MyPanel");
     EXPECT_EQ(w.GetName(), "MyPanel");
 }
+
+TEST(Widget, SetMinSize_StoresValues) {
+    class TestWidget : public unigui::Widget {
+    public:
+        explicit TestWidget(std::string name) : Widget(std::move(name)) {}
+        void Render() override {}
+    };
+    TestWidget w("test");
+    w.SetMinSize(100, 200);
+    EXPECT_FLOAT_EQ(w.GetMinSize().x, 100);
+    EXPECT_FLOAT_EQ(w.GetMinSize().y, 200);
+}

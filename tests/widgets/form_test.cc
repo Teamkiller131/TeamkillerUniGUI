@@ -89,3 +89,19 @@ TEST_F(FormTest, MinMaxValidator_RejectsOutOfRange) {
     auto errors = form.Validate();
     EXPECT_GE(errors.size(), 1u);
 }
+
+TEST_F(FormTest, Serialize_Then_Deserialize) {
+    unigui::Form form("frm", "S");
+    form.AddTextField("name", "Name");
+    form.AddCheckbox("agree", "Agree");
+    form.SetFieldValue("name", "Alice");
+    form.SetFieldValue("agree", "1");
+    auto json = form.Serialize();
+    EXPECT_NE(json.find("Alice"), std::string::npos);
+
+    unigui::Form form2("frm2", "S2");
+    form2.AddTextField("name", "Name");
+    form2.AddCheckbox("agree", "Agree");
+    EXPECT_TRUE(form2.Deserialize(json));
+    EXPECT_EQ(form2.GetFieldValue("name"), "Alice");
+}

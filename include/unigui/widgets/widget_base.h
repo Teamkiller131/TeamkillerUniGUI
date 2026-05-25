@@ -28,12 +28,23 @@ public:
     void SetFocused();
     bool IsFocused() const;
     static void SetNextFocused();
+    // v2.9: accessibility & sizing
+    void SetAccessibleName(std::string name);
+    void SetAccessibleDescription(std::string desc);
+    virtual void SetMinSize(float w, float h);
+    virtual void SetMaxSize(float w, float h);
+    ImVec2 GetMinSize() const { return minSize_; }
+    ImVec2 GetMaxSize() const { return maxSize_; }
 
 private:
     std::string name_;
     std::string tooltip_;
+    std::string accessibleName_;
+    std::string accessibleDesc_;
     bool visible_ = true;
     bool focused_ = false;
+    ImVec2 minSize_ = ImVec2(0, 0);
+    ImVec2 maxSize_ = ImVec2(0, 0);
 };
 
 } // namespace unigui

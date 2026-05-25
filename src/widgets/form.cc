@@ -1,5 +1,7 @@
 #include <unigui/widgets/form.h>
 #include <imgui.h>
+#include <sstream>
+#include <regex>
 
 namespace unigui {
 
@@ -136,6 +138,31 @@ void Form::Render() {
     }
 
     ImGui::End();
+}
+
+std::string Form::Serialize() const {
+    std::ostringstream ss;
+    ss << "{";
+    for (size_t i = 0; i < fields_.size(); i++) {
+        if (i > 0) ss << ",";
+        ss << "\"" << fields_[i].name << "\":\"" << fields_[i].value << "\"";
+    }
+    ss << "}";
+    return ss.str();
+}
+
+bool Form::Deserialize(const std::string& json) {
+    // Parse simple JSON: {"key1":"val1","key2":"val2"}
+    std::regex re("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"");
+    std::smatch m;
+    std::string s = json;
+    bool any = false;
+    while (std::regex_search(s, m, re)) {
+        SetFieldValue(m[1].str(), m[2].str());
+        s = m.suffix().str();
+        any = true;
+    }
+    return any || json == "{}";
 }
 
 } // namespace unigui

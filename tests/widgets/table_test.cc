@@ -16,3 +16,19 @@ TEST_F(TableTest, SaveRestoreColumnWidths_DoesNotCrash) {
     tbl.SaveColumnWidths();
     tbl.RestoreColumnWidths();
 }
+
+TEST_F(TableTest, ExportCSV_ReturnsHeaderAndRow) {
+    unigui::Table tbl("tbl", {"Name","Value"});
+    tbl.AddRow({"X","1"});
+    tbl.AddRow({"Y","2"});
+    auto csv = tbl.ExportCSV();
+    EXPECT_NE(csv.find("Name"), std::string::npos);
+    EXPECT_NE(csv.find("X"), std::string::npos);
+}
+
+TEST_F(TableTest, ImportCSV_AddsRows) {
+    unigui::Table tbl("tbl", {"A","B"});
+    std::string csv = "A,B\n1,2\n3,4\n";
+    tbl.ImportCSV(csv);
+    tbl.Render();
+}

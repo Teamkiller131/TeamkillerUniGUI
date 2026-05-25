@@ -1,4 +1,6 @@
 #include <unigui/theme/theme.h>
+#include <sstream>
+#include <regex>
 
 namespace unigui {
 
@@ -137,6 +139,57 @@ void ApplyTheme(const ThemeConfig& config) {
 
     // ── DPI Scaling ───────────────────────────────────────────────────────
     ImGui::GetIO().FontGlobalScale = config.dpi_scale;
+}
+
+static const char* kColorNames[] = {
+    "Text","TextDisabled","WindowBg","ChildBg","PopupBg","Border","BorderShadow",
+    "FrameBg","FrameBgHovered","FrameBgActive","TitleBg","TitleBgActive","TitleBgCollapsed",
+    "MenuBarBg","ScrollbarBg","ScrollbarGrab","ScrollbarGrabHovered","ScrollbarGrabActive",
+    "CheckMark","SliderGrab","SliderGrabActive","Button","ButtonHovered","ButtonActive",
+    "Header","HeaderHovered","HeaderActive","Separator","SeparatorHovered","SeparatorActive",
+    "ResizeGrip","ResizeGripHovered","ResizeGripActive","Tab","TabHovered","TabActive",
+    "TabUnfocused","TabUnfocusedActive","DockingPreview","DockingEmptyBg",
+    "PlotLines","PlotLinesHovered","PlotHistogram","PlotHistogramHovered",
+    "TableHeaderBg","TableBorderStrong","TableBorderLight","TableRowBg","TableRowBgAlt",
+    "TextLink","TreeLines","TextSelectedBg","DragDropTarget","DragDropTargetBg",
+    "UnsavedMarker","NavCursor","NavWindowingHighlight","NavWindowingDimBg","ModalWindowDimBg"
+};
+
+std::string ExportThemeJSON() {
+    auto& colors = ImGui::GetStyle().Colors;
+    constexpr int N = sizeof(kColorNames) / sizeof(kColorNames[0]);
+    std::ostringstream ss;
+    ss << "{";
+    for (int i = 0; i < ImGuiCol_COUNT && i < N; i++) {
+        if (i > 0) ss << ",";
+        ss << "\"" << kColorNames[i] << "\":[" << colors[i].x << "," << colors[i].y << "," << colors[i].z << "," << colors[i].w << "]";
+    }
+    ss << "}";
+    return ss.str();
+}
+
+bool ImportThemeJSON(const std::string& json) {
+    auto& colors = ImGui::GetStyle().Colors;
+    constexpr int N = sizeof(kColorNames) / sizeof(kColorNames[0]);
+    for (int i = 0; i < ImGuiCol_COUNT && i < N; i++) {
+        std::string name = kColorNames[i];
+        std::regex re("\"" + name + "\"\\s*:\\s*\\[([^\\]]+)\\]");
+        std::smatch m;
+        if (std::regex_search(json, m, re)) {
+            std::string arr = m[1].str();
+            float vals[4] = {0,0,0,1};
+            int vi = 0;
+            size_t pos = 0;
+            while (pos < arr.size() && vi < 4) {
+                size_t comma = arr.find(',', pos);
+                std::string num = (comma != std::string::npos) ? arr.substr(pos, comma-pos) : arr.substr(pos);
+                try { vals[vi++] = std::stof(num); } catch(...) { break; }
+                pos = (comma != std::string::npos) ? comma + 1 : arr.size();
+            }
+            colors[i] = ImVec4(vals[0], vals[1], vals[2], vals[3]);
+        }
+    }
+    return true;
 }
 
 } // namespace unigui

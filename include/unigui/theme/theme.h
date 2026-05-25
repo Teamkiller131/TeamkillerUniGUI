@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <string_view>
 #include <imgui.h>
 
@@ -21,5 +22,10 @@ struct ThemeConfig {
 /// Applies a complete theme (all 53 ImGui colors + style variables).
 /// Must be called after ImGui context is created.
 void ApplyTheme(const ThemeConfig& config);
+
+/// Export the current ImGui theme colors to a JSON string.
+std::string ExportThemeJSON();
+/// Import theme colors from a JSON string. Returns true on success.
+bool ImportThemeJSON(const std::string& json);
 
 } // namespace unigui

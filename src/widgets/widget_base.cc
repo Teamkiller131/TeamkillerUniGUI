@@ -21,5 +21,9 @@ void Widget::SetTooltip(std::string text) { tooltip_ = std::move(text); }
 void Widget::SetFocused() { ImGui::SetKeyboardFocusHere(); focused_ = true; }
 bool Widget::IsFocused() const { return focused_; }
 void Widget::SetNextFocused() { ImGui::SetNextItemWidth(-1); ImGui::SetKeyboardFocusHere(); }
+void Widget::SetAccessibleName(std::string name) { accessibleName_ = std::move(name); }
+void Widget::SetAccessibleDescription(std::string desc) { accessibleDesc_ = std::move(desc); }
+void Widget::SetMinSize(float w, float h) { minSize_ = ImVec2(w, h); }
+void Widget::SetMaxSize(float w, float h) { maxSize_ = ImVec2(w, h); }
 
 } // namespace unigui

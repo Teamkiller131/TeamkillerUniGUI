@@ -55,6 +55,8 @@ target_sources(unigui PRIVATE
     unigui.cc
     core/context.cc
     core/error.cc
+    core/locale.cc
+    core/settings.cc
     backend/glfw_platform.cc
     backend/opengl3_renderer.cc
     backend/backend_registry.cc
