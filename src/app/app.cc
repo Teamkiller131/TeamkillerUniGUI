@@ -67,6 +67,7 @@ bool Init(const AppConfig& config) {
 
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // v2.6: multi-viewport
     io.DisplaySize = ImVec2((float)config.width, (float)config.height);
     ApplyTheme(config.theme);
 

@@ -50,5 +50,9 @@
 #include <unigui/widgets/breadcrumb.h>
 #include <unigui/widgets/multiline.h>
 #include <unigui/widgets/iconbutton.h>
+#include <unigui/widgets/space.h>
+#include <unigui/widgets/contextmenu.h>
+#include <unigui/widgets/dragdrop.h>
+#include <unigui/widgets/shortcut.h>
 #include <unigui/ext/plot.h>
 #include <unigui/app/app.h>

@@ -98,6 +98,7 @@ target_sources(unigui PRIVATE
     widgets/breadcrumb.cc
     widgets/multiline.cc
     widgets/iconbutton.cc
+    widgets/space.cc
     app/app.cc
 )
 

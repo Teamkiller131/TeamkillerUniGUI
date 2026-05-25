@@ -23,9 +23,17 @@ public:
     const std::string& GetName() const;
     ImGuiID GetID() const;
 
+    // v2.6: tooltip & focus
+    void SetTooltip(std::string text);
+    void SetFocused();
+    bool IsFocused() const;
+    static void SetNextFocused();
+
 private:
     std::string name_;
+    std::string tooltip_;
     bool visible_ = true;
+    bool focused_ = false;
 };
 
 } // namespace unigui
