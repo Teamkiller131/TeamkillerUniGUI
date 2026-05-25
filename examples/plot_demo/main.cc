@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
     cfg.width = 1024; cfg.height = 768;
     cfg.title = "UniGUI — Plot Demo (ImPlot)";
     if (!unigui::Init(cfg)) { std::fprintf(stderr, "Init failed\n"); return 1; }
+    ImPlot::CreateContext();  // Required before any ImPlot call
 
     // Sample data
     std::vector<float> xs = {1,2,3,4,5,6,7,8,9,10};
@@ -75,6 +76,7 @@ int main(int argc, char** argv) {
     }
 
     unigui::Shutdown();
+    ImPlot::DestroyContext();
     std::printf("[plot_demo] Done. %d frames.\n", frame);
     return 0;
 }

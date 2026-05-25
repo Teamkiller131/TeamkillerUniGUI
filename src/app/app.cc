@@ -95,8 +95,16 @@ bool NewFrame() {
 void Render() {
     if (!g_initialized) return;
     ImGui::Render();
+    ImDrawData* dd = ImGui::GetDrawData();
     g_renderer->SetClearColor(0.10f, 0.10f, 0.12f, 1.00f);
-    g_renderer->RenderDrawData(ImGui::GetDrawData());
+    g_renderer->RenderDrawData(dd);
+
+    // Multi-viewport: render additional platform windows (detached docks/popups)
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault(nullptr, dd);
+    }
 }
 
 bool ShouldClose() { return g_platform ? g_platform->ShouldClose() : true; }
