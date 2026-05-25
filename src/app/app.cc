@@ -82,7 +82,7 @@ bool Init(const AppConfig& config) {
 
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // v2.6: multi-viewport
+    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // disabled: causes windows to float outside main viewport
     io.DisplaySize = ImVec2((float)config.width, (float)config.height);
     ApplyTheme(config.theme);
 
@@ -126,22 +126,11 @@ void Render() {
     if (dd && dd->CmdListsCount > 0) {
         UNIGUI_LOG_TRACE("Render: {} CmdLists, {} Vtx, {} Idx",
             dd->CmdListsCount, dd->TotalVtxCount, dd->TotalIdxCount);
-    } else {
-        UNIGUI_LOG_TRACE("Render: draw data empty (CmdLists={})",
-            dd ? dd->CmdListsCount : -1);
     }
     g_renderer->SetClearColor(0.10f, 0.10f, 0.12f, 1.00f);
     glClear(GL_COLOR_BUFFER_BIT);
     g_renderer->RenderDrawData(dd);
-
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault(nullptr, dd);
-    }
-
     g_platform->SwapBuffers();
-    UNIGUI_LOG_TRACE("Render done (buffers swapped)");
 }
 
 bool ShouldClose() { return g_platform ? g_platform->ShouldClose() : true; }
