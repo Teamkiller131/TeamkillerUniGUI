@@ -18,6 +18,10 @@ public:
     void SetResizable(bool on);
     void SaveColumnWidths();
     void RestoreColumnWidths();
+    /// Export table to CSV string.
+    std::string ExportCSV() const;
+    /// Import table from CSV string. Returns true on success.
+    bool ImportCSV(const std::string& csv);
 private:
     std::vector<std::string> columns_;
     std::vector<std::vector<std::string>> rows_;

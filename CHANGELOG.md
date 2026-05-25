@@ -1,6 +1,23 @@
 # Changelog
 
-## v0.4.0 (2026-05-25)
+## v0.5.0 (2026-05-25)
+
+### Added
+- **Locale/i18n System**: `unigui::Locale` — translation table with `Set()`, `Tr()`, `SetCurrent("zh_CN")`. Supports multiple locale codes.
+- **Settings Persistence**: `unigui::Settings` singleton — INI key-value store with `Set()/Get()`, typed helpers (`SetInt/GetInt`, `SetFloat/GetFloat`, `SetBool/GetBool`), and `Save()/Load()` file I/O.
+- **Global UndoStack**: `unigui::UndoStack<Action>` — command-pattern undo/redo template. `Execute()`, `Undo()`, `Redo()`, 100-depth default.
+- **Form Serialization**: `Form::Serialize()` / `Form::Deserialize(json)` — JSON string import/export of form state.
+- **Table CSV Import/Export**: `Table::ExportCSV()` / `Table::ImportCSV(csv)` — full CSV with quote escaping.
+- **Theme JSON Export**: `ExportThemeJSON()` / `ImportThemeJSON(json)` — save/load all 53 ImGui colors.
+- **Accessibility Hints**: `Widget::SetAccessibleName()` / `SetAccessibleDescription()`.
+- **Widget Size Constraints**: `Widget::SetMinSize(w,h)` / `SetMaxSize(w,h)`.
+- **Performance Benchmarks**: `tests/bench/bench_test.cc` — frame time measurement for 100-button/100-label renders.
+- **Version bump**: 0.4.0 → 0.5.0
+
+### Changed
+- widget_base: added `minSize_`, `maxSize_`, `accessibleName_`, `accessibleDesc_` members
+- unigui.h: includes `locale.h`, `settings.h`, `undo_stack.h`
+- Tests: 173 → 187 (+14 new tests)
 
 ### Added
 - **NodeEditor Groundwork**: `include/unigui/ext/node_editor.h` — RAII wrapper for `ax::NodeEditor` (Begin/End/Node/Pin/Link). Requires `imgui-node-editor` vcpkg dependency.

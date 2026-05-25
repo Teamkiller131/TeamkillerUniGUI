@@ -44,6 +44,11 @@ public:
     /// Set min/max range for a number or slider field.
     void SetFieldMinMax(const std::string& name, double min, double max);
 
+    /// Serialize form state to a simple JSON string.
+    std::string Serialize() const;
+    /// Deserialize form state from a simple JSON string.
+    bool Deserialize(const std::string& json);
+
 private:
     struct FieldValidator {
         std::string pattern;

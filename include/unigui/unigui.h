@@ -3,6 +3,9 @@
 #include <unigui/core/version.h>
 #include <unigui/core/context.h>
 #include <unigui/core/error.h>
+#include <unigui/core/locale.h>
+#include <unigui/core/settings.h>
+#include <unigui/core/undo_stack.h>
 #include <unigui/backend/platform_backend.h>
 #include <unigui/backend/renderer_backend.h>
 #include <unigui/backend/backend_types.h>
