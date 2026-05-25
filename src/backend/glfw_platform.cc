@@ -22,7 +22,7 @@ public:
         }
         UNIGUI_LOG_DEBUG("glfwInit OK");
 
-        glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // AMD debug: create hidden
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -37,11 +37,6 @@ public:
         glfwMakeContextCurrent(window_);
         ImGui_ImplGlfw_InitForOpenGL(window_, true);
         UNIGUI_LOG_DEBUG("ImGui GLFW backend initialized");
-
-        // Show window AFTER all OpenGL initialization is complete
-        glfwShowWindow(window_);
-        glfwPollEvents();  // process queued resize events
-
         initialized_ = true;
         return true;
     }

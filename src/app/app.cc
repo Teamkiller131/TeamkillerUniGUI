@@ -51,6 +51,7 @@ bool Init(const AppConfig& config) {
 
     // Ensure GL functions loaded on current context (AMD)
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    { GLenum e = glGetError(); if(e) UNIGUI_LOG_WARN("GL error after gladLoadGLLoader: 0x{:04x}",(unsigned)e); while(glGetError()!=GL_NO_ERROR){} }
 
 #ifdef UNIGUI_HAS_SDL3_VULKAN
     if (config.backend == BackendType::SDL3_Vulkan) {
@@ -79,21 +80,24 @@ bool Init(const AppConfig& config) {
         g_platform->Shutdown(); return false;
     }
     UNIGUI_LOG_DEBUG("Renderer initialized");
+    { GLenum e = glGetError(); if(e) UNIGUI_LOG_WARN("GL error after renderer Init: 0x{:04x}",(unsigned)e); while(glGetError()!=GL_NO_ERROR){} }
 
     g_platform->SetTitle(config.title);
     g_platform->SetSize(config.width, config.height);
 
     auto& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;  // AMD debug
     io.DisplaySize = ImVec2((float)config.width, (float)config.height);
     io.Fonts->Build(); // Required after renderer Init for new ImGui backends
+    { GLenum e = glGetError(); if(e) UNIGUI_LOG_WARN("GL error after Fonts->Build: 0x{:04x}",(unsigned)e); while(glGetError()!=GL_NO_ERROR){} }
     ApplyTheme(config.theme);
+    { GLenum e = glGetError(); if(e) UNIGUI_LOG_WARN("GL error after ApplyTheme: 0x{:04x}",(unsigned)e); while(glGetError()!=GL_NO_ERROR){} }
 
     // Warmup: just NewFrame+Render to avoid GLFW->GL interaction on AMD
     ImGui::NewFrame();
     ImGui::Render();
     g_renderer->RenderDrawData(nullptr);
-    while (glGetError() != GL_NO_ERROR) {}
+    { GLenum e = glGetError(); if(e) UNIGUI_LOG_WARN("GL error after warmup: 0x{:04x}",(unsigned)e); while(glGetError()!=GL_NO_ERROR){} }
 
     g_initialized = true;
     UNIGUI_LOG_INFO("Init complete: {}x{} docking=1 viewports=0",
