@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.3.1 (2026-05-25)
+
+### Added
+- **Multi-Viewport**: `ImGuiConfigFlags_ViewportsEnable` — OS-level window dragging
+- **DockSpace**: Full docking layout widget
+- **ContextMenu**: Right-click popup menu (`ContextMenu::Show`)
+- **Drag-Drop API**: `BeginDragSource`/`AcceptDragDrop` template helpers
+- **ShortcutManager**: Global keyboard shortcut registration (`Ctrl+S`, etc.)
+- **Widget Tooltip**: `Widget::SetTooltip()` on all widgets
+- **Widget Focus**: `SetFocused()`, `IsFocused()`, `SetNextFocused()`
+
 ## v0.3.0 (2026-05-25)
 
 ### Added

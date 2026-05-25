@@ -17,4 +17,9 @@ ImGuiID Widget::GetID() const {
     return ImHashStr(name_.c_str(), name_.size(), 0);
 }
 
+void Widget::SetTooltip(std::string text) { tooltip_ = std::move(text); }
+void Widget::SetFocused() { ImGui::SetKeyboardFocusHere(); focused_ = true; }
+bool Widget::IsFocused() const { return focused_; }
+void Widget::SetNextFocused() { ImGui::SetNextItemWidth(-1); ImGui::SetKeyboardFocusHere(); }
+
 } // namespace unigui
