@@ -65,6 +65,9 @@ bool Init(const AppConfig& config) {
         g_platform->Shutdown(); return false;
     }
 
+    g_platform->SetTitle(config.title);
+    g_platform->SetSize(config.width, config.height);
+
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // v2.6: multi-viewport
