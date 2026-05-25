@@ -1,0 +1,28 @@
+#pragma once
+#include <unigui/widgets/widget_base.h>
+#include <string>
+#include <vector>
+#include <functional>
+
+namespace unigui {
+struct TabPage {
+    std::string name;
+    std::string label;
+    std::function<void()> content_callback;
+    bool closable = false;
+};
+
+class TabWidget : public Widget {
+public:
+    TabWidget(std::string name);
+    void Render() override;
+    void AddTab(TabPage page);
+    void RemoveTab(const std::string& tab_name);
+    int GetActiveTab() const;
+    void SetActiveTab(int index);
+    const std::vector<TabPage>& GetTabs() const;
+private:
+    std::vector<TabPage> tabs_;
+    int active_ = 0;
+};
+}

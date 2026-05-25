@@ -1,0 +1,23 @@
+# Build outputs
+build/
+vcpkg_installed/
+out/
+CMakeCache.txt
+CMakeFiles/
+
+# IDE
+.vs/
+*.user
+
+# CMake
+CMakeUserPresets.json
+!CMakePresets.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# .omo — keep plans, ignore evidence/run artifacts
+.omo/evidence/
+.omo/drafts/
+.omo/run-continuation/

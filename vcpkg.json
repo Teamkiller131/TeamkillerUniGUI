@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "unigui",
+  "version": "0.2.0",
+  "description": "Modern Dear ImGui C++ wrapper — SDL3+Vulkan + GLFW+OpenGL3 backends, theme engine, widget library",
+  "dependencies": [
+    {
+      "name": "imgui",
+      "default-features": false,
+      "features": [
+        "docking-experimental",
+        "freetype",
+        "glfw-binding",
+        "opengl3-binding",
+        "sdl3-binding",
+        "vulkan-binding",
+        "dx11-binding"
+      ]
+    },
+    {
+      "name": "glfw3"
+    },
+    {
+      "name": "sdl3"
+    },
+    {
+      "name": "vulkan"
+    },
+    {
+      "name": "freetype"
+    },
+    {
+      "name": "glad",
+      "features": [
+        "loader"
+      ]
+    },
+    {
+      "name": "gtest"
+    }
+  ]
+}
