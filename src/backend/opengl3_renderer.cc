@@ -3,6 +3,7 @@
 #include <unigui/core/log.h>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
+#include <GLFW/glfw3.h>
 #include <memory>
 
 namespace unigui {
@@ -20,24 +21,24 @@ public:
             context = ImGui::GetCurrentContext();
         }
 
-        // Load OpenGL via GLAD
-        if (!gladLoadGL()) {
-            UNIGUI_LOG_ERROR("gladLoadGL() failed — no OpenGL context?");
+        // Load OpenGL via GLAD using GLFW's loader (required for AMD Core Profile)
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+            UNIGUI_LOG_ERROR("gladLoadGLLoader() failed — no OpenGL context?");
             return false;
         }
         UNIGUI_LOG_INFO("OpenGL: {} {} — GLSL {}", (const char*)glGetString(GL_VENDOR),
             (const char*)glGetString(GL_RENDERER), (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-        UNIGUI_LOG_DEBUG("GLAD: glGenVertexArrays=%p glBindVertexArray=%p",
-            (void*)glGenVertexArrays, (void*)glBindVertexArray);
+        UNIGUI_LOG_DEBUG("GLAD: glGenVertexArrays={} glBindVertexArray={}",
+            (void*)(uintptr_t)glGenVertexArrays, (void*)(uintptr_t)glBindVertexArray);
 
         // Core Profile requires a VAO before any draw call.
         // AMD drivers are strict about this.
         glGenVertexArrays(1, &vao_);
         glBindVertexArray(vao_);
 
-        if (!ImGui_ImplOpenGL3_Init("#version 450 core")) {
-            UNIGUI_LOG_ERROR("ImGui_ImplOpenGL3_Init(#version 450 core) failed");
+        if (!ImGui_ImplOpenGL3_Init("#version 330 core")) {
+            UNIGUI_LOG_ERROR("ImGui_ImplOpenGL3_Init(#version 330 core) failed");
             return false;
         }
         UNIGUI_LOG_DEBUG("ImGui_ImplOpenGL3_Init OK");
