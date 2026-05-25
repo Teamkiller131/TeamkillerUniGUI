@@ -10,6 +10,9 @@
 #include <unigui/backend/dx11_renderer.h>
 #include <imgui_impl_dx11.h>
 #endif
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 namespace unigui {
 static bool g_initialized = false;
@@ -27,18 +30,23 @@ bool Init(const AppConfig& config) {
     g_platform = std::move(backend.platform);
     g_renderer = std::move(backend.renderer);
     if (!g_platform || !g_platform->Init(nullptr)) { UNIGUI_LOG_ERROR("Platform init failed"); return false; }
+    g_platform->SetTitle(config.title);
+    g_platform->SetSize(config.width, config.height);
 #ifdef UNIGUI_HAS_DX11
     if (config.backend == BackendType::DX11) {
         auto hwnd = g_platform->GetWindowHandle();
+        RECT rc; GetClientRect((HWND)hwnd, &rc);
+        int pw = rc.right - rc.left, ph = rc.bottom - rc.top;
+        if (pw <= 0) { pw = config.width; ph = config.height; }
         ID3D11Device* dev=nullptr; ID3D11DeviceContext* ctx=nullptr;
         IDXGISwapChain* swap=nullptr; ID3D11RenderTargetView* rtv=nullptr;
-        if (!CreateDX11DeviceAndSwapChain(hwnd,config.width,config.height,&dev,&ctx,&swap,&rtv)) { g_platform->Shutdown(); return false; }
+        if (!CreateDX11DeviceAndSwapChain(hwnd,pw,ph,&dev,&ctx,&swap,&rtv)) { g_platform->Shutdown(); return false; }
         auto* dxr = static_cast<DX11Renderer*>(g_renderer.get());
         dxr->device_=dev; dxr->ctx_=ctx; dxr->swapchain_=swap; dxr->rtv_=rtv;
+        UNIGUI_LOG_INFO("DX11 swapchain: {}x{}", pw, ph);
     }
 #endif
     if (!g_renderer||!g_renderer->Init(ImGui::GetCurrentContext())) { g_platform->Shutdown(); return false; }
-    g_platform->SetTitle(config.title); g_platform->SetSize(config.width,config.height);
     auto& io = ImGui::GetIO();
     if (g_backend!=BackendType::DX11) io.ConfigFlags|=ImGuiConfigFlags_DockingEnable;
     io.DisplaySize=ImVec2((float)config.width,(float)config.height);
