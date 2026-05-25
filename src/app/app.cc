@@ -93,6 +93,11 @@ bool NewFrame() {
     g_platform->PollEvents();
     g_platform->NewFrame();
     ImGui::NewFrame();
+
+    // Create main dockspace over the entire viewport (required for docking)
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(),
+        ImGuiDockNodeFlags_PassthruCentralNode);
+
     return true;
 }
 
