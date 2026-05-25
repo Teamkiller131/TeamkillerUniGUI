@@ -81,8 +81,8 @@ bool Init(const AppConfig& config) {
     g_platform->SetSize(config.width, config.height);
 
     auto& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // disabled: causes windows to float outside main viewport
+    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // disabled for debugging
+    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // disabled for debugging
     io.DisplaySize = ImVec2((float)config.width, (float)config.height);
     ApplyTheme(config.theme);
 
@@ -111,9 +111,6 @@ bool NewFrame() {
     g_platform->PollEvents();
     g_platform->NewFrame();
     ImGui::NewFrame();
-
-    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(),
-        ImGuiDockNodeFlags_PassthruCentralNode);
     UNIGUI_LOG_TRACE("NewFrame");
 
     return true;
