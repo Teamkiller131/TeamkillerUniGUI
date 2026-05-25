@@ -31,4 +31,13 @@
 #include <unigui/widgets/toolbar.h>
 #include <unigui/widgets/table.h>
 #include <unigui/widgets/colorpicker.h>
+#include <unigui/widgets/filepath.h>
+#include <unigui/widgets/dirpath.h>
+#include <unigui/widgets/spinbox.h>
+#include <unigui/widgets/toggleswitch.h>
+#include <unigui/widgets/inputint.h>
+#include <unigui/widgets/inputfloat.h>
+#include <unigui/widgets/splitter.h>
+#include <unigui/widgets/separator.h>
+#include <unigui/widgets/scrollarea.h>
 #include <unigui/app/app.h>
