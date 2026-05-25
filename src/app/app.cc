@@ -85,8 +85,7 @@ bool Init(const AppConfig& config) {
     io.Fonts->Build(); // Required after renderer Init for new ImGui backends
     ApplyTheme(config.theme);
 
-    // Warmup frame: absorb window-creation GL state changes (AMD workaround)
-    g_platform->NewFrame();
+    // Warmup: just NewFrame+Render to avoid GLFW->GL interaction on AMD
     ImGui::NewFrame();
     ImGui::Render();
     g_renderer->RenderDrawData(nullptr);
@@ -112,7 +111,6 @@ void Shutdown() {
 
 bool NewFrame() {
     if (!g_initialized) return false;
-    g_platform->PollEvents();
     g_platform->NewFrame();
     ImGui::NewFrame();
     return true;
