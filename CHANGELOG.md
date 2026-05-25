@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.2 (2026-05-25)
+
+### Added
+- **DX12 Renderer**: Full DX12 backend — device/command-queue/swapchain/descriptor-heaps/fence via `CreateDX12DeviceAndSwapChain()`. Wraps `imgui_impl_dx12.h`. Runtime-ready on Windows.
+- **WebGPU Renderer**: `webgpu_renderer.cc` — Dawn/WGPU stub (full impl requires Dawn library).
+- **Metal Renderer**: Updated `metal_renderer.cc` — macOS-only stub (full `.mm` impl requires Objective-C++ on macOS).
+- **Emscripten Platform**: `emscripten_platform.cc` — Web/HTML5 stub with `__EMSCRIPTEN__` guard (full impl requires Emscripten SDK).
+- **BackendType**: `DX12`, `WebGPU`, `Emscripten` entries in enum + backend_factory routing.
+- **`UNIGUI_HAS_DX12`** compile definition for DX12 backend conditional compilation.
+- **Backend Comparison Table**: README matrix for all 7 backends (platform, API, status, features).
+- **DX12 vcpkg**: `imgui[dx12-binding]` + `d3d12` link library.
+
 ## v0.3.1 (2026-05-25)
 
 ### Added

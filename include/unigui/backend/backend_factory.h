@@ -25,6 +25,15 @@ std::unique_ptr<RendererBackend> CreateDX11Renderer();
 /// Creates a Metal renderer backend (macOS only).
 std::unique_ptr<RendererBackend> CreateMetalRenderer();
 
+/// Creates a DX12 renderer backend (Windows only).
+std::unique_ptr<RendererBackend> CreateDX12Renderer();
+
+/// Creates a WebGPU renderer backend.
+std::unique_ptr<RendererBackend> CreateWebGPURenderer();
+
+/// Creates an Emscripten platform backend.
+std::unique_ptr<PlatformBackend> CreateEmscriptenPlatform();
+
 /// Creates the default platform + renderer backend pair.
 struct DefaultBackend {
     std::unique_ptr<PlatformBackend> platform;
@@ -40,6 +49,8 @@ inline DefaultBackend CreateBackend(BackendType type) {
 #ifdef UNIGUI_HAS_SDL3_VULKAN
         return { CreateSDL3Platform(), CreateVulkanRenderer() };
 #else
+        return { nullptr, nullptr };
+#endif
     case BackendType::DX11:
 #ifdef UNIGUI_HAS_DX11
         return { CreateGLFWPlatform(), CreateDX11Renderer() };
@@ -52,7 +63,16 @@ inline DefaultBackend CreateBackend(BackendType type) {
 #else
         return { nullptr, nullptr };
 #endif
+    case BackendType::DX12:
+#ifdef UNIGUI_HAS_DX12
+        return { CreateGLFWPlatform(), CreateDX12Renderer() };
+#else
+        return { nullptr, nullptr };
 #endif
+    case BackendType::WebGPU:
+        return { CreateGLFWPlatform(), CreateWebGPURenderer() };
+    case BackendType::Emscripten:
+        return { CreateEmscriptenPlatform(), CreateWebGPURenderer() };
     }
     return { nullptr, nullptr };
 }

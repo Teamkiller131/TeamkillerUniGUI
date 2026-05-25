@@ -7,7 +7,10 @@ enum class BackendType {
     GLFW_GL3,       ///< GLFW platform + OpenGL 3 renderer (default)
     SDL3_Vulkan,    ///< SDL3 platform + Vulkan renderer
     DX11,           ///< DirectX 11 renderer (Windows only)
+    DX12,           ///< DirectX 12 renderer (Windows only)
     Metal,          ///< Metal renderer (macOS only)
+    WebGPU,         ///< WebGPU renderer (cross-platform via Dawn/WGPU)
+    Emscripten,     ///< Emscripten/Web platform
 };
 
 /// Configuration for creating a backend.
