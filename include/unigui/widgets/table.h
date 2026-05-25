@@ -14,10 +14,14 @@ public:
     void ClearRows();
     int GetSelectedRow() const;
     void SetOnSelect(std::function<void(int)> callback);
+    void SetSortable(bool on);
+    void SetResizable(bool on);
 private:
     std::vector<std::string> columns_;
     std::vector<std::vector<std::string>> rows_;
     int selected_ = -1;
+    bool sortable_ = false;
+    bool resizable_ = false;
     std::function<void(int)> on_select_;
 };
 }

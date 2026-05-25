@@ -15,10 +15,15 @@ public:
     const std::vector<std::string>& GetItems() const;
     void SetItems(std::vector<std::string> items);
     void SetOnChange(std::function<void(int)> callback);
+    void SetEditable(bool on);
+    void SetSearchable(bool on);
 private:
     std::string label_;
     std::vector<std::string> items_;
     int selected_;
+    bool editable_ = false;
+    bool searchable_ = false;
+    char search_buf_[256] = {};
     std::function<void(int)> on_change_;
 };
 }

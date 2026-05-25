@@ -40,4 +40,5 @@
 #include <unigui/widgets/splitter.h>
 #include <unigui/widgets/separator.h>
 #include <unigui/widgets/scrollarea.h>
+#include <unigui/widgets/tooltip.h>
 #include <unigui/app/app.h>
