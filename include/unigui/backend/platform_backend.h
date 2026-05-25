@@ -30,6 +30,10 @@ public:
     virtual bool ShouldClose() const = 0;
     /// Returns the native window handle, or nullptr if not available.
     virtual void* GetWindowHandle() const { return nullptr; }
+    /// Set the window title.
+    virtual void SetTitle(const char*) {}
+    /// Set the window client area size.
+    virtual void SetSize(int, int) {}
 };
 
 } // namespace unigui
