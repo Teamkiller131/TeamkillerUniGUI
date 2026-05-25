@@ -11,7 +11,11 @@ struct AppConfig {
     int height = 720;
     const char* title = "UniGUI Application";
     ThemeConfig theme = { ThemePreset::Dark, 1.0f, 16.0f };
+#ifdef _WIN32
+    BackendType backend = BackendType::DX11; // DX11 is stable on Windows
+#else
     BackendType backend = BackendType::GLFW_GL3;
+#endif
 };
 
 bool Init(const AppConfig& config);
