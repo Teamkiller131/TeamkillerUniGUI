@@ -34,7 +34,6 @@ bool Init(const AppConfig& config) {
     UNIGUI_LOG_INFO("Init: backend={}, {}x{}, title='{}'",
         (int)config.backend, config.width, config.height, config.title);
 
-    // Create ImGui context FIRST (required before any backend Init)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     UNIGUI_LOG_DEBUG("ImGui context created");
@@ -83,13 +82,19 @@ bool Init(const AppConfig& config) {
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.DisplaySize = ImVec2((float)config.width, (float)config.height);
+    io.Fonts->Build(); // Required after renderer Init for new ImGui backends
     ApplyTheme(config.theme);
 
+    // Warmup frame: absorb window-creation GL state changes (AMD workaround)
+    g_platform->NewFrame();
+    ImGui::NewFrame();
+    ImGui::Render();
+    g_renderer->RenderDrawData(nullptr);
+    while (glGetError() != GL_NO_ERROR) {}
+
     g_initialized = true;
-    UNIGUI_LOG_INFO("Init complete — {}x{} docking={} viewports={}",
-        config.width, config.height,
-        (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) ? 1 : 0,
-        (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) ? 1 : 0);
+    UNIGUI_LOG_INFO("Init complete: {}x{} docking=1 viewports=0",
+        config.width, config.height);
     return true;
 }
 
@@ -110,10 +115,6 @@ bool NewFrame() {
     g_platform->PollEvents();
     g_platform->NewFrame();
     ImGui::NewFrame();
-
-    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(),
-        ImGuiDockNodeFlags_PassthruCentralNode);
-
     return true;
 }
 
@@ -121,18 +122,14 @@ void Render() {
     if (!g_initialized) return;
     ImGui::Render();
     ImDrawData* dd = ImGui::GetDrawData();
-    if (dd && dd->CmdListsCount > 0) {
-        UNIGUI_LOG_TRACE("Render: {} CmdLists, {} Vtx, {} Idx",
-            dd->CmdListsCount, dd->TotalVtxCount, dd->TotalIdxCount);
-    }
     g_renderer->SetClearColor(1.0f, 0.0f, 0.0f, 1.0f); // RED diagnostic
     glClear(GL_COLOR_BUFFER_BIT);
     g_renderer->RenderDrawData(dd);
 
     GLenum err = glGetError();
-    while (err != GL_NO_ERROR) {
+    if (err != GL_NO_ERROR) {
         UNIGUI_LOG_WARN("GL error after RenderDrawData: 0x{:04x}", (unsigned)err);
-        err = glGetError();
+        while (glGetError() != GL_NO_ERROR) {}
     }
 
     g_platform->SwapBuffers();
