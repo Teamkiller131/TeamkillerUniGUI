@@ -4,6 +4,7 @@
 #include <unigui/core/log.h>
 #include <glad/glad.h>
 #include <imgui.h>
+#include <GLFW/glfw3.h>
 #include <cstdio>
 
 #ifdef UNIGUI_HAS_SDL3_VULKAN
@@ -47,6 +48,9 @@ bool Init(const AppConfig& config) {
         return false;
     }
     UNIGUI_LOG_DEBUG("Platform backend initialized");
+
+    // Ensure GL functions loaded on current context (AMD)
+    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
 #ifdef UNIGUI_HAS_SDL3_VULKAN
     if (config.backend == BackendType::SDL3_Vulkan) {

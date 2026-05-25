@@ -37,8 +37,8 @@ public:
         glGenVertexArrays(1, &vao_);
         glBindVertexArray(vao_);
 
-        if (!ImGui_ImplOpenGL3_Init("#version 330 core")) {
-            UNIGUI_LOG_ERROR("ImGui_ImplOpenGL3_Init(#version 330 core) failed");
+        if (!ImGui_ImplOpenGL3_Init("#version 460")) {
+            UNIGUI_LOG_ERROR("ImGui_ImplOpenGL3_Init(#version 460) failed");
             return false;
         }
         UNIGUI_LOG_DEBUG("ImGui_ImplOpenGL3_Init OK");

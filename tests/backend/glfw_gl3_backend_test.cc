@@ -115,11 +115,14 @@ TEST_F(BackendTest, RenderDrawData_NoGLError) {
     ImGui::NewFrame(); ImGui::Begin("T"); ImGui::Text("H"); ImGui::End();
     ImGui::Render(); renderer->RenderDrawData(ImGui::GetDrawData());
 
-    // Frame 2 — should have real content
+    // Frame 2 — with glClear before RenderDrawData (matches app behavior)
     while (glGetError() != GL_NO_ERROR) {}
     ImGui::NewFrame();
     ImGui::ShowDemoWindow();
     ImGui::Render();
+
+    renderer->SetClearColor(0.1f, 0.1f, 0.12f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     ImDrawData* dd = ImGui::GetDrawData();
     renderer->RenderDrawData(dd);
