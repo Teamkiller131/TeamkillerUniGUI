@@ -6,7 +6,8 @@ struct IDXGISwapChain;
 struct ID3D11RenderTargetView;
 namespace unigui {
 bool CreateDX11DeviceAndSwapChain(void* hwnd, int w, int h,
-    ID3D11Device** dev, ID3D11DeviceContext** ctx, IDXGISwapChain** swap);
+    ID3D11Device** dev, ID3D11DeviceContext** ctx, IDXGISwapChain** swap,
+    ID3D11RenderTargetView** rtv = nullptr);
 class DX11Renderer : public RendererBackend {
 public:
     ID3D11Device* device_ = nullptr;
