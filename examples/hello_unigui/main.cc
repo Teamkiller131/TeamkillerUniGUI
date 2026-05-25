@@ -27,6 +27,11 @@ int main(int argc, char** argv) {
     while (!done && !unigui::ShouldClose()) {
         unigui::NewFrame();
 
+        // Diagnostic: direct ImGui window to verify rendering
+        ImGui::Begin("Diagnostic");
+        ImGui::Text("Frame: %d, FPS: %.1f", frame_count, ImGui::GetIO().Framerate);
+        ImGui::End();
+
         {
             static auto window = std::make_shared<unigui::Window>("demo", "UniGUI Demo");
             static bool first = true;
