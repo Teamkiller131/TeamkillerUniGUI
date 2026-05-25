@@ -1,4 +1,5 @@
 #include <unigui/widgets/window.h>
+#include <unigui/core/log.h>
 #include <imgui.h>
 
 namespace unigui {
@@ -9,6 +10,7 @@ Window::Window(std::string name, std::string title)
 
 void Window::Render() {
     if (!IsVisible()) return;
+    UNIGUI_LOG_TRACE("Window::Render '{}': {} panels", title_, panels_.size());
 
     if (pos_x_ >= 0)
         ImGui::SetNextWindowPos(ImVec2(pos_x_, pos_y_), ImGuiCond_FirstUseEver);

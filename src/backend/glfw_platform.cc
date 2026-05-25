@@ -1,5 +1,6 @@
 #include <unigui/backend/backend_factory.h>
 #include <unigui/backend/backend_types.h>
+#include <unigui/core/log.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <GLFW/glfw3.h>
@@ -15,13 +16,11 @@ namespace {
 class GLFWPlatform : public PlatformBackend {
 public:
     bool Init(void* native_window_handle = nullptr) override {
-        if (!glfwInit()) return false;
-
-        // Ensure ImGui context exists
-        if (!ImGui::GetCurrentContext()) {
-            IMGUI_CHECKVERSION();
-            ImGui::CreateContext();
+        if (!glfwInit()) {
+            UNIGUI_LOG_ERROR("glfwInit() failed");
+            return false;
         }
+        UNIGUI_LOG_DEBUG("glfwInit OK");
 
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -29,12 +28,16 @@ public:
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         window_ = glfwCreateWindow(1280, 720, "UniGUI", nullptr, nullptr);
-        if (!window_) { glfwTerminate(); return false; }
-        glfwShowWindow(window_);
+        if (!window_) {
+            UNIGUI_LOG_ERROR("glfwCreateWindow(1280x720) failed");
+            glfwTerminate(); return false;
+        }
+        UNIGUI_LOG_INFO("GLFW window created: 1280x720 'UniGUI'");
 
         glfwMakeContextCurrent(window_);
         glfwSwapInterval(1);
         ImGui_ImplGlfw_InitForOpenGL(window_, true);
+        UNIGUI_LOG_DEBUG("ImGui GLFW backend initialized");
         initialized_ = true;
         return true;
     }
@@ -47,15 +50,14 @@ public:
     }
     void SwapBuffers() override {
         if (window_) glfwSwapBuffers(window_);
+        UNIGUI_LOG_TRACE("SwapBuffers");
     }
 
     void Shutdown() override {
         if (!initialized_) return;
+        UNIGUI_LOG_DEBUG("GLFWPlatform shutdown: destroying window");
         ImGui_ImplGlfw_Shutdown();
-        if (window_) {
-            glfwDestroyWindow(window_);
-            window_ = nullptr;
-        }
+        if (window_) { glfwDestroyWindow(window_); window_ = nullptr; }
         glfwTerminate();
         initialized_ = false;
     }

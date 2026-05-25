@@ -1,6 +1,7 @@
 #include <unigui/app/app.h>
 #include <unigui/backend/backend_factory.h>
 #include <unigui/theme/theme.h>
+#include <unigui/core/log.h>
 #include <glad/glad.h>
 #include <imgui.h>
 #include <cstdio>
@@ -25,18 +26,28 @@ static VulkanContext g_vulkanCtx;
 
 bool Init(const AppConfig& config) {
     if (g_initialized) {
-        std::fprintf(stderr, "[unigui] Already initialized\n");
+        UNIGUI_LOG_WARN("Init called but already initialized");
         return false;
     }
+
+    InitLogging("debug");
+    UNIGUI_LOG_INFO("Init: backend={}, {}x{}, title='{}'",
+        (int)config.backend, config.width, config.height, config.title);
+
+    // Create ImGui context FIRST (required before any backend Init)
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    UNIGUI_LOG_DEBUG("ImGui context created");
 
     auto backend = CreateBackend(config.backend);
     g_platform = std::move(backend.platform);
     g_renderer = std::move(backend.renderer);
 
     if (!g_platform || !g_platform->Init(nullptr)) {
-        std::fprintf(stderr, "[unigui] Platform backend init failed\n");
+        UNIGUI_LOG_ERROR("Platform backend init failed (backend={})", (int)config.backend);
         return false;
     }
+    UNIGUI_LOG_DEBUG("Platform backend initialized");
 
 #ifdef UNIGUI_HAS_SDL3_VULKAN
     if (config.backend == BackendType::SDL3_Vulkan) {
@@ -61,9 +72,10 @@ bool Init(const AppConfig& config) {
 #endif
 
     if (!g_renderer || !g_renderer->Init(ImGui::GetCurrentContext())) {
-        std::fprintf(stderr, "[unigui] Renderer backend init failed\n");
+        UNIGUI_LOG_ERROR("Renderer backend init failed");
         g_platform->Shutdown(); return false;
     }
+    UNIGUI_LOG_DEBUG("Renderer initialized");
 
     g_platform->SetTitle(config.title);
     g_platform->SetSize(config.width, config.height);
@@ -75,17 +87,23 @@ bool Init(const AppConfig& config) {
     ApplyTheme(config.theme);
 
     g_initialized = true;
+    UNIGUI_LOG_INFO("Init complete — {}x{} docking={} viewports={}",
+        config.width, config.height,
+        (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) ? 1 : 0,
+        (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) ? 1 : 0);
     return true;
 }
 
 void Shutdown() {
     if (!g_initialized) return;
+    UNIGUI_LOG_INFO("Shutdown: releasing renderer + platform");
     if (g_renderer) { g_renderer->Shutdown(); g_renderer.reset(); }
 #ifdef UNIGUI_HAS_SDL3_VULKAN
     if (g_vulkanCtx.device.device) { DestroyVulkanContext(g_vulkanCtx); g_vulkanCtx = VulkanContext{}; }
 #endif
     if (g_platform) { g_platform->Shutdown(); g_platform.reset(); }
     g_initialized = false;
+    UNIGUI_LOG_DEBUG("Shutdown complete");
 }
 
 bool NewFrame() {
@@ -94,9 +112,9 @@ bool NewFrame() {
     g_platform->NewFrame();
     ImGui::NewFrame();
 
-    // Create main dockspace over the entire viewport (required for docking)
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(),
         ImGuiDockNodeFlags_PassthruCentralNode);
+    UNIGUI_LOG_TRACE("NewFrame");
 
     return true;
 }
@@ -105,11 +123,17 @@ void Render() {
     if (!g_initialized) return;
     ImGui::Render();
     ImDrawData* dd = ImGui::GetDrawData();
+    if (dd && dd->CmdListsCount > 0) {
+        UNIGUI_LOG_TRACE("Render: {} CmdLists, {} Vtx, {} Idx",
+            dd->CmdListsCount, dd->TotalVtxCount, dd->TotalIdxCount);
+    } else {
+        UNIGUI_LOG_TRACE("Render: draw data empty (CmdLists={})",
+            dd ? dd->CmdListsCount : -1);
+    }
     g_renderer->SetClearColor(0.10f, 0.10f, 0.12f, 1.00f);
     glClear(GL_COLOR_BUFFER_BIT);
     g_renderer->RenderDrawData(dd);
 
-    // Multi-viewport: render additional platform windows (detached docks/popups)
     ImGuiIO& io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         ImGui::UpdatePlatformWindows();
@@ -117,6 +141,7 @@ void Render() {
     }
 
     g_platform->SwapBuffers();
+    UNIGUI_LOG_TRACE("Render done (buffers swapped)");
 }
 
 bool ShouldClose() { return g_platform ? g_platform->ShouldClose() : true; }

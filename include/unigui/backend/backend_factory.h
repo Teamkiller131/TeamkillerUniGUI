@@ -3,6 +3,7 @@
 #include <unigui/backend/platform_backend.h>
 #include <unigui/backend/renderer_backend.h>
 #include <unigui/backend/backend_types.h>
+#include <unigui/core/log.h>
 #include <memory>
 
 namespace unigui {
@@ -42,6 +43,7 @@ struct DefaultBackend {
 
 /// Creates backends based on the specified type.
 inline DefaultBackend CreateBackend(BackendType type) {
+    UNIGUI_LOG_DEBUG("CreateBackend: type={}", (int)type);
     switch (type) {
     case BackendType::GLFW_GL3:
         return { CreateGLFWPlatform(), CreateOpenGL3Renderer() };

@@ -22,12 +22,14 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(implot CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
 set(UNIGUI_LIBS
     imgui::imgui
     glfw
     glad::glad
     Freetype::Freetype
+    spdlog::spdlog
 )
 
 # ── SDL3 + Vulkan (conditional) ───────────────────────────────────────────────
@@ -57,6 +59,7 @@ target_sources(unigui PRIVATE
     core/error.cc
     core/locale.cc
     core/settings.cc
+    core/log.cc
     backend/glfw_platform.cc
     backend/opengl3_renderer.cc
     backend/backend_registry.cc
