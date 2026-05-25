@@ -1,0 +1,150 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 31,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-msvc-debug",
+      "displayName": "Windows MSVC Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-msvc-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "23",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "windows-msvc-release",
+      "displayName": "Windows MSVC Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-msvc-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "23",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "linux-gcc-debug",
+      "displayName": "Linux GCC Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-gcc-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "23"
+      }
+    },
+    {
+      "name": "macos-clang-debug",
+      "displayName": "macOS Clang Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-clang-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "23"
+      }
+    },
+    {
+      "name": "windows-msvc-sdl3-vulkan-debug",
+      "displayName": "Windows MSVC SDL3+Vulkan Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-msvc-sdl3-vulkan-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "23",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "UNIGUI_BACKEND": "SDL3_VULKAN"
+      }
+    },
+    {
+      "name": "windows-msvc-sdl3-vulkan-release",
+      "displayName": "Windows MSVC SDL3+Vulkan Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-msvc-sdl3-vulkan-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "23",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "UNIGUI_BACKEND": "SDL3_VULKAN"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-msvc-debug",
+      "configurePreset": "windows-msvc-debug"
+    },
+    {
+      "name": "windows-msvc-release",
+      "configurePreset": "windows-msvc-release"
+    },
+    {
+      "name": "linux-gcc-debug",
+      "configurePreset": "linux-gcc-debug"
+    },
+    {
+      "name": "macos-clang-debug",
+      "configurePreset": "macos-clang-debug"
+    },
+    {
+      "name": "windows-msvc-sdl3-vulkan-debug",
+      "configurePreset": "windows-msvc-sdl3-vulkan-debug"
+    },
+    {
+      "name": "windows-msvc-sdl3-vulkan-release",
+      "configurePreset": "windows-msvc-sdl3-vulkan-release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "windows-msvc-debug",
+      "configurePreset": "windows-msvc-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-release",
+      "configurePreset": "windows-msvc-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-gcc-debug",
+      "configurePreset": "linux-gcc-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "macos-clang-debug",
+      "configurePreset": "macos-clang-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-sdl3-vulkan-debug",
+      "configurePreset": "windows-msvc-sdl3-vulkan-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-sdl3-vulkan-release",
+      "configurePreset": "windows-msvc-sdl3-vulkan-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
