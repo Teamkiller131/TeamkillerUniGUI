@@ -1,6 +1,13 @@
 # Changelog
 
-## v0.2.0 (2026-05-25)
+## v0.2.3 (2026-05-25)
+
+### Added
+- **DX11 HWND Runtime Integration**: `CreateDX11DeviceAndSwapChain()` with D3D11 device/swapchain creation, GLFW Win32 native window handle, App Bootstrap DX11 init path
+- **Doxygen config**: `Doxyfile` for API documentation generation
+- **GitHub Actions CI**: Windows build + test workflow on push/PR
+
+## v0.2.2 (2026-05-25)
 
 ### Added
 - **SDL3 + Vulkan backend**: Full Vulkan 1.3 boilerplate encapsulation (Instance, Device, Swapchain, Pipeline, Frame sync, Present loop)

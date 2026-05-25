@@ -41,4 +41,9 @@
 #include <unigui/widgets/separator.h>
 #include <unigui/widgets/scrollarea.h>
 #include <unigui/widgets/tooltip.h>
+#include <unigui/widgets/datepicker.h>
+#include <unigui/widgets/image.h>
+#include <unigui/widgets/loadingindicator.h>
+#include <unigui/widgets/notification.h>
+#include <unigui/widgets/hyperlink.h>
 #include <unigui/app/app.h>

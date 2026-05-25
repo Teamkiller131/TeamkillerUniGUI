@@ -5,6 +5,8 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-0.2.0-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-138%20passing-brightgreen)]()
+[![Widgets](https://img.shields.io/badge/widgets-32-blue)]()
 
 A C++23 Dear ImGui wrapper library providing a unified dark theme engine and high-level widget components. Supports GLFW+OpenGL3 and SDL3+Vulkan backends.
 
@@ -65,26 +67,14 @@ unigui::Shutdown();
 
 ## Widgets
 
-### v1 Widgets
-| Widget | Description |
-|--------|-------------|
-| `Window` | Top-level window with docking, menu bar, child panels |
-| `Panel` | Collapsible content panel with callback |
-| `Form` | Input form with text/checkbox fields and validation |
-| `Button` | Styled button with enabled/disabled states |
-| `Label` | Static/updatable text label |
+### All Widgets (32 total)
 
-### v2.0 Widgets (new!)
-| Widget | Description |
-|--------|-------------|
-| `CheckBox` | Boolean toggle with onChange callback |
-| `Slider<T>` | Float/Int slider with min/max/format (header-only) |
-| `ProgressBar` | Fraction bar with Normal/Warning/Error states |
-| `RadioGroup` | Single-select from string options |
-| `ComboBox` | Dropdown with BeginCombo/EndCombo + Selectable |
-| `LineEdit` | Text input with placeholder, validator, error state |
-| `GroupBox` | Titled frame with child content callback |
-| `TabWidget` | RAII TabBar/TabItem with closable tabs |
+| Tier | Widgets |
+|------|---------|
+| **v1** | Window, Panel, Form, Button, Label, WidgetBase |
+| **v2.0** | CheckBox, Slider\<T\>, ProgressBar, RadioGroup, ComboBox, LineEdit, GroupBox, TabWidget |
+| **v2.1** | TreeView, ListView, Dialog, MenuBar, StatusBar, ToolBar, Table, ColorPicker |
+| **v2.2** | FilePath, DirPath, SpinBox\<T\>, ToggleSwitch, InputInt, InputFloat, Splitter, Separator, ScrollArea, Tooltip |
 
 ## Backend Selection
 

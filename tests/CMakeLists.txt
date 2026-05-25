@@ -136,7 +136,7 @@ target_compile_features(test_app PRIVATE cxx_std_23)
 gtest_discover_tests(test_app)
 
 # v2 widget tests
-foreach(_widget checkbox progressbar radiogroup combobox lineedit groupbox tabwidget treeview listview dialog menubar statusbar toolbar table colorpicker filepath dirpath toggleswitch inputint inputfloat splitter separator scrollarea tooltip)
+foreach(_widget checkbox progressbar radiogroup combobox lineedit groupbox tabwidget treeview listview dialog menubar statusbar toolbar table colorpicker filepath dirpath toggleswitch inputint inputfloat splitter separator scrollarea tooltip datepicker image loadingindicator notification hyperlink)
     add_executable(test_${_widget} widgets/${_widget}_test.cc)
     target_link_libraries(test_${_widget} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_widget} PRIVATE cxx_std_23)

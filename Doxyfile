@@ -1,0 +1,13 @@
+# Doxyfile for TeamkillerUniGUI
+PROJECT_NAME           = "TeamkillerUniGUI"
+PROJECT_BRIEF          = "Modern Dear ImGui C++23 Wrapper Library"
+PROJECT_VERSION        = 0.2.0
+OUTPUT_DIRECTORY       = docs
+INPUT                  = include/unigui
+RECURSIVE              = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = NO
+OPTIMIZE_OUTPUT_CXX    = YES
