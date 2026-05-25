@@ -1,55 +1,85 @@
-#include <unigui/backend/backend_factory.h>
+#include <unigui/backend/dx11_renderer.h>
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <d3d11.h>
 #include <cstdio>
+#include <memory>
+#ifdef _WIN32
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#endif
 
 namespace unigui {
-namespace {
 
-class DX11Renderer : public RendererBackend {
-public:
-    bool Init(ImGuiContext* context) override {
-        if (!context && !ImGui::GetCurrentContext()) {
-            IMGUI_CHECKVERSION(); ImGui::CreateContext();
-        }
-        // DX11 device requires an HWND — caller provides via factory
-        initialized_ = (device_ != nullptr);
-        return initialized_;
-    }
+bool CreateDX11DeviceAndSwapChain(void* hwnd, int width, int height,
+    ID3D11Device** outDevice, ID3D11DeviceContext** outCtx, IDXGISwapChain** outSwap) {
+#ifdef _WIN32
+    DXGI_SWAP_CHAIN_DESC sd{};
+    sd.BufferCount = 2;
+    sd.BufferDesc.Width = (UINT)width;
+    sd.BufferDesc.Height = (UINT)height;
+    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    sd.BufferDesc.RefreshRate.Numerator = 60;
+    sd.BufferDesc.RefreshRate.Denominator = 1;
+    sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    sd.OutputWindow = (HWND)hwnd;
+    sd.SampleDesc.Count = 1;
+    sd.Windowed = TRUE;
+    sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-    void Shutdown() override {
-        if (!initialized_) return;
-        ImGui_ImplDX11_Shutdown();
-        if (rtv_) { rtv_->Release(); rtv_ = nullptr; }
-        if (ctx_) { ctx_->Release(); ctx_ = nullptr; }
-        if (device_) { device_->Release(); device_ = nullptr; }
-        if (swapchain_) { swapchain_->Release(); swapchain_ = nullptr; }
-        initialized_ = false;
-    }
+    D3D_FEATURE_LEVEL featLevel;
+    const D3D_FEATURE_LEVEL featLevels[] = { D3D_FEATURE_LEVEL_11_0 };
+    HRESULT hr = D3D11CreateDeviceAndSwapChain(
+        nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
+        featLevels, 1, D3D11_SDK_VERSION, &sd,
+        outSwap, outDevice, &featLevel, outCtx);
+    if (FAILED(hr)) { std::fprintf(stderr, "[unigui] DX11 device creation failed: 0x%lx\n", (unsigned long)hr); return false; }
 
-    void RenderDrawData(ImDrawData* dd) override {
-        if (!initialized_ || !dd) return;
-        float c[4] = {clearR_, clearG_, clearB_, clearA_};
-        ctx_->ClearRenderTargetView(rtv_, c);
-        ImGui_ImplDX11_RenderDrawData(dd);
-        swapchain_->Present(1, 0);
-    }
+    // Create render target view
+    ID3D11Texture2D* backBuffer = nullptr;
+    (*outSwap)->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBuffer);
+    ID3D11RenderTargetView* rtv = nullptr;
+    (*outDevice)->CreateRenderTargetView(backBuffer, nullptr, &rtv);
+    backBuffer->Release();
+    (*outCtx)->OMSetRenderTargets(1, &rtv, nullptr);
 
-    void SetClearColor(float r, float g, float b, float a) override { clearR_=r; clearG_=g; clearB_=b; clearA_=a; }
+    D3D11_VIEWPORT vp{};
+    vp.Width = (FLOAT)width; vp.Height = (FLOAT)height;
+    vp.MinDepth = 0.0f; vp.MaxDepth = 1.0f;
+    (*outCtx)->RSSetViewports(1, &vp);
 
-    // Public for factory to set device handles
-    ID3D11Device* device_ = nullptr;
-    ID3D11DeviceContext* ctx_ = nullptr;
-    IDXGISwapChain* swapchain_ = nullptr;
-    ID3D11RenderTargetView* rtv_ = nullptr;
+    ImGui_ImplDX11_Init(*outDevice, *outCtx);
+    return true;
+#else
+    (void)hwnd; (void)width; (void)height; (void)outDevice; (void)outCtx; (void)outSwap;
+    return false;
+#endif
+}
 
-private:
-    bool initialized_ = false;
-    float clearR_=0.10f, clearG_=0.10f, clearB_=0.12f, clearA_=1.00f;
-};
-
-} // anonymous namespace
+bool DX11Renderer::Init(ImGuiContext* context) {
+    if (!context && !ImGui::GetCurrentContext()) { IMGUI_CHECKVERSION(); ImGui::CreateContext(); }
+    initialized_ = (device_ != nullptr);
+    return initialized_;
+}
+void DX11Renderer::Shutdown() {
+    if (!initialized_) return;
+    ImGui_ImplDX11_Shutdown();
+    if (rtv_) { rtv_->Release(); rtv_ = nullptr; }
+    if (ctx_) { ctx_->Release(); ctx_ = nullptr; }
+    if (device_) { device_->Release(); device_ = nullptr; }
+    if (swapchain_) { swapchain_->Release(); swapchain_ = nullptr; }
+    initialized_ = false;
+}
+void DX11Renderer::RenderDrawData(ImDrawData* dd) {
+    if (!initialized_ || !dd) return;
+    float c[4] = {clearR_, clearG_, clearB_, clearA_};
+    ctx_->ClearRenderTargetView(rtv_, c);
+    ImGui_ImplDX11_RenderDrawData(dd);
+    swapchain_->Present(1, 0);
+}
+void DX11Renderer::SetClearColor(float r, float g, float b, float a) { clearR_=r; clearG_=g; clearB_=b; clearA_=a; }
 
 std::unique_ptr<RendererBackend> CreateDX11Renderer() { return std::make_unique<DX11Renderer>(); }
 

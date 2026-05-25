@@ -10,6 +10,10 @@
 #include <SDL3/SDL.h>
 #endif
 
+#ifdef UNIGUI_HAS_DX11
+#include <unigui/backend/dx11_renderer.h>
+#endif
+
 namespace unigui {
 
 static bool g_initialized = false;
@@ -38,12 +42,21 @@ bool Init(const AppConfig& config) {
     if (config.backend == BackendType::SDL3_Vulkan) {
         auto* window = static_cast<SDL_Window*>(g_platform->GetWindowHandle());
         if (!window) { std::fprintf(stderr, "[unigui] SDL window is null\n"); return false; }
-        try {
-            g_vulkanCtx = InitVulkanContext(window, config.width, config.height);
-        } catch (const std::exception& e) {
-            std::fprintf(stderr, "[unigui] Vulkan init failed: %s\n", e.what());
-            g_platform->Shutdown(); return false;
+        try { g_vulkanCtx = InitVulkanContext(window, config.width, config.height); }
+        catch (const std::exception& e) { std::fprintf(stderr, "[unigui] Vulkan init failed: %s\n", e.what()); g_platform->Shutdown(); return false; }
+    }
+#endif
+
+#ifdef UNIGUI_HAS_DX11
+    if (config.backend == BackendType::DX11) {
+        auto* hwnd = g_platform->GetWindowHandle();
+        if (!hwnd) { std::fprintf(stderr, "[unigui] HWND is null\n"); return false; }
+        ID3D11Device* dev = nullptr; ID3D11DeviceContext* ctx = nullptr; IDXGISwapChain* swap = nullptr;
+        if (!unigui::CreateDX11DeviceAndSwapChain(hwnd, config.width, config.height, &dev, &ctx, &swap)) {
+            std::fprintf(stderr, "[unigui] DX11 device creation failed\n"); g_platform->Shutdown(); return false;
         }
+        auto* dxr = static_cast<unigui::DX11Renderer*>(g_renderer.get());
+        dxr->device_ = dev; dxr->ctx_ = ctx; dxr->swapchain_ = swap;
     }
 #endif
 
