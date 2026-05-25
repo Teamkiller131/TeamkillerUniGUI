@@ -125,7 +125,7 @@ void Render() {
         UNIGUI_LOG_TRACE("Render: {} CmdLists, {} Vtx, {} Idx",
             dd->CmdListsCount, dd->TotalVtxCount, dd->TotalIdxCount);
     }
-    g_renderer->SetClearColor(0.10f, 0.10f, 0.12f, 1.00f);
+    g_renderer->SetClearColor(1.0f, 0.0f, 0.0f, 1.0f); // RED for diagnostic
     glClear(GL_COLOR_BUFFER_BIT);
     g_renderer->RenderDrawData(dd);
     g_platform->SwapBuffers();
