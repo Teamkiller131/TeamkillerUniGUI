@@ -8,6 +8,21 @@ int Table::GetSelectedRow() const { return selected_; }
 void Table::SetOnSelect(std::function<void(int)> callback) { on_select_ = std::move(callback); }
 void Table::SetSortable(bool on) { sortable_ = on; }
 void Table::SetResizable(bool on) { resizable_ = on; }
+void Table::SaveColumnWidths() {
+    saved_widths_.clear();
+    // Note: Must be called while a table is active (inside Render/callback).
+    if (int n = ImGui::TableGetColumnCount()) {
+        for (int c = 0; c < n && c < (int)columns_.size(); c++)
+            saved_widths_.push_back(ImGui::GetColumnWidth(c));
+    }
+}
+void Table::RestoreColumnWidths() {
+    // Note: Must be called while a table is active (inside Render/callback).
+    if (int n = ImGui::TableGetColumnCount()) {
+        for (int c = 0; c < n && c < (int)saved_widths_.size(); c++)
+            ImGui::SetColumnWidth(c, saved_widths_[c]);
+    }
+}
 void Table::Render() {
     if (!IsVisible()) return;
     ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;

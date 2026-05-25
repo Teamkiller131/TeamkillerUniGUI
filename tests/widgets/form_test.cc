@@ -71,3 +71,21 @@ TEST_F(FormTest, Hidden_DoesNotRender) {
     form.Hide();
     form.Render();
 }
+
+TEST_F(FormTest, RegexValidator_RejectsMismatch) {
+    unigui::Form form("frm", "Reg");
+    form.AddTextField("email", "Email");
+    form.SetFieldValue("email", "notanemail");
+    form.SetFieldValidatorRegex("email", ".+@.+\\..+", "Invalid email");
+    auto errors = form.Validate();
+    EXPECT_GE(errors.size(), 1u);
+}
+
+TEST_F(FormTest, MinMaxValidator_RejectsOutOfRange) {
+    unigui::Form form("frm", "Num");
+    form.AddNumberField("age", "Age");
+    form.SetFieldValue("age", "200");
+    form.SetFieldMinMax("age", 0, 120);
+    auto errors = form.Validate();
+    EXPECT_GE(errors.size(), 1u);
+}

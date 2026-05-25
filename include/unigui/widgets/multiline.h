@@ -1,6 +1,7 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
 #include <string>
+#include <vector>
 namespace unigui {
 class MultiLine : public Widget {
 public:
@@ -9,6 +10,18 @@ public:
     void SetText(std::string t);
     std::string GetText() const;
     void SetMaxLines(int n);
-private: std::string text_; int maxLines_; char buf_[4096]={};
+    void SetEditable(bool on);
+    // Undo/redo
+    void Undo();
+    void Redo();
+    bool CanUndo() const;
+    bool CanRedo() const;
+private:
+    void PushUndo();
+    std::string text_; int maxLines_;
+    bool editable_ = false;
+    char buf_[4096]={};
+    std::vector<std::string> undoStack_;
+    int undoIndex_ = -1;
 };
 }

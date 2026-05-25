@@ -16,6 +16,8 @@ public:
     void SetOnSelect(std::function<void(int)> callback);
     void SetSortable(bool on);
     void SetResizable(bool on);
+    void SaveColumnWidths();
+    void RestoreColumnWidths();
 private:
     std::vector<std::string> columns_;
     std::vector<std::vector<std::string>> rows_;
@@ -23,5 +25,6 @@ private:
     bool sortable_ = false;
     bool resizable_ = false;
     std::function<void(int)> on_select_;
+    std::vector<float> saved_widths_;
 };
 }

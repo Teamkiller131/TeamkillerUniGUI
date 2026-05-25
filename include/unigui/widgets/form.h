@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <unordered_map>
+#include <regex>
 
 namespace unigui {
 
@@ -37,12 +39,26 @@ public:
     void SetOnSubmit(std::function<void()> callback);
     const std::vector<FormError>& GetErrors() const { return last_errors_; }
 
+    /// Set a regex validator for a text field.
+    void SetFieldValidatorRegex(const std::string& name, std::string pattern, std::string errorMsg);
+    /// Set min/max range for a number or slider field.
+    void SetFieldMinMax(const std::string& name, double min, double max);
+
 private:
+    struct FieldValidator {
+        std::string pattern;
+        std::string errorMsg;
+        double min = 0, max = 0;
+        bool hasRange = false;
+        bool hasRegex = false;
+    };
+
     std::string title_;
     std::vector<FormField> fields_;
     std::function<void()> on_submit_;
     std::vector<FormError> last_errors_;
     bool submitted_ = false;
+    std::unordered_map<std::string, FieldValidator> validators_;
 };
 
 } // namespace unigui
