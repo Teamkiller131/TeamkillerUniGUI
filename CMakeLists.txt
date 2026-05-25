@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.31)
 
 project(unigui
-    VERSION 0.2.0
+    VERSION 0.3.0
     DESCRIPTION "Modern Dear ImGui C++ wrapper — SDL3+Vulkan + GLFW+OpenGL3 backends, theme engine, widget library"
     HOMEPAGE_URL "https://github.com/Teamkiller131/TeamkillerUniGUI"
     LANGUAGES CXX
@@ -24,6 +24,8 @@ endif()
 
 if(UNIGUI_BUILD_EXAMPLES)
     add_subdirectory(examples/hello_unigui)
+    add_subdirectory(examples/widget_gallery)
+    add_subdirectory(examples/form_demo)
     if(UNIGUI_BACKEND STREQUAL "SDL3_VULKAN")
         add_subdirectory(examples/vulkan_triangle)
     endif()
