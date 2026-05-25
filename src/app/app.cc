@@ -127,10 +127,6 @@ void Render() {
     }
     g_renderer->SetClearColor(1.0f, 0.0f, 0.0f, 1.0f); // RED diagnostic
     glClear(GL_COLOR_BUFFER_BIT);
-
-    // Flush any GL errors before rendering
-    while (glGetError() != GL_NO_ERROR) {}
-
     g_renderer->RenderDrawData(dd);
 
     GLenum err = glGetError();
