@@ -127,6 +127,11 @@ void Render() {
     g_renderer->SetClearColor(0.10f, 0.10f, 0.12f, 1.00f);
     glClear(GL_COLOR_BUFFER_BIT);
     g_renderer->RenderDrawData(dd);
+
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+        UNIGUI_LOG_WARN("OpenGL error after RenderDrawData: 0x{:x}", (unsigned)err);
+    }
     g_platform->SwapBuffers();
 }
 
