@@ -90,6 +90,7 @@ void Shutdown() {
 
 bool NewFrame() {
     if (!g_initialized) return false;
+    g_platform->PollEvents();
     g_platform->NewFrame();
     ImGui::NewFrame();
     return true;
@@ -100,6 +101,7 @@ void Render() {
     ImGui::Render();
     ImDrawData* dd = ImGui::GetDrawData();
     g_renderer->SetClearColor(0.10f, 0.10f, 0.12f, 1.00f);
+    glClear(GL_COLOR_BUFFER_BIT);
     g_renderer->RenderDrawData(dd);
 
     // Multi-viewport: render additional platform windows (detached docks/popups)
@@ -108,6 +110,8 @@ void Render() {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault(nullptr, dd);
     }
+
+    g_platform->SwapBuffers();
 }
 
 bool ShouldClose() { return g_platform ? g_platform->ShouldClose() : true; }

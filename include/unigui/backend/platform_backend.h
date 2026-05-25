@@ -34,6 +34,8 @@ public:
     virtual void SetTitle(const char*) {}
     /// Set the window client area size.
     virtual void SetSize(int, int) {}
+    /// Swap front/back buffers (OpenGL/Vulkan present).
+    virtual void SwapBuffers() {}
 };
 
 } // namespace unigui
