@@ -13,7 +13,8 @@
 namespace unigui {
 
 bool CreateDX11DeviceAndSwapChain(void* hwnd, int width, int height,
-    ID3D11Device** outDevice, ID3D11DeviceContext** outCtx, IDXGISwapChain** outSwap) {
+    ID3D11Device** outDevice, ID3D11DeviceContext** outCtx, IDXGISwapChain** outSwap,
+    ID3D11RenderTargetView** outRtv) {
 #ifdef _WIN32
     DXGI_SWAP_CHAIN_DESC sd{};
     sd.BufferCount = 2;
@@ -44,6 +45,7 @@ bool CreateDX11DeviceAndSwapChain(void* hwnd, int width, int height,
     (*outDevice)->CreateRenderTargetView(backBuffer, nullptr, &rtv);
     backBuffer->Release();
     (*outCtx)->OMSetRenderTargets(1, &rtv, nullptr);
+    if (outRtv) *outRtv = rtv;
 
     D3D11_VIEWPORT vp{};
     vp.Width = (FLOAT)width; vp.Height = (FLOAT)height;

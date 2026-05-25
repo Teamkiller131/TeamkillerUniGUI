@@ -1,156 +1,69 @@
+// app.cc - DX11 + GL backend support
 #include <unigui/app/app.h>
 #include <unigui/backend/backend_factory.h>
 #include <unigui/theme/theme.h>
 #include <unigui/core/log.h>
 #include <glad/glad.h>
 #include <imgui.h>
-#include <GLFW/glfw3.h>
 #include <cstdio>
-
-#ifdef UNIGUI_HAS_SDL3_VULKAN
-#include <unigui/backend/vulkan_context.h>
-#include <SDL3/SDL.h>
-#endif
-
 #ifdef UNIGUI_HAS_DX11
 #include <unigui/backend/dx11_renderer.h>
+#include <imgui_impl_dx11.h>
 #endif
 
 namespace unigui {
-
 static bool g_initialized = false;
+static BackendType g_backend = BackendType::GLFW_GL3;
 static std::unique_ptr<PlatformBackend> g_platform;
 static std::unique_ptr<RendererBackend> g_renderer;
-#ifdef UNIGUI_HAS_SDL3_VULKAN
-static VulkanContext g_vulkanCtx;
-#endif
 
 bool Init(const AppConfig& config) {
-    if (g_initialized) {
-        UNIGUI_LOG_WARN("Init called but already initialized");
-        return false;
-    }
-
+    if (g_initialized) return false;
     InitLogging("debug");
-    UNIGUI_LOG_INFO("Init: backend={}, {}x{}, title='{}'",
-        (int)config.backend, config.width, config.height, config.title);
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    UNIGUI_LOG_DEBUG("ImGui context created");
-
+    UNIGUI_LOG_INFO("Init: backend={}, {}x{}", (int)config.backend, config.width, config.height);
+    IMGUI_CHECKVERSION(); ImGui::CreateContext();
     auto backend = CreateBackend(config.backend);
+    g_backend = config.backend;
     g_platform = std::move(backend.platform);
     g_renderer = std::move(backend.renderer);
-
-    if (!g_platform || !g_platform->Init(nullptr)) {
-        UNIGUI_LOG_ERROR("Platform backend init failed (backend={})", (int)config.backend);
-        return false;
-    }
-    UNIGUI_LOG_DEBUG("Platform backend initialized");
-
-    // Ensure GL functions loaded on current context (AMD)
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    { GLenum e = glGetError(); if(e) UNIGUI_LOG_WARN("GL error after gladLoadGLLoader: 0x{:04x}",(unsigned)e); while(glGetError()!=GL_NO_ERROR){} }
-
-#ifdef UNIGUI_HAS_SDL3_VULKAN
-    if (config.backend == BackendType::SDL3_Vulkan) {
-        auto* window = static_cast<SDL_Window*>(g_platform->GetWindowHandle());
-        if (!window) { std::fprintf(stderr, "[unigui] SDL window is null\n"); return false; }
-        try { g_vulkanCtx = InitVulkanContext(window, config.width, config.height); }
-        catch (const std::exception& e) { std::fprintf(stderr, "[unigui] Vulkan init failed: %s\n", e.what()); g_platform->Shutdown(); return false; }
-    }
-#endif
-
+    if (!g_platform || !g_platform->Init(nullptr)) { UNIGUI_LOG_ERROR("Platform init failed"); return false; }
 #ifdef UNIGUI_HAS_DX11
     if (config.backend == BackendType::DX11) {
-        auto* hwnd = g_platform->GetWindowHandle();
-        if (!hwnd) { std::fprintf(stderr, "[unigui] HWND is null\n"); return false; }
-        ID3D11Device* dev = nullptr; ID3D11DeviceContext* ctx = nullptr; IDXGISwapChain* swap = nullptr;
-        if (!unigui::CreateDX11DeviceAndSwapChain(hwnd, config.width, config.height, &dev, &ctx, &swap)) {
-            std::fprintf(stderr, "[unigui] DX11 device creation failed\n"); g_platform->Shutdown(); return false;
-        }
-        auto* dxr = static_cast<unigui::DX11Renderer*>(g_renderer.get());
-        dxr->device_ = dev; dxr->ctx_ = ctx; dxr->swapchain_ = swap;
+        auto hwnd = g_platform->GetWindowHandle();
+        ID3D11Device* dev=nullptr; ID3D11DeviceContext* ctx=nullptr;
+        IDXGISwapChain* swap=nullptr; ID3D11RenderTargetView* rtv=nullptr;
+        if (!CreateDX11DeviceAndSwapChain(hwnd,config.width,config.height,&dev,&ctx,&swap,&rtv)) { g_platform->Shutdown(); return false; }
+        auto* dxr = static_cast<DX11Renderer*>(g_renderer.get());
+        dxr->device_=dev; dxr->ctx_=ctx; dxr->swapchain_=swap; dxr->rtv_=rtv;
     }
 #endif
-
-    if (!g_renderer || !g_renderer->Init(ImGui::GetCurrentContext())) {
-        UNIGUI_LOG_ERROR("Renderer backend init failed");
-        g_platform->Shutdown(); return false;
-    }
-    UNIGUI_LOG_DEBUG("Renderer initialized");
-    { GLenum e = glGetError(); if(e) UNIGUI_LOG_WARN("GL error after renderer Init: 0x{:04x}",(unsigned)e); while(glGetError()!=GL_NO_ERROR){} }
-
-    g_platform->SetTitle(config.title);
-    g_platform->SetSize(config.width, config.height);
-
+    if (!g_renderer||!g_renderer->Init(ImGui::GetCurrentContext())) { g_platform->Shutdown(); return false; }
+    g_platform->SetTitle(config.title); g_platform->SetSize(config.width,config.height);
     auto& io = ImGui::GetIO();
-    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;  // AMD debug
-    io.DisplaySize = ImVec2((float)config.width, (float)config.height);
-    io.Fonts->Build(); // Required after renderer Init for new ImGui backends
-    { GLenum e = glGetError(); if(e) UNIGUI_LOG_WARN("GL error after Fonts->Build: 0x{:04x}",(unsigned)e); while(glGetError()!=GL_NO_ERROR){} }
+    if (g_backend!=BackendType::DX11) io.ConfigFlags|=ImGuiConfigFlags_DockingEnable;
+    io.DisplaySize=ImVec2((float)config.width,(float)config.height);
     ApplyTheme(config.theme);
-    { GLenum e = glGetError(); if(e) UNIGUI_LOG_WARN("GL error after ApplyTheme: 0x{:04x}",(unsigned)e); while(glGetError()!=GL_NO_ERROR){} }
-
-    // Warmup: just NewFrame+Render to avoid GLFW->GL interaction on AMD
-    ImGui::NewFrame();
-    ImGui::Render();
-    g_renderer->RenderDrawData(nullptr);
-    { GLenum e = glGetError(); if(e) UNIGUI_LOG_WARN("GL error after warmup: 0x{:04x}",(unsigned)e); while(glGetError()!=GL_NO_ERROR){} }
-
-    g_initialized = true;
-    UNIGUI_LOG_INFO("Init complete: {}x{} docking=1 viewports=0",
-        config.width, config.height);
+    g_initialized=true;
     return true;
 }
-
-void Shutdown() {
-    if (!g_initialized) return;
-    UNIGUI_LOG_INFO("Shutdown: releasing renderer + platform");
-    if (g_renderer) { g_renderer->Shutdown(); g_renderer.reset(); }
-#ifdef UNIGUI_HAS_SDL3_VULKAN
-    if (g_vulkanCtx.device.device) { DestroyVulkanContext(g_vulkanCtx); g_vulkanCtx = VulkanContext{}; }
+void Shutdown() { if(!g_initialized)return; if(g_renderer){g_renderer->Shutdown();g_renderer.reset();} if(g_platform){g_platform->Shutdown();g_platform.reset();} g_initialized=false; }
+bool NewFrame(){
+    if(!g_initialized)return false;
+    g_platform->PollEvents();
+#ifdef UNIGUI_HAS_DX11
+    if(g_backend==BackendType::DX11) ImGui_ImplDX11_NewFrame();
 #endif
-    if (g_platform) { g_platform->Shutdown(); g_platform.reset(); }
-    g_initialized = false;
-    UNIGUI_LOG_DEBUG("Shutdown complete");
-}
-
-bool NewFrame() {
-    if (!g_initialized) return false;
-    g_platform->NewFrame();
-    ImGui::NewFrame();
+    g_platform->NewFrame(); ImGui::NewFrame();
+    if(g_backend!=BackendType::DX11) ImGui::DockSpaceOverViewport(0,ImGui::GetMainViewport(),ImGuiDockNodeFlags_PassthruCentralNode);
     return true;
 }
-
-void Render() {
-    if (!g_initialized) return;
-    ImGui::Render();
-    ImDrawData* dd = ImGui::GetDrawData();
-    g_renderer->SetClearColor(1.0f, 0.0f, 0.0f, 1.0f); // RED diagnostic
-    glClear(GL_COLOR_BUFFER_BIT);
+void Render(){
+    if(!g_initialized)return;
+    ImGui::Render(); ImDrawData* dd=ImGui::GetDrawData();
+    if(g_backend==BackendType::GLFW_GL3){ g_renderer->SetClearColor(0.10f,0.10f,0.12f,1.0f); glClear(GL_COLOR_BUFFER_BIT); }
     g_renderer->RenderDrawData(dd);
-
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR) {
-        UNIGUI_LOG_WARN("GL error after RenderDrawData: 0x{:04x}", (unsigned)err);
-        while (glGetError() != GL_NO_ERROR) {}
-    }
-
-    g_platform->SwapBuffers();
+    if(g_backend==BackendType::GLFW_GL3) g_platform->SwapBuffers();
 }
-
-bool ShouldClose() { return g_platform ? g_platform->ShouldClose() : true; }
-
-void Run(const std::function<void()>& callback) {
-    while (!ShouldClose()) {
-        g_platform->PollEvents();
-        NewFrame();
-        callback();
-        Render();
-    }
-    Shutdown();
+bool ShouldClose(){ return g_platform?g_platform->ShouldClose():true; }
+void Run(const std::function<void()>& cb){ while(!ShouldClose()){ g_platform->PollEvents();NewFrame();cb();Render();} Shutdown(); }
 }
-
-} // namespace unigui
