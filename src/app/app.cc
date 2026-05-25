@@ -81,8 +81,7 @@ bool Init(const AppConfig& config) {
     g_platform->SetSize(config.width, config.height);
 
     auto& io = ImGui::GetIO();
-    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // disabled for debugging
-    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // disabled for debugging
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.DisplaySize = ImVec2((float)config.width, (float)config.height);
     ApplyTheme(config.theme);
 
@@ -111,7 +110,9 @@ bool NewFrame() {
     g_platform->PollEvents();
     g_platform->NewFrame();
     ImGui::NewFrame();
-    UNIGUI_LOG_TRACE("NewFrame");
+
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(),
+        ImGuiDockNodeFlags_PassthruCentralNode);
 
     return true;
 }
@@ -127,11 +128,6 @@ void Render() {
     g_renderer->SetClearColor(0.10f, 0.10f, 0.12f, 1.00f);
     glClear(GL_COLOR_BUFFER_BIT);
     g_renderer->RenderDrawData(dd);
-
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR) {
-        UNIGUI_LOG_WARN("OpenGL error after RenderDrawData: 0x{:x}", (unsigned)err);
-    }
     g_platform->SwapBuffers();
 }
 

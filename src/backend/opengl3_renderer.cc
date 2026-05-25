@@ -28,8 +28,8 @@ public:
         UNIGUI_LOG_INFO("OpenGL: {} {} — GLSL {}", (const char*)glGetString(GL_VENDOR),
             (const char*)glGetString(GL_RENDERER), (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-        if (!ImGui_ImplOpenGL3_Init("#version 130")) {
-            UNIGUI_LOG_ERROR("ImGui_ImplOpenGL3_Init(#version 130) failed");
+        if (!ImGui_ImplOpenGL3_Init("#version 330 core")) {
+            UNIGUI_LOG_ERROR("ImGui_ImplOpenGL3_Init(#version 330 core) failed");
             return false;
         }
         UNIGUI_LOG_DEBUG("ImGui_ImplOpenGL3_Init OK");
