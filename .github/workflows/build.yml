@@ -1,10 +1,6 @@
 name: Build & Test
 
-on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+on: [push, pull_request]
 
 jobs:
   windows:
@@ -22,3 +18,19 @@ jobs:
       run: cmake --build --preset windows-msvc-release
     - name: Test
       run: ctest --preset windows-msvc-release --output-on-failure
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+        ~/vcpkg/bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+    - name: Configure
+      run: cmake --preset linux-gcc-debug
+    - name: Build
+      run: cmake --build --preset linux-gcc-debug
+    - name: Test
+      run: ctest --preset linux-gcc-debug --output-on-failure

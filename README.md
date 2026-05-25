@@ -4,9 +4,9 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-0.2.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-138%20passing-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-32-blue)]()
+[![Version](https://img.shields.io/badge/version-0.3.0-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-156%20passing-brightgreen)]()
+[![Widgets](https://img.shields.io/badge/widgets-45-blue)]()
 
 A C++23 Dear ImGui wrapper library providing a unified dark theme engine and high-level widget components. Supports GLFW+OpenGL3 and SDL3+Vulkan backends.
 

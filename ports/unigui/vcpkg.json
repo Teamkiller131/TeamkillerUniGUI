@@ -1,0 +1,26 @@
+{
+  "name": "unigui",
+  "version": "0.3.0",
+  "description": "Modern Dear ImGui C++23 wrapper with 45 widgets, multi-backend, theme engine",
+  "homepage": "https://xbw-nas.iepose.cn/Teamkiller131/TeamkillerUniGUI",
+  "license": "MIT",
+  "dependencies": [
+    {
+      "name": "imgui",
+      "default-features": false,
+      "features": [
+        "docking-experimental", "freetype",
+        "glfw-binding", "opengl3-binding",
+        "sdl3-binding", "vulkan-binding",
+        "dx11-binding"
+      ]
+    },
+    { "name": "glfw3" },
+    { "name": "sdl3" },
+    { "name": "vulkan" },
+    { "name": "freetype" },
+    { "name": "glad", "features": ["loader"] },
+    { "name": "gtest" },
+    { "name": "implot" }
+  ]
+}

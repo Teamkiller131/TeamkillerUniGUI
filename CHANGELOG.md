@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.0 (2026-05-25)
+
+### Added
+- **widget_gallery**: Showcases all 45 widgets in organized tabs
+- **form_demo**: Complete registration form with all field types
+- **vcpkg port**: `ports/unigui/vcpkg.json` + `portfile.cmake`
+- **Multi-platform CI**: Windows + Linux GitHub Actions matrix
+- **Version bump**: 0.2.0 → 0.3.0
+
 ## v0.2.3 (2026-05-25)
 
 ### Added
