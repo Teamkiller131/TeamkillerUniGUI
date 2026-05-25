@@ -80,6 +80,14 @@ target_sources(unigui PRIVATE
     widgets/toolbar.cc
     widgets/table.cc
     widgets/colorpicker.cc
+    widgets/filepath.cc
+    widgets/dirpath.cc
+    widgets/toggleswitch.cc
+    widgets/inputint.cc
+    widgets/inputfloat.cc
+    widgets/splitter.cc
+    widgets/separator.cc
+    widgets/scrollarea.cc
     app/app.cc
 )
 
