@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.26)
 
 project(unigui
     VERSION 3.1.0
