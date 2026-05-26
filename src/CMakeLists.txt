@@ -145,6 +145,7 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/trayicon.cc
         widgets/passwordinput.cc
         widgets/wizard.cc
+        widgets/card.cc
     )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)
     message(STATUS "Extended widgets enabled")
