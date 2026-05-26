@@ -14,10 +14,12 @@ public:
     const std::string& GetTitle() const;
     bool IsCollapsed() const;
     void SetContentCallback(std::function<void()> callback);
+    void SetWrapEnabled(bool on) { wrap_ = on; }
 
 private:
     std::string title_;
     bool collapsed_ = false;
+    bool wrap_ = false;
     std::function<void()> content_callback_;
 };
 
