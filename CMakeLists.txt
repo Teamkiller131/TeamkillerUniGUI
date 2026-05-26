@@ -1,18 +1,29 @@
 cmake_minimum_required(VERSION 3.31)
 
 project(unigui
-    VERSION 2.0.0
-    DESCRIPTION "Modern Dear ImGui C++ wrapper — SDL3+Vulkan + GLFW+OpenGL3 backends, theme engine, widget library"
+    VERSION 2.8.0
+    DESCRIPTION "Modular Dear ImGui C++ wrapper — core + backends + optional modules"
     HOMEPAGE_URL "https://xbw-nas.iepose.cn/Teamkiller131/TeamkillerUniGUI"
     LANGUAGES CXX
 )
 
-# ── Options ──────────────────────────────────────────────────────────────────
-option(UNIGUI_BUILD_SHARED "Build unigui as a shared library (DLL)" OFF)
-option(UNIGUI_BUILD_TESTS   "Build the Google Test test suite"        ON)
-option(UNIGUI_BUILD_EXAMPLES "Build example applications"             ON)
-set(UNIGUI_BACKEND "GLFW_GL3" CACHE STRING "Backend to build: GLFW_GL3 or SDL3_VULKAN")
-set_property(CACHE UNIGUI_BACKEND PROPERTY STRINGS "GLFW_GL3" "SDL3_VULKAN")
+# ── Module Options ───────────────────────────────────────────────────────────
+option(UNIGUI_MODULE_WIDGETS  "Extended widgets"     ON)
+option(UNIGUI_MODULE_DSL       "Declarative UI DSL"   ON)
+option(UNIGUI_MODULE_STYLING   "CSS styling engine"   ON)
+option(UNIGUI_MODULE_FONTS     "Font manager"         ON)
+option(UNIGUI_MODULE_EVENTS    "EventBus"             ON)
+option(UNIGUI_MODULE_PLUGIN    "Plugin system"        ON)
+option(UNIGUI_MODULE_SQLITE    "SQLite database"      OFF)
+option(UNIGUI_MODULE_CONFIG    "TOML/JSON config"     OFF)
+option(UNIGUI_MODULE_IPC       "Shared memory IPC"    OFF)
+option(UNIGUI_MODULE_NETWORK   "HTTP/WebSocket"       OFF)
+option(UNIGUI_BACKEND_DX11     "DX11 backend (Win)"   ON)
+option(UNIGUI_BACKEND_DX12     "DX12 backend (Win)"    OFF)
+option(UNIGUI_BACKEND_GLFW3    "GLFW+OpenGL3 backend" ON)
+option(UNIGUI_BUILD_SHARED     "Build as DLL"         OFF)
+option(UNIGUI_BUILD_TESTS      "Build test suite"     ON)
+option(UNIGUI_BUILD_EXAMPLES   "Build examples"       ON)
 
 # ── Subdirectories ───────────────────────────────────────────────────────────
 add_subdirectory(src)
