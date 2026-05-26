@@ -1,14 +1,34 @@
 # Changelog
 
-## v3.1.0 (unreleased) — Stability
+## v3.2.0 (2026-05-26) — Cross-Platform + Polish
+
+### Added
+- **Linux**: Full compilation support (Fedora 43, GCC 15.2, 225/225 targets, 236/244 tests). `cmake/embed_font.py` cross-platform font embedding, platform-aware CJK font paths (Windows/MSYH, macOS/PingFang, Linux/NotoSansCJK).
+- **macOS**: Metal backend ObjC++ implementation (MTLDevice, CommandQueue, ImGui_ImplMetal_Init/Shutdown/Render). CMake `-fobjc-arc` + Metal.framework/QuartzCore.framework linkage. Platform-aware CJK fallback.
+- **Emscripten/Web**: Full platform backend (canvas sizing, emscripten_set_main_loop, HTML shell template with spinner and Module bridge).
+- **CI/CD**: GitHub Actions cross-platform matrix — Windows (MSVC), Linux (Ubuntu+GCC), macOS (Clang).
+- **Card**: `SetBorderColor(ImU32)`, `SetBorderRadius(float)`, proper padding via WindowPadding.
+- **SkeletonScreen**: built-in shimmer animation via `SetShimmer(bool, speed)`.
+- **ThemeRegistry**: `SetOnChange(std::function<void(std::string)>)` callback for theme switch notifications.
+
+### Fixed
+- CMake minimum lowered 3.31→3.26 for Rocky/Fedora compatibility.
+- `vcpkg.json`: DX11/DX12 bindings split to Windows-only platform.
+- `app.cc::NewFrame()`: DX11 resize code wrapped in `#ifdef UNIGUI_HAS_DX11`.
+- `std::find` → `#include <algorithm>` added (4 files) for GCC 15 strictness.
+- `webgpu/emscripten/metal` backend stubs compiled on all platforms (not just WIN32).
+- `config/database/ipc` headers guarded by `UNIGUI_HAS_*` preprocessor defines in `unigui.h`.
+
+### Changed
+- **AnimationState** docs: `progress` = target, `Update(dt)` return = eased current value.
+- **FontManager::Build()** doc warning: rebuilding atlas invalidates ImFont* pointers.
+
+## v3.1.0 (2026-05-26) — Stability
 
 ### Fixed
 - **EventBus exit crash**: `~Bus()` destructor now calls `Shutdown()` to join worker thread (244/244 tests pass)
-- **Toast triple-bug fix**: double-animation (2x Update per frame), `Hide()` deadlock, z-order burying via per-message windows + `BringWindowToDisplayFront`
-- **CSS @media** now fully evaluates `min-width`/`max-width`/`min-height`/`prefers-color-scheme`
-
-### Changed
-- Toast renders in `Render()` (not `NewFrame()`) for guaranteed top z-order
+- **Toast triple-bug**: double-animation, `Hide()` deadlock, z-order burying via per-message windows + `BringWindowToDisplayFront`
+- **CSS @media** evaluates `min-width`/`max-width`/`min-height`/`prefers-color-scheme`
 
 ## v3.0.0 (2026-05-26) — UI Beautification
 
