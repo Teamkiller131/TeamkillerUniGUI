@@ -80,6 +80,19 @@ bool NewFrame(){
     if(g_backend==BackendType::DX11)ImGui_ImplDX11_NewFrame();
 #endif
     g_platform->NewFrame();ImGui::NewFrame();
+    // Check for window resize (DX11 needs swapchain resize)
+    if (g_backend == BackendType::DX11) {
+        int cw = 0, ch = 0;
+        g_platform->GetClientSize(&cw, &ch);
+        static int lastW = 0, lastH = 0;
+        if (cw > 0 && ch > 0 && (cw != lastW || ch != lastH)) {
+            lastW = cw; lastH = ch;
+            auto* dxr = static_cast<DX11Renderer*>(g_renderer.get());
+            if (dxr->ResizeSwapChain(cw, ch)) {
+                ImGui::GetIO().DisplaySize = ImVec2((float)cw, (float)ch);
+            }
+        }
+    }
     if(g_backend!=BackendType::DX11)ImGui::DockSpaceOverViewport(0,ImGui::GetMainViewport(),ImGuiDockNodeFlags_PassthruCentralNode);
     return true;
 }

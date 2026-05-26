@@ -23,7 +23,7 @@ public:
         UNIGUI_LOG_DEBUG("glfwInit OK");
 
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // Fixed size for proper DPI
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -63,6 +63,11 @@ public:
 #else
         return window_;
 #endif
+    }
+
+    void GetClientSize(int* w, int* h) override {
+        if (window_) glfwGetWindowSize(window_, w, h);
+        else { if(w)*w=0; if(h)*h=0; }
     }
 
     void SetTitle(const char* title) override { if (window_) glfwSetWindowTitle(window_, title); }

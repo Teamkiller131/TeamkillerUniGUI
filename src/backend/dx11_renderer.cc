@@ -1,4 +1,5 @@
 #include <unigui/backend/dx11_renderer.h>
+#include <unigui/core/log.h>
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <d3d11.h>
@@ -82,6 +83,22 @@ void DX11Renderer::RenderDrawData(ImDrawData* dd) {
     swapchain_->Present(1, 0);
 }
 void DX11Renderer::SetClearColor(float r, float g, float b, float a) { clearR_=r; clearG_=g; clearB_=b; clearA_=a; }
+
+bool DX11Renderer::ResizeSwapChain(int w, int h) {
+    if (!swapchain_ || w <= 0 || h <= 0) return false;
+    if (rtv_) { rtv_->Release(); rtv_ = nullptr; }
+    ctx_->OMSetRenderTargets(0, nullptr, nullptr);
+    HRESULT hr = swapchain_->ResizeBuffers(0, (UINT)w, (UINT)h, DXGI_FORMAT_UNKNOWN, 0);
+    if (FAILED(hr)) { UNIGUI_LOG_ERROR("DX11 ResizeBuffers failed"); return false; }
+    ID3D11Texture2D* bb = nullptr;
+    swapchain_->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&bb);
+    device_->CreateRenderTargetView(bb, nullptr, &rtv_);
+    bb->Release();
+    ctx_->OMSetRenderTargets(1, &rtv_, nullptr);
+    D3D11_VIEWPORT vp{}; vp.Width=(FLOAT)w; vp.Height=(FLOAT)h; vp.MinDepth=0; vp.MaxDepth=1;
+    ctx_->RSSetViewports(1, &vp);
+    return true;
+}
 
 std::unique_ptr<RendererBackend> CreateDX11Renderer() { return std::make_unique<DX11Renderer>(); }
 
