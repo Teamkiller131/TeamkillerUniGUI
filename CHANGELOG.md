@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.6.0 (2026-05-26) — Advanced Features
+
+### Added
+- **Layout engine**: `Layout::HBox({...})`, `Layout::VBox({...})`, `Layout::BeginHSplit()/EndHSplit()` — declarative layout helpers.
+- **File drag-drop**: `Window::SetDropCallback(fn)` — accepts file drops from OS, parses paths.
+- **Clipboard API**: `Clipboard::Copy(text)`, `Clipboard::Paste()` — wraps ImGui clipboard.
+- **Animation system**: `Animate::FadeIn()`, `Animate::SlideIn()`, `Animate::Lerp()`, `Animate::FadeScope` — simple UI animations via style alpha.
+
+### Changed
+- Version: 1.5.1 → 1.6.0
+- Tests: 200/200 pass
+
 ## v1.5.1 (2026-05-26) — System Tray + Widget Docs
 
 ### Added
