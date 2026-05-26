@@ -156,3 +156,7 @@ add_executable(test_bench bench/bench_test.cc)
 target_link_libraries(test_bench PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_bench PRIVATE cxx_std_23)
 gtest_discover_tests(test_bench)
+
+# v1.3 tests — run manually (GL context needed for render/fuzz/font tests)
+# add_executable(test_fuzz fuzz/fuzz_test.cc)
+# add_executable(test_font theme/font_test.cc)
