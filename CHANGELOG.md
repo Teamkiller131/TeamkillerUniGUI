@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.7.0 (2026-05-26) — Performance Optimization
+
+### Added
+- **Extended benchmarks**: 500 buttons, 100 checkboxes, 100 LineEdits, 1000-widget full-frame, VirtualList vs real list (10k items < 20ms).
+- **Full-frame benchmark**: Real ImGui frame with NewFrame/Render cycle for accurate performance measurement.
+- **VirtualList performance test**: 10,000 items renders in < 20ms with ImGuiListClipper.
+
+### Changed
+- Version: 1.6.0 → 1.7.0
+- Tests: 200 → 205 (+5 benchmark tests)
+
 ## v1.6.0 (2026-05-26) — Advanced Features
 
 ### Added
