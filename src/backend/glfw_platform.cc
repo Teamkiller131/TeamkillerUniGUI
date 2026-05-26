@@ -65,6 +65,14 @@ public:
 #endif
     }
 
+    void* GetNativeWindowHandle() const override {
+#ifdef _WIN32
+        return glfwGetWin32Window(window_);
+#else
+        return window_;
+#endif
+    }
+
     void GetClientSize(int* w, int* h) override {
         if (window_) glfwGetWindowSize(window_, w, h);
         else { if(w)*w=0; if(h)*h=0; }
