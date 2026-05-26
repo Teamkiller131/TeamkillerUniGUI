@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-3.2.1-blueviolet)]()
 [![Tests](https://img.shields.io/badge/tests-244%20(236%2F244%20Linux)-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-63-blue)]()
+[![Widgets](https://img.shields.io/badge/widgets-66-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20production%29-orange)]()
 
 C++23 Dear ImGui 封装库——提供统一的明暗主题引擎、高层组件、声明式 DSL、CSS 样式引擎、插件系统与 EventBus。支持 7 种渲染后端：GLFW+OpenGL3、SDL3+Vulkan、DX11、DX12、Metal、WebGPU 和 Emscripten。
@@ -42,7 +42,7 @@ ctest --test-dir build
     ↓
 unigui:: API
     ├── 主题引擎 (53 色明暗主题，StyleScope RAII)
-    ├── 组件库 (63 个组件，表单校验/撤销重做/序列化)
+    ├── 组件库 (66 个组件，表单校验/撤销重做/序列化)
     ├── 声明式 DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
     ├── 事件总线 (unigui::events::Bus — 发布/订阅，支持通配符)
     ├── CSS 样式引擎 (unigui::styling::Engine — 选择器引擎 + 变量)
@@ -151,7 +151,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
       -DUNIGUI_MODULE_IPC=ON -DUNIGUI_BACKEND_DX12=ON ...
 ```
 
-## 组件列表（63 个）
+## 组件列表（66 个）
 
 | 分类 | 组件 | 核心 API |
 |------|------|----------|
@@ -168,6 +168,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | MultiCombo | `GetSelectedIndices()`, `SetSelected()` |
 | | SearchBox | `SetItems(v)`, `GetQuery()`, `SetOnSelect(fn)` |
 | | Slider\<T\> | `SetMin()`, `SetMax()`, `SetValue()` |
+| | MultiHandleSlider | 多游标可拖拽滑块 (v3.2) |
 | | InputInt/InputFloat | `GetValue()`, `SetValue()` |
 | | SpinBox\<T\> | `GetValue()`, `SetRange()` |
 | | DatePicker | `GetDate()`, `SetDate()` |
@@ -186,6 +187,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | LoadingIndicator | `SetActive(bool)`，旋转动画 |
 | | GradientText | `Render(text, leftColor, rightColor)` (v3.0) |
 | 列表 | VirtualList | `SetItemCount(n)`, `SetItemGetter(fn)` — 10 万+ |
+| | DataTable\<T\> | 虚拟滚动、排序、行着色、内联编辑、过滤 (v3.2) |
 | | ListView | `SetItems()`, `SetOnSelect()` |
 | | Table | `AddRow()`, `ExportCSV()`, `ImportCSV()` |
 | | TreeView | `SetRoot()`，多选支持 |
@@ -206,6 +208,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | RadioGroup | `SetSelected()`，单选项组 |
 | | ToggleSwitch | `SetOn(bool)`，带动画过渡 |
 | 其他 | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
+| | TimeSeriesChart | 实时时序图、滑动窗口 (v3.2) |
 | | ShortcutManager | `Register()`，全局快捷键 |
 | | Notification | `Show()`，待处理计数 |
 | | TrayIcon | `Show()`, `Hide()`, `SetMenu()`, `ShowNotification()` |

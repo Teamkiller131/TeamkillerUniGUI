@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-3.2.1-blueviolet)]()
 [![Tests](https://img.shields.io/badge/tests-244%20(236%2F244%20Linux)-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-55-blue)]()
+[![Widgets](https://img.shields.io/badge/widgets-66-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
 A C++23 Dear ImGui wrapper providing a unified dark+light theme engine, high-level widget components, declarative DSL, CSS styling, plugin system, and EventBus. Supports 7 backends: GLFW+OpenGL3, SDL3+Vulkan, DX11, DX12, Metal, WebGPU, and Emscripten.
@@ -42,7 +42,7 @@ User Code
     ↓
 unigui:: API
     ├── Theme Engine (53-color dark + light theme, StyleScope RAII)
-    ├── Widget Library (55+ widgets, form validation, undo/redo, serialization)
+    ├── Widget Library (66 widgets, form validation, undo/redo, serialization)
     ├── Declarative DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
     ├── EventBus (unigui::events::Bus — publish/subscribe with wildcards)
     ├── CSS Styling (unigui::styling::Engine — selector engine + variables)
@@ -151,7 +151,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
       -DUNIGUI_MODULE_IPC=ON -DUNIGUI_BACKEND_DX12=ON ...
 ```
 
-## Widgets (55 total)
+## Widgets (66 total)
 
 | Category | Widget | Key API |
 |----------|--------|---------|
@@ -166,6 +166,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | MultiCombo | `GetSelectedIndices()`, `SetSelected()` |
 | | SearchBox | `SetItems(v)`, `GetQuery()`, `SetOnSelect(fn)` |
 | | Slider\<T\> | `SetMin()`, `SetMax()`, `SetValue()` |
+| | MultiHandleSlider | multi-draggable tick handles (v3.2) |
 | | InputInt/InputFloat | `GetValue()`, `SetValue()` |
 | | SpinBox\<T\> | `GetValue()`, `SetRange()` |
 | | DatePicker | `GetDate()`, `SetDate()` |
@@ -183,6 +184,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | ProgressBar | `SetFraction()`, state colors |
 | | LoadingIndicator | `SetActive(bool)`, spinner animation |
 | Lists | VirtualList | `SetItemCount(n)`, `SetItemGetter(fn)` — 100k+ |
+| | DataTable\<T\> | virtual scroll, sort, row color, inline edit, filter (v3.2) |
 | | ListView | `SetItems()`, `SetOnSelect()` |
 | | Table | `AddRow()`, `ExportCSV()`, `ImportCSV()` |
 | | TreeView | `SetRoot()`, multi-select support |
@@ -203,6 +205,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | RadioGroup | `SetSelected()`, option groups |
 | | ToggleSwitch | `SetOn(bool)`, toggle with label |
 | Misc | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
+| | TimeSeriesChart | real-time implot chart, sliding window (v3.2) |
 | | ShortcutManager | `Register()`, global shortcuts |
 | | Notification | `Show()`, pending count |
 | | TrayIcon | `Show()`, `Hide()`, `SetMenu()`, `ShowNotification()` |
