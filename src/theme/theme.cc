@@ -35,37 +35,50 @@ float DetectDPIScale(void* native_window) {
 
 void LoadDefaultFont(float size_pixels, const char* ttf_path) {
     auto& io = ImGui::GetIO();
+    io.Fonts->Clear();
+
     ImFontConfig cfg;
     cfg.OversampleH = 2;
     cfg.OversampleV = 2;
 
-    // Ensure atlas is large enough for CJK
-    io.Fonts->Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight;
-
-    // Always load built-in font first (guaranteed to work)
-    io.Fonts->AddFontDefault(&cfg);
-
-    // Try to merge CJK font for Chinese/Japanese/Korean support
-    cfg.MergeMode = true;
-    const ImWchar* cjk_range = io.Fonts->GetGlyphRangesChineseFull();
-    ImFont* cjk = nullptr;
-
-    const char* paths[] = {
+    // Try system TTF fonts at the requested physical size
+    bool loaded = false;
+    const char* base_paths[] = {
         ttf_path,
-        "C:\\Windows\\Fonts\\msyh.ttc",
-        "C:\\Windows\\Fonts\\simhei.ttf",
         "C:\\Windows\\Fonts\\segoeui.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
         nullptr
     };
 
-    for (int i = 0; paths[i] && !cjk; i++) {
-        cjk = io.Fonts->AddFontFromFileTTF(paths[i], size_pixels, &cfg, cjk_range);
+    for (int i = 0; base_paths[i] && !loaded; i++) {
+        loaded = (io.Fonts->AddFontFromFileTTF(base_paths[i], size_pixels, &cfg) != nullptr);
     }
 
-    if (cjk) {
-        UNIGUI_LOG_INFO("CJK font merged: {} ({}px)", "ok", (int)size_pixels);
-    } else {
-        UNIGUI_LOG_WARN("No CJK font available — Chinese text may not render");
+    // Fallback: built-in font + FontGlobalScale to match target size
+    if (!loaded) {
+        io.Fonts->AddFontDefault(&cfg);
+        io.FontGlobalScale = size_pixels / 13.0f;
+        UNIGUI_LOG_WARN("Built-in font scaled to {}px (scale={:.2f})",
+            (int)size_pixels, io.FontGlobalScale);
+        io.Fonts->Build();
+        return;
+    }
+
+    UNIGUI_LOG_INFO("Base font loaded at {}px", (int)size_pixels);
+
+    // Merge CJK glyphs
+    cfg.MergeMode = true;
+    const ImWchar* cjk = io.Fonts->GetGlyphRangesChineseFull();
+    const char* cjk_paths[] = {
+        "C:\\Windows\\Fonts\\msyh.ttc",
+        "C:\\Windows\\Fonts\\simhei.ttf",
+        nullptr
+    };
+    for (int i = 0; cjk_paths[i]; i++) {
+        if (io.Fonts->AddFontFromFileTTF(cjk_paths[i], size_pixels, &cfg, cjk)) {
+            UNIGUI_LOG_INFO("CJK font merged: {}", cjk_paths[i]);
+            break;
+        }
     }
 
     io.Fonts->Build();
