@@ -23,3 +23,5 @@ Thumbs.db
 .omo/run-continuation/
 unigui.log
 imgui.ini
+release/
+*.zip
