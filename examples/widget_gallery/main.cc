@@ -45,6 +45,8 @@ int main(int argc, char** argv) {
                 static unigui::LineEdit le("le","Email"); le.SetPlaceholder("user@example.com");
                 static unigui::SpinBox<float> sb("sb","Volume",50,0,100,1);
                 ii.Render(); iif.Render(); le.Render(); sb.Render();
+                static unigui::PasswordInput pi("pi","Password"); pi.SetShowStrength(true);
+                pi.Render(); ImGui::Text(" Strength: %d/4", pi.GetStrengthScore());
             });
 
             addGroup("Toggles", [](){

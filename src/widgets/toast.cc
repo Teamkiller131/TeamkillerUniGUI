@@ -12,8 +12,8 @@ Toast::Toast(std::string name) : Widget(std::move(name)) {}
 
 void Toast::SetPosition(int anchor, float offsetX, float offsetY) { anchor_=anchor; offX_=offsetX; offY_=offsetY; }
 
-void Toast::Show(std::string msg, ToastType type, float duration) {
-    queue_.push_back({std::move(msg), type, std::chrono::steady_clock::now(), duration});
+void Toast::Show(std::string msg, ToastType type, float duration, std::function<void()> onDismiss) {
+    queue_.push_back({std::move(msg), type, std::chrono::steady_clock::now(), duration, std::move(onDismiss)});
     Widget::Show();
 }
 
@@ -24,7 +24,10 @@ void Toast::Render() {
     // Remove expired
     while (!queue_.empty()) {
         auto elapsed = std::chrono::duration<float>(now - queue_.front().showTime).count();
-        if (elapsed > queue_.front().duration) queue_.pop_front(); else break;
+        if (elapsed > queue_.front().duration) {
+            if (queue_.front().onDismiss) queue_.front().onDismiss();
+            queue_.pop_front();
+        } else { break; }
     }
     if (queue_.empty()) { Hide(); return; }
 
