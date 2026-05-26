@@ -50,7 +50,7 @@ unigui:: API
     │   ├── GLFW + OpenGL 3.3 ★ (default, production)
     │   ├── SDL3 + Vulkan 1.3 ★ (production)
     │   ├── GLFW + DX11 ★ (production, Windows default)
-    │   ├── GLFW + DX12   (runtime-ready)
+    │   ├── GLFW + DX12 ★ (production)
     │   ├── Metal          (macOS, stub on Windows)
     │   ├── WebGPU         (cross-platform, stub)
     │   └── Emscripten     (Web/HTML5, stub)
@@ -222,7 +222,7 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5 (stub)
 | GLFW+GL3 | Win/Lin/Mac | OpenGL 3.3 | ★ Production | 4x |
 | SDL3+Vulkan | Win/Lin/Mac | Vulkan 1.3 | ★ Production | Config |
 | GLFW+DX11 | Windows | DirectX 11 | ★ Production | 4x |
-| GLFW+DX12 | Windows | DirectX 12 | Runtime | Config |
+| GLFW+DX12 | Windows | DirectX 12 | ★ Production | Config |
 | Metal | macOS | Metal 2 | Stub | Native |
 | WebGPU | Cross | Dawn/WGPU | Stub | Native |
 | Emscripten | Web | WebGL/WebGPU | Stub | Browser |

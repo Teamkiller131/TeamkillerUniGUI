@@ -1,9 +1,9 @@
-# Doxyfile for TeamkillerUniGUI
+# Doxyfile for TeamkillerUniGUI — v3.1.0
 PROJECT_NAME           = "TeamkillerUniGUI"
-PROJECT_BRIEF          = "Modern Dear ImGui C++23 Wrapper Library"
-PROJECT_VERSION        = 0.2.0
+PROJECT_BRIEF          = "C++23 Dear ImGui Wrapper — 63 widgets, 10 themes, CSS engine, fx effects, DSL, EventBus, plugin system"
+PROJECT_VERSION        = 3.1.0
 OUTPUT_DIRECTORY       = docs
-INPUT                  = include/unigui
+INPUT                  = include/unigui README.md CHANGELOG.md
 RECURSIVE              = YES
 GENERATE_HTML          = YES
 GENERATE_LATEX         = NO
@@ -11,3 +11,20 @@ EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = NO
 EXTRACT_STATIC         = NO
 OPTIMIZE_OUTPUT_CXX    = YES
+
+# --- Extensions covered ---
+FILE_PATTERNS          = *.h *.md
+
+# --- Exclude test/demo noise ---
+EXCLUDE_PATTERNS       = */tests/* */examples/* */vulkan_triangle/*
+
+# --- Modern C++ ---
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = UNIGUI_API= NOMINMAX= GLFW_EXPOSE_NATIVE_WIN32= _WIN32= __cdecl=
+
+# --- Navigation ---
+SHOW_INCLUDE_FILES     = YES
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = YES
