@@ -47,6 +47,12 @@
     },
     {
         "name": "spdlog"
+    },
+    {
+        "name": "nlohmann-json"
+    },
+    {
+        "name": "cpptoml"
     }
   ]
 }
