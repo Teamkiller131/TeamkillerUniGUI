@@ -124,6 +124,7 @@ target_sources(unigui PRIVATE
     v2/dsl.cc
     v2/eventbus.cc
     v2/style_engine.cc
+    v2/font_manager.cc
 )
 
 # ── SDL3 + Vulkan sources (conditional) ───────────────────────────────────────
