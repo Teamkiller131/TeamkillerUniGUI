@@ -144,6 +144,17 @@ target_include_directories(unigui
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# ── Font embedding ──────────────────────────────────────────────────────────
+include(${CMAKE_SOURCE_DIR}/cmake/FontEmbed.cmake)
+set(FONT_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/fonts)
+file(MAKE_DIRECTORY ${FONT_GEN_DIR})
+embed_font(unigui
+    ${CMAKE_SOURCE_DIR}/fonts/JetBrainsMonoNerdFont-Regular.ttf
+    ${FONT_GEN_DIR}/jb_mono_font.h
+    jb_mono
+)
+target_include_directories(unigui PRIVATE ${FONT_GEN_DIR})
+
 # ── Install ───────────────────────────────────────────────────────────────────
 install(TARGETS unigui
     EXPORT unigui-targets

@@ -4,7 +4,7 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-1.0.0-blueviolet)]()
+[![Version](https://img.shields.io/badge/version-1.1.0-blueviolet)]()
 [![Tests](https://img.shields.io/badge/tests-186-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-48-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
@@ -119,6 +119,26 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5 (stub)
 - **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022.
 - **Linux**: X11/Wayland via GLFW or SDL3. GCC 14+ or Clang 18+.
 - **macOS**: OpenGL deprecated by Apple (capped at 4.1). Vulkan via MoltenVK.
+
+## Fonts
+
+UniGUI embeds **JetBrains Mono Nerd Font** directly in the library binary. No system font installation required.
+
+```cpp
+// Default: JetBrains Mono Nerd Font at auto-DPI size
+unigui::AppConfig cfg;
+
+// Custom font via file path
+cfg.theme.font_path = "C:/path/to/my-font.ttf";
+cfg.theme.font_size = 20.0f;           // logical px at 96 DPI
+
+// Disable CJK merge (faster startup)
+cfg.theme.font_path = nullptr;         // use embedded font only
+```
+
+**CJK Support**: On Windows, the library automatically merges Microsoft YaHei (msyh.ttc) for Chinese/Japanese/Korean glyphs. On Linux/macOS, CJK merge is skipped — users can provide a custom CJK font via `ThemeConfig::font_path`.
+
+**Nerd Font Icons**: The embedded font includes Nerd Font glyphs (`` `` `` `` etc.), usable in any ImGui text.
 
 ## Dependencies (vcpkg)
 

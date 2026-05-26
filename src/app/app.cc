@@ -65,8 +65,11 @@ bool Init(const AppConfig& config){
     if(actualDpi>0.5f && actualDpi>dpi*1.1f){
         UNIGUI_LOG_INFO("DPI updated: {:.2f} -> {:.2f}", dpi, actualDpi);
         dpi=actualDpi;
-        LoadDefaultFont(config.theme.font_size*dpi,config.theme.font_path);
-        ImGui::GetIO().Fonts->Build();
+        // For embedded font: scale via FontGlobalScale instead of reloading
+        ImGui::GetIO().FontGlobalScale = dpi;
+        // Re-apply theme sizing for new DPI
+        ThemeConfig tc2=config.theme; tc2.dpi_scale=dpi;
+        ApplyTheme(tc2);
     }
 
     auto& io=ImGui::GetIO();
