@@ -28,6 +28,11 @@ cmake --build --preset windows-msvc-sdl3-vulkan-release
 
 # Run demo
 ./build/windows-msvc-release/examples/hello_unigui/hello_unigui.exe --frames 10
+
+# Linux (Fedora 43 / Rocky 9, GCC 14+, CMake 3.26+)
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux -G Ninja -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+cmake --build build
+ctest --test-dir build
 ```
 
 ## Architecture
@@ -245,8 +250,8 @@ All sub-module headers are also pulled in by `<unigui/unigui.h>` for convenience
 
 ## Platform Notes
 
-- **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022. DX11 is default.
-- **Linux**: X11/Wayland via GLFW or SDL3. GCC 14+ or Clang 18+.
+- **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022. DX11 is default. 244/244 tests pass.
+- **Linux**: GCC 14+/Clang 18+ via GLFW+OpenGL3. X11/Wayland. 236/244 tests pass (8 GL-context failures expected in headless). See [vcpkg.json](vcpkg.json) for x64-linux triplet deps.
 - **macOS**: OpenGL deprecated by Apple (capped at 4.1). Vulkan via MoltenVK.
 
 ## Fonts
