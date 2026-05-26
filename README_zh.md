@@ -5,7 +5,7 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-3.1.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-244-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-244%20(236%2F244%20Linux)-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-63-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20production%29-orange)]()
 
@@ -28,6 +28,11 @@ cmake --build --preset windows-msvc-sdl3-vulkan-release
 
 # 运行示例
 ./build/windows-msvc-release/examples/hello_unigui/hello_unigui.exe --frames 10
+
+# Linux (Fedora 43 / Rocky 9, GCC 14+, CMake 3.26+)
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux -G Ninja -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+cmake --build build
+ctest --test-dir build
 ```
 
 ## 架构
@@ -250,8 +255,8 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5（桩）
 
 ## 平台说明
 
-- **Windows**：主力平台。Visual Studio 2022 + MSVC 19.40+。DX11 为默认后端。
-- **Linux**：通过 GLFW 或 SDL3 支持 X11/Wayland。需要 GCC 14+ 或 Clang 18+。
+- **Windows**：主力平台。Visual Studio 2022 + MSVC 19.40+。DX11 为默认后端。244/244 测试通过。
+- **Linux**：GCC 14+/Clang 18+，GLFW+OpenGL3。支持 X11/Wayland。236/244 测试通过（8 项 GL 上下文失败为无头环境预期）。x64-linux triplet 依赖见 [vcpkg.json](vcpkg.json)。
 - **macOS**：Apple 已弃用 OpenGL（上限 4.1），推荐通过 MoltenVK 使用 Vulkan。
 
 ## 字体
