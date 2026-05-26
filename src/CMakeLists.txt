@@ -120,6 +120,7 @@ target_sources(unigui PRIVATE
     widgets/passwordinput.cc
     widgets/wizard.cc
     app/app.cc
+    v2/plugin_manager.cc
 )
 
 # ── SDL3 + Vulkan sources (conditional) ───────────────────────────────────────

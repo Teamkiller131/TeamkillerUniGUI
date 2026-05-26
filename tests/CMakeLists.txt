@@ -160,3 +160,9 @@ gtest_discover_tests(test_bench)
 # v1.3 tests — run manually (GL context needed for render/fuzz/font tests)
 # add_executable(test_fuzz fuzz/fuzz_test.cc)
 # add_executable(test_font theme/font_test.cc)
+
+# v2 plugin tests
+add_executable(test_plugin v2/plugin_test.cc)
+target_link_libraries(test_plugin PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_plugin PRIVATE cxx_std_23)
+gtest_discover_tests(test_plugin)
