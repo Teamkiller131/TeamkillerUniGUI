@@ -23,6 +23,7 @@ find_package(glad CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(implot CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 set(UNIGUI_LIBS
     imgui::imgui
@@ -31,6 +32,7 @@ set(UNIGUI_LIBS
     glad::glad
     Freetype::Freetype
     spdlog::spdlog
+    SQLite::SQLite3
 )
 
 # ── SDL3 + Vulkan (conditional) ───────────────────────────────────────────────
@@ -126,6 +128,7 @@ target_sources(unigui PRIVATE
     v2/style_engine.cc
     v2/font_manager.cc
     v2/config.cc
+    v2/database.cc
 )
 
 # ── SDL3 + Vulkan sources (conditional) ───────────────────────────────────────

@@ -53,6 +53,9 @@
     },
     {
         "name": "cpptoml"
+    },
+    {
+        "name": "sqlite3"
     }
   ]
 }
