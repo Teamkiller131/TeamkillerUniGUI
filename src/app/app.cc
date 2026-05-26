@@ -24,6 +24,17 @@ bool Init(const AppConfig& config){
     InitLogging("debug");
 
     IMGUI_CHECKVERSION(); ImGui::CreateContext();
+
+    // Load font BEFORE any backend init (DX11 locks atlas)
+    float dpi=config.theme.dpi_scale;
+    if(dpi<=0){
+        dpi=DetectDPIScale(nullptr);
+        if(dpi<0.5f)dpi=1.0f;
+    }
+    UNIGUI_LOG_INFO("DPI scale: {:.2f}",dpi);
+    float fontSize=config.theme.font_size*dpi;
+    LoadDefaultFont(fontSize,config.theme.font_path);
+
     auto be=CreateBackend(config.backend);
     g_backend=config.backend; g_platform=std::move(be.platform); g_renderer=std::move(be.renderer);
 
@@ -46,20 +57,19 @@ bool Init(const AppConfig& config){
 
     if(!g_renderer||!g_renderer->Init(ImGui::GetCurrentContext())){g_platform->Shutdown();return false;}
 
-    // ── DPI auto-detection ──────────────────────────────────────────────────
-    auto& io=ImGui::GetIO();
-    float dpi=config.theme.dpi_scale;
-    if(dpi<=0){
-        dpi=DetectDPIScale(g_platform->GetWindowHandle());
-        if(dpi<0.5f)dpi=1.0f;
+    // Build font atlas AFTER renderer Init (RendererHasTextures flag is set)
+    ImGui::GetIO().Fonts->Build();
+
+    // Re-detect DPI with actual window handle for per-monitor accuracy
+    float actualDpi=DetectDPIScale(g_platform->GetWindowHandle());
+    if(actualDpi>0.5f && actualDpi>dpi*1.1f){
+        UNIGUI_LOG_INFO("DPI updated: {:.2f} -> {:.2f}", dpi, actualDpi);
+        dpi=actualDpi;
+        LoadDefaultFont(config.theme.font_size*dpi,config.theme.font_path);
+        ImGui::GetIO().Fonts->Build();
     }
-    UNIGUI_LOG_INFO("DPI scale: {:.2f}",dpi);
 
-    // Load CJK font at DPI-scaled size
-    float fontSize=config.theme.font_size*dpi;
-    LoadDefaultFont(fontSize,config.theme.font_path);
-
-    // Apply theme with DPI scaling
+    auto& io=ImGui::GetIO();
     ThemeConfig tc=config.theme; tc.dpi_scale=dpi;
     ApplyTheme(tc);
 
