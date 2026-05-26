@@ -43,24 +43,6 @@
     },
     {
         "name": "spdlog"
-    },
-    {
-        "name": "nlohmann-json"
-    },
-    {
-        "name": "cpptoml"
-    },
-    {
-        "name": "sqlite3"
-    },
-    {
-        "name": "cppzmq"
-    },
-    {
-        "name": "cpp-httplib"
-    },
-    {
-        "name": "ixwebsocket"
     }
   ]
 }
