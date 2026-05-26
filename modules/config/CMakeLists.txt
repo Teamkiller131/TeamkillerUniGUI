@@ -1,0 +1,6 @@
+add_library(unigui-config "")
+add_library(unigui::config ALIAS unigui-config)
+set_target_properties(unigui-config PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+target_link_libraries(unigui-config PUBLIC unigui::core)
+target_include_directories(unigui-config PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_sources(unigui-config PRIVATE ${CMAKE_SOURCE_DIR}/src/v2/config.cc)

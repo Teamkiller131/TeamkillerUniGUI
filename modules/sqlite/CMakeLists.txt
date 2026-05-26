@@ -1,0 +1,7 @@
+add_library(unigui-sqlite "")
+add_library(unigui::sqlite ALIAS unigui-sqlite)
+set_target_properties(unigui-sqlite PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+find_package(SQLite3 REQUIRED)
+target_link_libraries(unigui-sqlite PUBLIC unigui::core SQLite::SQLite3)
+target_include_directories(unigui-sqlite PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_sources(unigui-sqlite PRIVATE ${CMAKE_SOURCE_DIR}/src/v2/database.cc)

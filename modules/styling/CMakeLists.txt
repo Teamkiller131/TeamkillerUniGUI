@@ -1,0 +1,6 @@
+add_library(unigui-styling "")
+add_library(unigui::styling ALIAS unigui-styling)
+set_target_properties(unigui-styling PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+target_link_libraries(unigui-styling PUBLIC unigui::core)
+target_include_directories(unigui-styling PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_sources(unigui-styling PRIVATE ${CMAKE_SOURCE_DIR}/src/v2/style_engine.cc)

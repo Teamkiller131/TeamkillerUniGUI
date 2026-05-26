@@ -1,0 +1,6 @@
+add_library(unigui-events "")
+add_library(unigui::events ALIAS unigui-events)
+set_target_properties(unigui-events PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+target_link_libraries(unigui-events PUBLIC unigui::core)
+target_include_directories(unigui-events PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_sources(unigui-events PRIVATE ${CMAKE_SOURCE_DIR}/src/v2/eventbus.cc)
