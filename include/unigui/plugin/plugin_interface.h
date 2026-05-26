@@ -4,7 +4,7 @@
 #include <memory>
 #include <functional>
 
-namespace unigui::v2 {
+namespace unigui::plugin {
 
 struct PluginInfo {
     std::string name;
@@ -13,7 +13,7 @@ struct PluginInfo {
     std::string description;
 };
 
-/// Base class for all v2 plugins. Must be implemented by plugin DLLs.
+/// Base class for all plugins. Must be implemented by plugin DLLs.
 class IPlugin {
 public:
     virtual ~IPlugin() = default;
@@ -28,4 +28,4 @@ public:
 using CreatePluginFn = IPlugin*(*)();
 using DestroyPluginFn = void(*)(IPlugin*);
 
-} // namespace unigui::v2
+} // namespace unigui::plugin

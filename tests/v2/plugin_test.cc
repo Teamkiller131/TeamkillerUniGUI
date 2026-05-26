@@ -1,19 +1,19 @@
 #include <unigui/unigui.h>
-#include <unigui/v2/plugin_manager.h>
+#include <unigui/plugin/plugin_manager.h>
 #include <gtest/gtest.h>
-using namespace unigui::v2;
+using namespace unigui::plugin;
 
 class PluginTest : public ::testing::Test {
 protected:
-    void TearDown() override { PluginManager::Instance().Shutdown(); }
+    void TearDown() override { Manager::Instance().Shutdown(); }
 };
 
 TEST_F(PluginTest, List_EmptyByDefault) {
-    EXPECT_TRUE(PluginManager::Instance().List().empty());
+    EXPECT_TRUE(Manager::Instance().List().empty());
 }
 
 TEST_F(PluginTest, Load_Nonexistent_ReturnsNull) {
-    auto* p = PluginManager::Instance().Load("nonexistent.dll");
+    auto* p = Manager::Instance().Load("nonexistent.dll");
     EXPECT_EQ(p, nullptr);
 }
 
@@ -23,10 +23,10 @@ TEST_F(PluginTest, Register_Builtin_Works) {
         bool Init() override { return true; }
         void Shutdown() override {}
     };
-    auto* p = PluginManager::Instance().Register(new TestPlugin());
+    auto* p = Manager::Instance().Register(new TestPlugin());
     ASSERT_NE(p, nullptr);
     EXPECT_EQ(p->GetInfo().name, "Test");
-    EXPECT_FALSE(PluginManager::Instance().List().empty());
+    EXPECT_FALSE(Manager::Instance().List().empty());
 }
 
 TEST_F(PluginTest, Unload_RemovesPlugin) {
@@ -35,7 +35,7 @@ TEST_F(PluginTest, Unload_RemovesPlugin) {
         bool Init() override { return true; }
         void Shutdown() override {}
     };
-    PluginManager::Instance().Register(new TestPlugin());
-    EXPECT_TRUE(PluginManager::Instance().Unload("T2"));
-    EXPECT_TRUE(PluginManager::Instance().List().empty());
+    Manager::Instance().Register(new TestPlugin());
+    EXPECT_TRUE(Manager::Instance().Unload("T2"));
+    EXPECT_TRUE(Manager::Instance().List().empty());
 }

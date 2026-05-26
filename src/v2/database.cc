@@ -1,8 +1,8 @@
-#include <unigui/v2/database.h>
+#include <unigui/sqlite/database.h>
 #include <unigui/core/log.h>
 #include <cstring>
 
-namespace unigui::v2 {
+namespace unigui::sqlite {
 
 Database::~Database() { Close(); }
 
@@ -21,7 +21,7 @@ void Database::Close() {
     if (db_) { sqlite3_close(db_); db_ = nullptr; }
 }
 
-void Database::BindParams(sqlite3_stmt* stmt, const std::vector<SqlParam>& params) {
+void Database::BindParams(sqlite3_stmt* stmt, const std::vector<Param>& params) {
     for (int i = 0; i < (int)params.size(); i++) {
         int idx = i + 1;
         auto& p = params[i];
@@ -37,7 +37,7 @@ void Database::BindParams(sqlite3_stmt* stmt, const std::vector<SqlParam>& param
     }
 }
 
-int Database::Execute(const std::string& sql, const std::vector<SqlParam>& params) {
+int Database::Execute(const std::string& sql, const std::vector<Param>& params) {
     if (!db_) return -1;
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
@@ -51,8 +51,8 @@ int Database::Execute(const std::string& sql, const std::vector<SqlParam>& param
     return changes;
 }
 
-int Database::Query(const std::string& sql, const std::vector<SqlParam>& params,
-                     std::function<void(SqlRow&)> callback) {
+int Database::Query(const std::string& sql, const std::vector<Param>& params,
+                     std::function<void(Row&)> callback) {
     if (!db_ || !callback) return -1;
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
@@ -63,7 +63,7 @@ int Database::Query(const std::string& sql, const std::vector<SqlParam>& params,
     int colCount = sqlite3_column_count(stmt);
     int rows = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        SqlRow row;
+        Row row;
         for (int i = 0; i < colCount; i++) {
             const char* val = (const char*)sqlite3_column_text(stmt, i);
             row.columns.push_back(val ? val : "");
@@ -75,9 +75,9 @@ int Database::Query(const std::string& sql, const std::vector<SqlParam>& params,
     return rows;
 }
 
-std::string Database::QueryValue(const std::string& sql, const std::vector<SqlParam>& params) {
+std::string Database::QueryValue(const std::string& sql, const std::vector<Param>& params) {
     std::string result;
-    Query(sql, params, [&](SqlRow& r){ if(r.columns.size()>0) result = r.columns[0]; });
+    Query(sql, params, [&](Row& r){ if(r.columns.size()>0) result = r.columns[0]; });
     return result;
 }
 
@@ -103,4 +103,4 @@ bool Database::Migrate(int version, const std::string& sql) {
 
 int64_t Database::LastInsertId() { return db_ ? sqlite3_last_insert_rowid(db_) : 0; }
 
-} // namespace unigui::v2
+} // namespace unigui::sqlite

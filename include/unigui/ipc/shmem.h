@@ -10,7 +10,7 @@
 #include <unistd.h>
 #endif
 
-namespace unigui::v2 {
+namespace unigui::ipc {
 
 class SharedMemory {
 public:
@@ -31,4 +31,4 @@ private:
     std::string name_;
 };
 
-} // namespace unigui::v2
+} // namespace unigui::ipc

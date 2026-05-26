@@ -1,21 +1,21 @@
-/// hello_unigui_v2: same demo, but using v2 DSL.
+/// hello_unigui_v2: same demo, using DSL.
 #include <unigui/unigui.h>
-#include <unigui/v2/dsl.h>
+#include <unigui/dsl/dsl.h>
 #include <cstdio>
 #include <cstdlib>
-using namespace unigui::v2::dsl;
+using namespace unigui::dsl;
 
 int main(int argc, char** argv) {
     int max_frames = 0;
     for (int i=1;i<argc;i++) if (argv[i]==std::string("--frames")&&i+1<argc) max_frames=std::atoi(argv[++i]);
 
-    unigui::AppConfig cfg; cfg.title="Hello UniGUI v2 (DSL)";
+    unigui::AppConfig cfg; cfg.title="Hello UniGUI DSL";
     if(!unigui::Init(cfg))return 1;
-    std::printf("[v2] DSL Initialized\n");
+    std::printf("[DSL] Initialized\n");
 
     // Build UI tree ONCE
-    auto ui = Window("UniGUI v2 DSL Demo", VBox({
-        Text("Welcome to UniGUI v2!"),
+    auto ui = Window("UniGUI DSL Demo", VBox({
+        Text("Welcome to UniGUI DSL!"),
         Separator(),
         Label("This UI is built with the declarative DSL."),
         Label("No manual ImGui::Begin/End calls needed."),
@@ -35,5 +35,5 @@ int main(int argc, char** argv) {
         unigui::Render(); frame++;
         if(max_frames>0&&frame>=max_frames){done=true;}
     }
-    unigui::Shutdown(); std::printf("[v2] Done\n"); return 0;
+    unigui::Shutdown(); std::printf("[DSL] Done\n"); return 0;
 }

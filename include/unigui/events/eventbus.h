@@ -11,16 +11,16 @@
 #include <queue>
 #include <condition_variable>
 
-namespace unigui::v2 {
+namespace unigui::events {
 
-/// EventBus: publish-subscribe messaging across all v2 components.
+/// EventBus: publish-subscribe messaging across all components.
 /// Thread-safe. Supports synchronous + async publishing.
-class EventBus {
+class Bus {
 public:
     using Handler = std::function<void(const std::any& event)>;
     using SubID = uint64_t;
 
-    static EventBus& Instance();
+    static Bus& Instance();
 
     /// Subscribe to a topic. Supports wildcards: "window.*" matches "window.close".
     /// Returns subscription ID for Unsubscribe().
@@ -42,7 +42,7 @@ public:
     void Shutdown();
 
 private:
-    EventBus();
+    Bus();
     bool MatchTopic(const std::string& pattern, const std::string& topic);
     void WorkerThread();
 
@@ -58,4 +58,4 @@ private:
     std::atomic<bool> running_{true};
 };
 
-} // namespace unigui::v2
+} // namespace unigui::events

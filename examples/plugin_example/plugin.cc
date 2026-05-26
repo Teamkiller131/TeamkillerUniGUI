@@ -1,14 +1,14 @@
-/// Example plugin: demonstrates the v2 plugin interface.
+/// Example plugin: demonstrates the plugin interface.
 /// Build: cmake --build && the DLL goes to the build output.
-#include <unigui/v2/plugin_interface.h>
+#include <unigui/plugin/plugin_interface.h>
 #include <unigui/core/log.h>
 #include <imgui.h>
 #include <cstdio>
 
-class ExamplePlugin : public unigui::v2::IPlugin {
+class ExamplePlugin : public unigui::plugin::IPlugin {
 public:
-    unigui::v2::PluginInfo GetInfo() const override {
-        return {"ExamplePlugin", "1.0.0", "UniGUI Team", "Demo plugin for v2 plugin system"};
+    unigui::plugin::PluginInfo GetInfo() const override {
+        return {"ExamplePlugin", "1.0.0", "UniGUI Team", "Demo plugin"};
     }
     bool Init() override {
         std::printf("[ExamplePlugin] Initialized\n");
@@ -26,6 +26,6 @@ public:
 
 // Required exports
 extern "C" {
-    __declspec(dllexport) unigui::v2::IPlugin* CreatePlugin() { return new ExamplePlugin(); }
-    __declspec(dllexport) void DestroyPlugin(unigui::v2::IPlugin* p) { delete p; }
+    __declspec(dllexport) unigui::plugin::IPlugin* CreatePlugin() { return new ExamplePlugin(); }
+    __declspec(dllexport) void DestroyPlugin(unigui::plugin::IPlugin* p) { delete p; }
 }

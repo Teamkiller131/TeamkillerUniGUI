@@ -1,41 +1,41 @@
-#include <unigui/v2/config.h>
+#include <unigui/config/config.h>
 #include <unigui/core/log.h>
 #include <fstream>
 #include <sstream>
 #include <cstdio>
 
-namespace unigui::v2 {
+namespace unigui::config {
 
-Config& Config::Instance() { static Config c; return c; }
+Store& Store::Instance() { static Store c; return c; }
 
 // ── Internal ────────────────────────────────────────────────────────────────
-void Config::SetValue(const std::string& key, const std::string& value) { data_[key] = value; }
-std::string Config::GetValue(const std::string& key, const std::string& defaultVal) const {
+void Store::SetValue(const std::string& key, const std::string& value) { data_[key] = value; }
+std::string Store::GetValue(const std::string& key, const std::string& defaultVal) const {
     auto it = data_.find(key); return it != data_.end() ? it->second : defaultVal;
 }
-void Config::Clear() { data_.clear(); }
-bool Config::Has(const std::string& key) const { return data_.count(key) > 0; }
-std::vector<std::string> Config::Keys() const {
+void Store::Clear() { data_.clear(); }
+bool Store::Has(const std::string& key) const { return data_.count(key) > 0; }
+std::vector<std::string> Store::Keys() const {
     std::vector<std::string> ks;
     for (auto& [k,_] : data_) ks.push_back(k);
     return ks;
 }
-void Config::Merge(const Config& other) {
+void Store::Merge(const Store& other) {
     for (auto& [k,v] : other.data_) data_[k] = v;
 }
 
 // ── Typed access ────────────────────────────────────────────────────────────
-std::string Config::GetString(const std::string& k, const std::string& d) const { return GetValue(k,d); }
-void Config::SetString(const std::string& k, const std::string& v) { SetValue(k,v); }
-int Config::GetInt(const std::string& k, int d) const { auto v=GetValue(k); return v.empty()?d:std::stoi(v); }
-void Config::SetInt(const std::string& k, int v) { SetValue(k,std::to_string(v)); }
-double Config::GetDouble(const std::string& k, double d) const { auto v=GetValue(k); return v.empty()?d:std::stod(v); }
-void Config::SetDouble(const std::string& k, double v) { SetValue(k,std::to_string(v)); }
-bool Config::GetBool(const std::string& k, bool d) const { auto v=GetValue(k); return v.empty()?d:(v=="true"||v=="1"); }
-void Config::SetBool(const std::string& k, bool v) { SetValue(k,v?"true":"false"); }
+std::string Store::GetString(const std::string& k, const std::string& d) const { return GetValue(k,d); }
+void Store::SetString(const std::string& k, const std::string& v) { SetValue(k,v); }
+int Store::GetInt(const std::string& k, int d) const { auto v=GetValue(k); return v.empty()?d:std::stoi(v); }
+void Store::SetInt(const std::string& k, int v) { SetValue(k,std::to_string(v)); }
+double Store::GetDouble(const std::string& k, double d) const { auto v=GetValue(k); return v.empty()?d:std::stod(v); }
+void Store::SetDouble(const std::string& k, double v) { SetValue(k,std::to_string(v)); }
+bool Store::GetBool(const std::string& k, bool d) const { auto v=GetValue(k); return v.empty()?d:(v=="true"||v=="1"); }
+void Store::SetBool(const std::string& k, bool v) { SetValue(k,v?"true":"false"); }
 
 // ── TOML ────────────────────────────────────────────────────────────────────
-bool Config::LoadTOML(const std::string& path) {
+bool Store::LoadTOML(const std::string& path) {
     try {
         auto tbl = cpptoml::parse_file(path);
         for (auto it = tbl->begin(); it != tbl->end(); ++it) {
@@ -45,12 +45,12 @@ bool Config::LoadTOML(const std::string& path) {
             else if (auto v = it->second->as<double>()) SetValue(key, std::to_string(v->get()));
             else if (auto v = it->second->as<bool>()) SetValue(key, v->get() ? "true" : "false");
         }
-        UNIGUI_LOG_INFO("Config: loaded TOML {} ({} keys)", path, (int)data_.size());
+        UNIGUI_LOG_INFO("Store: loaded TOML {} ({} keys)", path, (int)data_.size());
         return true;
-    } catch (...) { UNIGUI_LOG_WARN("Config: TOML parse failed: {}", path); return false; }
+    } catch (...) { UNIGUI_LOG_WARN("Store: TOML parse failed: {}", path); return false; }
 }
 
-bool Config::SaveTOML(const std::string& path) const {
+bool Store::SaveTOML(const std::string& path) const {
     FILE* f = fopen(path.c_str(), "w"); if (!f) return false;
     for (auto& [k,v] : data_) {
         if (v=="true"||v=="false") std::fprintf(f,"%s = %s\n",k.c_str(),v.c_str());
@@ -60,7 +60,7 @@ bool Config::SaveTOML(const std::string& path) const {
 }
 
 // ── JSON ────────────────────────────────────────────────────────────────────
-bool Config::LoadJSON(const std::string& path) {
+bool Store::LoadJSON(const std::string& path) {
     try {
         std::ifstream f(path);
         if (!f) return false;
@@ -71,12 +71,12 @@ bool Config::LoadJSON(const std::string& path) {
             else if (v.is_number_float()) SetValue(k, std::to_string(v.get<double>()));
             else if (v.is_boolean()) SetValue(k, v.get<bool>()?"true":"false");
         }
-        UNIGUI_LOG_INFO("Config: loaded JSON {} ({} keys)", path, (int)data_.size());
+        UNIGUI_LOG_INFO("Store: loaded JSON {} ({} keys)", path, (int)data_.size());
         return true;
-    } catch (...) { UNIGUI_LOG_WARN("Config: JSON parse failed: {}", path); return false; }
+    } catch (...) { UNIGUI_LOG_WARN("Store: JSON parse failed: {}", path); return false; }
 }
 
-bool Config::SaveJSON(const std::string& path) const {
+bool Store::SaveJSON(const std::string& path) const {
     nlohmann::json j;
     for (auto& [k,v] : data_) {
         if (v=="true") j[k]=true; else if (v=="false") j[k]=false;
@@ -86,7 +86,7 @@ bool Config::SaveJSON(const std::string& path) const {
 }
 
 // ── INI ─────────────────────────────────────────────────────────────────────
-bool Config::LoadINI(const std::string& path) {
+bool Store::LoadINI(const std::string& path) {
     FILE* f = fopen(path.c_str(), "r"); if (!f) return false;
     char buf[4096];
     while (fgets(buf, sizeof(buf), f)) {
@@ -95,8 +95,8 @@ bool Config::LoadINI(const std::string& path) {
         auto eq = line.find('=');
         if (eq != std::string::npos) data_[line.substr(0,eq)] = line.substr(eq+1);
     }
-    fclose(f); UNIGUI_LOG_INFO("Config: loaded INI {} ({} keys)", path, (int)data_.size());
+    fclose(f); UNIGUI_LOG_INFO("Store: loaded INI {} ({} keys)", path, (int)data_.size());
     return true;
 }
 
-} // namespace unigui::v2
+} // namespace unigui::config

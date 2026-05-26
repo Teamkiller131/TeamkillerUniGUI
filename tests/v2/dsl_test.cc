@@ -1,7 +1,7 @@
 #include <unigui/unigui.h>
-#include <unigui/v2/dsl.h>
+#include <unigui/dsl/dsl.h>
 #include <gtest/gtest.h>
-using namespace unigui::v2::dsl;
+using namespace unigui::dsl;
 
 class DSLTest : public ::testing::Test {
 protected:

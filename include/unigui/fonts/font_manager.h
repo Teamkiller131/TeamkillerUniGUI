@@ -6,7 +6,7 @@
 #include <functional>
 #include <memory>
 
-namespace unigui::v2 {
+namespace unigui::fonts {
 
 struct FontEntry {
     std::string name;
@@ -16,9 +16,9 @@ struct FontEntry {
     std::vector<std::string> fallbacks; // fallback font names
 };
 
-class FontManager {
+class Manager {
 public:
-    static FontManager& Instance();
+    static Manager& Instance();
 
     /// Load a font from a TTF file. Returns ImFont* or nullptr.
     ImFont* Load(const std::string& name, const std::string& path, float size);
@@ -49,8 +49,8 @@ public:
     void Build();
 
 private:
-    FontManager() = default;
+    Manager() = default;
     std::unordered_map<std::string, FontEntry> fonts_;
 };
 
-} // namespace unigui::v2
+} // namespace unigui::fonts

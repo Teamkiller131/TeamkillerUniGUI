@@ -1,8 +1,8 @@
-#include <unigui/v2/network.h>
+#include <unigui/network/network.h>
 #include <unigui/core/log.h>
 #include <httplib.h>
 
-namespace unigui::v2 {
+namespace unigui::network {
 
 // ── HTTP ────────────────────────────────────────────────────────────────────
 
@@ -81,4 +81,4 @@ void WebSocketClient::OnClose(std::function<void()> cb) { onClose_ = std::move(c
 bool WebSocketClient::IsConnected() const { return ws_.getReadyState() == ix::ReadyState::Open; }
 void WebSocketClient::Disconnect() { ws_.stop(); }
 
-} // namespace unigui::v2
+} // namespace unigui::network

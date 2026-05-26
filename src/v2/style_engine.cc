@@ -1,13 +1,13 @@
-#include <unigui/v2/style_engine.h>
+#include <unigui/styling/style_engine.h>
 #include <unigui/core/log.h>
 #include <sstream>
 #include <regex>
 #include <fstream>
 #include <cstdio>
 
-namespace unigui::v2 {
+namespace unigui::styling {
 
-StyleEngine& StyleEngine::Instance() { static StyleEngine se; return se; }
+Engine& Engine::Instance() { static Engine se; return se; }
 
 int StyleRule::priority() const {
     if (!idName.empty()) return 2;
@@ -15,14 +15,14 @@ int StyleRule::priority() const {
     return 0;
 }
 
-void StyleEngine::SetVar(const std::string& name, const std::string& value) { vars_[name] = value; }
-std::string StyleEngine::GetVar(const std::string& name) const {
+void Engine::SetVar(const std::string& name, const std::string& value) { vars_[name] = value; }
+std::string Engine::GetVar(const std::string& name) const {
     auto it = vars_.find(name); return it != vars_.end() ? it->second : "";
 }
 
 // ── CSS Parser ──────────────────────────────────────────────────────────────
 
-void StyleEngine::ParseSelector(StyleRule& rule, const std::string& sel) {
+void Engine::ParseSelector(StyleRule& rule, const std::string& sel) {
     rule.selector = sel;
     std::string s = sel;
     // Extract pseudo-class :hover
@@ -38,7 +38,7 @@ void StyleEngine::ParseSelector(StyleRule& rule, const std::string& sel) {
     rule.type = s;
 }
 
-void StyleEngine::ParseRule(const std::string& block) {
+void Engine::ParseRule(const std::string& block) {
     // Split: "Window { bg: #1a1e; rounding: 6; }"
     auto brace = block.find('{');
     if (brace == std::string::npos) return;
@@ -74,7 +74,7 @@ void StyleEngine::ParseRule(const std::string& block) {
     rules_.push_back(std::move(rule));
 }
 
-int StyleEngine::Parse(const std::string& css) {
+int Engine::Parse(const std::string& css) {
     int count = 0;
     // Find all rule blocks: "Selector { ... }"
     std::regex ruleRe(R"(([^{]+)\s*\{([^}]*)\})");
@@ -89,7 +89,7 @@ int StyleEngine::Parse(const std::string& css) {
     return count;
 }
 
-int StyleEngine::LoadFile(const std::string& path) {
+int Engine::LoadFile(const std::string& path) {
     std::ifstream f(path);
     if (!f) { UNIGUI_LOG_WARN("CSS file not found: {}", path); return 0; }
     std::stringstream ss; ss << f.rdbuf();
@@ -124,11 +124,11 @@ static void ApplyProp(const std::string& key, const std::string& val) {
     if (key=="alpha")         { style.Alpha=std::stof(val); return; }
 }
 
-void StyleEngine::ApplyRule(const StyleRule& rule) {
+void Engine::ApplyRule(const StyleRule& rule) {
     for (auto& [k, v] : rule.props) ApplyProp(k, v);
 }
 
-void StyleEngine::Apply(const std::string& widgetType, const std::string& className,
+void Engine::Apply(const std::string& widgetType, const std::string& className,
                          const std::string& idName, bool hovered) {
     for (auto& rule : rules_) {
         bool match = (rule.type.empty() || rule.type == "*" || rule.type == widgetType);
@@ -141,8 +141,8 @@ void StyleEngine::Apply(const std::string& widgetType, const std::string& classN
     }
 }
 
-void StyleEngine::ApplyAll() {
+void Engine::ApplyAll() {
     for (auto& rule : rules_) ApplyRule(rule);
 }
 
-} // namespace unigui::v2
+} // namespace unigui::styling
