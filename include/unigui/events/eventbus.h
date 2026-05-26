@@ -20,6 +20,7 @@ public:
     using Handler = std::function<void(const std::any& event)>;
     using SubID = uint64_t;
 
+    ~Bus() { Shutdown(); }
     static Bus& Instance();
 
     /// Subscribe to a topic. Supports wildcards: "window.*" matches "window.close".
