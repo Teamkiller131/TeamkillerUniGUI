@@ -21,6 +21,11 @@ void Window::Render() {
     ImGuiWindowFlags flags = ImGuiWindowFlags_None;
     if (menu_bar_enabled_) flags |= ImGuiWindowFlags_MenuBar;
 
+    // Respect popup priority: don't steal input when menus are open
+    if (ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup)) {
+        flags |= ImGuiWindowFlags_NoInputs;
+    }
+
     if (ImGui::Begin(title_.c_str(), &open, flags)) {
         for (auto& panel : panels_) {
             panel->Render();
