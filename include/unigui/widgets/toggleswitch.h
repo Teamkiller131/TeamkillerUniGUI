@@ -1,5 +1,6 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
+#include <unigui/fx/animation.h>
 #include <string>
 #include <functional>
 namespace unigui {
@@ -10,5 +11,6 @@ public:
     bool IsOn() const; void SetOn(); void SetOff(); void Toggle();
     void SetOnChange(std::function<void(bool)> cb);
 private: std::string label_; bool on_; std::function<void(bool)> on_change_;
+    fx::AnimationState anim_;
 };
 }

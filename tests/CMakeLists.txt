@@ -245,5 +245,11 @@ target_link_libraries(test_animation PRIVATE GTest::gtest GTest::gtest_main unig
 target_compile_features(test_animation PRIVATE cxx_std_23)
 gtest_discover_tests(test_animation)
 
+# v3.0 effect benchmarks
+add_executable(test_effect_bench fx/bench_test.cc)
+target_link_libraries(test_effect_bench PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_effect_bench PRIVATE cxx_std_23)
+gtest_discover_tests(test_effect_bench)
+
 # v3.0 effect scope tests — manual-only (needs GL context)
 # add_executable(test_effect_scope fx/effect_scope_test.cc)
