@@ -14,7 +14,7 @@ enum class ThemePreset {
 struct ThemeConfig {
     ThemePreset preset = ThemePreset::Dark;
     float dpi_scale = 0.0f;  // 0 = auto-detect from system DPI
-    float font_size = 24.0f; // base font size in logical pixels (scaled by DPI)
+    float font_size = 16.0f; // logical px at 96 DPI (scaled by auto-DPI)
     const char* font_path = nullptr; // nullptr = auto-detect system CJK font
 };
 
