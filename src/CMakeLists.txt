@@ -2,29 +2,26 @@
 add_library(unigui "")
 add_library(unigui::unigui ALIAS unigui)
 
-# Respect global BUILD_SHARED_LIBS
 set_target_properties(unigui PROPERTIES
     CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )
 
-# ── Export header (DLL import/export macros) ─────────────────────────────────
+# ── Export header ─────────────────────────────────────────────────────────────
 include(GenerateExportHeader)
 generate_export_header(unigui
     EXPORT_MACRO_NAME UNIGUI_API
     EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/unigui_export.h
 )
 
-# ── Dependencies (vcpkg) ─────────────────────────────────────────────────────
+# ── Dependencies (always) ─────────────────────────────────────────────────────
 find_package(imgui CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(implot CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-find_package(SQLite3 REQUIRED)
-find_package(ZeroMQ REQUIRED)
 
 set(UNIGUI_LIBS
     imgui::imgui
@@ -33,9 +30,19 @@ set(UNIGUI_LIBS
     glad::glad
     Freetype::Freetype
     spdlog::spdlog
-    SQLite::SQLite3
-    libzmq
 )
+
+# ── Optional module deps ──────────────────────────────────────────────────────
+if(UNIGUI_MODULE_SQLITE)
+    find_package(SQLite3 REQUIRED)
+    list(APPEND UNIGUI_LIBS SQLite::SQLite3)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_SQLITE)
+endif()
+if(UNIGUI_MODULE_IPC)
+    find_package(ZeroMQ REQUIRED)
+    list(APPEND UNIGUI_LIBS libzmq)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_IPC)
+endif()
 
 # ── SDL3 + Vulkan (conditional) ───────────────────────────────────────────────
 if(UNIGUI_BACKEND STREQUAL "SDL3_VULKAN")
@@ -48,19 +55,27 @@ else()
     message(STATUS "Building with GLFW + OpenGL3 backend")
 endif()
 
-# ── DX11 + DX12 (Windows only, always available via vcpkg) ────────────────────
+# ── DX11 + DX12 (Windows, optional) ───────────────────────────────────────────
 if(WIN32)
-    list(APPEND UNIGUI_LIBS d3d11 d3dcompiler dxgi dxguid d3d12)
-    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DX11)
-    if(UNIGUI_BACKEND STREQUAL "DX12")
-        target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DX12)
+    if(UNIGUI_BACKEND_DX11)
+        list(APPEND UNIGUI_LIBS d3d11 d3dcompiler dxgi dxguid)
+        target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DX11)
+        message(STATUS "DX11 backend enabled")
     endif()
-    message(STATUS "DX11 + DX12 backends available")
+    if(UNIGUI_BACKEND_DX12)
+        list(APPEND UNIGUI_LIBS d3d12)
+        target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DX12)
+        message(STATUS "DX12 backend enabled")
+    endif()
 endif()
 
 target_link_libraries(unigui PUBLIC ${UNIGUI_LIBS})
 
-# ── Sources (added incrementally per task) ───────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# Sources — conditional per module
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Core sources (always compiled) ────────────────────────────────────────────
 target_sources(unigui PRIVATE
     unigui.cc
     core/context.cc
@@ -73,6 +88,8 @@ target_sources(unigui PRIVATE
     backend/backend_registry.cc
     theme/theme.cc
     theme/style_scope.cc
+    app/app.cc
+    # Core widgets — fundamental UI primitives
     widgets/widget_base.cc
     widgets/label.cc
     widgets/button.cc
@@ -86,55 +103,94 @@ target_sources(unigui PRIVATE
     widgets/lineedit.cc
     widgets/groupbox.cc
     widgets/tabwidget.cc
-    widgets/treeview.cc
-    widgets/listview.cc
+    widgets/separator.cc
+    widgets/scrollarea.cc
     widgets/dialog.cc
     widgets/menubar.cc
     widgets/statusbar.cc
     widgets/toolbar.cc
-    widgets/table.cc
-    widgets/colorpicker.cc
-    widgets/filepath.cc
-    widgets/dirpath.cc
-    widgets/toggleswitch.cc
-    widgets/inputint.cc
-    widgets/inputfloat.cc
-    widgets/splitter.cc
-    widgets/separator.cc
-    widgets/scrollarea.cc
-    widgets/datepicker.cc
-    widgets/image.cc
-    widgets/loadingindicator.cc
-    widgets/notification.cc
-    widgets/hyperlink.cc
-    widgets/tag.cc
-    widgets/breadcrumb.cc
-    widgets/multiline.cc
-    widgets/iconbutton.cc
-    widgets/space.cc
-    widgets/richtext.cc
-    widgets/imagebutton.cc
-    widgets/markdown.cc
-    widgets/virtuallist.cc
-    widgets/multicombo.cc
-    widgets/propertygrid.cc
-    widgets/searchbox.cc
-    widgets/toast.cc
-    widgets/trayicon.cc
-    widgets/passwordinput.cc
-    widgets/wizard.cc
-    app/app.cc
-    v2/plugin_manager.cc
-    v2/dsl.cc
-    v2/eventbus.cc
-    v2/style_engine.cc
-    v2/font_manager.cc
-    v2/config.cc
-    v2/database.cc
-    v2/shmem.cc
 )
 
-# ── SDL3 + Vulkan sources (conditional) ───────────────────────────────────────
+# ── Extended widgets (UNIGUI_MODULE_WIDGETS) ──────────────────────────────────
+if(UNIGUI_MODULE_WIDGETS)
+    target_sources(unigui PRIVATE
+        widgets/treeview.cc
+        widgets/listview.cc
+        widgets/table.cc
+        widgets/colorpicker.cc
+        widgets/filepath.cc
+        widgets/dirpath.cc
+        widgets/toggleswitch.cc
+        widgets/inputint.cc
+        widgets/inputfloat.cc
+        widgets/splitter.cc
+        widgets/datepicker.cc
+        widgets/image.cc
+        widgets/loadingindicator.cc
+        widgets/notification.cc
+        widgets/hyperlink.cc
+        widgets/tag.cc
+        widgets/breadcrumb.cc
+        widgets/multiline.cc
+        widgets/iconbutton.cc
+        widgets/space.cc
+        widgets/richtext.cc
+        widgets/imagebutton.cc
+        widgets/markdown.cc
+        widgets/virtuallist.cc
+        widgets/multicombo.cc
+        widgets/propertygrid.cc
+        widgets/searchbox.cc
+        widgets/toast.cc
+        widgets/trayicon.cc
+        widgets/passwordinput.cc
+        widgets/wizard.cc
+    )
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)
+    message(STATUS "Extended widgets enabled")
+endif()
+
+# ── v2 modules (optional) ─────────────────────────────────────────────────────
+if(UNIGUI_MODULE_DSL)
+    target_sources(unigui PRIVATE v2/dsl.cc)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DSL)
+    message(STATUS "DSL module enabled")
+endif()
+if(UNIGUI_MODULE_STYLING)
+    target_sources(unigui PRIVATE v2/style_engine.cc)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_STYLING)
+    message(STATUS "Styling module enabled")
+endif()
+if(UNIGUI_MODULE_FONTS)
+    target_sources(unigui PRIVATE v2/font_manager.cc)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_FONTS)
+    message(STATUS "Font manager enabled")
+endif()
+if(UNIGUI_MODULE_EVENTS)
+    target_sources(unigui PRIVATE v2/eventbus.cc)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_EVENTS)
+    message(STATUS "EventBus enabled")
+endif()
+if(UNIGUI_MODULE_PLUGIN)
+    target_sources(unigui PRIVATE v2/plugin_manager.cc)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_PLUGIN)
+    message(STATUS "Plugin system enabled")
+endif()
+if(UNIGUI_MODULE_SQLITE)
+    target_sources(unigui PRIVATE v2/database.cc)
+    message(STATUS "SQLite module enabled")
+endif()
+if(UNIGUI_MODULE_CONFIG)
+    target_sources(unigui PRIVATE v2/config.cc)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_CONFIG)
+    message(STATUS "Config module enabled")
+endif()
+if(UNIGUI_MODULE_IPC)
+    target_sources(unigui PRIVATE v2/shmem.cc)
+    message(STATUS "IPC module enabled")
+endif()
+
+# ── Backend sources ───────────────────────────────────────────────────────────
 if(UNIGUI_BACKEND STREQUAL "SDL3_VULKAN")
     target_sources(unigui PRIVATE
         backend/sdl3_platform.cc
@@ -147,16 +203,16 @@ if(UNIGUI_BACKEND STREQUAL "SDL3_VULKAN")
     )
 endif()
 
-# ── DX11 + Metal (Windows) ──────────────────────────────────────────────────
 if(WIN32)
     target_sources(unigui PRIVATE
-    backend/dx11_renderer.cc
-    backend/metal_renderer.cc
-    backend/webgpu_renderer.cc
-    backend/emscripten_platform.cc
-)
-    # DX12 only when explicitly requested
-    if(UNIGUI_BACKEND STREQUAL "DX12")
+        backend/metal_renderer.cc
+        backend/webgpu_renderer.cc
+        backend/emscripten_platform.cc
+    )
+    if(UNIGUI_BACKEND_DX11)
+        target_sources(unigui PRIVATE backend/dx11_renderer.cc)
+    endif()
+    if(UNIGUI_BACKEND_DX12)
         target_sources(unigui PRIVATE backend/dx12_renderer.cc)
     endif()
 endif()
