@@ -112,9 +112,6 @@ bool NewFrame(){
     if(g_backend==BackendType::DX11)ImGui_ImplDX11_NewFrame();
 #endif
     g_platform->NewFrame();ImGui::NewFrame();
-#ifdef UNIGUI_HAS_WIDGETS
-    unigui::Toast::Instance().Render();
-#endif
     // Check for window resize (DX11 needs swapchain resize)
     if (g_backend == BackendType::DX11) {
         int cw = 0, ch = 0;
@@ -134,6 +131,9 @@ bool NewFrame(){
 
 void Render(){
     if(!g_initialized)return;
+#ifdef UNIGUI_HAS_WIDGETS
+    unigui::Toast::Instance().Render();
+#endif
     ImGui::Render();ImDrawData* dd=ImGui::GetDrawData();
     if(g_backend==BackendType::GLFW_GL3){g_renderer->SetClearColor(0.10f,0.10f,0.12f,1.0f);glClear(GL_COLOR_BUFFER_BIT);}
     g_renderer->RenderDrawData(dd);
