@@ -1,6 +1,8 @@
 #include <unigui/widgets/window.h>
 #include <unigui/core/log.h>
 #include <imgui.h>
+#include <vector>
+#include <string>
 
 namespace unigui {
 
@@ -27,6 +29,26 @@ void Window::Render() {
     }
 
     if (ImGui::Begin(title_.c_str(), &open, flags)) {
+        // v1.6: file drag-drop support
+        if (onDrop_ && ImGui::BeginDragDropTarget()) {
+            if (auto* payload = ImGui::AcceptDragDropPayload("FILES")) {
+                std::vector<std::string> files;
+                // ImGui doesn't parse file paths from drag-drop natively
+                // Windows: files come as null-separated list
+                const char* data = (const char*)payload->Data;
+                int size = payload->DataSize;
+                std::string current;
+                for (int i = 0; i < size; i++) {
+                    if (data[i] == '\0') {
+                        if (!current.empty()) { files.push_back(current); current.clear(); }
+                    } else {
+                        current += data[i];
+                    }
+                }
+                if (!files.empty()) onDrop_(files);
+            }
+            ImGui::EndDragDropTarget();
+        }
         for (auto& panel : panels_) {
             panel->Render();
         }
