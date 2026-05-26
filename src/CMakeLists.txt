@@ -190,6 +190,9 @@ if(UNIGUI_MODULE_IPC)
     message(STATUS "IPC module enabled")
 endif()
 
+# ── fx effects (core — always compiled) ─────────────────────────────────────
+target_sources(unigui PRIVATE fx/effect_scope.cc)
+
 # ── Backend sources ───────────────────────────────────────────────────────────
 if(UNIGUI_BACKEND STREQUAL "SDL3_VULKAN")
     target_sources(unigui PRIVATE
