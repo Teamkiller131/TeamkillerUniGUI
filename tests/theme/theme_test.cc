@@ -67,11 +67,12 @@ TEST_F(ThemeTest, DarkTheme_SetsAllColorsDifferFromDefault) {
 }
 
 TEST_F(ThemeTest, DPI_Scaling_SetsFontGlobalScale) {
-    unigui::ApplyTheme({unigui::ThemePreset::Dark, 2.0f});
-    EXPECT_FLOAT_EQ(ImGui::GetIO().FontGlobalScale, 2.0f);
+    unigui::ApplyTheme({unigui::ThemePreset::Dark, 2.0f, 18.0f});
+    // DPI is now applied via style.ScaleAllSizes() — verify style is scaled
+    EXPECT_FLOAT_EQ(ImGui::GetStyle().ItemSpacing.x, 16.0f); // 8.0 * 2.0
 }
 
 TEST_F(ThemeTest, DPI_Scaling_DefaultIsOne) {
-    unigui::ApplyTheme({unigui::ThemePreset::Dark});
-    EXPECT_FLOAT_EQ(ImGui::GetIO().FontGlobalScale, 1.0f);
+    unigui::ApplyTheme({unigui::ThemePreset::Dark, 1.0f, 18.0f});
+    EXPECT_FLOAT_EQ(ImGui::GetStyle().ItemSpacing.x, 8.0f); // default, no scale
 }
