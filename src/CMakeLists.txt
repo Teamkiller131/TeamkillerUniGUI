@@ -219,13 +219,18 @@ if(WIN32)
         backend/metal_renderer.cc
         backend/webgpu_renderer.cc
         backend/emscripten_platform.cc
+        backend/dx11_renderer.cc
     )
-    if(UNIGUI_BACKEND_DX11)
-        target_sources(unigui PRIVATE backend/dx11_renderer.cc)
-    endif()
     if(UNIGUI_BACKEND_DX12)
         target_sources(unigui PRIVATE backend/dx12_renderer.cc)
     endif()
+else()
+    # Linux/macOS: include stubs needed by backend_factory.h
+    target_sources(unigui PRIVATE
+        backend/webgpu_renderer.cc
+        backend/emscripten_platform.cc
+        backend/metal_renderer.cc
+    )
 endif()
 
 # ── Include directories ──────────────────────────────────────────────────────
