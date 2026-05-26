@@ -149,6 +149,7 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/shimmer.cc
         widgets/badge.cc
         widgets/skeleton.cc
+        widgets/herosection.cc
         fonts/gradient_text.cc
     )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)

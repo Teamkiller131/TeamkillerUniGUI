@@ -4,6 +4,15 @@
 
 namespace unigui {
 
+class ShadowConfig {
+public:
+    bool enabled = false;
+    float radius = 4.f;
+    float offX = 2.f, offY = 2.f;
+    ImU32 color = IM_COL32(0, 0, 0, 80);
+    int samples = 3;
+};
+
 class Widget {
 public:
     explicit Widget(std::string name);
@@ -16,6 +25,11 @@ public:
     void SetAccessibleName(std::string n); void SetAccessibleDescription(std::string d);
     virtual void SetMinSize(float w,float h); virtual void SetMaxSize(float w,float h);
     ImVec2 GetMinSize()const{return minSize_;} ImVec2 GetMaxSize()const{return maxSize_;}
+    // ── v3.0 Shadow ────────────────────────────────────────────────────
+    void SetShadow(bool enable, float radius = 4.f, float offX = 2.f, float offY = 2.f);
+    const ShadowConfig& GetShadowConfig() const { return shadow_; }
+protected:
+    ShadowConfig shadow_;
 private:
     std::string name_,tooltip_,accessibleName_,accessibleDesc_;
     bool visible_=true,focused_=false;

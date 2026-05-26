@@ -28,7 +28,9 @@ public:
 
     /// Apply matching rules to the ImGui style system.
     void Apply(const std::string& widgetType, const std::string& className = "",
-               const std::string& idName = "", bool hovered = false);
+               const std::string& idName = "", bool hovered = false,
+               bool active = false, bool focused = false, bool disabled = false,
+               int childIndex = -1);
 
     /// Apply all loaded rules globally.
     void ApplyAll();

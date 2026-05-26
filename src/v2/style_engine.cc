@@ -203,8 +203,45 @@ static void ApplyProp(const std::string& key, const std::string& val) {
     if (key=="display-scale") { /* responsive hint */ return; }
 
     // ── Transition / animation hints (theme-driven) ────────────────────
-    if (key=="transition") { return; }    // parsed dynamically by widgets
-    if (key=="animation")  { return; }    // parsed dynamically by widgets
+    if (key=="transition") { return; }
+    if (key=="animation")  { return; }
+
+    // ── Gradient ───────────────────────────────────────────────────────
+    if (key=="bg-gradient" || key=="gradient") {
+        // Format: "linear-gradient(90deg, #ff0000, #0000ff)"
+        //         "linear-gradient(to right, #e94560, #0f3460)"
+        std::string v = val;
+        // Strip "linear-gradient(" prefix if present
+        auto lp = v.find("linear-gradient(");
+        if (lp != std::string::npos) v = v.substr(lp + 16);
+        auto rp = v.find(')');
+        if (rp != std::string::npos) v = v.substr(0, rp);
+
+        // Parse direction: "90deg" or "to bottom"
+        float angle = 0.f;
+        bool horiz = true;
+        if (v.find("deg") != std::string::npos) {
+            angle = std::stof(v.substr(0, v.find("deg")));
+            horiz = (angle < 45.f || angle > 315.f || (angle > 135.f && angle < 225.f));
+        } else if (v.find("to right") != std::string::npos ||
+                   v.find("to left") != std::string::npos) {
+            horiz = true;
+        } else if (v.find("to bottom") != std::string::npos ||
+                   v.find("to top") != std::string::npos) {
+            horiz = false;
+        }
+
+        // Extract colors: "#rrggbb" or "#rrggbbaa"
+        std::string colors_s = v.substr(v.find('#'));
+        unsigned int c1r=0,c1g=0,c1b=0,c2r=0,c2g=0,c2b=0;
+        int n = sscanf(colors_s.c_str(), "#%02x%02x%02x %*[, ] #%02x%02x%02x",
+                       &c1r,&c1g,&c1b,&c2r,&c2g,&c2b);
+        if (n >= 6) {
+            // Store gradient info as style hint
+            style.WindowRounding = style.WindowRounding; // no-op placeholder
+        }
+        return;
+    }
 }
 
 void Engine::ApplyRule(const StyleRule& rule) {
@@ -212,13 +249,21 @@ void Engine::ApplyRule(const StyleRule& rule) {
 }
 
 void Engine::Apply(const std::string& widgetType, const std::string& className,
-                         const std::string& idName, bool hovered) {
+                         const std::string& idName, bool hovered,
+                         bool active, bool focused, bool disabled,
+                         int index) {
     for (auto& rule : rules_) {
         bool match = (rule.type.empty() || rule.type == "*" || rule.type == widgetType);
         if (match && !className.empty() && rule.className != className) match = false;
         if (match && !idName.empty() && rule.idName != idName) match = false;
         if (match && !rule.pseudoClass.empty()) {
-            if (rule.pseudoClass == "hover" && !hovered) match = false;
+            if (rule.pseudoClass == "hover"    && !hovered)   match = false;
+            if (rule.pseudoClass == "active"   && !active)    match = false;
+            if (rule.pseudoClass == "focus"    && !focused)   match = false;
+            if (rule.pseudoClass == "disabled" && !disabled)  match = false;
+            if (rule.pseudoClass == "first-child" && index != 0)     match = false;
+            if (rule.pseudoClass == "last-child")  match = false;     // requires context
+            if (rule.pseudoClass == "checked")      match = false;    // per-widget
         }
         if (match) ApplyRule(rule);
     }

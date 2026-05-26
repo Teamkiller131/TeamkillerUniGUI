@@ -25,5 +25,10 @@ void Widget::SetAccessibleName(std::string name) { accessibleName_ = std::move(n
 void Widget::SetAccessibleDescription(std::string desc) { accessibleDesc_ = std::move(desc); }
 void Widget::SetMinSize(float w, float h) { minSize_ = ImVec2(w, h); }
 void Widget::SetMaxSize(float w, float h) { maxSize_ = ImVec2(w, h); }
+void Widget::SetShadow(bool enable, float radius, float offX, float offY) {
+    shadow_.enabled = enable;
+    if (radius > 0) shadow_.radius = radius;
+    shadow_.offX = offX; shadow_.offY = offY;
+}
 
 } // namespace unigui

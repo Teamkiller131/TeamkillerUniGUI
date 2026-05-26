@@ -1,5 +1,6 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
+#include <unigui/fx/animation.h>
 #include <string>
 
 namespace unigui {
@@ -16,5 +17,6 @@ private:
     float fraction_;
     State state_ = Normal;
     std::string overlay_;
+    fx::AnimationState anim_;
 };
 }
