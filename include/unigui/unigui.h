@@ -76,6 +76,7 @@
 #include <unigui/v2/style_engine.h>
 #include <unigui/v2/font_manager.h>
 #include <unigui/v2/config.h>
+#include <unigui/v2/database.h>
 #include <unigui/widgets/virtuallist.h>
 #include <unigui/widgets/multicombo.h>
 #include <unigui/widgets/propertygrid.h>

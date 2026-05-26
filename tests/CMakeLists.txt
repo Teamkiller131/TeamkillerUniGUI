@@ -191,3 +191,8 @@ add_executable(test_config v2/config_test.cc)
 target_link_libraries(test_config PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_config PRIVATE cxx_std_23)
 gtest_discover_tests(test_config)
+
+add_executable(test_database v2/database_test.cc)
+target_link_libraries(test_database PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_database PRIVATE cxx_std_23)
+gtest_discover_tests(test_database)
