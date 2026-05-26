@@ -79,32 +79,96 @@ void Engine::ParseRule(const std::string& block) {
 int Engine::Parse(const std::string& css) {
     int count = 0;
 
-    // ── @media blocks ────────────────────────────────────────────────────
-    // Format: @media (min-width: 800px) { ... }
-    std::regex mediaRe(R"(@media\s*\(([^)]+)\)\s*\{)");
-    std::smatch mm;
-    auto mStart = css.cbegin();
-
-    // Find all rule blocks: "Selector { ... }"
+    // Find all rule blocks: "@media (cond) { Rule { ... } }" or "Selector { ... }"
     std::regex ruleRe(R"(([^{]+)\s*\{([^}]*)\})");
     std::smatch m;
     auto start = css.cbegin();
     while (std::regex_search(start, css.cend(), m, ruleRe)) {
         std::string full = m[0].str();
-        // Check if preceded by @media
-        bool isMedia = false;
-        if (full.find("@media") != std::string::npos) {
-            isMedia = true;
-        }
-        if (!isMedia) {
+
+        // @media blocks
+        auto mediaPos = full.find("@media");
+        if (mediaPos != std::string::npos) {
+            // Extract condition: "@media (min-width: 800px) { ... }"
+            auto condStart = full.find('(');
+            auto condEnd   = full.find(')');
+            if (condStart != std::string::npos && condEnd != std::string::npos) {
+                std::string cond = full.substr(condStart + 1, condEnd - condStart - 1);
+                MediaRule mr;
+                mr.condition = cond;
+
+                // Parse inner rules (between outer { })
+                auto innerStart = full.find('{');
+                auto innerEnd   = full.rfind('}');
+                if (innerStart != std::string::npos && innerEnd != std::string::npos) {
+                    std::string inner = full.substr(innerStart + 1, innerEnd - innerStart - 1);
+                    std::regex innerRe(R"(([^{]+)\s*\{([^}]*)\})");
+                    std::smatch im;
+                    auto is = inner.cbegin();
+                    while (std::regex_search(is, inner.cend(), im, innerRe)) {
+                        StyleRule rule;
+                        ParseSelector(rule, im[1].str());
+                        // Parse properties
+                        std::regex propRe(R"(([\w-]+)\s*:\s*([^;]+)\s*;?)");
+                        std::smatch pm;
+                        auto ps = im[2].str().cbegin();
+                        while (std::regex_search(ps, im[2].str().cend(), pm, propRe)) {
+                            std::string val = pm[2].str();
+                            if (!val.empty() && val[0] == '$')
+                                val = GetVar(val.substr(1));
+                            rule.props[pm[1].str()] = val;
+                            ps = pm.suffix().first;
+                        }
+                        mr.rules.push_back(std::move(rule));
+                        is = im.suffix().first;
+                    }
+                }
+                mediaRules_.push_back(std::move(mr));
+                count += (int)mediaRules_.back().rules.size();
+            }
+        } else {
             ParseRule(full);
             count++;
         }
         start = m.suffix().first;
     }
 
-    UNIGUI_LOG_INFO("CSS: {} rules parsed", count);
+    UNIGUI_LOG_INFO("CSS: {} rules parsed, {} @media blocks", count, (int)mediaRules_.size());
     return count;
+}
+
+void Engine::EvaluateMedia(float viewWidth, float viewHeight, bool darkMode) {
+    for (auto& mr : mediaRules_) {
+        bool match = false;
+
+        // Parse condition
+        if (mr.condition.find("min-width") != std::string::npos) {
+            auto colon = mr.condition.find(':');
+            if (colon != std::string::npos) {
+                float val = std::stof(mr.condition.substr(colon + 1));
+                match = (viewWidth >= val);
+            }
+        } else if (mr.condition.find("max-width") != std::string::npos) {
+            auto colon = mr.condition.find(':');
+            if (colon != std::string::npos) {
+                float val = std::stof(mr.condition.substr(colon + 1));
+                match = (viewWidth <= val);
+            }
+        } else if (mr.condition.find("min-height") != std::string::npos) {
+            auto colon = mr.condition.find(':');
+            if (colon != std::string::npos) {
+                float val = std::stof(mr.condition.substr(colon + 1));
+                match = (viewHeight >= val);
+            }
+        } else if (mr.condition.find("prefers-color-scheme") != std::string::npos) {
+            bool wantsDark = mr.condition.find("dark") != std::string::npos;
+            match = (darkMode == wantsDark);
+        }
+
+        if (match) {
+            for (auto& rule : mr.rules) ApplyRule(rule);
+        }
+    }
 }
 
 int Engine::LoadFile(const std::string& path) {

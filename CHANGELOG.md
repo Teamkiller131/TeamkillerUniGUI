@@ -1,5 +1,45 @@
 # Changelog
 
+## v3.1.0 (unreleased) — Stability
+
+### Fixed
+- **EventBus exit crash**: `~Bus()` destructor now calls `Shutdown()` to join worker thread (244/244 tests pass)
+- **Toast triple-bug fix**: double-animation (2x Update per frame), `Hide()` deadlock, z-order burying via per-message windows + `BringWindowToDisplayFront`
+- **CSS @media** now fully evaluates `min-width`/`max-width`/`min-height`/`prefers-color-scheme`
+
+### Changed
+- Toast renders in `Render()` (not `NewFrame()`) for guaranteed top z-order
+
+## v3.0.0 (2026-05-26) — UI Beautification
+
+### Added
+- **fx/easing**: 10 easing curves (linear, quad, cubic, expo, elastic, bounce) + CSS aliases + `ParseEasing()`
+- **fx/effects**: `ShadowEffect` (multi-pass blur), `GlowEffect` (radial rings), `BlurEffect` (glass morphism), `GradientBrush` (horizontal/vertical/multi-stop), `Effects` factory
+- **fx/animation**: `AnimationState` with Play/Stop/Loop/PingPong/`onComplete`, `AnimationManager` singleton
+- **fx/transition**: `Fade`, `SlideIn`, `Scale`, `CrossFade`, `PageSwitch`, `Appear`, `Disappear` (header-only)
+- **CSS Engine v2**: 16 → 70 properties, `linear-gradient()` parser, `transition` shorthand, `:active`/`:focus`/`:disabled`/`:first-child` pseudo-classes, `@media` block detection
+- **10 built-in themes**: Material Dark/Light, Fluent Dark/Light, Dracula, Nord, Gruvbox, Catppuccin Mocha, Solarized Dark/Light, TokyoNight, OneDark, Everforest
+- **ThemeRegistry**: `Register`/`Get`/`List`/`Apply` + `RegisterAllThemes()` auto-init
+- **New widgets**: `Card` (Elevated/Outlined/Filled), `Shimmer` (animated sweep), `Badge` (Dot/Count/Label), `SkeletonScreen` (placeholder blocks), `HeroSection` (gradient banner + CTA), `GradientText` (per-char interpolation)
+- **Widget polish**: Button animated hover, Toast eased fade-in, ProgressBar animated fill, ToggleSwitch alpha pulse, TabWidget crossfade, Panel shadow via `WidgetBase::SetShadow()`
+- **Demos**: `v3_overview` (all features), `theme_demo` (auto-cycle), `widget_gallery` updated
+
+### Changed
+- `Toast` now renders in `Render()` (on top of all windows), per-message independent ImGui windows
+
+## v2.9.0 (2026-05-26) — De-v2 Namespace
+
+### Breaking
+- **All `v2::` namespace removed**: `unigui::v2::EventBus` → `unigui::events::Bus`, etc.
+- Headers moved: `include/unigui/v2/*` → `include/unigui/<module>/*`
+
+## v2.8.0 (2026-05-26) — Modular CMake
+
+### Added
+- 20 configurable modules via `-DUNIGUI_MODULE_*=ON/OFF`
+- 3 presets: recommended (default), minimal (~200 targets), full (~470 targets)
+- Conditional deps: SQLite3, ZeroMQ
+
 ## v1.10.0 (2026-05-26) — TrayIcon Polish
 
 ### Added

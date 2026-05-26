@@ -17,6 +17,11 @@ struct StyleRule {
     int priority() const;     // 0=type, 1=class, 2=id
 };
 
+struct MediaRule {
+    std::string condition;     // "min-width: 800px" or "prefers-color-scheme: dark"
+    std::vector<StyleRule> rules;
+};
+
 class Engine {
 public:
     static Engine& Instance();
@@ -39,9 +44,13 @@ public:
     void SetVar(const std::string& name, const std::string& value);
     std::string GetVar(const std::string& name) const;
 
+    /// Evaluate @media rules against current viewport/view preferences.
+    void EvaluateMedia(float viewWidth, float viewHeight, bool darkMode = true);
+
 private:
     Engine() = default;
     std::vector<StyleRule> rules_;
+    std::vector<MediaRule> mediaRules_;
     std::unordered_map<std::string, std::string> vars_;
     void ParseRule(const std::string& block);
     void ParseSelector(StyleRule& rule, const std::string& sel);
