@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.2.0 (2026-05-26) — Widget Ecosystem
+
+### Added
+- **VirtualList**: Virtual scrolling list widget using ImGuiListClipper. Handles 100k+ entries.
+  API: `SetItemCount()`, `SetItemGetter()`, `SetOnSelect()`.
+- **MultiCombo**: Multi-select combo box with checkboxes. API: `GetSelectedIndices()`, `SetSelectedIndices()`, `GetPreview()`.
+- **PropertyGrid**: Property editing panel (Bool/Int/Float/String/Combo types). Two-column table with inline editors. API: `AddProperty()`, `SetOnChange()`.
+- **SearchBox**: Search input with filtered dropdown suggestions. API: `SetItems()`, `GetQuery()`, `GetMatches()`, `SetOnSelect()`.
+- **Toast**: Singleton notification popup system. API: `Toast::Info()`, `Toast::Success()`, `Toast::Warn()`, `Toast::Error()`.
+- **PasswordInput**: Password field with show/hide toggle + strength indicator. API: `GetStrengthScore()`.
+- **Wizard**: Multi-step wizard with Next/Previous/Finish/Cancel navigation. API: `AddStep()`, `Next()`, `Previous()`.
+
+### Changed
+- Test count: 186 → 200 (+14 tests for new widgets)
+- Version: 1.1.0 → 1.2.0
+
 ## v1.1.0 (2026-05-26) — Embedded Fonts
 
 ### Added

@@ -107,6 +107,13 @@ target_sources(unigui PRIVATE
     widgets/richtext.cc
     widgets/imagebutton.cc
     widgets/markdown.cc
+    widgets/virtuallist.cc
+    widgets/multicombo.cc
+    widgets/propertygrid.cc
+    widgets/searchbox.cc
+    widgets/toast.cc
+    widgets/passwordinput.cc
+    widgets/wizard.cc
     app/app.cc
 )
 
