@@ -26,6 +26,7 @@ find_package(spdlog CONFIG REQUIRED)
 
 set(UNIGUI_LIBS
     imgui::imgui
+    implot::implot
     glfw
     glad::glad
     Freetype::Freetype
@@ -46,7 +47,10 @@ endif()
 # ── DX11 + DX12 (Windows only, always available via vcpkg) ────────────────────
 if(WIN32)
     list(APPEND UNIGUI_LIBS d3d11 d3dcompiler dxgi dxguid d3d12)
-    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DX11 UNIGUI_HAS_DX12)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DX11)
+    if(UNIGUI_BACKEND STREQUAL "DX12")
+        target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DX12)
+    endif()
     message(STATUS "DX11 + DX12 backends available")
 endif()
 
@@ -135,10 +139,13 @@ if(WIN32)
     target_sources(unigui PRIVATE
     backend/dx11_renderer.cc
     backend/metal_renderer.cc
-    backend/dx12_renderer.cc
     backend/webgpu_renderer.cc
     backend/emscripten_platform.cc
 )
+    # DX12 only when explicitly requested
+    if(UNIGUI_BACKEND STREQUAL "DX12")
+        target_sources(unigui PRIVATE backend/dx12_renderer.cc)
+    endif()
 endif()
 
 # ── Include directories ──────────────────────────────────────────────────────

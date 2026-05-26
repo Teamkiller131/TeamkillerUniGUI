@@ -1,5 +1,13 @@
 #pragma once
 
+#ifdef _WIN32
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <windows.h>
+    #define GLFW_EXPOSE_NATIVE_WIN32
+#endif
+
 #include <unigui/core/version.h>
 #include <unigui/core/context.h>
 #include <unigui/core/error.h>

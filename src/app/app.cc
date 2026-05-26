@@ -5,6 +5,7 @@
 #include <unigui/core/settings.h>
 #include <glad/glad.h>
 #include <imgui.h>
+#include <implot.h>
 #include <cstdio>
 #ifdef UNIGUI_HAS_DX11
 #include <unigui/backend/dx11_renderer.h>
@@ -23,6 +24,7 @@ static std::unique_ptr<RendererBackend> g_renderer;
 bool Init(const AppConfig& config){
     if(g_initialized)return false;
     InitLogging("debug");
+    ImPlot::CreateContext();
 
     IMGUI_CHECKVERSION(); ImGui::CreateContext();
 
@@ -85,7 +87,7 @@ bool Init(const AppConfig& config){
     return true;
 }
 
-void Shutdown(){if(!g_initialized)return;if(g_renderer){g_renderer->Shutdown();g_renderer.reset();}if(g_platform){g_platform->Shutdown();g_platform.reset();}Settings::Shutdown();g_initialized=false;}
+void Shutdown(){if(!g_initialized)return;if(g_renderer){g_renderer->Shutdown();g_renderer.reset();}if(g_platform){g_platform->Shutdown();g_platform.reset();}ImPlot::DestroyContext();Settings::Shutdown();g_initialized=false;}
 
 bool NewFrame(){
     if(!g_initialized)return false;

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.5.0 (2026-05-26) — User Feedback Fixes
+- ImPlot::CreateContext/DestroyContext auto-managed in Init/Shutdown
+- DX12 renderer only compiled when UNIGUI_BACKEND=DX12
+- GLFW_EXPOSE_NATIVE_WIN32 handled internally (no user setup needed)
+- GetNativeWindowHandle() unified cross-platform API
+
 ## v1.4.0 (2026-05-26) — i18n & Settings
 
 ### Added

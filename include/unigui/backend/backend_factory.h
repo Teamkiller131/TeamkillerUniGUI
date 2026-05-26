@@ -27,7 +27,9 @@ std::unique_ptr<RendererBackend> CreateDX11Renderer();
 std::unique_ptr<RendererBackend> CreateMetalRenderer();
 
 /// Creates a DX12 renderer backend (Windows only).
+#ifdef UNIGUI_HAS_DX12
 std::unique_ptr<RendererBackend> CreateDX12Renderer();
+#endif
 
 /// Creates a WebGPU renderer backend.
 std::unique_ptr<RendererBackend> CreateWebGPURenderer();
