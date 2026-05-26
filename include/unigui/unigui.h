@@ -59,4 +59,11 @@
 #include <unigui/widgets/dragdrop.h>
 #include <unigui/widgets/shortcut.h>
 #include <unigui/ext/plot.h>
+#include <unigui/widgets/virtuallist.h>
+#include <unigui/widgets/multicombo.h>
+#include <unigui/widgets/propertygrid.h>
+#include <unigui/widgets/searchbox.h>
+#include <unigui/widgets/toast.h>
+#include <unigui/widgets/passwordinput.h>
+#include <unigui/widgets/wizard.h>
 #include <unigui/app/app.h>
