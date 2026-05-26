@@ -69,6 +69,17 @@ if(WIN32)
     endif()
 endif()
 
+# ── macOS-specific: Objective-C++ flags for Metal backend ──────────────────────
+if(APPLE)
+    set_source_files_properties(backend/metal_renderer.cc PROPERTIES
+        COMPILE_FLAGS "-x objective-c++ -fobjc-arc")
+    find_library(METAL_LIBRARY Metal REQUIRED)
+    find_library(QUARTZCORE_LIBRARY QuartzCore REQUIRED)
+    list(APPEND UNIGUI_LIBS ${METAL_LIBRARY} ${QUARTZCORE_LIBRARY})
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_METAL)
+    message(STATUS "Metal backend enabled (macOS)")
+endif()
+
 target_link_libraries(unigui PUBLIC ${UNIGUI_LIBS})
 
 # ═══════════════════════════════════════════════════════════════════════════════
