@@ -1,6 +1,7 @@
 #include <unigui/app/app.h>
 #include <unigui/backend/backend_factory.h>
 #include <unigui/theme/theme.h>
+#include <unigui/theme/presets/registry.h>
 #include <unigui/core/log.h>
 #include <unigui/core/settings.h>
 #ifdef UNIGUI_HAS_EVENTS
@@ -30,6 +31,7 @@ bool Init(const AppConfig& config){
     ImPlot::CreateContext();
 
     IMGUI_CHECKVERSION(); ImGui::CreateContext();
+    unigui::theme::RegisterAllThemes();
 
     // Load font BEFORE any backend init (DX11 locks atlas)
     float dpi=config.theme.dpi_scale;

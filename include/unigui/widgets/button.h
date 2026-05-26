@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unigui/widgets/widget_base.h>
+#include <unigui/fx/animation.h>
 #include <string>
 
 namespace unigui {
@@ -26,6 +27,7 @@ private:
     bool clicked_ = false;
     ColorVariant variant_ = Default;
     Size sz_ = Medium;
+    fx::AnimationState anim_;
 };
 
 } // namespace unigui
