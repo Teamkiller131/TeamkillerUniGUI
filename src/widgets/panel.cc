@@ -14,7 +14,9 @@ void Panel::Render() {
         return;
     }
     if (content_callback_) {
+        if (wrap_) ImGui::PushTextWrapPos(0.0f); // 0 = wrap at right edge
         content_callback_();
+        if (wrap_) ImGui::PopTextWrapPos();
     }
     ImGui::End();
 }

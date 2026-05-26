@@ -23,9 +23,23 @@ int main(int argc, char** argv) {
             static auto window = std::make_shared<unigui::Window>("demo", "UniGUI Demo");
             static bool first = true;
             if (first) {
-                auto panel = std::make_shared<unigui::Panel>("info", "Information");
-                panel->SetContentCallback([]() { ImGui::TextWrapped("Welcome to UniGUI!"); });
+                auto panel = std::make_shared<unigui::Panel>("info", "Welcome");
+                panel->SetContentCallback([]() {
+                    ImGui::TextWrapped("Welcome to UniGUI! A modern Dear ImGui C++ wrapper with 48+ widgets, "
+                                       "dark/light theme, DPI auto-scaling, DX11/OpenGL/Vulkan backends, "
+                                       "and full CJK font support.");
+                });
                 window->AddPanel(panel);
+
+                auto wrapPanel = std::make_shared<unigui::Panel>("wrap", "Auto-Wrap Demo");
+                wrapPanel->SetWrapEnabled(true);
+                wrapPanel->SetContentCallback([]() {
+                    ImGui::TextUnformatted("This panel has auto-wrap enabled. "
+                        "Long text will automatically wrap to fit the panel width. "
+                        "No need to manually insert line breaks or call TextWrapped — "
+                        "the PushTextWrapPos is applied automatically before your content callback.");
+                });
+                window->AddPanel(wrapPanel);
                 first = false;
             }
             window->Render();
