@@ -191,7 +191,9 @@ if(UNIGUI_MODULE_IPC)
 endif()
 
 # ── fx effects (core — always compiled) ─────────────────────────────────────
-target_sources(unigui PRIVATE fx/effect_scope.cc fx/animation.cc)
+target_sources(unigui PRIVATE     fx/effect_scope.cc fx/animation.cc
+    # theme registry
+    theme/theme_registry.cc)
 
 # ── Backend sources ───────────────────────────────────────────────────────────
 if(UNIGUI_BACKEND STREQUAL "SDL3_VULKAN")

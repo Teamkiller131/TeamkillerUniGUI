@@ -94,3 +94,4 @@
 #include <unigui/fx/effect_scope.h>
 #include <unigui/fx/animation.h>
 #include <unigui/fx/transition.h>
+#include <unigui/theme/presets/registry.h>

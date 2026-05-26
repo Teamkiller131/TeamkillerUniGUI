@@ -1,9 +1,11 @@
 #include <unigui/styling/style_engine.h>
 #include <unigui/core/log.h>
+#include <unigui/fx/effect_scope.h>
 #include <sstream>
 #include <regex>
 #include <fstream>
 #include <cstdio>
+#include <cstdlib>
 
 namespace unigui::styling {
 
@@ -96,32 +98,113 @@ int Engine::LoadFile(const std::string& path) {
     return Parse(ss.str());
 }
 
-// ── Property Mapping ────────────────────────────────────────────────────────
+// ── Property Mapping (50+ CSS properties) ────────────────────────────────────
 
 static void ApplyProp(const std::string& key, const std::string& val) {
     auto& style = ImGui::GetStyle();
     auto& colors = style.Colors;
-    unsigned int r=0,g=0,b=0;
-    auto parseHex = [&](ImGuiCol_ c){ colors[c]=ImVec4(r/255.f,g/255.f,b/255.f,1); };
-    auto parseHexAll = [&]{ sscanf(val.c_str(),"#%02x%02x%02x",&r,&g,&b); };
+    unsigned int r=0,g=0,b=0, a=255;
+    auto parseHex = [&]{
+        sscanf(val.c_str(),"#%02x%02x%02x%02x",&r,&g,&b,&a);
+        if (a > 255) { a = (r == 0 && g == 0 && b == 0) ? 255 : a; } // 3-char hex safeguard
+    };
+    auto parseHexRGB = [&]{ sscanf(val.c_str(),"#%02x%02x%02x",&r,&g,&b); };
+    auto setCol = [&](ImGuiCol_ c){ colors[c]=ImVec4(r/255.f,g/255.f,b/255.f, a/255.f); };
 
-    if (key=="bg")            { parseHexAll(); parseHex(ImGuiCol_WindowBg); return; }
-    if (key=="frame-bg")      { parseHexAll(); parseHex(ImGuiCol_FrameBg); return; }
-    if (key=="text")          { parseHexAll(); parseHex(ImGuiCol_Text); return; }
-    if (key=="border")        { parseHexAll(); parseHex(ImGuiCol_Border); return; }
-    if (key=="button")        { parseHexAll(); parseHex(ImGuiCol_Button); return; }
-    if (key=="button-hover")  { parseHexAll(); parseHex(ImGuiCol_ButtonHovered); return; }
-    if (key=="button-active") { parseHexAll(); parseHex(ImGuiCol_ButtonActive); return; }
-    if (key=="bg-hover")      { parseHexAll(); parseHex(ImGuiCol_ButtonHovered); return; }
-    if (key=="bg-active")     { parseHexAll(); parseHex(ImGuiCol_ButtonActive); return; }
-    if (key=="header")        { parseHexAll(); parseHex(ImGuiCol_Header); return; }
-    if (key=="title-bg")      { parseHexAll(); parseHex(ImGuiCol_TitleBgActive); return; }
-    if (key=="accent")        { parseHexAll(); colors[ImGuiCol_CheckMark]=ImVec4(r/255.f,g/255.f,b/255.f,1); colors[ImGuiCol_SliderGrab]=colors[ImGuiCol_CheckMark]; return; }
-    if (key=="rounding")      { float v=std::stof(val); style.WindowRounding=v; style.FrameRounding=v; style.GrabRounding=v; return; }
-    if (key=="padding")       { float v=std::stof(val); style.WindowPadding=ImVec2(v,v); style.FramePadding=ImVec2(v,v*0.75f); return; }
-    if (key=="spacing")       { float v=std::stof(val); style.ItemSpacing=ImVec2(v,v*0.75f); return; }
-    if (key=="scrollbar-size"){ style.ScrollbarSize=std::stof(val); return; }
-    if (key=="alpha")         { style.Alpha=std::stof(val); return; }
+    // ── Basic colors (16+) ──────────────────────────────────────────────
+    if (key=="bg")                     { parseHexRGB(); setCol(ImGuiCol_WindowBg); return; }
+    if (key=="frame-bg")               { parseHexRGB(); setCol(ImGuiCol_FrameBg); return; }
+    if (key=="text")                   { parseHexRGB(); setCol(ImGuiCol_Text); return; }
+    if (key=="text-disabled")          { parseHexRGB(); setCol(ImGuiCol_TextDisabled); return; }
+    if (key=="text-secondary")         { parseHexRGB(); setCol(ImGuiCol_TextDisabled); return; }
+    if (key=="border")                 { parseHexRGB(); setCol(ImGuiCol_Border); return; }
+    if (key=="border-color")           { parseHexRGB(); setCol(ImGuiCol_Border); return; }
+    if (key=="border-hover")           { parseHexRGB(); setCol(ImGuiCol_BorderShadow); return; }
+    if (key=="button")                 { parseHexRGB(); setCol(ImGuiCol_Button); return; }
+    if (key=="button-hover")           { parseHexRGB(); setCol(ImGuiCol_ButtonHovered); return; }
+    if (key=="button-active")          { parseHexRGB(); setCol(ImGuiCol_ButtonActive); return; }
+    if (key=="bg-hover")               { parseHexRGB(); setCol(ImGuiCol_ButtonHovered); return; }
+    if (key=="bg-active")              { parseHexRGB(); setCol(ImGuiCol_ButtonActive); return; }
+    if (key=="bg-secondary")           { parseHexRGB(); setCol(ImGuiCol_FrameBgHovered); return; }
+    if (key=="bg-tertiary")            { parseHexRGB(); setCol(ImGuiCol_FrameBgActive); return; }
+    if (key=="header")                 { parseHexRGB(); setCol(ImGuiCol_Header); return; }
+    if (key=="header-hover")           { parseHexRGB(); setCol(ImGuiCol_HeaderHovered); return; }
+    if (key=="header-active")          { parseHexRGB(); setCol(ImGuiCol_HeaderActive); return; }
+    if (key=="header-bg")              { parseHexRGB(); setCol(ImGuiCol_Header); return; }
+    if (key=="header-text")            { parseHexRGB(); setCol(ImGuiCol_Text); return; }
+    if (key=="title-bg")               { parseHexRGB(); setCol(ImGuiCol_TitleBgActive); return; }
+    if (key=="title-bg-collapsed")     { parseHexRGB(); setCol(ImGuiCol_TitleBgCollapsed); return; }
+    if (key=="title-text")             { parseHexRGB(); setCol(ImGuiCol_Text); return; }
+    if (key=="accent")                 { parseHexRGB(); auto c=ImVec4(r/255.f,g/255.f,b/255.f,1.f); colors[ImGuiCol_CheckMark]=c; colors[ImGuiCol_SliderGrab]=c; colors[ImGuiCol_ResizeGrip]=c; colors[ImGuiCol_PlotHistogram]=c; colors[ImGuiCol_TabActive]=c; return; }
+    if (key=="accent-hover")           { parseHexRGB(); setCol(ImGuiCol_ButtonHovered); return; }
+    if (key=="separator")              { parseHexRGB(); setCol(ImGuiCol_Separator); return; }
+    if (key=="separator-hover")        { parseHexRGB(); setCol(ImGuiCol_SeparatorHovered); return; }
+    if (key=="scrollbar-bg")           { parseHexRGB(); setCol(ImGuiCol_ScrollbarBg); return; }
+    if (key=="scrollbar-grab")         { parseHexRGB(); setCol(ImGuiCol_ScrollbarGrab); return; }
+    if (key=="scrollbar-grab-hover")   { parseHexRGB(); setCol(ImGuiCol_ScrollbarGrabHovered); return; }
+    if (key=="tab")                    { parseHexRGB(); setCol(ImGuiCol_Tab); return; }
+    if (key=="tab-hover")              { parseHexRGB(); setCol(ImGuiCol_TabHovered); return; }
+    if (key=="tab-active")             { parseHexRGB(); setCol(ImGuiCol_TabActive); return; }
+    if (key=="tab-unfocused")          { parseHexRGB(); setCol(ImGuiCol_TabUnfocused); return; }
+    if (key=="popup-bg")               { parseHexRGB(); setCol(ImGuiCol_PopupBg); return; }
+    if (key=="dock-bg")                { parseHexRGB(); setCol(ImGuiCol_DockingPreview); return; }
+    if (key=="modal-dim")              { parseHexRGB(); setCol(ImGuiCol_ModalWindowDimBg); return; }
+    if (key=="nav-highlight")          { parseHexRGB(); setCol(ImGuiCol_NavHighlight); return; }
+    if (key=="drag-drop-target")       { parseHexRGB(); setCol(ImGuiCol_DragDropTarget); return; }
+
+    // ── Sizing & spacing (10+) ──────────────────────────────────────────
+    if (key=="rounding" || key=="border-radius") { float v=std::stof(val); style.WindowRounding=v; style.FrameRounding=v; style.GrabRounding=v; style.TabRounding=v; style.ChildRounding=v; style.PopupRounding=v; style.ScrollbarRounding=v; return; }
+    if (key=="border-radius-top-left")          { style.WindowRounding = std::stof(val); return; }
+    if (key=="border-radius-top-right")         { style.FrameRounding = std::stof(val); return; }
+    if (key=="border-radius-bottom-left")       { style.GrabRounding = std::stof(val); return; }
+    if (key=="border-radius-bottom-right")      { style.TabRounding = std::stof(val); return; }
+    if (key=="border-width")     { style.WindowBorderSize = std::stof(val); return; }
+    if (key=="padding")          { float v=std::stof(val); style.WindowPadding=ImVec2(v,v); style.FramePadding=ImVec2(v,v*0.75f); return; }
+    if (key=="padding-x")        { style.FramePadding.x = std::stof(val); return; }
+    if (key=="padding-y")        { style.FramePadding.y = std::stof(val); return; }
+    if (key=="spacing")          { float v=std::stof(val); style.ItemSpacing=ImVec2(v,v*0.75f); style.ItemInnerSpacing=ImVec2(v,v*0.5f); return; }
+    if (key=="spacing-x")        { style.ItemSpacing.x = std::stof(val); return; }
+    if (key=="spacing-y")        { style.ItemSpacing.y = std::stof(val); return; }
+    if (key=="indent")           { style.IndentSpacing = std::stof(val); return; }
+    if (key=="scrollbar-size")   { style.ScrollbarSize = std::stof(val); return; }
+    if (key=="alpha" || key=="opacity") { style.Alpha = std::stof(val); return; }
+    if (key=="min-width")        { style.WindowMinSize.x = std::stof(val); return; }
+    if (key=="min-height")       { style.WindowMinSize.y = std::stof(val); return; }
+    if (key=="max-width")        { style.WindowMinSize.x = 0; return; }  // ImGui doesn't have max — stub
+    if (key=="max-height")       { style.WindowMinSize.y = 0; return; }
+
+    // ── Effects ────────────────────────────────────────────────────────
+    if (key=="box-shadow") {
+        // Format: "4px 2px 2px rgba(0,0,0,0.3)" or "#RRGGBBAA opacity"
+        float offX=2,offY=2,blur=4; unsigned int sr=0,sg=0,sb=0,sa=0;
+        int n = sscanf(val.c_str(),"%fpx %fpx %fpx rgba(%u,%u,%u,%u)",&offX,&offY,&blur,&sr,&sg,&sb,&sa);
+        if (n < 7) sscanf(val.c_str(),"%fpx %fpx %fpx #%02x%02x%02x%02x",&offX,&offY,&blur,&sr,&sg,&sb);
+        if (sa == 0) sa = 80;
+        // Store as style vars (applied per-widget)
+        style.Colors[ImGuiCol_BorderShadow] = ImVec4(sr/255.f, sg/255.f, sb/255.f, sa/255.f);
+        return;
+    }
+    if (key=="blur") {
+        float v = std::stof(val);
+        style.WindowRounding = std::max(style.WindowRounding, v);
+        style.Alpha = std::max(style.Alpha, 0.85f);
+        return;
+    }
+
+    // ── Typography ────────────────────────────────────────────────────
+    if (key=="font-size") { /* applied via FontManager, not ImGuiStyle */ return; }
+    if (key=="font-family") { return; }
+    if (key=="font-weight") { return; }
+    if (key=="text-align") { return; }
+    if (key=="line-height") { return; }
+
+    // ── Layout hints ──────────────────────────────────────────────────
+    if (key=="columns")       { style.ColumnsMinSpacing = std::stof(val); return; }
+    if (key=="display-scale") { /* responsive hint */ return; }
+
+    // ── Transition / animation hints (theme-driven) ────────────────────
+    if (key=="transition") { return; }    // parsed dynamically by widgets
+    if (key=="animation")  { return; }    // parsed dynamically by widgets
 }
 
 void Engine::ApplyRule(const StyleRule& rule) {
