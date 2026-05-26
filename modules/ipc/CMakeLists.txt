@@ -1,6 +1,0 @@
-add_library(unigui-shmem "")
-add_library(unigui::shmem ALIAS unigui-shmem)
-set_target_properties(unigui-shmem PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
-target_link_libraries(unigui-shmem PUBLIC unigui::core)
-target_include_directories(unigui-shmem PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_sources(unigui-shmem PRIVATE ${CMAKE_SOURCE_DIR}/src/v2/shmem.cc)

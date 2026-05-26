@@ -1,6 +1,0 @@
-add_library(unigui-plugin "")
-add_library(unigui::plugin ALIAS unigui-plugin)
-set_target_properties(unigui-plugin PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
-target_link_libraries(unigui-plugin PUBLIC unigui::core)
-target_include_directories(unigui-plugin PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_sources(unigui-plugin PRIVATE ${CMAKE_SOURCE_DIR}/src/v2/plugin_manager.cc)

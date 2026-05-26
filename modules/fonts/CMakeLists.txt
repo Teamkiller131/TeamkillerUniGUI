@@ -1,6 +1,0 @@
-add_library(unigui-fonts "")
-add_library(unigui::fonts ALIAS unigui-fonts)
-set_target_properties(unigui-fonts PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
-target_link_libraries(unigui-fonts PUBLIC unigui::core)
-target_include_directories(unigui-fonts PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_sources(unigui-fonts PRIVATE ${CMAKE_SOURCE_DIR}/src/v2/font_manager.cc)

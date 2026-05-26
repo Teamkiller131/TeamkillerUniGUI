@@ -1,7 +1,0 @@
-add_library(unigui-backend-dx12 "")
-add_library(unigui::backend-dx12 ALIAS unigui-backend-dx12)
-set_target_properties(unigui-backend-dx12 PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
-target_compile_definitions(unigui-backend-dx12 PUBLIC UNIGUI_HAS_DX12)
-target_link_libraries(unigui-backend-dx12 PUBLIC unigui::core d3d12)
-target_include_directories(unigui-backend-dx12 PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_sources(unigui-backend-dx12 PRIVATE ${CMAKE_SOURCE_DIR}/src/backend/dx12_renderer.cc)
