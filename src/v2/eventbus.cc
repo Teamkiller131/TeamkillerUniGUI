@@ -1,5 +1,6 @@
 #include <unigui/events/eventbus.h>
 #include <unigui/core/log.h>
+#include <algorithm>
 
 namespace unigui::events {
 
