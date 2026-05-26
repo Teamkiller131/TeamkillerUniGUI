@@ -3,6 +3,7 @@
 #include <sstream>
 #include <regex>
 #include <cstdio>
+#include <cerrno>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -41,17 +42,39 @@ void LoadDefaultFont(float size_pixels, const char* ttf_path) {
     cfg.OversampleH = 2;
     cfg.OversampleV = 2;
 
-    // Try system TTF fonts at the requested physical size
+    // Try loading via memory (bypasses ImFileOpen issues)
+    auto tryLoad = [&](const char* path) -> ImFont* {
+        FILE* fp = fopen(path, "rb");
+        if (!fp) { UNIGUI_LOG_DEBUG("Font fopen failed: {} errno={}", path, errno); return nullptr; }
+        fseek(fp, 0, SEEK_END);
+        long sz = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+        if (sz <= 0) { fclose(fp); return nullptr; }
+        void* data = IM_ALLOC(sz);
+        fread(data, 1, sz, fp);
+        fclose(fp);
+        ImFont* f = io.Fonts->AddFontFromMemoryTTF(data, (int)sz, size_pixels, &cfg);
+        if (!f) { IM_FREE(data); UNIGUI_LOG_DEBUG("Font AddFontFromMemoryTTF failed: {}", path); }
+        return f;
+    };
+
     bool loaded = false;
     const char* base_paths[] = {
-        ttf_path,
-        "C:\\Windows\\Fonts\\segoeui.ttf",
-        "C:\\Windows\\Fonts\\arial.ttf",
+        "C:/Windows/Fonts/segoeui.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/calibri.ttf",
         nullptr
     };
 
+    // Try custom path first if provided
+    if (ttf_path && tryLoad(ttf_path)) loaded = true;
+
     for (int i = 0; base_paths[i] && !loaded; i++) {
-        loaded = (io.Fonts->AddFontFromFileTTF(base_paths[i], size_pixels, &cfg) != nullptr);
+        ImFont* f = tryLoad(base_paths[i]);
+        if (f) {
+            UNIGUI_LOG_INFO("Font: {} ({}px)", base_paths[i], (int)size_pixels);
+            loaded = true;
+        }
     }
 
     // Fallback: built-in font + FontGlobalScale to match target size
@@ -60,7 +83,6 @@ void LoadDefaultFont(float size_pixels, const char* ttf_path) {
         io.FontGlobalScale = size_pixels / 13.0f;
         UNIGUI_LOG_WARN("Built-in font scaled to {}px (scale={:.2f})",
             (int)size_pixels, io.FontGlobalScale);
-        io.Fonts->Build();
         return;
     }
 
@@ -70,8 +92,8 @@ void LoadDefaultFont(float size_pixels, const char* ttf_path) {
     cfg.MergeMode = true;
     const ImWchar* cjk = io.Fonts->GetGlyphRangesChineseFull();
     const char* cjk_paths[] = {
-        "C:\\Windows\\Fonts\\msyh.ttc",
-        "C:\\Windows\\Fonts\\simhei.ttf",
+        "C:/Windows/Fonts/msyh.ttc",
+        "C:/Windows/Fonts/simhei.ttf",
         nullptr
     };
     for (int i = 0; cjk_paths[i]; i++) {
@@ -80,8 +102,6 @@ void LoadDefaultFont(float size_pixels, const char* ttf_path) {
             break;
         }
     }
-
-    io.Fonts->Build();
 }
 
 void BeginTextWrap(float width) {
