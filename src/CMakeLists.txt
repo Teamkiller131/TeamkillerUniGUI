@@ -122,6 +122,7 @@ target_sources(unigui PRIVATE
     app/app.cc
     v2/plugin_manager.cc
     v2/dsl.cc
+    v2/eventbus.cc
 )
 
 # ── SDL3 + Vulkan sources (conditional) ───────────────────────────────────────

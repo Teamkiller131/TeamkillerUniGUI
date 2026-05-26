@@ -3,6 +3,7 @@
 #include <unigui/theme/theme.h>
 #include <unigui/core/log.h>
 #include <unigui/core/settings.h>
+#include <unigui/v2/eventbus.h>
 #include <glad/glad.h>
 #include <imgui.h>
 #include <implot.h>
@@ -84,10 +85,11 @@ bool Init(const AppConfig& config){
 
     g_initialized=true;
     UNIGUI_LOG_INFO("Init complete: backend={} {}x{} DPI={:.1f}",(int)g_backend,config.width,config.height,dpi);
+    v2::EventBus::Instance().Publish("app.init", std::make_pair(config.width, config.height));
     return true;
 }
 
-void Shutdown(){if(!g_initialized)return;if(g_renderer){g_renderer->Shutdown();g_renderer.reset();}if(g_platform){g_platform->Shutdown();g_platform.reset();}ImPlot::DestroyContext();Settings::Shutdown();g_initialized=false;}
+void Shutdown(){if(!g_initialized)return;v2::EventBus::Instance().Publish("app.shutdown",int{0});if(g_renderer){g_renderer->Shutdown();g_renderer.reset();}if(g_platform){g_platform->Shutdown();g_platform.reset();}ImPlot::DestroyContext();Settings::Shutdown();g_initialized=false;}
 
 bool NewFrame(){
     if(!g_initialized)return false;

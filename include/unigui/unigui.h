@@ -72,6 +72,7 @@
 #include <unigui/v2/plugin_interface.h>
 #include <unigui/v2/plugin_manager.h>
 #include <unigui/v2/dsl.h>
+#include <unigui/v2/eventbus.h>
 #include <unigui/widgets/virtuallist.h>
 #include <unigui/widgets/multicombo.h>
 #include <unigui/widgets/propertygrid.h>
