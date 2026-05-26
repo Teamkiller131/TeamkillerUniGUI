@@ -101,6 +101,9 @@
 #include <unigui/fonts/gradient_text.h>
 #include <unigui/widgets/skeleton.h>
 #include <unigui/widgets/herosection.h>
+#include <unigui/widgets/datatable.h>
+#include <unigui/widgets/multihandleslider.h>
+#include <unigui/widgets/timeseries_chart.h>
 #include <unigui/app/app.h>
 #include <unigui/fx/easing.h>
 #include <unigui/fx/effect_scope.h>

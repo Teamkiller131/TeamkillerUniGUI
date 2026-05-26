@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.2.1 (2026-05-26) — Data Widgets
+
+### Added
+- **DataTable\<T\>**: high-performance template data table with zero-copy data source,
+  virtual scrolling (ImGuiListClipper), column sorting, row colouring (profit/loss),
+  cell formatting, selection + double-click callbacks. Header-only (`include/unigui/widgets/datatable.h`).
+- **MultiHandleSlider**: multi-handle draggable slider bar with tick management,
+  per-tick color, custom per-tick overlay rendering, current-position marker line.
+- **TimeSeriesChart**: real-time time-series plot via implot with sliding window,
+  auto-fit Y axis, crosshair toggle, legend, grid color. `AppendPoint()` with timestamp.
+
 ## v3.2.0 (2026-05-26) — Cross-Platform + Polish
 
 ### Added

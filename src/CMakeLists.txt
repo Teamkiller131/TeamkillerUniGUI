@@ -161,6 +161,8 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/badge.cc
         widgets/skeleton.cc
         widgets/herosection.cc
+        widgets/multihandleslider.cc
+        widgets/timeseries_chart.cc
         fonts/gradient_text.cc
     )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)
