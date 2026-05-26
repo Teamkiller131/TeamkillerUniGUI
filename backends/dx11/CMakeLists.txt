@@ -1,0 +1,7 @@
+add_library(unigui-backend-dx11 "")
+add_library(unigui::backend-dx11 ALIAS unigui-backend-dx11)
+set_target_properties(unigui-backend-dx11 PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+target_compile_definitions(unigui-backend-dx11 PUBLIC UNIGUI_HAS_DX11)
+target_link_libraries(unigui-backend-dx11 PUBLIC unigui::core d3d11 d3dcompiler dxgi dxguid)
+target_include_directories(unigui-backend-dx11 PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_sources(unigui-backend-dx11 PRIVATE ${CMAKE_SOURCE_DIR}/src/backend/dx11_renderer.cc)
