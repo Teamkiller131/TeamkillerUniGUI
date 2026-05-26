@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.0 (2026-05-26) — First Stable Release
+- DX11 Backend default on Windows, OpenGL 3.3 on Linux/macOS
+- DPI auto-scaling, CJK font support, window resize
+- Auto-wrap text, popup input priority, spdlog logging
+- 48+ widgets, 186 tests, 4 example apps
+
+# Changelog
+
 ## v0.5.0 (2026-05-25)
 
 ### Added
