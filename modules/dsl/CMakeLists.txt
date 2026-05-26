@@ -1,6 +1,0 @@
-add_library(unigui-dsl "")
-add_library(unigui::dsl ALIAS unigui-dsl)
-set_target_properties(unigui-dsl PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
-target_link_libraries(unigui-dsl PUBLIC unigui::core)
-target_include_directories(unigui-dsl PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_sources(unigui-dsl PRIVATE ${CMAKE_SOURCE_DIR}/src/v2/dsl.cc)
