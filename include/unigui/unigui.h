@@ -75,9 +75,15 @@
 #include <unigui/events/eventbus.h>
 #include <unigui/styling/style_engine.h>
 #include <unigui/fonts/font_manager.h>
+#ifdef UNIGUI_HAS_CONFIG
 #include <unigui/config/config.h>
+#endif
+#ifdef UNIGUI_HAS_SQLITE
 #include <unigui/sqlite/database.h>
+#endif
+#ifdef UNIGUI_HAS_IPC
 #include <unigui/ipc/shmem.h>
+#endif
 #include <unigui/widgets/virtuallist.h>
 #include <unigui/widgets/multicombo.h>
 #include <unigui/widgets/propertygrid.h>
