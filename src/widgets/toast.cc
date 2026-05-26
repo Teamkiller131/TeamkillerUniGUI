@@ -16,16 +16,11 @@ void Toast::SetPosition(int anchor, float offsetX, float offsetY) { anchor_=anch
 void Toast::Show(std::string msg, ToastType type, float duration, std::function<void()> onDismiss) {
     queue_.push_back({std::move(msg), type, std::chrono::steady_clock::now(), duration, std::move(onDismiss), fx::AnimationState{}});
     queue_.back().anim.Play(0.25f, fx::EasingCurve::CubicOut);
-    Widget::Show();
 }
 
 void Toast::Render() {
-    if (!IsVisible() || queue_.empty()) { Hide(); return; }
-
+    // Remove expired (always — needed to clear queue even when not showing)
     auto now = std::chrono::steady_clock::now();
-    float dt = ImGui::GetIO().DeltaTime;
-
-    // Remove expired
     while (!queue_.empty()) {
         auto elapsed = std::chrono::duration<float>(now - queue_.front().showTime).count();
         if (elapsed > queue_.front().duration) {
@@ -33,7 +28,11 @@ void Toast::Render() {
             queue_.pop_front();
         } else { break; }
     }
-    if (queue_.empty()) { Hide(); return; }
+
+    // Nothing to show — don't create ImGui window
+    if (queue_.empty()) return;
+
+    float dt = ImGui::GetIO().DeltaTime;
 
     ImVec2 pivot((anchor_==1||anchor_==2)?1.0f:0.0f, (anchor_>=2)?1.0f:0.0f);
     ImVec2 pos(offX_, offY_);
