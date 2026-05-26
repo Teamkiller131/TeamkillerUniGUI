@@ -18,7 +18,6 @@ int main(int argc, char** argv) {
     int frame_count = 0; bool done = false;
     while (!done && !unigui::ShouldClose()) {
         unigui::NewFrame();
-        ImGui::ShowDemoWindow();
         {
             static auto window = std::make_shared<unigui::Window>("demo", "UniGUI Demo");
             static bool first = true;
@@ -44,6 +43,8 @@ int main(int argc, char** argv) {
             }
             window->Render();
         }
+        // ShowDemoWindow LAST — popups get top input priority
+        ImGui::ShowDemoWindow();
         unigui::Render(); frame_count++;
         if (max_frames > 0 && frame_count >= max_frames) { done = true; }
     }
