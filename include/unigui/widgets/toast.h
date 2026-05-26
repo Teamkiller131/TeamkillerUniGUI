@@ -1,5 +1,6 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
+#include <unigui/fx/animation.h>
 #include <string>
 #include <vector>
 #include <deque>
@@ -15,6 +16,7 @@ struct ToastMessage {
     std::string text; ToastType type = ToastType::Info;
     std::chrono::steady_clock::time_point showTime; float duration = 3.0f;
     std::function<void()> onDismiss;
+    fx::AnimationState anim;
 };
 
 /// Singleton notification popup system. Call Show() from anywhere.
