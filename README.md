@@ -5,11 +5,11 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-2.9.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-200-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-200%2B-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-55-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
-A C++23 Dear ImGui wrapper library providing a unified dark+light theme engine and high-level widget components. Supports 7 backends: GLFW+OpenGL3, SDL3+Vulkan, DX11, DX12, Metal, WebGPU, and Emscripten.
+A C++23 Dear ImGui wrapper providing a unified dark+light theme engine, high-level widget components, declarative DSL, CSS styling, plugin system, and EventBus. Supports 7 backends: GLFW+OpenGL3, SDL3+Vulkan, DX11, DX12, Metal, WebGPU, and Emscripten.
 
 ## Quick Start
 
@@ -17,16 +17,16 @@ A C++23 Dear ImGui wrapper library providing a unified dark+light theme engine a
 git clone https://xbw-nas.iepose.cn/Teamkiller131/TeamkillerUniGUI.git
 cd TeamkillerUniGUI
 
-# GLFW + OpenGL3 (default, backward compatible)
+# Default: GLFW + OpenGL3
 cmake --preset windows-msvc-release
 cmake --build --preset windows-msvc-release
 ctest --preset windows-msvc-release
 
-# SDL3 + Vulkan (v2.0)
+# SDL3 + Vulkan
 cmake --preset windows-msvc-sdl3-vulkan-release
 cmake --build --preset windows-msvc-sdl3-vulkan-release
 
-# Run demo (GLFW_GL3)
+# Run demo
 ./build/windows-msvc-release/examples/hello_unigui/hello_unigui.exe --frames 10
 ```
 
@@ -37,12 +37,20 @@ User Code
     ↓
 unigui:: API
     ├── Theme Engine (53-color dark + light theme, StyleScope RAII)
-    ├── Widget Library (45 widgets across 6 releases)
+    ├── Widget Library (55+ widgets, form validation, undo/redo, serialization)
+    ├── Declarative DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
+    ├── EventBus (unigui::events::Bus — publish/subscribe with wildcards)
+    ├── CSS Styling (unigui::styling::Engine — selector engine + variables)
+    ├── Plugin System (unigui::plugin::Manager — DLL plugin hot-reload)
+    ├── Font Manager (unigui::fonts::Manager — multi-font with fallback chains)
+    ├── Config Layer (unigui::config::Store — TOML/JSON/INI)
+    ├── SQLite (unigui::sqlite::Database — thin wrapper + migrations)
+    ├── IPC (unigui::ipc — SharedMemory + ZMQ channels)
     ├── Backend Abstraction (PlatformBackend / RendererBackend interfaces)
     │   ├── GLFW + OpenGL 3.3 ★ (default, production)
-    │   ├── SDL3 + Vulkan 1.3 ★ (v2.0, production)
-    │   ├── GLFW + DX11 ★ (v2.3, runtime-ready)
-    │   ├── GLFW + DX12   (v2.7, runtime-ready)
+    │   ├── SDL3 + Vulkan 1.3 ★ (production)
+    │   ├── GLFW + DX11 ★ (production, Windows default)
+    │   ├── GLFW + DX12   (runtime-ready)
     │   ├── Metal          (macOS, stub on Windows)
     │   ├── WebGPU         (cross-platform, stub)
     │   └── Emscripten     (Web/HTML5, stub)
@@ -53,16 +61,15 @@ ImGui (v1.92.8, docking + multi-viewport)
 
 ## API Overview
 
+### Core Loop
+
 ```cpp
 #include <unigui/unigui.h>
 
-// Backend selection (v2.0)
 unigui::AppConfig cfg;
-cfg.backend = unigui::BackendType::GLFW_GL3;      // default
-// cfg.backend = unigui::BackendType::SDL3_Vulkan; // v2.0
+cfg.backend = unigui::BackendType::DX11; // or GLFW_GL3, SDL3_Vulkan, DX12
 unigui::Init(cfg);
 
-// Manual loop
 while (!unigui::ShouldClose()) {
     unigui::NewFrame();
     ImGui::ShowDemoWindow(); // raw ImGui works + auto-themed
@@ -71,22 +78,75 @@ while (!unigui::ShouldClose()) {
 unigui::Shutdown();
 ```
 
-## Widgets
+### Declarative DSL
 
-### All Widgets (45 total)
+```cpp
+#include <unigui/dsl/dsl.h>
+using namespace unigui::dsl;
 
-| Tier | Widgets |
-|------|---------|
-| **v1** | Window, Panel, Form, Button, Label, WidgetBase (6) |
-| **v2.0** | CheckBox, Slider\<T\>, ProgressBar, RadioGroup, ComboBox, LineEdit, GroupBox, TabWidget (8) |
-| **v2.1** | TreeView, ListView, Dialog, MenuBar, StatusBar, ToolBar, Table, ColorPicker (8) |
-| **v2.2** | FilePath, DirPath, SpinBox\<T\>, ToggleSwitch, InputInt, InputFloat, Splitter, Separator, ScrollArea, Tooltip (10) |
-| **v2.3** | DatePicker, Image, LoadingIndicator, Notification, Hyperlink (5) |
-| **v2.4** | Tag, Breadcrumb, MultiLine, IconButton (4) |
-| **v2.5-6** | DockSpace, ContextMenu, DragDrop, ShortcutManager (4) |
-| **v2.8** | RichText, ImageButton, Markdown (3) |
+auto ui = Window("DSL Demo", VBox({
+    Text("Welcome!"),
+    Separator(),
+    HBox({
+        Button("Click Me", []{ /* action */ }),
+        Button("Exit",     []{ std::exit(0); })
+    }),
+    For(5, [](int i){ return Label("Item #" + std::to_string(i+1)); })
+}));
 
-### Widget Quick Reference
+// In render loop:
+Render(ui);
+```
+
+### EventBus
+
+```cpp
+#include <unigui/events/eventbus.h>
+using namespace unigui::events;
+
+auto id = Bus::Instance().Subscribe("window.*", [](auto& e) {
+    // handles window.close, window.resize, ...
+});
+Bus::Instance().Publish("window.close", std::string("main"));
+```
+
+### CSS Styling
+
+```cpp
+#include <unigui/styling/style_engine.h>
+using namespace unigui::styling;
+
+Engine::Instance().Parse(R"(
+    Window { bg: #1a1a2e; rounding: 8 }
+    Button.primary { bg: #e94560; rounding: 4 }
+    Button:hover { bg: #ff6b6b }
+)");
+Engine::Instance().ApplyAll();
+```
+
+### Plugin System
+
+```cpp
+#include <unigui/plugin/plugin_manager.h>
+using namespace unigui::plugin;
+
+auto* p = Manager::Instance().Load("my_plugin.dll");
+if (p) { p->Init(); /* each frame: p->Render(); */ }
+```
+
+### Modular CMake (conditional compilation)
+
+```bash
+# Core only (minimal, ~200 targets)
+cmake -DUNIGUI_MODULE_WIDGETS=OFF -DUNIGUI_MODULE_DSL=OFF \
+      -DUNIGUI_MODULE_EVENTS=OFF -DUNIGUI_MODULE_PLUGIN=OFF ...
+
+# Full (all modules)
+cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
+      -DUNIGUI_MODULE_IPC=ON -DUNIGUI_BACKEND_DX12=ON ...
+```
+
+## Widgets (55 total)
 
 | Category | Widget | Key API |
 |----------|--------|---------|
@@ -105,6 +165,8 @@ unigui::Shutdown();
 | | SpinBox\<T\> | `GetValue()`, `SetRange()` |
 | | DatePicker | `GetDate()`, `SetDate()` |
 | | ColorPicker | `GetColor()`, `SetColor()` |
+| | FilePath | `SetPath()`, file picker |
+| | DirPath | directory picker |
 | Display | Label | `GetText()`, `SetText()` |
 | | Button | `WasClicked()`, `SetEnabled()` |
 | | ImageButton | `SetImage(texID, w, h)`, `SetLabel()` |
@@ -124,7 +186,6 @@ unigui::Shutdown();
 | | Separator | horizontal/vertical dividers |
 | | Space | `DockSpace()` docking layout |
 | Navigation | MenuBar | `SetMenus()`, nested submenus |
-| | TabWidget | tabbed content panels |
 | | Breadcrumb | `SetItems()`, path navigation |
 | | Wizard | `AddStep()`, `Next()`, `Previous()` |
 | Dialogs | Dialog | `Open()`, `Close()`, modal/ non-modal |
@@ -136,44 +197,55 @@ unigui::Shutdown();
 | | CheckBox | `SetChecked()`, `OnChange()` |
 | | RadioGroup | `SetSelected()`, option groups |
 | | ToggleSwitch | `SetOn(bool)`, toggle with label |
-| Files | FilePath | `SetPath()`, file picker |
-| | DirPath | directory picker |
 | Misc | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
 | | ShortcutManager | `Register()`, global shortcuts |
 | | Notification | `Show()`, pending count |
 | | TrayIcon | `Show()`, `Hide()`, `SetMenu()`, `ShowNotification()` |
+| | Tag | colored tag badges |
+| | ContextMenu | right-click popup menus |
 
 ## Backend Selection
 
 ```cpp
-// CMake option (binary backends)
-cmake -DUNIGUI_BACKEND=SDL3_VULKAN ...
-
 // Runtime (select from 7 backends)
 cfg.backend = BackendType::GLFW_GL3;      // GLFW + OpenGL 3.3 ★
-cfg.backend = BackendType::SDL3_Vulkan;  // SDL3 + Vulkan 1.3 ★
-cfg.backend = BackendType::DX11;          // GLFW + DirectX 11
+cfg.backend = BackendType::SDL3_Vulkan;   // SDL3 + Vulkan 1.3 ★
+cfg.backend = BackendType::DX11;          // GLFW + DirectX 11 ★
 cfg.backend = BackendType::DX12;          // GLFW + DirectX 12
 cfg.backend = BackendType::Metal;         // macOS Metal (stub on Win)
 cfg.backend = BackendType::WebGPU;        // Dawn/WGPU (stub)
 cfg.backend = BackendType::Emscripten;    // Web/HTML5 (stub)
 ```
 
-### Backend Comparison
+| Backend | Platform | Graphics API | Status | MSAA |
+|---------|----------|-------------|--------|------|
+| GLFW+GL3 | Win/Lin/Mac | OpenGL 3.3 | ★ Production | 4x |
+| SDL3+Vulkan | Win/Lin/Mac | Vulkan 1.3 | ★ Production | Config |
+| GLFW+DX11 | Windows | DirectX 11 | ★ Production | 4x |
+| GLFW+DX12 | Windows | DirectX 12 | Runtime | Config |
+| Metal | macOS | Metal 2 | Stub | Native |
+| WebGPU | Cross | Dawn/WGPU | Stub | Native |
+| Emscripten | Web | WebGL/WebGPU | Stub | Browser |
 
-| Backend | Platform | Graphics API | Status | Anti-aliasing | Complexity |
-|---------|----------|-------------|--------|--------------|------------|
-| GLFW+GL3 | Win/Lin/Mac | OpenGL 3.3 | ★ Production | 4x MSAA | Low |
-| SDL3+Vulkan | Win/Lin/Mac | Vulkan 1.3 | ★ Production | Configurable | High |
-| GLFW+DX11 | Windows | DirectX 11 | ✓ Runtime | 4x MSAA | Medium |
-| GLFW+DX12 | Windows | DirectX 12 | ✓ Runtime | Configurable | High |
-| Metal | macOS | Metal 2 | Stub | Native | Medium |
-| WebGPU | Cross | Dawn/WGPU | Stub | Native | High |
-| Emscripten | Web | WebGL/WebGPU | Stub | Browser | Medium |
+## Sub-Modules
+
+| Module | Namespace | Header |
+|--------|-----------|--------|
+| Declarative DSL | `unigui::dsl` | `<unigui/dsl/dsl.h>` |
+| EventBus | `unigui::events` | `<unigui/events/eventbus.h>` |
+| CSS Styling | `unigui::styling` | `<unigui/styling/style_engine.h>` |
+| Font Manager | `unigui::fonts` | `<unigui/fonts/font_manager.h>` |
+| Plugin System | `unigui::plugin` | `<unigui/plugin/plugin_manager.h>` |
+| Config (TOML/JSON/INI) | `unigui::config` | `<unigui/config/config.h>` |
+| SQLite Database | `unigui::sqlite` | `<unigui/sqlite/database.h>` |
+| IPC (Shared Memory + ZMQ) | `unigui::ipc` | `<unigui/ipc/shmem.h>`, `<unigui/ipc/ipc.h>` |
+| HTTP / WebSocket | `unigui::network` | `<unigui/network/network.h>` |
+
+All sub-module headers are also pulled in by `<unigui/unigui.h>` for convenience.
 
 ## Platform Notes
 
-- **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022.
+- **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022. DX11 is default.
 - **Linux**: X11/Wayland via GLFW or SDL3. GCC 14+ or Clang 18+.
 - **macOS**: OpenGL deprecated by Apple (capped at 4.1). Vulkan via MoltenVK.
 
@@ -182,15 +254,9 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5 (stub)
 UniGUI embeds **JetBrains Mono Nerd Font** directly in the library binary. No system font installation required.
 
 ```cpp
-// Default: JetBrains Mono Nerd Font at auto-DPI size
 unigui::AppConfig cfg;
-
-// Custom font via file path
-cfg.theme.font_path = "C:/path/to/my-font.ttf";
-cfg.theme.font_size = 20.0f;           // logical px at 96 DPI
-
-// Disable CJK merge (faster startup)
-cfg.theme.font_path = nullptr;         // use embedded font only
+cfg.theme.font_path = "C:/path/to/my-font.ttf"; // custom font
+cfg.theme.font_size = 20.0f;                     // logical px at 96 DPI
 ```
 
 **CJK Support**: On Windows, the library automatically merges Microsoft YaHei (msyh.ttc) for Chinese/Japanese/Korean glyphs. On Linux/macOS, CJK merge is skipped — users can provide a custom CJK font via `ThemeConfig::font_path`.
@@ -199,11 +265,13 @@ cfg.theme.font_path = nullptr;         // use embedded font only
 
 ## Dependencies (vcpkg)
 
-- `imgui` (v1.92.8, docking+freetype+glfw+opengl3+sdl3+vulkan+dx11+dx12 bindings)
-- `implot` (v1.0, plot widget library)
-- `imgui-node-editor` (v0.9.3, node editor groundwork)
-- `glfw3`, `sdl3`, `vulkan`, `glad`, `freetype`, `gtest`
-- Windows: `d3d11`, `d3d12`, `d3dcompiler`, `dxgi`, `dxguid`
+```
+imgui (1.92.8, docking+freetype+all bindings)
+implot (1.0), imgui-node-editor (0.9.3)
+glfw3, sdl3, vulkan, glad, freetype, gtest, spdlog
+Optional: sqlite3, cpptoml, nlohmann-json, cppzmq, cpp-httplib, ixwebsocket
+Windows: d3d11, d3d12, d3dcompiler, dxgi, dxguid
+```
 
 ## License
 
