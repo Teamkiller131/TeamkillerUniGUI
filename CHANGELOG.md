@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.1.0 (2026-05-26) — Embedded Fonts
+
+### Added
+- **Embedded Font**: JetBrains Mono Nerd Font (~2.4MB) embedded directly in the library binary via CMake code generation pipeline (`cmake/FontEmbed.cmake`). No system font dependency for the primary UI font. Nerd Font icons included (Powerline, Devicons, etc.).
+- **CMake Font Pipeline**: `embed_font(target font_file header var_name)` — converts TTF to C array at build time using PowerShell (Windows) or `xxd` (Linux/macOS).
+- **Font docs**: README section on embedded fonts, how to load custom fonts via `ThemeConfig::font_path`.
+
+### Changed
+- `LoadDefaultFont` simplified: embedded font always used as primary, CJK merge from system fonts kept as optional enhancement.
+- Removed system font fallback logic for the base font (segoeui.ttf/arial.ttf no longer needed).
+
+### Fixed
+- Cross-platform font consistency: identical rendering on all platforms regardless of system fonts.
+- Nerd Font icons now render correctly (e.g., `` `` ``).
+
 ## v1.0.0 (2026-05-26) — First Stable Release
 - DX11 Backend default on Windows, OpenGL 3.3 on Linux/macOS
 - DPI auto-scaling, CJK font support, window resize
