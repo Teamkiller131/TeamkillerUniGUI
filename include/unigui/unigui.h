@@ -89,6 +89,7 @@
 #include <unigui/widgets/animate.h>
 #include <unigui/widgets/passwordinput.h>
 #include <unigui/widgets/wizard.h>
+#include <unigui/widgets/card.h>
 #include <unigui/app/app.h>
 #include <unigui/fx/easing.h>
 #include <unigui/fx/effect_scope.h>
