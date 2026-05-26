@@ -1,0 +1,3 @@
+add_executable(hello_unigui_v2 main.cc)
+target_link_libraries(hello_unigui_v2 PRIVATE unigui)
+target_compile_features(hello_unigui_v2 PRIVATE cxx_std_23)
