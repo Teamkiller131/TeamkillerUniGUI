@@ -1,6 +1,7 @@
 #include <unigui/widgets/toast.h>
 #include <unigui/fx/animation.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 
 namespace unigui {
 
@@ -68,6 +69,9 @@ void Toast::Render() {
         ImGui::PopStyleColor();
 
         ImGui::End();
+        // Force toast to front of z-order
+        ImGuiWindow* w = ImGui::FindWindowByName(winName);
+        if (w) ImGui::BringWindowToDisplayFront(w);
     }
 }
 
