@@ -7,12 +7,12 @@
 #include <nlohmann/json.hpp>
 #include <cpptoml.h>
 
-namespace unigui::v2 {
+namespace unigui::config {
 
 /// Unified config system: TOML + JSON + INI, layered merging.
-class Config {
+class Store {
 public:
-    static Config& Instance();
+    static Store& Instance();
 
     // ── Load ────────────────────────────────────────────────────────────────
     bool LoadTOML(const std::string& path);
@@ -46,16 +46,16 @@ public:
 
     // ── Layering ────────────────────────────────────────────────────────────
     /// Merge another config on top (higher priority overwrites).
-    void Merge(const Config& other);
+    void Merge(const Store& other);
 
     /// Clear all values.
     void Clear();
 
 private:
-    Config() = default;
+    Store() = default;
     std::unordered_map<std::string, std::string> data_;
     void SetValue(const std::string& key, const std::string& value);
     std::string GetValue(const std::string& key, const std::string& defaultVal = "") const;
 };
 
-} // namespace unigui::v2
+} // namespace unigui::config

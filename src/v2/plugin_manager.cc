@@ -1,4 +1,4 @@
-#include <unigui/v2/plugin_manager.h>
+#include <unigui/plugin/plugin_manager.h>
 #include <unigui/core/log.h>
 #include <algorithm>
 #ifdef _WIN32
@@ -7,9 +7,9 @@
 #include <dlfcn.h>
 #endif
 
-namespace unigui::v2 {
+namespace unigui::plugin {
 
-PluginManager& PluginManager::Instance() { static PluginManager pm; return pm; }
+Manager& Manager::Instance() { static Manager pm; return pm; }
 
 static void* LoadLibOS(const std::string& path) {
 #ifdef _WIN32
@@ -34,7 +34,7 @@ static void* GetSymOS(void* h, const char* n) {
 #endif
 }
 
-IPlugin* PluginManager::Load(const std::string& path) {
+IPlugin* Manager::Load(const std::string& path) {
     for (auto& p : plugins_) if (p.path == path) { UNIGUI_LOG_WARN("Plugin already loaded: {}", path); return p.raw; }
 
     void* h = LoadLibOS(path);
@@ -57,7 +57,7 @@ IPlugin* PluginManager::Load(const std::string& path) {
     return plugins_.back().raw;
 }
 
-bool PluginManager::Unload(const std::string& name) {
+bool Manager::Unload(const std::string& name) {
     auto it = std::find_if(plugins_.begin(), plugins_.end(), [&](auto& p){return p.name==name;});
     if (it == plugins_.end()) return false;
     it->raw->Shutdown();
@@ -66,7 +66,7 @@ bool PluginManager::Unload(const std::string& name) {
     return true;
 }
 
-IPlugin* PluginManager::Reload(const std::string& name) {
+IPlugin* Manager::Reload(const std::string& name) {
     std::string path;
     for (auto& p : plugins_) if (p.name == name) { path = p.path; break; }
     if (path.empty()) return nullptr;
@@ -76,18 +76,18 @@ IPlugin* PluginManager::Reload(const std::string& name) {
     return p;
 }
 
-std::vector<std::string> PluginManager::List() const {
+std::vector<std::string> Manager::List() const {
     std::vector<std::string> ns;
     for (auto& p : plugins_) ns.push_back(p.name);
     return ns;
 }
 
-IPlugin* PluginManager::Get(const std::string& name) const {
+IPlugin* Manager::Get(const std::string& name) const {
     for (auto& p : plugins_) if (p.name == name) return p.raw;
     return nullptr;
 }
 
-IPlugin* PluginManager::Register(IPlugin* plugin) {
+IPlugin* Manager::Register(IPlugin* plugin) {
     auto info = plugin->GetInfo();
     if (!plugin->Init()) { UNIGUI_LOG_ERROR("Init failed: {}", info.name); delete plugin; return nullptr; }
     LoadedPlugin lp;
@@ -98,9 +98,9 @@ IPlugin* PluginManager::Register(IPlugin* plugin) {
     return plugins_.back().raw;
 }
 
-void PluginManager::Shutdown() {
+void Manager::Shutdown() {
     for (auto& p : plugins_) if (p.raw) p.raw->Shutdown();
     plugins_.clear();
 }
 
-} // namespace unigui::v2
+} // namespace unigui::plugin

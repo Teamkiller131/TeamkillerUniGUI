@@ -1,30 +1,30 @@
-#include <unigui/v2/eventbus.h>
+#include <unigui/events/eventbus.h>
 #include <unigui/core/log.h>
 
-namespace unigui::v2 {
+namespace unigui::events {
 
-EventBus::EventBus() { worker_ = std::thread(&EventBus::WorkerThread, this); }
+Bus::Bus() { worker_ = std::thread(&Bus::WorkerThread, this); }
 
-EventBus& EventBus::Instance() { static EventBus eb; return eb; }
+Bus& Bus::Instance() { static Bus eb; return eb; }
 
-EventBus::SubID EventBus::Subscribe(const std::string& topic, Handler handler) {
+Bus::SubID Bus::Subscribe(const std::string& topic, Handler handler) {
     std::lock_guard lock(mutex_);
     SubID id = nextId_++;
     subs_.push_back({id, topic, std::move(handler)});
     return id;
 }
 
-void EventBus::Unsubscribe(SubID id) {
+void Bus::Unsubscribe(SubID id) {
     std::lock_guard lock(mutex_);
     subs_.erase(std::remove_if(subs_.begin(), subs_.end(),
         [id](auto& s) { return s.id == id; }), subs_.end());
 }
 
-EventBus::SubID EventBus::SubscribeAll(Handler handler) {
+Bus::SubID Bus::SubscribeAll(Handler handler) {
     return Subscribe("*", std::move(handler));
 }
 
-bool EventBus::MatchTopic(const std::string& pattern, const std::string& topic) {
+bool Bus::MatchTopic(const std::string& pattern, const std::string& topic) {
     if (pattern == "*") return true;
     // Convert glob pattern to regex: "window.*" -> "window\..*"
     if (pattern.find('*') != std::string::npos) {
@@ -40,7 +40,7 @@ bool EventBus::MatchTopic(const std::string& pattern, const std::string& topic) 
     return pattern == topic;
 }
 
-void EventBus::Publish(const std::string& topic, const std::any& event) {
+void Bus::Publish(const std::string& topic, const std::any& event) {
     std::lock_guard lock(mutex_);
     for (auto& s : subs_) {
         if (MatchTopic(s.topic, topic)) {
@@ -49,13 +49,13 @@ void EventBus::Publish(const std::string& topic, const std::any& event) {
     }
 }
 
-void EventBus::PublishAsync(const std::string& topic, const std::any& event) {
+void Bus::PublishAsync(const std::string& topic, const std::any& event) {
     std::lock_guard lock(queueMutex_);
     asyncQueue_.push({topic, event});
     queueCV_.notify_one();
 }
 
-void EventBus::WorkerThread() {
+void Bus::WorkerThread() {
     while (running_) {
         std::unique_lock lock(queueMutex_);
         queueCV_.wait_for(lock, std::chrono::milliseconds(100));
@@ -70,10 +70,10 @@ void EventBus::WorkerThread() {
     }
 }
 
-void EventBus::Shutdown() {
+void Bus::Shutdown() {
     running_ = false;
     queueCV_.notify_all();
     if (worker_.joinable()) worker_.join();
 }
 
-} // namespace unigui::v2
+} // namespace unigui::events

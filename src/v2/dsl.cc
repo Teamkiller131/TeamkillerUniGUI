@@ -1,6 +1,6 @@
-#include <unigui/v2/dsl.h>
+#include <unigui/dsl/dsl.h>
 
-namespace unigui::v2::dsl {
+namespace unigui::dsl {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -115,4 +115,4 @@ static void renderImpl(NodePtr node) {
 
 void Render(NodePtr root) { renderImpl(root); }
 
-} // namespace unigui::v2::dsl
+} // namespace unigui::dsl

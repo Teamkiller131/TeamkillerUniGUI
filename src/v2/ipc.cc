@@ -4,7 +4,7 @@
 #include <winsock2.h>
 #include <windows.h>
 #endif
-#include <unigui/v2/ipc.h>
+#include <unigui/ipc/ipc.h>
 #include <unigui/core/log.h>
 #include <zmq.h>
 #include <cstring>
@@ -17,21 +17,21 @@
 #include <unistd.h>
 #endif
 
-namespace unigui::v2 {
+namespace unigui::ipc {
 
 // ── ZMQ Helpers ─────────────────────────────────────────────────────────────
 
 static void* zmqCtx() { static void* ctx = zmq_ctx_new(); return ctx; }
 
-// ── IPCServer ───────────────────────────────────────────────────────────────
+// ── Server ───────────────────────────────────────────────────────────────
 
-IPCServer::IPCServer(const std::string& address) : address_(address) {
+Server::Server(const std::string& address) : address_(address) {
     ctx_ = zmqCtx();
 }
 
-IPCServer::~IPCServer() { Close(); }
+Server::~Server() { Close(); }
 
-bool IPCServer::Start() {
+bool Server::Start() {
     if (socket_) return true;
     socket_ = zmq_socket(ctx_, ZMQ_PUB);
     if (!socket_) { UNIGUI_LOG_ERROR("IPC server: zmq_socket failed"); return false; }
@@ -45,27 +45,27 @@ bool IPCServer::Start() {
     return true;
 }
 
-bool IPCServer::Send(const std::string& msg) {
+bool Server::Send(const std::string& msg) {
     if (!socket_ || !running_) return false;
     return zmq_send(socket_, msg.c_str(), msg.size(), 0) == (int)msg.size();
 }
 
-void IPCServer::OnReceive(std::function<void(const std::string&)> cb) { onRecv_ = std::move(cb); }
+void Server::OnReceive(std::function<void(const std::string&)> cb) { onRecv_ = std::move(cb); }
 
-void IPCServer::Close() {
+void Server::Close() {
     running_ = false;
     if (socket_) { zmq_close(socket_); socket_ = nullptr; }
 }
 
-// ── IPCClient ───────────────────────────────────────────────────────────────
+// ── Client ───────────────────────────────────────────────────────────────
 
-IPCClient::IPCClient(const std::string& address) : address_(address) {
+Client::Client(const std::string& address) : address_(address) {
     ctx_ = zmqCtx();
 }
 
-IPCClient::~IPCClient() { Close(); }
+Client::~Client() { Close(); }
 
-bool IPCClient::Connect() {
+bool Client::Connect() {
     if (socket_) return true;
     socket_ = zmq_socket(ctx_, ZMQ_SUB);
     if (!socket_) return false;
@@ -79,14 +79,14 @@ bool IPCClient::Connect() {
     return true;
 }
 
-bool IPCClient::Send(const std::string& msg) {
+bool Client::Send(const std::string& msg) {
     if (!socket_) return false;
     return zmq_send(socket_, msg.c_str(), msg.size(), 0) == (int)msg.size();
 }
 
-void IPCClient::OnReceive(std::function<void(const std::string&)> cb) { onRecv_ = std::move(cb); }
+void Client::OnReceive(std::function<void(const std::string&)> cb) { onRecv_ = std::move(cb); }
 
-bool IPCClient::Poll(int timeoutMs) {
+bool Client::Poll(int timeoutMs) {
     if (!socket_ || !onRecv_) return false;
     zmq_pollitem_t items[] = {{socket_, 0, ZMQ_POLLIN, 0}};
     if (zmq_poll(items, 1, timeoutMs) > 0 && (items[0].revents & ZMQ_POLLIN)) {
@@ -97,7 +97,7 @@ bool IPCClient::Poll(int timeoutMs) {
     return false;
 }
 
-void IPCClient::Close() { if (socket_) { zmq_close(socket_); socket_ = nullptr; } }
+void Client::Close() { if (socket_) { zmq_close(socket_); socket_ = nullptr; } }
 
 // ── SharedMemory ────────────────────────────────────────────────────────────
 
@@ -133,4 +133,4 @@ void SharedMemory::Read(void* data, size_t size, size_t offset) {
     if (data_ && offset + size <= size_) std::memcpy(data, (char*)data_ + offset, size);
 }
 
-} // namespace unigui::v2
+} // namespace unigui::ipc

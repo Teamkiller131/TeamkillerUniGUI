@@ -1,6 +1,6 @@
-#include <unigui/v2/shmem.h>
+#include <unigui/ipc/shmem.h>
 #include <unigui/core/log.h>
-namespace unigui::v2 {
+namespace unigui::ipc {
 SharedMemory::SharedMemory(const std::string& name, size_t size) : size_(size), name_(name) {
 #ifdef _WIN32
     handle_ = CreateFileMappingA(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, (DWORD)size, name.c_str());

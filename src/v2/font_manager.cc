@@ -1,13 +1,13 @@
-#include <unigui/v2/font_manager.h>
+#include <unigui/fonts/font_manager.h>
 #include <unigui/core/log.h>
 #include <cstdio>
 #include <imgui.h>
 
-namespace unigui::v2 {
+namespace unigui::fonts {
 
-FontManager& FontManager::Instance() { static FontManager fm; return fm; }
+Manager& Manager::Instance() { static Manager fm; return fm; }
 
-ImFont* FontManager::Load(const std::string& name, const std::string& path, float size) {
+ImFont* Manager::Load(const std::string& name, const std::string& path, float size) {
     if (fonts_.count(name)) { UNIGUI_LOG_WARN("Font '{}' already loaded", name); return fonts_[name].font; }
 
     FILE* fp = fopen(path.c_str(), "rb");
@@ -28,7 +28,7 @@ ImFont* FontManager::Load(const std::string& name, const std::string& path, floa
     return font;
 }
 
-ImFont* FontManager::LoadFromMemory(const std::string& name, const void* data, int size, float fontSize) {
+ImFont* Manager::LoadFromMemory(const std::string& name, const void* data, int size, float fontSize) {
     if (fonts_.count(name)) { UNIGUI_LOG_WARN("Font '{}' already loaded", name); return fonts_[name].font; }
     ImFontConfig cfg; cfg.FontDataOwnedByAtlas = false;
     ImFont* font = ImGui::GetIO().Fonts->AddFontFromMemoryTTF((void*)data, size, fontSize, &cfg);
@@ -39,11 +39,11 @@ ImFont* FontManager::LoadFromMemory(const std::string& name, const void* data, i
     return font;
 }
 
-ImFont* FontManager::Get(const std::string& name) const {
+ImFont* Manager::Get(const std::string& name) const {
     auto it = fonts_.find(name); return it != fonts_.end() ? it->second.font : nullptr;
 }
 
-bool FontManager::Unload(const std::string& name) {
+bool Manager::Unload(const std::string& name) {
     auto it = fonts_.find(name);
     if (it == fonts_.end()) return false;
     if (it->second.data) IM_FREE(it->second.data);
@@ -52,27 +52,27 @@ bool FontManager::Unload(const std::string& name) {
     return true;
 }
 
-void FontManager::SetDefault(const std::string& name) {
+void Manager::SetDefault(const std::string& name) {
     auto* f = Get(name);
     if (f) ImGui::GetIO().FontDefault = f;
 }
 
-void FontManager::SetFallback(const std::string& name, const std::string& fallbackName) {
+void Manager::SetFallback(const std::string& name, const std::string& fallbackName) {
     auto it = fonts_.find(name);
     if (it != fonts_.end()) it->second.fallbacks.push_back(fallbackName);
 }
 
-std::vector<std::string> FontManager::List() const {
+std::vector<std::string> Manager::List() const {
     std::vector<std::string> ns;
     for (auto& [k,_] : fonts_) ns.push_back(k);
     return ns;
 }
 
-void FontManager::Push(const std::string& name) {
+void Manager::Push(const std::string& name) {
     if (auto* f = Get(name)) ImGui::PushFont(f);
 }
-void FontManager::Pop() { ImGui::PopFont(); }
+void Manager::Pop() { ImGui::PopFont(); }
 
-void FontManager::Build() { ImGui::GetIO().Fonts->Build(); }
+void Manager::Build() { ImGui::GetIO().Fonts->Build(); }
 
-} // namespace unigui::v2
+} // namespace unigui::fonts

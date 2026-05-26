@@ -5,7 +5,7 @@
 #include <functional>
 #include <imgui.h>
 
-namespace unigui::v2 {
+namespace unigui::styling {
 
 struct StyleRule {
     std::string selector;     // "Window", "Button.primary", Button:hover", "#submit"
@@ -17,9 +17,9 @@ struct StyleRule {
     int priority() const;     // 0=type, 1=class, 2=id
 };
 
-class StyleEngine {
+class Engine {
 public:
-    static StyleEngine& Instance();
+    static Engine& Instance();
 
     /// Load CSS from a file. Returns number of rules parsed.
     int LoadFile(const std::string& path);
@@ -38,7 +38,7 @@ public:
     std::string GetVar(const std::string& name) const;
 
 private:
-    StyleEngine() = default;
+    Engine() = default;
     std::vector<StyleRule> rules_;
     std::unordered_map<std::string, std::string> vars_;
     void ParseRule(const std::string& block);
@@ -46,4 +46,4 @@ private:
     void ApplyRule(const StyleRule& rule);
 };
 
-} // namespace unigui::v2
+} // namespace unigui::styling

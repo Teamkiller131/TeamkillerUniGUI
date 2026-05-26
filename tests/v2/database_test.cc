@@ -1,6 +1,6 @@
-#include <unigui/v2/database.h>
+#include <unigui/sqlite/database.h>
 #include <gtest/gtest.h>
-using namespace unigui::v2;
+using namespace unigui::sqlite;
 
 class DBTest : public ::testing::Test {
 protected:

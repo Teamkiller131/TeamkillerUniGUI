@@ -7,7 +7,7 @@
 #include <httplib.h>
 #include <ixwebsocket/IXWebSocket.h>
 
-namespace unigui::v2 {
+namespace unigui::network {
 
 struct HttpResponse {
     int status = 0;
@@ -49,4 +49,4 @@ private:
     std::function<void()> onClose_;
 };
 
-} // namespace unigui::v2
+} // namespace unigui::network

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.31)
 
 project(unigui
-    VERSION 2.8.0
+    VERSION 2.9.0
     DESCRIPTION "Modular Dear ImGui C++ wrapper — core + backends + optional modules"
     HOMEPAGE_URL "https://xbw-nas.iepose.cn/Teamkiller131/TeamkillerUniGUI"
     LANGUAGES CXX

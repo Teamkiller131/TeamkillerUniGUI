@@ -6,7 +6,7 @@
 #include <variant>
 #include <imgui.h>
 
-namespace unigui::v2::dsl {
+namespace unigui::dsl {
 
 // Forward
 struct Node;
@@ -64,4 +64,4 @@ NodePtr For(int count, std::function<NodePtr(int)> builder);
 /// Render a DSL tree. Called each frame.
 void Render(NodePtr root);
 
-} // namespace unigui::v2::dsl
+} // namespace unigui::dsl

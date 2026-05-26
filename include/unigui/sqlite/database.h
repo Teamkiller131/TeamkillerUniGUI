@@ -6,11 +6,11 @@
 #include <variant>
 #include <sqlite3.h>
 
-namespace unigui::v2 {
+namespace unigui::sqlite {
 
-using SqlParam = std::variant<int, double, std::string, std::nullptr_t, const char*>;
+using Param = std::variant<int, double, std::string, std::nullptr_t, const char*>;
 
-struct SqlRow {
+struct Row {
     std::vector<std::string> columns;
     std::string Get(int i) const { return i<(int)columns.size()?columns[i]:""; }
     std::string Get(const char* name); // not implemented inline — needs column index
@@ -26,14 +26,14 @@ public:
     bool IsOpen() const { return db_ != nullptr; }
 
     /// Execute INSERT/UPDATE/DELETE. Returns affected rows or -1.
-    int Execute(const std::string& sql, const std::vector<SqlParam>& params = {});
+    int Execute(const std::string& sql, const std::vector<Param>& params = {});
 
     /// Query SELECT. Calls callback for each row. Returns row count.
-    int Query(const std::string& sql, const std::vector<SqlParam>& params,
-              std::function<void(SqlRow&)> callback);
+    int Query(const std::string& sql, const std::vector<Param>& params,
+              std::function<void(Row&)> callback);
 
     /// Get a single value (first column of first row).
-    std::string QueryValue(const std::string& sql, const std::vector<SqlParam>& params = {});
+    std::string QueryValue(const std::string& sql, const std::vector<Param>& params = {});
 
     /// Schema migration: run SQL if version not yet applied.
     bool Migrate(int version, const std::string& sql);
@@ -45,7 +45,7 @@ public:
 
 private:
     sqlite3* db_ = nullptr;
-    void BindParams(sqlite3_stmt* stmt, const std::vector<SqlParam>& params);
+    void BindParams(sqlite3_stmt* stmt, const std::vector<Param>& params);
 };
 
 class Transaction {
@@ -57,4 +57,4 @@ private:
     Database& db_; bool committed_ = false;
 };
 
-} // namespace unigui::v2
+} // namespace unigui::sqlite

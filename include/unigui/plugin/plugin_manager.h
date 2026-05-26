@@ -1,12 +1,12 @@
 #pragma once
-#include <unigui/v2/plugin_interface.h>
+#include <unigui/plugin/plugin_interface.h>
 #include <string>
 #include <vector>
 #include <memory>
 #include <functional>
 #include <unordered_map>
 
-namespace unigui::v2 {
+namespace unigui::plugin {
 
 struct LoadedPlugin {
     std::string path, name;
@@ -16,9 +16,9 @@ struct LoadedPlugin {
 };
 
 /// Manages plugin lifecycle: load, unload, reload, list.
-class PluginManager {
+class Manager {
 public:
-    static PluginManager& Instance();
+    static Manager& Instance();
 
     /// Load a plugin DLL. Returns nullptr on failure.
     IPlugin* Load(const std::string& path);
@@ -45,7 +45,7 @@ public:
     void Shutdown();
 
 private:
-    PluginManager() = default;
+    Manager() = default;
     void* LoadLibraryOS(const std::string& path);
     void FreeLibraryOS(void* handle);
     void* GetSymbolOS(void* handle, const char* name);
@@ -54,4 +54,4 @@ private:
     std::function<void(const std::string&)> onReload_;
 };
 
-} // namespace unigui::v2
+} // namespace unigui::plugin
