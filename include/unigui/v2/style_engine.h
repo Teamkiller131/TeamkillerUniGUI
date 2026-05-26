@@ -1,0 +1,49 @@
+#pragma once
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <functional>
+#include <imgui.h>
+
+namespace unigui::v2 {
+
+struct StyleRule {
+    std::string selector;     // "Window", "Button.primary", Button:hover", "#submit"
+    std::string type;         // Widget type name
+    std::string className;    // ".primary"
+    std::string idName;       // "#submit"
+    std::string pseudoClass;  // ":hover" or empty
+    std::unordered_map<std::string, std::string> props;
+    int priority() const;     // 0=type, 1=class, 2=id
+};
+
+class StyleEngine {
+public:
+    static StyleEngine& Instance();
+
+    /// Load CSS from a file. Returns number of rules parsed.
+    int LoadFile(const std::string& path);
+    /// Parse CSS from a string. Returns number of rules parsed.
+    int Parse(const std::string& css);
+
+    /// Apply matching rules to the ImGui style system.
+    void Apply(const std::string& widgetType, const std::string& className = "",
+               const std::string& idName = "", bool hovered = false);
+
+    /// Apply all loaded rules globally.
+    void ApplyAll();
+
+    /// Get/set a CSS variable.
+    void SetVar(const std::string& name, const std::string& value);
+    std::string GetVar(const std::string& name) const;
+
+private:
+    StyleEngine() = default;
+    std::vector<StyleRule> rules_;
+    std::unordered_map<std::string, std::string> vars_;
+    void ParseRule(const std::string& block);
+    void ParseSelector(StyleRule& rule, const std::string& sel);
+    void ApplyRule(const StyleRule& rule);
+};
+
+} // namespace unigui::v2
