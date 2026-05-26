@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.5.1 (2026-05-26) — System Tray + Widget Docs
+
+### Added
+- **TrayIcon**: System tray widget with menu support and notification balloons (Windows via `Shell_NotifyIcon`). API: `Show()`, `Hide()`, `SetMenu()`, `ShowNotification()`.
+- **README widget quick-reference**: Compact API table for all 55 widgets.
+
+### Changed
+- Version: 1.5.0 → 1.5.1
+
 ## v1.5.0 (2026-05-26) — User Feedback Fixes
 - ImPlot::CreateContext/DestroyContext auto-managed in Init/Shutdown
 - DX12 renderer only compiled when UNIGUI_BACKEND=DX12
