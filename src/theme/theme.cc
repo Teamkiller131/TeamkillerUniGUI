@@ -2,15 +2,94 @@
 #include <unigui/core/log.h>
 #include <sstream>
 #include <regex>
+#include <cstdio>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 namespace unigui {
 
+float DetectDPIScale(void* native_window) {
+#ifdef _WIN32
+    HWND hwnd = (HWND)native_window;
+    if (hwnd) {
+        // Try per-monitor DPI (Windows 10+)
+        using GetDpiForWindow_t = UINT(WINAPI*)(HWND);
+        HMODULE user32 = GetModuleHandleA("user32.dll");
+        auto pGetDpiForWindow = (GetDpiForWindow_t)GetProcAddress(user32, "GetDpiForWindow");
+        if (pGetDpiForWindow) {
+            UINT dpi = pGetDpiForWindow(hwnd);
+            if (dpi > 0) return dpi / 96.0f;
+        }
+    }
+    // Fallback: system DPI
+    HDC screen = GetDC(nullptr);
+    if (screen) {
+        int dpi = GetDeviceCaps(screen, LOGPIXELSX);
+        ReleaseDC(nullptr, screen);
+        if (dpi > 0) return dpi / 96.0f;
+    }
+#endif
+    return 1.0f;
+}
+
+void LoadDefaultFont(float size_pixels, const char* ttf_path) {
+    auto& io = ImGui::GetIO();
+    ImFontConfig cfg;
+    cfg.OversampleH = 2;
+    cfg.OversampleV = 2;
+
+    // Ensure atlas is large enough for CJK
+    io.Fonts->Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight;
+
+    // Always load built-in font first (guaranteed to work)
+    io.Fonts->AddFontDefault(&cfg);
+
+    // Try to merge CJK font for Chinese/Japanese/Korean support
+    cfg.MergeMode = true;
+    const ImWchar* cjk_range = io.Fonts->GetGlyphRangesChineseFull();
+    ImFont* cjk = nullptr;
+
+    const char* paths[] = {
+        ttf_path,
+        "C:\\Windows\\Fonts\\msyh.ttc",
+        "C:\\Windows\\Fonts\\simhei.ttf",
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+        nullptr
+    };
+
+    for (int i = 0; paths[i] && !cjk; i++) {
+        cjk = io.Fonts->AddFontFromFileTTF(paths[i], size_pixels, &cfg, cjk_range);
+    }
+
+    if (cjk) {
+        UNIGUI_LOG_INFO("CJK font merged: {} ({}px)", "ok", (int)size_pixels);
+    } else {
+        UNIGUI_LOG_WARN("No CJK font available — Chinese text may not render");
+    }
+
+    io.Fonts->Build();
+}
+
+void BeginTextWrap(float width) {
+    if (width <= 0) width = ImGui::GetContentRegionAvail().x;
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + width);
+}
+void EndTextWrap() {
+    ImGui::PopTextWrapPos();
+}
+
 void ApplyTheme(const ThemeConfig& config) {
-    UNIGUI_LOG_DEBUG("ApplyTheme: preset={} dpi={}", (int)config.preset, config.dpi_scale);
+    auto& io = ImGui::GetIO();
     auto& style = ImGui::GetStyle();
     auto& colors = style.Colors;
 
-    // ── Rounding & Spacing (shared) ────────────────────────────────────────
+    // ── DPI scaling ──────────────────────────────────────────────────────
+    float dpi = config.dpi_scale;
+    if (dpi <= 0) dpi = 1.0f; // caller should have set dpi before calling
+    UNIGUI_LOG_INFO("Theme: preset={} dpi={:.2f} font={}px",
+        (int)config.preset, dpi, (int)(config.font_size * dpi));
+    // ── Style base values ─────────────────────────────────────────────
     style.WindowRounding = 6.0f;
     style.FrameRounding = 4.0f;
     style.GrabRounding = 4.0f;
@@ -23,7 +102,7 @@ void ApplyTheme(const ThemeConfig& config) {
     style.ScrollbarSize = 14.0f;
     style.WindowMenuButtonPosition = ImGuiDir_None;
 
-    // ── Color palette ─────────────────────────────────────────────────────
+    // ── Color palette ────────────────────────────────────────────────────
     if (config.preset == ThemePreset::Dark) {
         colors[ImGuiCol_Text]                  = ImVec4(0.90f, 0.90f, 0.92f, 1.00f);
         colors[ImGuiCol_TextDisabled]          = ImVec4(0.50f, 0.50f, 0.55f, 1.00f);
@@ -81,7 +160,6 @@ void ApplyTheme(const ThemeConfig& config) {
         colors[ImGuiCol_NavWindowingDimBg]     = ImVec4(0.50f, 0.50f, 0.55f, 0.20f);
         colors[ImGuiCol_ModalWindowDimBg]      = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
     } else {
-        // Light theme (white/gray backgrounds, dark text, blue accent)
         colors[ImGuiCol_Text]                  = ImVec4(0.15f, 0.15f, 0.18f, 1.00f);
         colors[ImGuiCol_TextDisabled]          = ImVec4(0.55f, 0.55f, 0.60f, 1.00f);
         colors[ImGuiCol_WindowBg]              = ImVec4(0.96f, 0.96f, 0.97f, 1.00f);
@@ -139,56 +217,38 @@ void ApplyTheme(const ThemeConfig& config) {
         colors[ImGuiCol_ModalWindowDimBg]      = ImVec4(0.00f, 0.00f, 0.00f, 0.35f);
     }
 
-    // ── DPI Scaling ───────────────────────────────────────────────────────
-    ImGui::GetIO().FontGlobalScale = config.dpi_scale;
+    // Scale all sizes by DPI (AFTER setting values so they get scaled)
+    style.ScaleAllSizes(dpi);
 }
 
-static const char* kColorNames[] = {
-    "Text","TextDisabled","WindowBg","ChildBg","PopupBg","Border","BorderShadow",
-    "FrameBg","FrameBgHovered","FrameBgActive","TitleBg","TitleBgActive","TitleBgCollapsed",
-    "MenuBarBg","ScrollbarBg","ScrollbarGrab","ScrollbarGrabHovered","ScrollbarGrabActive",
-    "CheckMark","SliderGrab","SliderGrabActive","Button","ButtonHovered","ButtonActive",
-    "Header","HeaderHovered","HeaderActive","Separator","SeparatorHovered","SeparatorActive",
-    "ResizeGrip","ResizeGripHovered","ResizeGripActive","Tab","TabHovered","TabActive",
-    "TabUnfocused","TabUnfocusedActive","DockingPreview","DockingEmptyBg",
-    "PlotLines","PlotLinesHovered","PlotHistogram","PlotHistogramHovered",
-    "TableHeaderBg","TableBorderStrong","TableBorderLight","TableRowBg","TableRowBgAlt",
-    "TextLink","TreeLines","TextSelectedBg","DragDropTarget","DragDropTargetBg",
-    "UnsavedMarker","NavCursor","NavWindowingHighlight","NavWindowingDimBg","ModalWindowDimBg"
-};
+static const char* kColorNames[] = {"Text","TextDisabled","WindowBg","ChildBg","PopupBg","Border","BorderShadow","FrameBg","FrameBgHovered","FrameBgActive","TitleBg","TitleBgActive","TitleBgCollapsed","MenuBarBg","ScrollbarBg","ScrollbarGrab","ScrollbarGrabHovered","ScrollbarGrabActive","CheckMark","SliderGrab","SliderGrabActive","Button","ButtonHovered","ButtonActive","Header","HeaderHovered","HeaderActive","Separator","SeparatorHovered","SeparatorActive","ResizeGrip","ResizeGripHovered","ResizeGripActive","Tab","TabHovered","TabActive","TabUnfocused","TabUnfocusedActive","DockingPreview","DockingEmptyBg","PlotLines","PlotLinesHovered","PlotHistogram","PlotHistogramHovered","TableHeaderBg","TableBorderStrong","TableBorderLight","TableRowBg","TableRowBgAlt","TextLink","TreeLines","TextSelectedBg","DragDropTarget","DragDropTargetBg","UnsavedMarker","NavCursor","NavWindowingHighlight","NavWindowingDimBg","ModalWindowDimBg"};
 
 std::string ExportThemeJSON() {
     auto& colors = ImGui::GetStyle().Colors;
-    constexpr int N = sizeof(kColorNames) / sizeof(kColorNames[0]);
-    std::ostringstream ss;
-    ss << "{";
+    constexpr int N = sizeof(kColorNames)/sizeof(kColorNames[0]);
+    std::ostringstream ss; ss << "{";
     for (int i = 0; i < ImGuiCol_COUNT && i < N; i++) {
         if (i > 0) ss << ",";
         ss << "\"" << kColorNames[i] << "\":[" << colors[i].x << "," << colors[i].y << "," << colors[i].z << "," << colors[i].w << "]";
     }
-    ss << "}";
-    return ss.str();
+    ss << "}"; return ss.str();
 }
 
 bool ImportThemeJSON(const std::string& json) {
     auto& colors = ImGui::GetStyle().Colors;
-    constexpr int N = sizeof(kColorNames) / sizeof(kColorNames[0]);
+    constexpr int N = sizeof(kColorNames)/sizeof(kColorNames[0]);
     for (int i = 0; i < ImGuiCol_COUNT && i < N; i++) {
-        std::string name = kColorNames[i];
-        std::regex re("\"" + name + "\"\\s*:\\s*\\[([^\\]]+)\\]");
+        std::regex re("\"" + std::string(kColorNames[i]) + "\"\\s*:\\s*\\[([^\\]]+)\\]");
         std::smatch m;
         if (std::regex_search(json, m, re)) {
+            float vals[4]={0,0,0,1}; int vi=0; size_t pos=0;
             std::string arr = m[1].str();
-            float vals[4] = {0,0,0,1};
-            int vi = 0;
-            size_t pos = 0;
-            while (pos < arr.size() && vi < 4) {
-                size_t comma = arr.find(',', pos);
-                std::string num = (comma != std::string::npos) ? arr.substr(pos, comma-pos) : arr.substr(pos);
-                try { vals[vi++] = std::stof(num); } catch(...) { break; }
-                pos = (comma != std::string::npos) ? comma + 1 : arr.size();
+            while (pos<arr.size()&&vi<4) {
+                size_t comma=arr.find(',',pos);
+                try{vals[vi++]=std::stof(comma!=std::string::npos?arr.substr(pos,comma-pos):arr.substr(pos));}catch(...){break;}
+                pos=comma!=std::string::npos?comma+1:arr.size();
             }
-            colors[i] = ImVec4(vals[0], vals[1], vals[2], vals[3]);
+            colors[i]=ImVec4(vals[0],vals[1],vals[2],vals[3]);
         }
     }
     return true;

@@ -1,4 +1,3 @@
-// app.cc - DX11 + GL backend support
 #include <unigui/app/app.h>
 #include <unigui/backend/backend_factory.h>
 #include <unigui/theme/theme.h>
@@ -15,63 +14,84 @@
 #endif
 
 namespace unigui {
-static bool g_initialized = false;
-static BackendType g_backend = BackendType::GLFW_GL3;
+static bool g_initialized=false;
+static BackendType g_backend=BackendType::GLFW_GL3;
 static std::unique_ptr<PlatformBackend> g_platform;
 static std::unique_ptr<RendererBackend> g_renderer;
 
-bool Init(const AppConfig& config) {
-    if (g_initialized) return false;
+bool Init(const AppConfig& config){
+    if(g_initialized)return false;
     InitLogging("debug");
-    UNIGUI_LOG_INFO("Init: backend={}, {}x{}", (int)config.backend, config.width, config.height);
+
     IMGUI_CHECKVERSION(); ImGui::CreateContext();
-    auto backend = CreateBackend(config.backend);
-    g_backend = config.backend;
-    g_platform = std::move(backend.platform);
-    g_renderer = std::move(backend.renderer);
-    if (!g_platform || !g_platform->Init(nullptr)) { UNIGUI_LOG_ERROR("Platform init failed"); return false; }
-    g_platform->SetTitle(config.title);
-    g_platform->SetSize(config.width, config.height);
+    auto be=CreateBackend(config.backend);
+    g_backend=config.backend; g_platform=std::move(be.platform); g_renderer=std::move(be.renderer);
+
+    if(!g_platform||!g_platform->Init(nullptr)){UNIGUI_LOG_ERROR("Platform init failed");return false;}
+    g_platform->SetTitle(config.title); g_platform->SetSize(config.width,config.height);
+
 #ifdef UNIGUI_HAS_DX11
-    if (config.backend == BackendType::DX11) {
-        auto hwnd = g_platform->GetWindowHandle();
-        RECT rc; GetClientRect((HWND)hwnd, &rc);
-        int pw = rc.right - rc.left, ph = rc.bottom - rc.top;
-        if (pw <= 0) { pw = config.width; ph = config.height; }
-        ID3D11Device* dev=nullptr; ID3D11DeviceContext* ctx=nullptr;
-        IDXGISwapChain* swap=nullptr; ID3D11RenderTargetView* rtv=nullptr;
-        if (!CreateDX11DeviceAndSwapChain(hwnd,pw,ph,&dev,&ctx,&swap,&rtv)) { g_platform->Shutdown(); return false; }
-        auto* dxr = static_cast<DX11Renderer*>(g_renderer.get());
-        dxr->device_=dev; dxr->ctx_=ctx; dxr->swapchain_=swap; dxr->rtv_=rtv;
-        UNIGUI_LOG_INFO("DX11 swapchain: {}x{}", pw, ph);
+    if(config.backend==BackendType::DX11){
+        auto hwnd=g_platform->GetWindowHandle();
+        RECT rc; GetClientRect((HWND)hwnd,&rc);
+        int pw=rc.right-rc.left,ph=rc.bottom-rc.top;
+        if(pw<=0){pw=config.width;ph=config.height;}
+        ID3D11Device* dev=nullptr;ID3D11DeviceContext* ctx=nullptr;
+        IDXGISwapChain* swap=nullptr;ID3D11RenderTargetView* rtv=nullptr;
+        if(!CreateDX11DeviceAndSwapChain(hwnd,pw,ph,&dev,&ctx,&swap,&rtv)){g_platform->Shutdown();return false;}
+        auto* dxr=static_cast<DX11Renderer*>(g_renderer.get());
+        dxr->device_=dev;dxr->ctx_=ctx;dxr->swapchain_=swap;dxr->rtv_=rtv;
     }
 #endif
-    if (!g_renderer||!g_renderer->Init(ImGui::GetCurrentContext())) { g_platform->Shutdown(); return false; }
-    auto& io = ImGui::GetIO();
-    if (g_backend!=BackendType::DX11) io.ConfigFlags|=ImGuiConfigFlags_DockingEnable;
+
+    if(!g_renderer||!g_renderer->Init(ImGui::GetCurrentContext())){g_platform->Shutdown();return false;}
+
+    // ── DPI auto-detection ──────────────────────────────────────────────────
+    auto& io=ImGui::GetIO();
+    float dpi=config.theme.dpi_scale;
+    if(dpi<=0){
+        dpi=DetectDPIScale(g_platform->GetWindowHandle());
+        if(dpi<0.5f)dpi=1.0f;
+    }
+    UNIGUI_LOG_INFO("DPI scale: {:.2f}",dpi);
+
+    // Load CJK font at DPI-scaled size
+    float fontSize=config.theme.font_size*dpi;
+    LoadDefaultFont(fontSize,config.theme.font_path);
+
+    // Apply theme with DPI scaling
+    ThemeConfig tc=config.theme; tc.dpi_scale=dpi;
+    ApplyTheme(tc);
+
+    if(g_backend!=BackendType::DX11)io.ConfigFlags|=ImGuiConfigFlags_DockingEnable;
     io.DisplaySize=ImVec2((float)config.width,(float)config.height);
-    ApplyTheme(config.theme);
+
     g_initialized=true;
+    UNIGUI_LOG_INFO("Init complete: backend={} {}x{} DPI={:.1f}",(int)g_backend,config.width,config.height,dpi);
     return true;
 }
-void Shutdown() { if(!g_initialized)return; if(g_renderer){g_renderer->Shutdown();g_renderer.reset();} if(g_platform){g_platform->Shutdown();g_platform.reset();} g_initialized=false; }
+
+void Shutdown(){if(!g_initialized)return;if(g_renderer){g_renderer->Shutdown();g_renderer.reset();}if(g_platform){g_platform->Shutdown();g_platform.reset();}g_initialized=false;}
+
 bool NewFrame(){
     if(!g_initialized)return false;
     g_platform->PollEvents();
 #ifdef UNIGUI_HAS_DX11
-    if(g_backend==BackendType::DX11) ImGui_ImplDX11_NewFrame();
+    if(g_backend==BackendType::DX11)ImGui_ImplDX11_NewFrame();
 #endif
-    g_platform->NewFrame(); ImGui::NewFrame();
-    if(g_backend!=BackendType::DX11) ImGui::DockSpaceOverViewport(0,ImGui::GetMainViewport(),ImGuiDockNodeFlags_PassthruCentralNode);
+    g_platform->NewFrame();ImGui::NewFrame();
+    if(g_backend!=BackendType::DX11)ImGui::DockSpaceOverViewport(0,ImGui::GetMainViewport(),ImGuiDockNodeFlags_PassthruCentralNode);
     return true;
 }
+
 void Render(){
     if(!g_initialized)return;
-    ImGui::Render(); ImDrawData* dd=ImGui::GetDrawData();
-    if(g_backend==BackendType::GLFW_GL3){ g_renderer->SetClearColor(0.10f,0.10f,0.12f,1.0f); glClear(GL_COLOR_BUFFER_BIT); }
+    ImGui::Render();ImDrawData* dd=ImGui::GetDrawData();
+    if(g_backend==BackendType::GLFW_GL3){g_renderer->SetClearColor(0.10f,0.10f,0.12f,1.0f);glClear(GL_COLOR_BUFFER_BIT);}
     g_renderer->RenderDrawData(dd);
-    if(g_backend==BackendType::GLFW_GL3) g_platform->SwapBuffers();
+    if(g_backend==BackendType::GLFW_GL3)g_platform->SwapBuffers();
 }
-bool ShouldClose(){ return g_platform?g_platform->ShouldClose():true; }
-void Run(const std::function<void()>& cb){ while(!ShouldClose()){ g_platform->PollEvents();NewFrame();cb();Render();} Shutdown(); }
+
+bool ShouldClose(){return g_platform?g_platform->ShouldClose():true;}
+void Run(const std::function<void()>& cb){while(!ShouldClose()){g_platform->PollEvents();NewFrame();cb();Render();}Shutdown();}
 }
