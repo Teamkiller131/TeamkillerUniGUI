@@ -13,9 +13,9 @@ function(embed_font TARGET font_file output_header var_name)
     else()
         add_custom_command(
             OUTPUT ${output_header}
-            COMMAND xxd -i ${font_file} > ${output_header}
-            DEPENDS ${font_file}
-            COMMENT "Embedding font: ${font_file} (xxd)"
+            COMMAND python3 "${CMAKE_SOURCE_DIR}/cmake/embed_font.py" "${font_file}" "${output_header}" "${var_name}"
+            DEPENDS ${font_file} "${CMAKE_SOURCE_DIR}/cmake/embed_font.py"
+            COMMENT "Embedding font: ${font_file}"
         )
     endif()
     target_sources(${TARGET} PRIVATE ${output_header})

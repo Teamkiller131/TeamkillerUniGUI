@@ -113,6 +113,7 @@ bool NewFrame(){
 #endif
     g_platform->NewFrame();ImGui::NewFrame();
     // Check for window resize (DX11 needs swapchain resize)
+#ifdef UNIGUI_HAS_DX11
     if (g_backend == BackendType::DX11) {
         int cw = 0, ch = 0;
         g_platform->GetClientSize(&cw, &ch);
@@ -125,6 +126,7 @@ bool NewFrame(){
             }
         }
     }
+#endif
     if(g_backend!=BackendType::DX11)ImGui::DockSpaceOverViewport(0,ImGui::GetMainViewport(),ImGuiDockNodeFlags_PassthruCentralNode);
     return true;
 }
