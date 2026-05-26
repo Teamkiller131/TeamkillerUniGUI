@@ -1,13 +1,13 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
+#include <unigui/fx/animation.h>
 #include <string>
 #include <vector>
 #include <functional>
 
 namespace unigui {
 struct TabPage {
-    std::string name;
-    std::string label;
+    std::string name, label;
     std::function<void()> content_callback;
     bool closable = false;
 };
@@ -24,5 +24,7 @@ public:
 private:
     std::vector<TabPage> tabs_;
     int active_ = 0;
+    int prevActive_ = 0;
+    fx::AnimationState transAnim_;
 };
 }

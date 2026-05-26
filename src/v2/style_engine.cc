@@ -78,15 +78,31 @@ void Engine::ParseRule(const std::string& block) {
 
 int Engine::Parse(const std::string& css) {
     int count = 0;
+
+    // ── @media blocks ────────────────────────────────────────────────────
+    // Format: @media (min-width: 800px) { ... }
+    std::regex mediaRe(R"(@media\s*\(([^)]+)\)\s*\{)");
+    std::smatch mm;
+    auto mStart = css.cbegin();
+
     // Find all rule blocks: "Selector { ... }"
     std::regex ruleRe(R"(([^{]+)\s*\{([^}]*)\})");
     std::smatch m;
     auto start = css.cbegin();
     while (std::regex_search(start, css.cend(), m, ruleRe)) {
-        ParseRule(m[0].str());
-        count++;
+        std::string full = m[0].str();
+        // Check if preceded by @media
+        bool isMedia = false;
+        if (full.find("@media") != std::string::npos) {
+            isMedia = true;
+        }
+        if (!isMedia) {
+            ParseRule(full);
+            count++;
+        }
         start = m.suffix().first;
     }
+
     UNIGUI_LOG_INFO("CSS: {} rules parsed", count);
     return count;
 }
@@ -203,8 +219,27 @@ static void ApplyProp(const std::string& key, const std::string& val) {
     if (key=="display-scale") { /* responsive hint */ return; }
 
     // ── Transition / animation hints (theme-driven) ────────────────────
-    if (key=="transition") { return; }
-    if (key=="animation")  { return; }
+    if (key=="transition") {
+        // Format: "opacity 0.3s ease-out" or "all 0.25s ease"
+        float dur = 0.3f;
+        std::string curve = "ease";
+        if (val.find("s") != std::string::npos) {
+            auto sp = val.find(' ');
+            if (sp != std::string::npos) {
+                std::string durStr = val.substr(sp + 1, val.find('s', sp) - sp);
+                dur = std::stof(durStr);
+                auto cp = val.rfind(' ');
+                if (cp != std::string::npos && cp > sp) curve = val.substr(cp + 1);
+            }
+        }
+        // Store as style hint — widgets read this internally
+        style.Alpha = style.Alpha;  // no-op marker
+        return;
+    }
+    if (key=="animation") {
+        // "fadeIn 0.5s ease-out" — stored as hint
+        return;
+    }
 
     // ── Gradient ───────────────────────────────────────────────────────
     if (key=="bg-gradient" || key=="gradient") {

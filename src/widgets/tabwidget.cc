@@ -4,14 +4,24 @@ namespace unigui {
 TabWidget::TabWidget(std::string name) : Widget(std::move(name)) {}
 void TabWidget::Render() {
     if (!IsVisible()) return;
+
+    // Animated transition on tab switch
+    if (active_ != prevActive_) {
+        transAnim_.Play(0.2f, fx::EasingCurve::EaseOut);
+        prevActive_ = active_;
+    }
+    float t = transAnim_.Update(ImGui::GetIO().DeltaTime);
+    float alpha = 0.7f + 0.3f * t;  // smooth fade-in
+
     if (ImGui::BeginTabBar(GetName().c_str())) {
         for (int i = 0; i < (int)tabs_.size(); i++) {
             auto& tab = tabs_[i];
-            ImGuiTabItemFlags flags = tab.closable ? ImGuiTabItemFlags_None : ImGuiTabItemFlags_None;
             bool open = true;
-            if (ImGui::BeginTabItem(tab.label.c_str(), tab.closable ? &open : nullptr, flags)) {
+            if (ImGui::BeginTabItem(tab.label.c_str(), tab.closable ? &open : nullptr)) {
                 active_ = i;
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
                 if (tab.content_callback) tab.content_callback();
+                ImGui::PopStyleVar();
                 ImGui::EndTabItem();
             }
             if (!open) { tabs_.erase(tabs_.begin() + i); i--; }
