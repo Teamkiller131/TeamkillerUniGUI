@@ -5,25 +5,21 @@
 
 namespace unigui {
 
-/// SkeletonScreen — static loading placeholder (blocks + circles + lines)
-/// Use with Shimmer for animated loading UIs.
+/// SkeletonScreen — loading placeholder (blocks + circles + lines).
+/// Optional built-in shimmer animation via SetShimmer(true).
 class SkeletonScreen {
 public:
     SkeletonScreen() = default;
 
-    /// Add a rectangular block (e.g., card, image placeholder)
     void AddBlock(float width, float height, float x = 0.f, float y = 0.f);
-
-    /// Add a text line placeholder
     void AddLine(float width, float x = 0.f, float y = 0.f);
-
-    /// Add a circle placeholder (e.g., avatar)
     void AddCircle(float radius, float x = 0.f, float y = 0.f);
 
-    /// Auto-generate skeleton from a child region size
+    /// Enable built-in shimmer animation (gradient sweep over skeleton).
+    void SetShimmer(bool enable, float speed = 1.2f);
+
     static SkeletonScreen FromSize(float w, float h, int lineCount = 4);
 
-    /// Render all skeleton elements
     void Render();
 
 private:
@@ -34,6 +30,10 @@ private:
     std::vector<Element> elements_;
     static constexpr ImU32 kColor = IM_COL32(60, 60, 70, 120);
     static constexpr float kRounding = 4.f;
+
+    bool shimmer_ = false;
+    fx::AnimationState shimmerAnim_;
+    float shimmerSpeed_ = 1.2f;
 };
 
 } // namespace unigui

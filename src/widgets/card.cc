@@ -12,29 +12,38 @@ void Card::SetVariant(Variant v)                 { variant_ = v; }
 void Card::SetShadow(bool enable)                { hasShadow_ = enable; }
 void Card::SetShadowRadius(float r)              { shadowRadius_ = r; }
 void Card::SetPadding(float p)                   { padding_ = p; }
+void Card::SetBorderColor(ImU32 c)              { borderColor_ = c; }
+void Card::SetBorderRadius(float r)              { borderRadius_ = r; }
 
 void Card::Render() {
-    auto& style = ImGui::GetStyle();
-    float rounding = style.ChildRounding > 0.f ? style.ChildRounding : 8.f;
+    float r = (borderRadius_ > 0.f) ? borderRadius_ : 8.f;
 
-    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, rounding);
-    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.f);
+    // ── Push padding + rounding ──────────────────────────────────────────
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, r);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(padding_, padding_));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, (variant_ == Outlined) ? 1.5f : 1.f);
 
-    // Shadow (draw before the card via ImDrawList)
-    if (hasShadow_ && variant_ == Elevated) {
-        ImVec2 cursor = ImGui::GetCursorScreenPos();
-        ImVec2 size = ImGui::GetContentRegionAvail();
-        size.y = ImGui::CalcTextSize(title_.c_str()).y + padding_ * 5.f; // estimate
-        fx::ShadowEffect shadow(shadowRadius_, 2.f, 2.f, IM_COL32(0, 0, 0, 60), 3);
-        shadow.SetRect(cursor, ImVec2(cursor.x + size.x, cursor.y + size.y));
-        shadow.Push(ImGui::GetWindowDrawList());
-        shadow.Pop();
+    // ── Distinct border color for Outlined variant ───────────────────────
+    if (variant_ == Outlined) {
+        ImGui::PushStyleColor(ImGuiCol_Border, ImGui::ColorConvertU32ToFloat4(borderColor_));
     }
 
-    // Begin child
-    ImGui::BeginChild(title_.c_str(), ImVec2(0, 0),
-                      ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+    // ── Shadow (Elevated only, drawn before card content) ────────────────
+    if (hasShadow_ && variant_ == Elevated) {
+        ImVec2 cursor = ImGui::GetCursorScreenPos();
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        float estH = ImGui::GetTextLineHeightWithSpacing() * (contentFn_ ? 5.f : 2.f) + padding_ * 2.f;
+        fx::ShadowEffect sh(shadowRadius_, 2.f, 2.f, IM_COL32(0, 0, 0, 60), 3);
+        sh.SetRect(cursor, ImVec2(cursor.x + avail.x, cursor.y + estH));
+        sh.Push(ImGui::GetWindowDrawList()); sh.Pop();
+    }
+
+    // ── Card body (child window) ─────────────────────────────────────────
+    ImGuiChildFlags flags = (variant_ == Filled)
+        ? ImGuiChildFlags_AutoResizeY
+        : ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY;
+
+    ImGui::BeginChild(title_.c_str(), ImVec2(0, 0), flags);
 
     if (!title_.empty()) {
         ImGui::TextUnformatted(title_.c_str());
@@ -50,6 +59,9 @@ void Card::Render() {
     }
 
     ImGui::EndChild();
+
+    if (variant_ == Outlined)
+        ImGui::PopStyleColor();
     ImGui::PopStyleVar(3);
 }
 

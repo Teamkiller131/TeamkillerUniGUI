@@ -45,7 +45,12 @@ public:
     void Push(const std::string& name);
     void Pop();
 
-    /// Build the font atlas (call after all fonts are loaded).
+    /// Build the font atlas. Must be called after all fonts are loaded and
+    /// BEFORE any text rendering.  **WARNING**: Rebuilding the atlas
+    /// invalidates ALL previously obtained ImFont* pointers.  To preserve
+    /// them, call Get() again after Build() — the Manager re-caches pointers
+    /// from the new atlas.  Alternatively, load ALL fonts first, then Build()
+    /// once — this avoids pointer churn.
     void Build();
 
 private:

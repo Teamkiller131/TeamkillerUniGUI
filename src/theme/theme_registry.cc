@@ -40,6 +40,7 @@ bool ThemeRegistry::Apply(const std::string& name) {
     if (!p) { UNIGUI_LOG_WARN("Theme not found: {}", name); return false; }
     p->apply(ImGui::GetStyle());
     current_ = name;
+    if (onChange_) onChange_(name);
     UNIGUI_LOG_INFO("Theme applied: {}", name);
     return true;
 }
