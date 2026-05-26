@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.3.0 (2026-05-26) — Platform Hardening
+
+### Added
+- **Render Integration Test**: `render_integration_test.cc` — verifies OpenGL3 multi-frame render produces no GL errors. Run manually (needs GPU context).
+- **Fuzz Test**: `fuzz_test.cc` — random widget sequence 100 iterations + all v1.2 widgets smoke test. Run manually (`test_fuzz.exe`).
+- **Font Test**: `font_test.cc` — embedded font loading + CJK merge verification. Run manually (`test_font.exe`).
+- **Memory Safety**: ASan-ready compilation flags documented for debug builds.
+
+### Changed
+- Test count: 200 → 200 (no regression; new tests added as manual-only)
+- Version: 1.2.0 → 1.3.0
+
 ## v1.2.0 (2026-05-26) — Widget Ecosystem
 
 ### Added
