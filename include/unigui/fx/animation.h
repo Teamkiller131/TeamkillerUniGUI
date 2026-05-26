@@ -11,17 +11,30 @@ namespace unigui::fx {
 // AnimationState — per-widget animation state
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════════
+/// AnimationState — per-widget animation state.
+///
+/// **progress** is the target [0..1].  Play() starts interpolating toward 1.0
+/// (or 0.0 for pingPong reverse).  Call Update(dt) each frame and use its
+/// RETURN VALUE (already eased) for actual rendering.
+///
+///   AnimationState s;
+///   s.Play(0.3f, EasingCurve::CubicOut);
+///   float alpha = s.Update(dt);   // eased current value for rendering
+///   if (!s.IsPlaying()) { /* done */ }
+// ═══════════════════════════════════════════════════════════════════════════════
+
 struct AnimationState {
-    float      progress = 0.f;       // 0..1
+    float      progress = 0.f;       // target [0..1] — Update() returns eased current
     EasingCurve curve   = EasingCurve::Ease;
     float      duration = 0.3f;      // seconds
     float      elapsed  = 0.f;       // seconds since Play()
     bool       playing  = false;
-    bool       loop     = false;
-    bool       pingPong = false;     // reverse at end, then loop
+    bool       loop     = false;     // repeat from 0 after reaching 1
+    bool       pingPong = false;     // reverse direction at end, then loop
     int        direction = 1;        // 1=forward, -1=reverse
 
-    /// Start playing. Resets elapsed to 0.
+    /// Start playing. Resets elapsed to 0, sets curve, returns eased progress via Update().
     void Play(float dur = -1.f, EasingCurve c = EasingCurve::Ease);
 
     /// Stop immediately (progress stays at current value).

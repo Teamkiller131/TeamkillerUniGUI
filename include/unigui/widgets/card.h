@@ -5,7 +5,7 @@
 
 namespace unigui {
 
-/// Card — elevated surface widget with shadow, rounded corners, optional image
+/// Card — elevated surface widget with shadow, rounded corners
 class Card {
 public:
     enum Variant { Elevated, Outlined, Filled };
@@ -20,6 +20,8 @@ public:
     void SetShadow(bool enable);
     void SetShadowRadius(float r);
     void SetPadding(float p);
+    void SetBorderColor(ImU32 color);
+    void SetBorderRadius(float r);
 
     // ── Rendering ────────────────────────────────────────────────────────
     void Render();
@@ -31,6 +33,8 @@ private:
     bool hasShadow_ = true;
     float shadowRadius_ = 6.f;
     float padding_ = 16.f;
+    ImU32 borderColor_ = IM_COL32(60, 60, 70, 120);
+    float borderRadius_ = 8.f;
 };
 
 } // namespace unigui
