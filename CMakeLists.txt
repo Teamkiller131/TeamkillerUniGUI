@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.31)
 
 project(unigui
-    VERSION 1.9.0
+    VERSION 1.10.0
     DESCRIPTION "Modern Dear ImGui C++ wrapper — SDL3+Vulkan + GLFW+OpenGL3 backends, theme engine, widget library"
     HOMEPAGE_URL "https://xbw-nas.iepose.cn/Teamkiller131/TeamkillerUniGUI"
     LANGUAGES CXX

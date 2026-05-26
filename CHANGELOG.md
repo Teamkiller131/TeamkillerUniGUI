@@ -1,6 +1,18 @@
 # Changelog
 
-## v1.9.0 (2026-05-26) — Polish & API Completion
+## v1.10.0 (2026-05-26) — TrayIcon Polish
+
+### Added
+- TrayIcon::UpdateTooltip(title) — dynamic tooltip via NIM_MODIFY
+- TrayMenuItem submenus — children field for recursive submenus
+- TrayMenuItem::isSeparator — menu separators (MF_SEPARATOR)
+- ShowNotification(title, msg, NotifyType) — Info/Warning/Error icons
+- Toast dismiss callback — Show(msg, type, dur, onDismiss)
+- PasswordInput demo in widget_gallery (strength indicator)
+
+### Changed
+- Version: 1.9.0 → 1.10.0
+- Tests: 202/202 pass
 
 ### Fixed
 - **TrayIcon**: proper right-click menu via TrackPopupMenu, icon resource ID parameter, notification title/msg param pass-through.
