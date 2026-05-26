@@ -10,9 +10,27 @@
 | Platform | Backend | Graphics | Status | Priority |
 |----------|---------|----------|--------|----------|
 | Windows | GLFW+DX11/GL3 | DirectX 11 / OpenGL 3.3 | ★ Production | P0 (keep) |
-| Linux | GLFW+GL3 | OpenGL 3.3 (X11/Wayland) | ✓ Compiles | P1 |
-| macOS | GLFW+GL3/Metal | OpenGL 3.3 / Metal 2 | ✓ Compiles | P1 |
-| Web | Emscripten | WebGL 2.0 | ✗ Fails | P2 |
+| Linux | GLFW+GL3 | OpenGL 3.3 (X11/Wayland) | ★ Compiles (225/225) | P1 ✅ |
+| macOS | GLFW+GL3/Metal | OpenGL 3.3 / Metal 2 | ✓ Code ready, untested | P1 |
+| Web | Emscripten | WebGL 2.0 | ✗ Not started | P2 |
+
+---
+
+## Progress Log
+
+### 2026-05-26 — Linux ✅
+- Fedora 43, GCC 15.2, CMake 4.3, Ninja 1.13
+- 225/225 targets compile, 236/244 tests pass (8 GL-headless expected)
+- CMake 3.31→3.26, vcpkg DX split, `UNIGUI_HAS_DX11` guards, `<algorithm>` includes
+- Python `embed_font.py` for non-Windows font embedding
+- CJK font paths: Noto Sans CJK on Linux
+
+### 2026-05-26 — macOS code ✅
+- Metal renderer: full ObjC++ implementation with MTLDevice/CommandQueue/ImGui_ImplMetal
+- CJK font paths: PingFang.ttc / STHeiti / AppleSDGothicNeo
+- CMake: `-x objective-c++ -fobjc-arc` for Metal source, Metal.framework + QuartzCore.framework linkage
+- `UNIGUI_HAS_METAL` compile definition on __APPLE__
+- *Not tested — no macOS hardware available*
 
 ## Work Objectives
 

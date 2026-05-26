@@ -58,15 +58,32 @@ void LoadDefaultFont(float size_pixels, const char* ttf_path) {
         return;
     }
 
-    // Merge CJK glyphs from system font (optional)
+    // Merge CJK glyphs from system font (optional, platform-specific paths)
     cfg.MergeMode = true;
     cfg.FontDataOwnedByAtlas = true; // ImGui frees the data, not us
     const ImWchar* cjk = io.Fonts->GetGlyphRangesChineseFull();
+
+#ifdef _WIN32
     const char* cjk_paths[] = {
         "C:/Windows/Fonts/msyh.ttc",
         "C:/Windows/Fonts/simhei.ttf",
         nullptr
     };
+#elif defined(__APPLE__)
+    const char* cjk_paths[] = {
+        "/System/Library/Fonts/PingFang.ttc",
+        "/System/Library/Fonts/STHeiti Light.ttc",
+        "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+        nullptr
+    };
+#else // Linux
+    const char* cjk_paths[] = {
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+        nullptr
+    };
+#endif
 
     for (int i = 0; cjk_paths[i]; i++) {
         FILE* fp = fopen(cjk_paths[i], "rb");
