@@ -176,3 +176,8 @@ add_executable(test_eventbus v2/eventbus_test.cc)
 target_link_libraries(test_eventbus PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_eventbus PRIVATE cxx_std_23)
 gtest_discover_tests(test_eventbus)
+
+add_executable(test_style v2/style_test.cc)
+target_link_libraries(test_style PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_style PRIVATE cxx_std_23)
+gtest_discover_tests(test_style)

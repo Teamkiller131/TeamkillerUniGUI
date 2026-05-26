@@ -1,0 +1,9 @@
+/* UniGUI v2 Default Dark Theme */
+* { bg: #101012; text: #e5e5eb; rounding: 6; padding: 8; spacing: 6; accent: #3b82f6; }
+Window { bg: #101012; title-bg: #161618; border: #1e1e24; }
+Button { bg: #26262c; bg-hover: #303038; bg-active: #1e1e24; }
+Button.primary { bg: #3b82f6; text: #ffffff; }
+Button.danger { bg: #ef4444; text: #ffffff; }
+Header { bg: #1a1a1e; }
+Frame { frame-bg: #1a1a1e; }
+Scrollbar { scrollbar-size: 12; }
