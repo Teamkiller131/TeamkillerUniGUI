@@ -4,12 +4,16 @@
 #include <vector>
 #include <functional>
 #include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
+#include <cstring>
 #include <imgui.h>
 
 namespace unigui {
 
 /// DataTable<T> — high-performance data table with virtual scrolling, sorting,
-/// row coloring, and cell formatting.  References external data via pointer.
+/// row coloring, cell formatting, inline editing, and text filtering.
+/// References external data via pointer.
 template<typename T>
 class DataTable : public Widget {
 public:
@@ -25,6 +29,8 @@ public:
     using SortCompare    = std::function<bool(const T& a, const T& b)>;
     using SelectFn       = std::function<void(int row)>;
     using DoubleClickFn  = std::function<void(int row)>;
+    using CellCommitFn   = std::function<void(int row, int col, const std::string& newValue)>;
+    using FilterFn       = std::function<bool(int row, const T&)>;
 
     DataTable(std::string name, std::vector<ColumnDef> columns)
         : Widget(std::move(name)), columns_(std::move(columns)) {}
@@ -48,6 +54,18 @@ public:
     int  GetSelectedRow() const { return selectedRow_; }
     void SetOnSelect(SelectFn cb) { onSelect_ = std::move(cb); }
     void SetOnDoubleClick(DoubleClickFn cb) { onDblClick_ = std::move(cb); }
+
+    // ── Inline editing ───────────────────────────────────────────────────
+    /// Enable inline editing on a column. Double-click to edit.
+    void SetCellEditable(int col, bool editable) { editableCols_.insert(col); }
+    void SetOnCellCommit(CellCommitFn fn) { onCellCommit_ = std::move(fn); }
+
+    // ── Filtering (text search) ──────────────────────────────────────────
+    /// Set text filter string — rows not matching are hidden.
+    void SetFilterText(const std::string& text) { filterText_ = text; }
+    const std::string& GetFilterText() const { return filterText_; }
+    /// Custom filter predicate (optional, overrides text filter).
+    void SetFilterFn(FilterFn fn) { filterFn_ = std::move(fn); }
 
     // ── Virtual scrolling ─────────────────────────────────────────────────
     void SetVirtualScroll(bool on) { virtualScroll_ = on; }
@@ -120,10 +138,25 @@ public:
             scrollToRow_ = -1;
         }
 
+        // ── Text filter ─────────────────────────────────────────────────
+        auto rowPasses = [&](int idx) -> bool {
+            const T& item = (*data_)[idx];
+            if (filterFn_ && !filterFn_(idx, item)) return false;
+            if (!filterText_.empty() && cellFmt_) {
+                for (int c = 0; c < (int)columns_.size(); ++c) {
+                    std::string cell = cellFmt_(idx, c, item);
+                    if (cell.find(filterText_) != std::string::npos) return true;
+                }
+                return false;
+            }
+            return true;
+        };
+
         // ── Render rows ──────────────────────────────────────────────────
         for (int row = firstRow; row < lastRow; ++row) {
             int idx = (sortColumn_ >= 0 && !sortIndices_.empty())
                         ? sortIndices_[row] : row;
+            if (!rowPasses(idx)) continue;
 
             ImGui::TableNextRow();
             if (rowColorFn_) {
@@ -137,11 +170,34 @@ public:
                 ImGui::TableSetColumnIndex(col);
                 std::string text = cellFmt_ ? cellFmt_(idx, col, (*data_)[idx])
                                             : std::to_string(idx);
-                if (ImGui::Selectable(text.c_str(), isSelected,
-                        ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
-                    selectedRow_ = idx;
-                    if (onSelect_) onSelect_(idx);
-                    if (ImGui::IsMouseDoubleClicked(0) && onDblClick_) onDblClick_(idx);
+
+                // ── Inline editing: InputText popup ────────────────────
+                bool isEditing = (editRow_ == idx && editCol_ == col);
+                if (isEditing) {
+                    ImGui::SetKeyboardFocusHere();
+                    if (ImGui::InputText("##edit", editBuf_, sizeof(editBuf_),
+                                         ImGuiInputTextFlags_EnterReturnsTrue)) {
+                        if (onCellCommit_ && strlen(editBuf_) > 0)
+                            onCellCommit_(idx, col, std::string(editBuf_));
+                        editRow_ = editCol_ = -1;
+                    }
+                    if (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Escape))
+                        editRow_ = editCol_ = -1;
+                } else {
+                    ImGuiSelectableFlags sflags = ImGuiSelectableFlags_SpanAllColumns;
+                    if (editableCols_.count(col)) sflags |= ImGuiSelectableFlags_AllowDoubleClick;
+                    if (ImGui::Selectable(text.c_str(), isSelected, sflags)) {
+                        selectedRow_ = idx;
+                        if (onSelect_) onSelect_(idx);
+                        if (ImGui::IsMouseDoubleClicked(0)) {
+                            if (editableCols_.count(col)) {
+                                editRow_ = idx; editCol_ = col;
+                                strncpy(editBuf_, text.c_str(), sizeof(editBuf_) - 1);
+                                editBuf_[sizeof(editBuf_) - 1] = 0;
+                            }
+                            if (onDblClick_) onDblClick_(idx);
+                        }
+                    }
                 }
             }
         }
@@ -163,6 +219,12 @@ private:
     int scrollToRow_ = -1;
     SelectFn onSelect_;
     DoubleClickFn onDblClick_;
+    CellCommitFn onCellCommit_;
+    FilterFn filterFn_;
+    std::string filterText_;
+    std::unordered_set<int> editableCols_;    // columns with inline edit enabled
+    int editRow_ = -1, editCol_ = -1;          // currently editing cell
+    char editBuf_[256] = {};
 };
 
 } // namespace unigui

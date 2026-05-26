@@ -1,5 +1,13 @@
 # Changelog
 
+## v3.2.2 (2026-05-26) — Inline Editing & Filtering
+
+### Added
+- **DataTable\<T\> inline editing**: `SetCellEditable(col, bool)`, double-click enters
+  InputText popup, Enter commits via `SetOnCellCommit(CellCommitFn)`, Escape cancels.
+- **DataTable\<T\> text filtering**: `SetFilterText(string)` + `SetFilterFn(FilterFn)`.
+  Rows not matching filter text (searched across all columns via CellFormatter) are hidden.
+
 ## v3.2.1 (2026-05-26) — Data Widgets
 
 ### Added
