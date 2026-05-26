@@ -3,6 +3,7 @@
 ## v3.2.2 (2026-05-26) — Inline Editing & Filtering
 
 ### Added
+- **InvokeOnMainThread / ProcessMainThreadTasks**: cross-thread dispatcher for UI updates from network/IO callbacks.
 - **DataTable\<T\> inline editing**: `SetCellEditable(col, bool)`, double-click enters
   InputText popup, Enter commits via `SetOnCellCommit(CellCommitFn)`, Escape cancels.
 - **DataTable\<T\> text filtering**: `SetFilterText(string)` + `SetFilterFn(FilterFn)`.
