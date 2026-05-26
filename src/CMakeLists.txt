@@ -116,6 +116,7 @@ target_sources(unigui PRIVATE
     widgets/propertygrid.cc
     widgets/searchbox.cc
     widgets/toast.cc
+    widgets/trayicon.cc
     widgets/passwordinput.cc
     widgets/wizard.cc
     app/app.cc

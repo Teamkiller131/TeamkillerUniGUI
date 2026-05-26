@@ -4,7 +4,7 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-1.5.0-blueviolet)]()
+[![Version](https://img.shields.io/badge/version-1.5.1-blueviolet)]()
 [![Tests](https://img.shields.io/badge/tests-200-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-55-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
@@ -85,6 +85,63 @@ unigui::Shutdown();
 | **v2.4** | Tag, Breadcrumb, MultiLine, IconButton (4) |
 | **v2.5-6** | DockSpace, ContextMenu, DragDrop, ShortcutManager (4) |
 | **v2.8** | RichText, ImageButton, Markdown (3) |
+
+### Widget Quick Reference
+
+| Category | Widget | Key API |
+|----------|--------|---------|
+| Containers | Window | `AddPanel()`, `SetMenuBarEnabled()`, `SetPosition()` |
+| | Panel | `SetContentCallback(fn)`, `SetWrapEnabled(bool)` |
+| | GroupBox | `SetContentCallback(fn)`, `SetTitle()` |
+| | TabWidget | `AddTab()`, `RemoveTab()` |
+| Inputs | LineEdit | `SetValue()`, `SetValidator()`, `Undo()`/`Redo()` |
+| | MultiLine | `SetText()`, `Undo()`/`Redo()` |
+| | PasswordInput | `GetStrengthScore()` (0-4), show/hide toggle |
+| | ComboBox | `SetItems()`, `SetOnChange()`, `SetSearchable()` |
+| | MultiCombo | `GetSelectedIndices()`, `SetSelected()` |
+| | SearchBox | `SetItems(v)`, `GetQuery()`, `SetOnSelect(fn)` |
+| | Slider\<T\> | `SetMin()`, `SetMax()`, `SetValue()` |
+| | InputInt/InputFloat | `GetValue()`, `SetValue()` |
+| | SpinBox\<T\> | `GetValue()`, `SetRange()` |
+| | DatePicker | `GetDate()`, `SetDate()` |
+| | ColorPicker | `GetColor()`, `SetColor()` |
+| Display | Label | `GetText()`, `SetText()` |
+| | Button | `WasClicked()`, `SetEnabled()` |
+| | ImageButton | `SetImage(texID, w, h)`, `SetLabel()` |
+| | IconButton | `WasClicked()` |
+| | Hyperlink | `WasClicked()` |
+| | RichText | `SetSpans()`, `AddSpan()` |
+| | Markdown | `SetMarkdown()`, supports # ** * - [links] |
+| | Image | `SetTexture(texID)`, scale modes |
+| | ProgressBar | `SetFraction()`, state colors |
+| | LoadingIndicator | `SetActive(bool)`, spinner animation |
+| Lists | VirtualList | `SetItemCount(n)`, `SetItemGetter(fn)` — 100k+ |
+| | ListView | `SetItems()`, `SetOnSelect()` |
+| | Table | `AddRow()`, `ExportCSV()`, `ImportCSV()` |
+| | TreeView | `SetRoot()`, multi-select support |
+| Layout | Splitter | `SetOrientation()`, drag to resize |
+| | ScrollArea | `SetContentCallback(fn)` |
+| | Separator | horizontal/vertical dividers |
+| | Space | `DockSpace()` docking layout |
+| Navigation | MenuBar | `SetMenus()`, nested submenus |
+| | TabWidget | tabbed content panels |
+| | Breadcrumb | `SetItems()`, path navigation |
+| | Wizard | `AddStep()`, `Next()`, `Previous()` |
+| Dialogs | Dialog | `Open()`, `Close()`, modal/ non-modal |
+| | Tooltip | `Show(text)`, hover tooltips |
+| | ContextMenu | `Show()`, right-click popup |
+| | Toast | `Toast::Info()`, `Success()`, `Warn()`, `Error()` |
+| Forms | Form | `AddTextField()`, `Validate()`, `Serialize()` |
+| | PropertyGrid | `AddProperty({name, type, val})` |
+| | CheckBox | `SetChecked()`, `OnChange()` |
+| | RadioGroup | `SetSelected()`, option groups |
+| | ToggleSwitch | `SetOn(bool)`, toggle with label |
+| Files | FilePath | `SetPath()`, file picker |
+| | DirPath | directory picker |
+| Misc | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
+| | ShortcutManager | `Register()`, global shortcuts |
+| | Notification | `Show()`, pending count |
+| | TrayIcon | `Show()`, `Hide()`, `SetMenu()`, `ShowNotification()` |
 
 ## Backend Selection
 
