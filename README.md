@@ -5,7 +5,7 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-3.1.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-244-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-244%20(236%2F244%20Linux)-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-55-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
