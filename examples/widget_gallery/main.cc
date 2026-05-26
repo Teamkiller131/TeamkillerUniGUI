@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
 
     unigui::AppConfig cfg;
     cfg.width = 1280; cfg.height = 800;
-    cfg.title = "UniGUI — Widget Gallery (45 widgets)";
+    cfg.title = "UniGUI v3.0 — Widget Gallery (55+ widgets, 10 themes)";
     if (!unigui::Init(cfg)) return 1;
     std::printf("[gallery] Initialized\n");
 
@@ -130,6 +130,84 @@ int main(int argc, char** argv) {
                 dlg.Render(); nf.Render(); sb.Render(); mb.Render(); tb.Render();
                 lbl.Render(); ml.Render(); hl.Render(); tag.Render(); dpo.Render();
             });
+
+            // ── v3.0 Theme Switcher ────────────────────────────────────
+            auto themePanel = std::make_shared<unigui::Panel>("themes", "v3.0 Themes");
+            themePanel->SetContentCallback([]() {
+                static int selected = 0;
+                auto names = unigui::theme::ThemeRegistry::Instance().List();
+                if (ImGui::BeginCombo("Theme", names.empty() ? "" : names[selected].c_str())) {
+                    for (int i = 0; i < (int)names.size(); i++) {
+                        bool isSel = (selected == i);
+                        if (ImGui::Selectable(names[i].c_str(), &isSel)) {
+                            selected = i;
+                            unigui::theme::ThemeRegistry::Instance().Apply(names[i]);
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+            });
+            win->AddPanel(themePanel);
+
+            // ── v3.0 Card Demo ──────────────────────────────────────────
+            auto cardPanel = std::make_shared<unigui::Panel>("card", "Card (v3.0)");
+            cardPanel->SetContentCallback([]() {
+                static unigui::Card card("Elevated Card");
+                card.SetContent([]() {
+                    ImGui::TextWrapped("This is a card with drop shadow and rounded corners. "
+                                      "Cards can have titles, content, and footers.");
+                    static int clicks = 0;
+                    if (ImGui::Button("Click Me")) clicks++;
+                    ImGui::SameLine();
+                    ImGui::Text("Clicks: %d", clicks);
+                });
+                card.SetFooter([]() {
+                    ImGui::TextDisabled("Card footer");
+                });
+                card.Render();
+            });
+            win->AddPanel(cardPanel);
+
+            // ── v3.0 Shimmer Demo ───────────────────────────────────────
+            auto shimmerPanel = std::make_shared<unigui::Panel>("shimmer", "Shimmer Loading (v3.0)");
+            shimmerPanel->SetContentCallback([]() {
+                static unigui::Shimmer sh;
+                static bool init = true;
+                if (init) {
+                    sh.AddBlock(300, 16, 0, 0);
+                    sh.AddBlock(250, 16, 0, 22);
+                    sh.AddBlock(200, 16, 0, 44);
+                    sh.AddCircle(36, 0, 66);
+                    sh.AddBlock(400, 40, 46, 66);
+                    sh.Start();
+                    init = false;
+                }
+                if (ImGui::Button(sh.IsPlaying() ? "Stop" : "Start")) {
+                    sh.IsPlaying() ? sh.Stop() : sh.Start();
+                }
+                ImGui::SameLine();
+                ImGui::Text("(skeleton shimmer)");
+                ImGui::Dummy(ImVec2(0, 4));
+                sh.Render();
+            });
+            win->AddPanel(shimmerPanel);
+
+            // ── v3.0 Badge Demo ─────────────────────────────────────────
+            auto badgePanel = std::make_shared<unigui::Panel>("badge", "Badge (v3.0)");
+            badgePanel->SetContentCallback([]() {
+                static unigui::Badge dot(""); dot.SetVariant(unigui::Badge::Dot);
+                static unigui::Badge cnt(""); cnt.SetCount(7);
+                cnt.SetColor(IM_COL32(233, 69, 96, 255));
+                static unigui::Badge lbl("NEW");
+                lbl.SetColor(IM_COL32(0, 180, 100, 255));
+
+                ImGui::Text("Dot:"); ImGui::SameLine(); dot.Render();
+                ImGui::SameLine(80);
+                ImGui::Text("Count:"); ImGui::SameLine(); cnt.Render();
+                ImGui::SameLine(170);
+                ImGui::Text("Label:"); ImGui::SameLine(); lbl.Render();
+            });
+            win->AddPanel(badgePanel);
 
             first = false;
         }
