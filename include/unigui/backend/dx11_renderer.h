@@ -18,6 +18,7 @@ public:
     void Shutdown() override;
     void RenderDrawData(ImDrawData* dd) override;
     void SetClearColor(float r,float g,float b,float a) override;
+    bool ResizeSwapChain(int w, int h);
 private:
     bool initialized_ = false;
     float clearR_=0.10f, clearG_=0.10f, clearB_=0.12f, clearA_=1.00f;
