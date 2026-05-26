@@ -2,6 +2,9 @@
 #include <unigui/backend/backend_factory.h>
 #include <unigui/theme/theme.h>
 #include <unigui/theme/presets/registry.h>
+#ifdef UNIGUI_HAS_WIDGETS
+#include <unigui/widgets/toast.h>
+#endif
 #include <unigui/core/log.h>
 #include <unigui/core/settings.h>
 #ifdef UNIGUI_HAS_EVENTS
@@ -98,6 +101,7 @@ bool Init(const AppConfig& config){
 void Shutdown(){if(!g_initialized)return;
 #ifdef UNIGUI_HAS_EVENTS
 events::Bus::Instance().Publish("app.shutdown",int{0});
+events::Bus::Instance().Shutdown();
 #endif
     if(g_renderer){g_renderer->Shutdown();g_renderer.reset();}if(g_platform){g_platform->Shutdown();g_platform.reset();}ImPlot::DestroyContext();Settings::Shutdown();g_initialized=false;}
 
@@ -108,6 +112,9 @@ bool NewFrame(){
     if(g_backend==BackendType::DX11)ImGui_ImplDX11_NewFrame();
 #endif
     g_platform->NewFrame();ImGui::NewFrame();
+#ifdef UNIGUI_HAS_WIDGETS
+    unigui::Toast::Instance().Render();
+#endif
     // Check for window resize (DX11 needs swapchain resize)
     if (g_backend == BackendType::DX11) {
         int cw = 0, ch = 0;
