@@ -1,5 +1,8 @@
 #include <unigui/core/locale.h>
 #include <vector>
+#include <regex>
+#include <cstdio>
+#include <cerrno>
 
 namespace unigui {
 
@@ -24,7 +27,7 @@ std::string Locale::Tr(const std::string& key) {
         auto kit = it->second.find(key);
         if (kit != it->second.end()) return kit->second;
     }
-    return key; // fallback: return key itself
+    return key;
 }
 
 bool Locale::Has(const std::string& key) {
@@ -35,6 +38,69 @@ bool Locale::Has(const std::string& key) {
 }
 
 void Locale::Clear() { Table().clear(); }
+
+bool Locale::LoadFromFile(const std::string& path) {
+    FILE* f = fopen(path.c_str(), "r");
+    if (!f) return false;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    if (sz <= 0) { fclose(f); return false; }
+    std::string json(sz, '\0');
+    fread(&json[0], 1, sz, f);
+    fclose(f);
+
+    // Determine locale from filename: "zh_CN.json" -> "zh_CN"
+    std::string locale = "en_US";
+    auto lastSlash = path.find_last_of("/\\");
+    auto base = (lastSlash != std::string::npos) ? path.substr(lastSlash + 1) : path;
+    auto dot = base.find('.');
+    if (dot != std::string::npos) locale = base.substr(0, dot);
+
+    // Parse JSON {"key":"value","key2":"value2"}
+    std::regex re("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"");
+    std::smatch m;
+    auto start = json.cbegin();
+    auto end = json.cend();
+    while (std::regex_search(start, end, m, re)) {
+        Set(locale, m[1].str(), m[2].str());
+        start = m.suffix().first;
+    }
+    return true;
+}
+
+void Locale::LoadBuiltin() {
+    // English (default — keys are already English)
+    Set("en_US", "app.title", "UniGUI Application");
+    Set("en_US", "menu.file", "File");
+    Set("en_US", "menu.edit", "Edit");
+    Set("en_US", "menu.help", "Help");
+    Set("en_US", "menu.exit", "Exit");
+    Set("en_US", "btn.ok", "OK");
+    Set("en_US", "btn.cancel", "Cancel");
+    Set("en_US", "btn.apply", "Apply");
+    Set("en_US", "btn.close", "Close");
+
+    // Chinese
+    Set("zh_CN", "app.title", "UniGUI 应用程序");
+    Set("zh_CN", "menu.file", "文件");
+    Set("zh_CN", "menu.edit", "编辑");
+    Set("zh_CN", "menu.help", "帮助");
+    Set("zh_CN", "menu.exit", "退出");
+    Set("zh_CN", "btn.ok", "确定");
+    Set("zh_CN", "btn.cancel", "取消");
+    Set("zh_CN", "btn.apply", "应用");
+    Set("zh_CN", "btn.close", "关闭");
+
+    // Japanese
+    Set("ja_JP", "app.title", "UniGUI アプリケーション");
+    Set("ja_JP", "menu.file", "ファイル");
+    Set("ja_JP", "menu.edit", "編集");
+    Set("ja_JP", "menu.help", "ヘルプ");
+    Set("ja_JP", "menu.exit", "終了");
+    Set("ja_JP", "btn.ok", "OK");
+    Set("ja_JP", "btn.cancel", "キャンセル");
+}
 
 std::vector<std::string> Locale::GetLocales() {
     std::vector<std::string> locales;

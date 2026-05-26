@@ -2,6 +2,7 @@
 #include <unigui/backend/backend_factory.h>
 #include <unigui/theme/theme.h>
 #include <unigui/core/log.h>
+#include <unigui/core/settings.h>
 #include <glad/glad.h>
 #include <imgui.h>
 #include <cstdio>
@@ -84,7 +85,7 @@ bool Init(const AppConfig& config){
     return true;
 }
 
-void Shutdown(){if(!g_initialized)return;if(g_renderer){g_renderer->Shutdown();g_renderer.reset();}if(g_platform){g_platform->Shutdown();g_platform.reset();}g_initialized=false;}
+void Shutdown(){if(!g_initialized)return;if(g_renderer){g_renderer->Shutdown();g_renderer.reset();}if(g_platform){g_platform->Shutdown();g_platform.reset();}Settings::Shutdown();g_initialized=false;}
 
 bool NewFrame(){
     if(!g_initialized)return false;

@@ -14,6 +14,11 @@ int main(int argc, char** argv) {
     config.backend = unigui::BackendType::DX11;
 #endif
     if (!unigui::Init(config)) { std::fprintf(stderr, "Init failed\n"); return 1; }
+
+    // v1.4: Enable i18n + settings auto-save
+    unigui::Locale::LoadBuiltin();
+    unigui::Settings::Instance().EnableAutoSave("unigui_settings.ini");
+
     std::printf("[unigui] Initialized DX11\n");
     int frame_count = 0; bool done = false;
     while (!done && !unigui::ShouldClose()) {
@@ -54,6 +59,36 @@ int main(int argc, char** argv) {
                     ImGui::TextUnformatted("Emoji: 🎉 🚀 ✨ 💻 🎨 (emoji support test)");
                 });
                 window->AddPanel(i18nPanel);
+
+                // v1.4: i18n locale switcher + MRU demo
+                auto localePanel = std::make_shared<unigui::Panel>("locale", "i18n Settings");
+                localePanel->SetContentCallback([]() {
+                    static int curLocale = 0;
+                    const char* locales[] = {"en_US","zh_CN","ja_JP"};
+                    if (ImGui::Combo("Locale", &curLocale, "English\0Chinese\0Japanese\0")) {
+                        unigui::Locale::SetCurrent(locales[curLocale]);
+                    }
+                    ImGui::Text("App Title: %s", unigui::Locale::Tr("app.title").c_str());
+                    ImGui::Text("File: %s | Edit: %s | Help: %s",
+                        unigui::Locale::Tr("menu.file").c_str(),
+                        unigui::Locale::Tr("menu.edit").c_str(),
+                        unigui::Locale::Tr("menu.help").c_str());
+                    ImGui::Separator();
+                    ImGui::Text("OK: %s | Cancel: %s | Close: %s",
+                        unigui::Locale::Tr("btn.ok").c_str(),
+                        unigui::Locale::Tr("btn.cancel").c_str(),
+                        unigui::Locale::Tr("btn.close").c_str());
+                    ImGui::Separator();
+                    if (ImGui::Button("Add this demo to MRU")) {
+                        unigui::Settings::Instance().AddRecentFile("hello_unigui.exe");
+                    }
+                    auto recent = unigui::Settings::Instance().GetRecentFiles();
+                    if (!recent.empty()) {
+                        ImGui::Text("Recent files:");
+                        for (auto& f : recent) ImGui::BulletText("%s", f.c_str());
+                    }
+                });
+                window->AddPanel(localePanel);
                 first = false;
             }
             window->Render();
