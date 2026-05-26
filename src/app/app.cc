@@ -2,6 +2,7 @@
 #include <unigui/backend/backend_factory.h>
 #include <unigui/theme/theme.h>
 #include <unigui/theme/presets/registry.h>
+#include <unigui/core/main_thread.h>
 #ifdef UNIGUI_HAS_WIDGETS
 #include <unigui/widgets/toast.h>
 #endif
@@ -112,6 +113,7 @@ bool NewFrame(){
     if(g_backend==BackendType::DX11)ImGui_ImplDX11_NewFrame();
 #endif
     g_platform->NewFrame();ImGui::NewFrame();
+    ProcessMainThreadTasks();
     // Check for window resize (DX11 needs swapchain resize)
 #ifdef UNIGUI_HAS_DX11
     if (g_backend == BackendType::DX11) {

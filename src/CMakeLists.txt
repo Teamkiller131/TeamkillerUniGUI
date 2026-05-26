@@ -94,6 +94,7 @@ target_sources(unigui PRIVATE
     core/locale.cc
     core/settings.cc
     core/log.cc
+    core/main_thread.cc
     backend/glfw_platform.cc
     backend/opengl3_renderer.cc
     backend/backend_registry.cc
