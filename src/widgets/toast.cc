@@ -41,10 +41,13 @@ void Toast::Render() {
     if(anchor_>=2) pos.y = ImGui::GetIO().DisplaySize.y - offY_;
     ImGui::SetNextWindowPos(pos, ImGuiCond_Always, pivot);
 
-    // Animated alpha per-toast
+    // Single-pass: update animations once, cache alphas
     float maxAlpha = 0.f;
+    std::vector<float> alphas;
+    alphas.reserve(queue_.size());
     for (auto& t : queue_) {
         float a = t.anim.Update(dt);
+        alphas.push_back(a);
         maxAlpha = std::max(maxAlpha, a);
     }
     ImGui::SetNextWindowBgAlpha(0.8f * maxAlpha);
@@ -53,8 +56,9 @@ void Toast::Render() {
                 ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
     ImGui::Begin("##toasts", nullptr, flags);
 
+    int i = 0;
     for (auto& t : queue_) {
-        float alpha = t.anim.Update(dt);
+        float alpha = alphas[i++];
         ImVec4 color;
         switch (t.type) {
         case ToastType::Info:    color = ImVec4(0.4f, 0.6f, 1.0f, 1.0f); break;
