@@ -240,5 +240,10 @@ target_link_libraries(test_easing PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_easing PRIVATE cxx_std_23)
 gtest_discover_tests(test_easing)
 
+add_executable(test_animation fx/animation_test.cc)
+target_link_libraries(test_animation PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_animation PRIVATE cxx_std_23)
+gtest_discover_tests(test_animation)
+
 # v3.0 effect scope tests — manual-only (needs GL context)
 # add_executable(test_effect_scope fx/effect_scope_test.cc)

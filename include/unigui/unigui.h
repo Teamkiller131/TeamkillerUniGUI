@@ -92,3 +92,5 @@
 #include <unigui/app/app.h>
 #include <unigui/fx/easing.h>
 #include <unigui/fx/effect_scope.h>
+#include <unigui/fx/animation.h>
+#include <unigui/fx/transition.h>
