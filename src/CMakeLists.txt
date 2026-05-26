@@ -121,6 +121,7 @@ target_sources(unigui PRIVATE
     widgets/wizard.cc
     app/app.cc
     v2/plugin_manager.cc
+    v2/dsl.cc
 )
 
 # ── SDL3 + Vulkan sources (conditional) ───────────────────────────────────────

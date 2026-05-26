@@ -166,3 +166,8 @@ add_executable(test_plugin v2/plugin_test.cc)
 target_link_libraries(test_plugin PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_plugin PRIVATE cxx_std_23)
 gtest_discover_tests(test_plugin)
+
+add_executable(test_dsl v2/dsl_test.cc)
+target_link_libraries(test_dsl PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_dsl PRIVATE cxx_std_23)
+gtest_discover_tests(test_dsl)
