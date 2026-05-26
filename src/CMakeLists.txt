@@ -24,6 +24,7 @@ find_package(Freetype REQUIRED)
 find_package(implot CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(SQLite3 REQUIRED)
+find_package(ZeroMQ REQUIRED)
 
 set(UNIGUI_LIBS
     imgui::imgui
@@ -33,6 +34,7 @@ set(UNIGUI_LIBS
     Freetype::Freetype
     spdlog::spdlog
     SQLite::SQLite3
+    libzmq
 )
 
 # ── SDL3 + Vulkan (conditional) ───────────────────────────────────────────────
@@ -129,6 +131,7 @@ target_sources(unigui PRIVATE
     v2/font_manager.cc
     v2/config.cc
     v2/database.cc
+    v2/shmem.cc
 )
 
 # ── SDL3 + Vulkan sources (conditional) ───────────────────────────────────────

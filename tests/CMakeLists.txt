@@ -196,3 +196,13 @@ add_executable(test_database v2/database_test.cc)
 target_link_libraries(test_database PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_database PRIVATE cxx_std_23)
 gtest_discover_tests(test_database)
+
+add_executable(test_ipc v2/ipc_test.cc)
+target_link_libraries(test_ipc PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_ipc PRIVATE cxx_std_23)
+gtest_discover_tests(test_ipc)
+
+add_executable(test_shmem v2/shmem_test.cc)
+target_link_libraries(test_shmem PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_shmem PRIVATE cxx_std_23)
+gtest_discover_tests(test_shmem)
