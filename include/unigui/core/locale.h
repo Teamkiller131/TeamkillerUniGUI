@@ -25,6 +25,12 @@ public:
     /// Clear all translations.
     static void Clear();
 
+    /// Load translations from a JSON file {"key":"value",...}. Returns true on success.
+    static bool LoadFromFile(const std::string& path);
+
+    /// Load built-in translations for common locales.
+    static void LoadBuiltin();
+
     /// Get all available locale codes.
     static std::vector<std::string> GetLocales();
 

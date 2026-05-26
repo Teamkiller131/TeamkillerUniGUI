@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.4.0 (2026-05-26) — i18n & Settings
+
+### Added
+- **Locale::LoadFromFile**: Load translations from JSON file `{"key":"value",...}`. Auto-detects locale from filename.
+- **Locale::LoadBuiltin**: Built-in translations for en_US, zh_CN, ja_JP (app title, menu items, buttons).
+- **Settings::EnableAutoSave**: Auto-save settings to INI file on program exit (wired into `unigui::Shutdown()`).
+- **Settings MRU**: `AddRecentFile()` / `GetRecentFiles()` / `ClearRecentFiles()` — most recently used file list.
+- **hello_unigui**: i18n locale switch demo (English/Chinese/Japanese) + MRU demo panel.
+
+### Changed
+- Version: 1.3.0 → 1.4.0
+- Tests: 200/200 pass
+
 ## v1.3.0 (2026-05-26) — Platform Hardening
 
 ### Added
