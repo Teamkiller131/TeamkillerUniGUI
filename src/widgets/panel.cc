@@ -4,7 +4,7 @@
 namespace unigui {
 
 Panel::Panel(std::string name, std::string title)
-    : Widget(std::move(name)), title_(std::move(title)) {
+    : Widget(std::move(name)), title_(std::move(title)), wrap_(true) {
 }
 
 void Panel::Render() {

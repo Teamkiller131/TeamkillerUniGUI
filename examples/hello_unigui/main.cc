@@ -39,6 +39,21 @@ int main(int argc, char** argv) {
                         "the PushTextWrapPos is applied automatically before your content callback.");
                 });
                 window->AddPanel(wrapPanel);
+
+                auto i18nPanel = std::make_shared<unigui::Panel>("i18n", "i18n Test");
+                i18nPanel->SetContentCallback([]() {
+                    ImGui::TextUnformatted("English: Hello, world! This is a Dear ImGui C++ wrapper library.");
+                    ImGui::Separator();
+                    ImGui::TextUnformatted("Chinese: 你好，世界！这是一个 Dear ImGui C++ 封装库。");
+                    ImGui::TextUnformatted("Japanese: こんにちは世界！これはImGuiのラッパーです。");
+                    ImGui::TextUnformatted("Korean: 안녕하세요 세계! 이것은 ImGui 래퍼입니다.");
+                    ImGui::Separator();
+                    ImGui::TextUnformatted("Arabic: مرحبا بالعالم! هذا هو مغلف ImGui.");
+                    ImGui::TextUnformatted("Thai: สวัสดีชาวโลก! นี่คือไลบรารี ImGui.");
+                    ImGui::Separator();
+                    ImGui::TextUnformatted("Emoji: 🎉 🚀 ✨ 💻 🎨 (emoji support test)");
+                });
+                window->AddPanel(i18nPanel);
                 first = false;
             }
             window->Render();

@@ -19,7 +19,7 @@ public:
 private:
     std::string title_;
     bool collapsed_ = false;
-    bool wrap_ = false;
+    bool wrap_ = true;
     std::function<void()> content_callback_;
 };
 
