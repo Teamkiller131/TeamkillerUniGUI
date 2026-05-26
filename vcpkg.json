@@ -11,9 +11,7 @@
         "docking-experimental",
         "freetype",
         "glfw-binding",
-        "opengl3-binding",
-        "sdl3-binding",
-        "vulkan-binding"
+        "opengl3-binding"
       ]
     },
     {
@@ -27,15 +25,6 @@
     },
     {
       "name": "glfw3"
-    },
-    {
-      "name": "sdl3"
-    },
-    {
-      "name": "vulkan"
-    },
-    {
-      "name": "freetype"
     },
     {
       "name": "glad",
