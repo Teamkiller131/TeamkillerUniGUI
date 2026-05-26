@@ -122,5 +122,6 @@ void Render(){
 }
 
 bool ShouldClose(){return g_platform?g_platform->ShouldClose():true;}
+void* GetNativeWindowHandle(){return g_platform?g_platform->GetNativeWindowHandle():nullptr;}
 void Run(const std::function<void()>& cb){while(!ShouldClose()){g_platform->PollEvents();NewFrame();cb();Render();}Shutdown();}
 }

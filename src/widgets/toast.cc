@@ -10,6 +10,8 @@ Toast& Toast::Instance() {
 
 Toast::Toast(std::string name) : Widget(std::move(name)) {}
 
+void Toast::SetPosition(int anchor, float offsetX, float offsetY) { anchor_=anchor; offX_=offsetX; offY_=offsetY; }
+
 void Toast::Show(std::string msg, ToastType type, float duration) {
     queue_.push_back({std::move(msg), type, std::chrono::steady_clock::now(), duration});
     Widget::Show();
@@ -26,7 +28,11 @@ void Toast::Render() {
     }
     if (queue_.empty()) { Hide(); return; }
 
-    ImGui::SetNextWindowPos(ImVec2(10, ImGui::GetIO().DisplaySize.y - 10), ImGuiCond_Always, ImVec2(0, 1));
+    ImVec2 pivot((anchor_==1||anchor_==2)?1.0f:0.0f, (anchor_>=2)?1.0f:0.0f);
+    ImVec2 pos(offX_, offY_);
+    if(anchor_==1||anchor_==2) pos.x = ImGui::GetIO().DisplaySize.x - offX_;
+    if(anchor_>=2) pos.y = ImGui::GetIO().DisplaySize.y - offY_;
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Always, pivot);
     ImGui::SetNextWindowBgAlpha(0.8f);
     int flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
                 ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;

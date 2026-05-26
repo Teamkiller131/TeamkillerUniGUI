@@ -25,4 +25,7 @@ void Render();
 bool ShouldClose();
 void Run(const std::function<void()>& callback);
 
+/// v1.9: Get native window handle. Returns HWND on Windows, GLFWwindow* elsewhere.
+void* GetNativeWindowHandle();
+
 } // namespace unigui

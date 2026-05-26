@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.9.0 (2026-05-26) — Polish & API Completion
+
+### Fixed
+- **TrayIcon**: proper right-click menu via TrackPopupMenu, icon resource ID parameter, notification title/msg param pass-through.
+- **GetNativeWindowHandle()**: public API in app.h, returns HWND on Windows.
+- **GLFW headers**: auto-included in unigui.h (glfw3.h + glfw3native.h), no user include needed.
+- **Toast::SetPosition(anchor, x, y)**: control notification position (top-left/right, bottom-left/right).
+
+### Changed
+- vcpkg version synced with CMake version (1.9.0)
+- Version: 1.8.0 → 1.9.0
+- Tests: 202/202 pass
+
 ## v1.8.0 (2026-05-26) — 1.x Series Final
 
 ### Finalized
