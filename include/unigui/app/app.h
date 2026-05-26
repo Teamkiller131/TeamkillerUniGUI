@@ -10,7 +10,7 @@ struct AppConfig {
     int width = 1280;
     int height = 720;
     const char* title = "UniGUI Application";
-    ThemeConfig theme = { ThemePreset::Dark, 0.0f, 18.0f }; // auto-DPI, 18px base font
+    ThemeConfig theme = { ThemePreset::Dark, 0.0f, 24.0f }; // auto-DPI, 24px base font
 #ifdef _WIN32
     BackendType backend = BackendType::DX11; // DX11 is stable on Windows
 #else
