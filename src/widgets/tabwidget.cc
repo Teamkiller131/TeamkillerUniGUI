@@ -1,5 +1,6 @@
 #include <unigui/widgets/tabwidget.h>
 #include <imgui.h>
+#include <algorithm>
 namespace unigui {
 TabWidget::TabWidget(std::string name) : Widget(std::move(name)) {}
 void TabWidget::Render() {

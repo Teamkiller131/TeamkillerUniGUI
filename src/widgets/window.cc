@@ -1,6 +1,7 @@
 #include <unigui/widgets/window.h>
 #include <unigui/core/log.h>
 #include <imgui.h>
+#include <algorithm>
 #include <vector>
 #include <string>
 

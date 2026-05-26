@@ -1,5 +1,6 @@
 #include <unigui/widgets/listview.h>
 #include <imgui.h>
+#include <algorithm>
 namespace unigui {
 ListView::ListView(std::string name, std::vector<std::string> items) : Widget(std::move(name)), items_(std::move(items)) {}
 void ListView::Render() {
