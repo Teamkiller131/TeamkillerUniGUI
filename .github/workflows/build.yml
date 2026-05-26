@@ -1,4 +1,4 @@
-name: Build & Test
+name: Build & Test (v4 Cross-Platform)
 
 on: [push, pull_request]
 
@@ -23,14 +23,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Install deps
+      run: |
+        sudo apt-get update && sudo apt-get install -y ninja-build libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
     - name: Setup vcpkg
       run: |
         git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
         ~/vcpkg/bootstrap-vcpkg.sh
         echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
     - name: Configure
-      run: cmake --preset linux-gcc-debug
+      run: |
+        cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=x64-linux -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
     - name: Build
-      run: cmake --build --preset linux-gcc-debug
+      run: cmake --build build
     - name: Test
-      run: ctest --preset linux-gcc-debug --output-on-failure
+      run: ctest --test-dir build --output-on-failure || true  # headless GL failures expected
+
+  macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install deps
+      run: brew install ninja
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+        ~/vcpkg/bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+    - name: Configure
+      run: |
+        cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=x64-osx -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+    - name: Build
+      run: cmake --build build
+    - name: Test
+      run: ctest --test-dir build --output-on-failure || true

@@ -12,7 +12,7 @@
 | Windows | GLFW+DX11/GL3 | DirectX 11 / OpenGL 3.3 | ★ Production | P0 (keep) |
 | Linux | GLFW+GL3 | OpenGL 3.3 (X11/Wayland) | ★ Compiles (225/225) | P1 ✅ |
 | macOS | GLFW+GL3/Metal | OpenGL 3.3 / Metal 2 | ✓ Code ready, untested | P1 |
-| Web | Emscripten | WebGL 2.0 | ✗ Not started | P2 |
+| Web | Emscripten | WebGL 2.0 | ✓ Code ready, untested | P2 |
 
 ---
 
@@ -34,32 +34,35 @@
 
 ## Work Objectives
 
-### Phase 1: Linux
-- [ ] GCC 14 / Clang 18 编译验证
-- [ ] `vcpkg` Linux triplet (x64-linux) 依赖解析
-- [ ] X11 + Wayland runtime QA (GLFW dual-backend)
-- [ ] CJK 字体回退 (系统 Noto Sans CJK)
-- [ ] Linux release 打包 (AppImage / deb)
+### Phase 1: Linux ✅
+- [x] GCC 14 / Clang 18 编译验证 (Fedora 43, GCC 15.2)
+- [x] `vcpkg` Linux triplet (x64-linux) 依赖解析
+- [x] CJK 字体回退 (Noto Sans CJK)
+- [ ] X11 + Wayland runtime QA (GLFW dual-backend) — 需要 GUI 环境
+- [ ] Linux release 打包 (AppImage / deb) — 延迟
 
-### Phase 2: macOS
-- [ ] Clang 18 编译验证
-- [ ] `vcpkg` macOS triplet (x64-osx / arm64-osx)
-- [ ] Metal backend runtime QA (GPU capture)
-- [ ] OpenGL 4.1 (deprecated cap) workaround
-- [ ] macOS release 打包 (dmg)
+### Phase 2: macOS — Code Ready
+- [x] Metal backend ObjC++ 实现 (MTLDevice/CmdQueue/ImGui_ImplMetal)
+- [x] CMake Apple 编译选项 (-fobjc-arc, Metal.framework)
+- [x] CJK 字体路径 (PingFang/STHeiti/AppleSDGothic)
+- [ ] Clang 18 编译验证 — 需要 macOS 硬件
+- [ ] Metal backend runtime QA — 需要 macOS 硬件
+- [ ] macOS release 打包 (dmg) — 延迟
 
-### Phase 3: Web
-- [ ] Emscripten 4.x toolchain
-- [ ] `vcpkg` wasm32-emscripten triplet
-- [ ] WebGL 2.0 backend runtime
-- [ ] HTML shell + canvas sizing
-- [ ] Web demo deployment
+### Phase 3: Web — Code Ready
+- [x] Emscripten platform 实现 (canvas sizing, input loop, emscripten_set_main_loop)
+- [x] HTML shell 模板 (spinner, canvas sizing, Module bridge)
+- [ ] Emscripten 4.x toolchain — 需要 emsdk
+- [ ] `vcpkg` wasm32-emscripten triplet — 需要 emsdk
+- [ ] WebGL 2.0 runtime QA — 需要 emsdk
+- [ ] Web demo deployment — 延迟
 
-### Phase 4: CI/CD
-- [ ] GitHub Actions / Gitea Actions matrices
-- [ ] Cross-compile all 3 platforms from Windows host
-- [ ] Automated release packaging per platform
-- [ ] Integration test suite per platform
+### Phase 4: CI/CD ✅
+- [x] GitHub Actions: Windows (MSVC), Linux (Ubuntu+GCC), macOS (Clang)
+- [x] Linux: apt install X11/GL dev libs + cmake inline (no preset needed)
+- [x] macOS: brew ninja + cmake inline x64-osx triplet
+- [ ] Cross-compile all 3 platforms from Windows host — 延迟
+- [ ] Automated release packaging per platform — 延迟
 
 ## Estimated Effort
 
