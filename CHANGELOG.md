@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.2.4 (2026-05-27)
+
+### Added
+- INTEGRATION.md with CRT troubleshooting, CMake CRT diagnostic
+
 ## v3.2.2 (2026-05-26) — Inline Editing & Filtering
 
 ### Added
