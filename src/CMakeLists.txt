@@ -2,6 +2,17 @@
 add_library(unigui "")
 add_library(unigui::unigui ALIAS unigui)
 
+# CRT diagnostic for MSVC integration users
+if(MSVC)
+    if(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "MultiThreadedDLL")
+        message(STATUS "UniGUI CRT: /MD (Dynamic)")
+    elseif(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "MultiThreaded$")
+        message(STATUS "UniGUI CRT: /MT (Static)")
+    else()
+        message(WARNING "UniGUI: Unknown MSVC runtime: ${CMAKE_MSVC_RUNTIME_LIBRARY}")
+    endif()
+endif()
+
 # CRT diagnostic for MSVC users
 if(MSVC)
     if(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "MultiThreadedDLL")
