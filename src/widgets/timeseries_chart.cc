@@ -57,13 +57,13 @@ void TimeSeriesChart::Render() {
         }
     }
 
-    // ── Axis labels ──────────────────────────────────────────────────────
-    if (!xLabel_.empty()) ImPlot::SetupAxis(ImAxis_X1, xLabel_.c_str());
-    if (!yLabel_.empty()) ImPlot::SetupAxis(ImAxis_Y1, yLabel_.c_str());
-    ImPlot::SetupAxesLimits(0, 0, yMin_, yMax_, ImPlotCond_Once);
-
     if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, 300),
                            ImPlotFlags_Crosshairs * (crosshair_ ? 1 : 0))) {
+
+        // ── Axis labels ───────────────────────────────────────────────
+        if (!xLabel_.empty()) ImPlot::SetupAxis(ImAxis_X1, xLabel_.c_str());
+        if (!yLabel_.empty()) ImPlot::SetupAxis(ImAxis_Y1, yLabel_.c_str());
+        ImPlot::SetupAxesLimits(0, 0, yMin_, yMax_, ImPlotCond_Once);
 
         // ── Grid ──────────────────────────────────────────────────────
         ImPlot::GetStyle().Colors[ImPlotCol_PlotBg] = ImGui::ColorConvertU32ToFloat4(IM_COL32(20, 20, 28, 255));
