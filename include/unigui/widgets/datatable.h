@@ -51,9 +51,16 @@ public:
     bool GetSortAscending() const { return sortAscending_; }
 
     // ── Selection ─────────────────────────────────────────────────────────
-    int  GetSelectedRow() const { return selectedRow_; }
-    void SetOnSelect(SelectFn cb) { onSelect_ = std::move(cb); }
+    void SetMultiSelect(bool on)        { multiSelect_ = on; }
+    int  GetSelectedRow() const         { return selectedRows_.empty() ? -1 : selectedRows_[0]; }
+    std::vector<int> GetSelectedRows() const { return selectedRows_; }
+    void SetOnSelect(SelectFn cb)       { onSelect_ = std::move(cb); }
     void SetOnDoubleClick(DoubleClickFn cb) { onDblClick_ = std::move(cb); }
+    void SetOnSelectionChanged(std::function<void()> cb) { onSelChanged_ = std::move(cb); }
+
+    // ── Column auto-width ─────────────────────────────────────────────────
+    void SetColumnAutoWidth(int col, bool on) {
+        if (on) autoWidthCols_.insert(col); else autoWidthCols_.erase(col); }
 
     // ── Inline editing ───────────────────────────────────────────────────
     /// Enable inline editing on a column. Double-click to edit.
@@ -88,7 +95,7 @@ public:
             auto& col = columns_[ci];
             ImGui::TableSetupColumn(col.name.c_str(),
                 (col.resizable ? ImGuiTableColumnFlags_None : ImGuiTableColumnFlags_NoResize),
-                col.width, (ImGuiID)ci);
+                autoWidthCols_.count((int)ci) ? 0.f : col.width, (ImGuiID)ci);
         }
 
         ImGui::TableHeadersRow();
@@ -176,8 +183,8 @@ public:
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, bg);
             }
 
-            // Selectable row — only on first column, spans all
-            bool isSelected = (selectedRow_ == idx);
+            // Multi-select: check if row is in selected set
+            bool isSelected = std::find(selectedRows_.begin(), selectedRows_.end(), idx) != selectedRows_.end();
             for (int col = 0; col < (int)columns_.size(); ++col) {
                 ImGui::TableSetColumnIndex(col);
                 std::string text = cellFmt_ ? cellFmt_(idx, col, (*data_)[idx])
@@ -202,8 +209,16 @@ public:
                     ImGuiSelectableFlags sflags = ImGuiSelectableFlags_SpanAllColumns;
                     if (editableCols_.count(col)) sflags |= ImGuiSelectableFlags_AllowDoubleClick;
                     if (ImGui::Selectable(text.c_str(), isSelected, sflags)) {
-                        selectedRow_ = idx;
+                        if (multiSelect_ && ImGui::GetIO().KeyCtrl) {
+                            auto it = std::find(selectedRows_.begin(), selectedRows_.end(), idx);
+                            if (it != selectedRows_.end()) selectedRows_.erase(it);
+                            else selectedRows_.push_back(idx);
+                        } else {
+                            selectedRows_.clear();
+                            selectedRows_.push_back(idx);
+                        }
                         if (onSelect_) onSelect_(idx);
+                        if (onSelChanged_) onSelChanged_();
                         if (ImGui::IsMouseDoubleClicked(0)) {
                             if (editableCols_.count(col)) {
                                 editRow_ = idx; editCol_ = col;
@@ -232,17 +247,20 @@ private:
     std::vector<int> sortIndices_;
     int sortColumn_ = -1;
     bool sortAscending_ = true;
-    int selectedRow_ = -1;
     bool virtualScroll_ = true;
     int scrollToRow_ = -1;
     SelectFn onSelect_;
     DoubleClickFn onDblClick_;
+    std::function<void()> onSelChanged_;
     CellCommitFn onCellCommit_;
     FilterFn filterFn_;
     std::string filterText_;
-    std::unordered_set<int> editableCols_;    // columns with inline edit enabled
-    int editRow_ = -1, editCol_ = -1;          // currently editing cell
+    std::unordered_set<int> editableCols_;
+    std::unordered_set<int> autoWidthCols_;
+    int editRow_ = -1, editCol_ = -1;
     char editBuf_[256] = {};
+    bool multiSelect_ = false;
+    std::vector<int> selectedRows_;
 };
 
 } // namespace unigui

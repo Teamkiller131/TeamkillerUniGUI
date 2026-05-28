@@ -18,11 +18,17 @@ public:
     const TreeNode& GetRoot() const;
     void SetMultiSelect(bool on);
     std::vector<int> GetSelectedNodes() const;
+
+    /// Custom node renderer: called for each node WITHIN the TreeNode
+    /// after the expand arrow and label.  int=nodeId, int=depth.
+    void SetNodeRenderer(std::function<void(int id, int depth, const TreeNode& node)> fn);
+
 private:
     TreeNode root_;
     bool multiSelect_ = false;
     std::vector<int> selected_;
     int nodeCounter_ = 0;
+    std::function<void(int,int,const TreeNode&)> nodeRenderer_;
     void RenderNode(TreeNode& node, int depth);
 };
 }

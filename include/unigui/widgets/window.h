@@ -3,6 +3,7 @@
 #include <unigui/widgets/panel.h>
 #include <memory>
 #include <functional>
+#include <string>
 
 namespace unigui {
 
@@ -22,6 +23,10 @@ public:
 
     /// v1.6: file drag-drop support
     void SetDropCallback(std::function<void(std::vector<std::string>)> cb) { onDrop_ = std::move(cb); }
+
+    /// v3.2.6: layout persistence — saves/restores position + size to JSON string
+    std::string SaveLayout() const;
+    void RestoreLayout(const std::string& json);
 
 private:
     std::string title_;

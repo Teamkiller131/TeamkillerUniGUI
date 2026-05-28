@@ -50,6 +50,10 @@ public:
     void SetCrosshairEnabled(bool on) { crosshair_ = on; }
     /// Show legend.
     void SetLegendEnabled(bool on) { legend_ = on; }
+    /// Enable mouse pan (drag to scroll).
+    void SetPanEnabled(bool on) { panEnabled_ = on; }
+    /// Enable mouse wheel zoom.
+    void SetZoomEnabled(bool on) { zoomEnabled_ = on; }
 
     /// Grid and background colors.
     void SetGridColor(ImU32 c) { gridColor_ = c; }
@@ -67,6 +71,8 @@ private:
     std::string xLabel_, yLabel_;
     bool crosshair_ = false;
     bool legend_ = true;
+    bool panEnabled_ = true;
+    bool zoomEnabled_ = true;
     ImU32 gridColor_ = IM_COL32(60, 60, 70, 70);
     double frameCounter_ = 0;
 };
