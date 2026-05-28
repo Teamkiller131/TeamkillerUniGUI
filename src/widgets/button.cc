@@ -46,8 +46,10 @@ void Button::Render() {
     ImVec2 size(0,0);
     if (sz_ == Small) size = ImVec2(80, 24);
     else if (sz_ == Large) size = ImVec2(180, 36);
+    ImGui::PushID(GetName().c_str());
     if (size.x > 0) clicked_ = ImGui::Button(label_.c_str(), size);
     else clicked_ = ImGui::Button(label_.c_str());
+    ImGui::PopID();
 
     ImGui::PopStyleColor(3);
     ImGui::EndDisabled();

@@ -107,6 +107,17 @@ public:
                                 : sortComps_[sortColumn_]((*data_)[b], (*data_)[a]);
                         });
                     sortIndices_ = std::move(indices);
+                } else if (cellFmt_) {
+                    // Default sort: compare string values of the sorted column
+                    std::vector<int> indices(data_->size());
+                    for (size_t i = 0; i < data_->size(); ++i) indices[i] = (int)i;
+                    std::sort(indices.begin(), indices.end(),
+                        [&](int a, int b) {
+                            int cmp = cellFmt_(a, sortColumn_, (*data_)[a])
+                                      .compare(cellFmt_(b, sortColumn_, (*data_)[b]));
+                            return sortAscending_ ? (cmp < 0) : (cmp > 0);
+                        });
+                    sortIndices_ = std::move(indices);
                 }
                 sortSpecs->SpecsDirty = false;
             }
