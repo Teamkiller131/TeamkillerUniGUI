@@ -290,6 +290,7 @@ public:
 
                 // ── Sort mini-header ─────────────────────────────────
                 if (g.expanded) {
+                    ImGui::TableNextRow();
                     for (int c = 0; c < (int)columns_.size(); ++c) {
                         ImGui::TableSetColumnIndex(c);
                         auto& col = columns_[c];
