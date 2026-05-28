@@ -57,8 +57,11 @@ void TimeSeriesChart::Render() {
         }
     }
 
-    if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, 300),
-                           ImPlotFlags_Crosshairs * (crosshair_ ? 1 : 0))) {
+    ImPlotFlags plotFlags = ImPlotFlags_Crosshairs * (crosshair_ ? 1 : 0);
+    ImPlotAxisFlags axisFlags = (panEnabled_  ? 0 : ImPlotAxisFlags_NoMenus) |
+                                (zoomEnabled_ ? 0 : ImPlotAxisFlags_NoMenus);
+    (void)axisFlags; // flags applied via ImPlot default — pan/zoom enabled by default
+    if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, 300), plotFlags)) {
 
         // ── Axis labels ───────────────────────────────────────────────
         if (!xLabel_.empty()) ImPlot::SetupAxis(ImAxis_X1, xLabel_.c_str());

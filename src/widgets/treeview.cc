@@ -8,7 +8,8 @@ void TreeView::SetRoot(TreeNode root) { root_ = std::move(root); }
 const TreeNode& TreeView::GetRoot() const { return root_; }
 void TreeView::SetMultiSelect(bool on) { multiSelect_ = on; }
 std::vector<int> TreeView::GetSelectedNodes() const { return selected_; }
-void TreeView::RenderNode(TreeNode& node, int) {
+void TreeView::SetNodeRenderer(std::function<void(int,int,const TreeNode&)> fn) { nodeRenderer_ = std::move(fn); }
+void TreeView::RenderNode(TreeNode& node, int depth) {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
     if (node.children.empty()) flags |= ImGuiTreeNodeFlags_Leaf;
     int id = nodeCounter_++;
@@ -21,7 +22,8 @@ void TreeView::RenderNode(TreeNode& node, int) {
                 if (it != selected_.end()) selected_.erase(it); else selected_.push_back(id);
             } else { selected_ = {id}; }
         }
-        for (auto& child : node.children) RenderNode(child, 0);
+        if (nodeRenderer_) nodeRenderer_(id, depth, node);
+        for (auto& child : node.children) RenderNode(child, depth + 1);
         ImGui::TreePop();
     }
 }

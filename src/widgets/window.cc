@@ -77,4 +77,17 @@ bool Window::HasMenuBar() const { return menu_bar_enabled_; }
 void Window::SetOnClose(std::function<void()> callback) { on_close_ = std::move(callback); }
 void Window::SetPosition(float x, float y) { pos_x_ = x; pos_y_ = y; }
 
+std::string Window::SaveLayout() const {
+    char buf[128];
+    snprintf(buf, sizeof(buf), R"({"x":%.0f,"y":%.0f,"w":%.0f,"h":%.0f})", pos_x_, pos_y_, width_, height_);
+    return buf;
+}
+
+void Window::RestoreLayout(const std::string& json) {
+    float x=0,y=0,w=0,h=0;
+    if (sscanf(json.c_str(), R"({"x":%f,"y":%f,"w":%f,"h":%f})", &x, &y, &w, &h) >= 4) {
+        pos_x_ = x; pos_y_ = y; width_ = w; height_ = h;
+    }
+}
+
 } // namespace unigui

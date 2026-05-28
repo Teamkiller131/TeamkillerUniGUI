@@ -186,6 +186,7 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/herosection.cc
         widgets/multihandleslider.cc
         widgets/timeseries_chart.cc
+        widgets/multisplitter.cc
         fonts/gradient_text.cc
     )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)
