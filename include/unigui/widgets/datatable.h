@@ -286,14 +286,18 @@ public:
                 snprintf(hdr, sizeof(hdr), "  %s  %s  (%d rows)",
                          g.expanded ? "▼" : "▶", g.label.c_str(), childCount);
                 ImGui::PushID((int)(gi + 1000));
-                // Full-width button spanning all columns
                 ImGui::PushStyleColor(ImGuiCol_Button, groupBg);
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(55,58,75,255));
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(35,38,50,255));
-                bool clicked = ImGui::Button(hdr, ImVec2(-1, 0));
+                // Compute full row width from all column widths
+                float fullW = 0.f; for (auto& c : columns_) fullW += c.width;
+                bool clicked = ImGui::Button(hdr, ImVec2(fullW, 0));
                 ImGui::PopStyleColor(3);
                 ImGui::PopID();
                 if (clicked) g.expanded = !g.expanded;
+                // Skip remaining columns (button already fills visual row)
+                for (int c = 1; c < (int)columns_.size(); ++c)
+                    ImGui::TableSetColumnIndex(c);
 
                 // ── Sort mini-header ─────────────────────────────────
                 if (g.expanded) {
