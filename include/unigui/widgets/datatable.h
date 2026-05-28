@@ -98,8 +98,9 @@ public:
         // ── Header ──────────────────────────────────────────────────────
         int flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                     ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
-                    ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingFixedFit
-                    | (columnReorder_ ? ImGuiTableFlags_Reorderable : 0);
+                    ImGuiTableFlags_SizingFixedFit
+                    | (columnReorder_ ? ImGuiTableFlags_Reorderable : 0)
+                    | (groups_.empty() ? ImGuiTableFlags_Sortable : 0);
 
         float tableH = virtualScroll_ ? ImGui::GetContentRegionAvail().y : 0.f;
         if (!ImGui::BeginTable(GetName().c_str(), (int)columns_.size(), flags,
@@ -275,22 +276,26 @@ public:
             for (size_t gi = 0; gi < groups_.size(); ++gi) {
                 auto& g = groups_[gi];
 
-                // ── Group header row ───────────────────────────────────
+                // ── Group header (full-width separator row) ──────────
                 ImGui::TableNextRow();
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, groupBg);
                 ImGui::TableSetColumnIndex(0);
                 char hdr[256];
                 int childCount = g.endRow < 0 ? (int)data_->size() - g.startRow
                                : std::min((int)data_->size(), g.endRow) - g.startRow;
-                snprintf(hdr, sizeof(hdr), "%s  %s  (%d rows)",
+                snprintf(hdr, sizeof(hdr), "  %s  %s  (%d rows)",
                          g.expanded ? "▼" : "▶", g.label.c_str(), childCount);
                 ImGui::PushID((int)(gi + 1000));
-                if (ImGui::Button(hdr, ImVec2(-1, 0))) {
-                    g.expanded = !g.expanded;
-                }
+                // Full-width button spanning all columns
+                ImGui::PushStyleColor(ImGuiCol_Button, groupBg);
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(55,58,75,255));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(35,38,50,255));
+                bool clicked = ImGui::Button(hdr, ImVec2(-1, 0));
+                ImGui::PopStyleColor(3);
                 ImGui::PopID();
+                if (clicked) g.expanded = !g.expanded;
 
-                // ── Sort mini-header for this group ────────────────────
+                // ── Sort mini-header ─────────────────────────────────
                 if (g.expanded) {
                     for (int c = 0; c < (int)columns_.size(); ++c) {
                         ImGui::TableSetColumnIndex(c);
