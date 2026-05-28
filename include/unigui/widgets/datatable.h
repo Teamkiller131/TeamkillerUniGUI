@@ -78,7 +78,7 @@ public:
         // ── Header ──────────────────────────────────────────────────────
         int flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                     ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
-                    ImGuiTableFlags_Sortable;
+                    ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingFixedFit;
 
         float tableH = virtualScroll_ ? ImGui::GetContentRegionAvail().y : 0.f;
         if (!ImGui::BeginTable(GetName().c_str(), (int)columns_.size(), flags,
@@ -164,18 +164,20 @@ public:
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, bg);
             }
 
-            // Selectable row
+            // Selectable row — only on first column, spans all
             bool isSelected = (selectedRow_ == idx);
             for (int col = 0; col < (int)columns_.size(); ++col) {
                 ImGui::TableSetColumnIndex(col);
                 std::string text = cellFmt_ ? cellFmt_(idx, col, (*data_)[idx])
                                             : std::to_string(idx);
 
-                // ── Inline editing: InputText popup ────────────────────
+                // ── Inline editing: InputText popup (per-row unique ID) ──
                 bool isEditing = (editRow_ == idx && editCol_ == col);
                 if (isEditing) {
                     ImGui::SetKeyboardFocusHere();
-                    if (ImGui::InputText("##edit", editBuf_, sizeof(editBuf_),
+                    char editLabel[64];
+                    snprintf(editLabel, sizeof(editLabel), "##edit_%d_%d", idx, col);
+                    if (ImGui::InputText(editLabel, editBuf_, sizeof(editBuf_),
                                          ImGuiInputTextFlags_EnterReturnsTrue)) {
                         if (onCellCommit_ && strlen(editBuf_) > 0)
                             onCellCommit_(idx, col, std::string(editBuf_));
@@ -183,7 +185,8 @@ public:
                     }
                     if (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Escape))
                         editRow_ = editCol_ = -1;
-                } else {
+                } else if (col == 0) {
+                    // Selectable only on column 0 (SpansAllColumns covers rest)
                     ImGuiSelectableFlags sflags = ImGuiSelectableFlags_SpanAllColumns;
                     if (editableCols_.count(col)) sflags |= ImGuiSelectableFlags_AllowDoubleClick;
                     if (ImGui::Selectable(text.c_str(), isSelected, sflags)) {
@@ -198,6 +201,9 @@ public:
                             if (onDblClick_) onDblClick_(idx);
                         }
                     }
+                } else {
+                    // Remaining columns: just text (already covered by SpanAllColumns)
+                    ImGui::TextUnformatted(text.c_str());
                 }
             }
         }
