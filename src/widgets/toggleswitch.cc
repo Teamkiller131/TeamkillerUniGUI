@@ -14,7 +14,9 @@ void ToggleSwitch::Render(){
 
     // Push alpha for smooth on/off feel
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.7f + 0.3f * t);
+    ImGui::PushID(GetName().c_str());
     ImGui::Checkbox(label_.c_str(),&on_);
+    ImGui::PopID();
     ImGui::PopStyleVar();
 
     if(on_!=prev&&on_change_)on_change_(on_);
