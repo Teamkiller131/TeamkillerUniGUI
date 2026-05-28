@@ -232,6 +232,87 @@ int main(int argc, char** argv) {
     });
     win->AddPanel(interactPanel);
 
+    // ── Panel: DataTable + Button Interaction ────────────────────────────
+    auto tablePanel = std::make_shared<unigui::Panel>("tablePanel", "DataTable<T> — Rows, Filter, Action Buttons");
+    tablePanel->SetContentCallback([]() {
+        struct Position {
+            std::string symbol; int longVol, shortVol; double pnl; double cost;
+        };
+        static std::vector<Position> positions;
+        static bool initData = true;
+        if (initData) {
+            for (int i = 0; i < 15; ++i) {
+                positions.push_back({
+                    std::string(1, 'A' + (i % 4)) + std::to_string(6000 + i) + ".CF",
+                    (i % 3 == 0) ? (i + 1) * 100 : 0,
+                    (i % 3 != 0) ? (i + 1) * 100 : 0,
+                    (i % 2) ? (i + 1) * 500.0 : -(i + 1) * 300.0,
+                    5000.0 + i * 100.0
+                });
+            }
+            initData = false;
+        }
+
+        static unigui::DataTable<Position> table("持仓", {
+            {"合约", 100}, {"多头手", 60}, {"空头手", 60}, {"盈亏", 80}, {"成本", 80}
+        });
+        table.SetDataSource(&positions);
+        table.SetCellFormatter([](int, int col, const Position& p) -> std::string {
+            switch (col) {
+                case 0: return p.symbol;
+                case 1: return p.longVol > 0 ? std::to_string(p.longVol) : "-";
+                case 2: return p.shortVol > 0 ? std::to_string(p.shortVol) : "-";
+                case 3: { char buf[32]; snprintf(buf, 32, "%.2f", p.pnl); return buf; }
+                case 4: { char buf[32]; snprintf(buf, 32, "%.2f", p.cost); return buf; }
+            }
+            return "-";
+        });
+        table.SetRowColor([](int, const Position& p) {
+            return p.pnl >= 0 ? IM_COL32(0, 160, 80, 80)
+                              : IM_COL32(220, 60, 60, 80);
+        });
+
+        // ── Filter bar ────────────────────────────────────────────────
+        static char filterBuf[64] = "";
+        ImGui::InputTextWithHint("##filter", "Filter...", filterBuf, sizeof(filterBuf));
+        if (filterBuf[0]) table.SetFilterText(filterBuf);
+        else table.SetFilterText("");
+
+        ImGui::SameLine();
+        static unigui::Button addBtn("addBtn", "+ Add");
+        static unigui::Button delBtn("delBtn", "- Del Sel");
+        addBtn.Render(); ImGui::SameLine(); delBtn.Render();
+
+        if (addBtn.WasClicked()) {
+            int n = (int)positions.size();
+            positions.push_back({"NEW" + std::to_string(6001 + n), 500, 0, 1200.0, 5100.0});
+        }
+        if (delBtn.WasClicked()) {
+            int sel = table.GetSelectedRow();
+            if (sel >= 0 && sel < (int)positions.size())
+                positions.erase(positions.begin() + sel);
+        }
+
+        // ── Table ─────────────────────────────────────────────────────
+        table.SetVirtualScroll(true);
+        table.Render();
+
+        // ── Row action buttons ────────────────────────────────────────
+        int sel = table.GetSelectedRow();
+        if (sel >= 0 && sel < (int)positions.size()) {
+            ImGui::Text("Selected: %s | PnL: %.2f", positions[sel].symbol.c_str(), positions[sel].pnl);
+            static unigui::Button upBtn("upBtn", "+ 多");
+            static unigui::Button dnBtn("dnBtn", "- 空");
+            upBtn.Render(); ImGui::SameLine(); dnBtn.Render();
+            if (upBtn.WasClicked()) { positions[sel].longVol += 100; positions[sel].pnl += 50; }
+            if (dnBtn.WasClicked()) { positions[sel].shortVol += 100; positions[sel].pnl -= 50; }
+        }
+
+        static int addCount = 0;
+        ImGui::Text("Rows: %zu | Filter: '%s'", positions.size(), filterBuf);
+    });
+    win->AddPanel(tablePanel);
+
     // ── Panel: Animation Demo ─────────────────────────────────────────────
     auto animPanel = std::make_shared<unigui::Panel>("anim", "Animation State + Transition");
     animPanel->SetContentCallback([]() {
