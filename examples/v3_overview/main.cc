@@ -19,19 +19,19 @@ int main(int argc, char** argv) {
     // P1: DataTable with group rows
     auto pDT = std::make_shared<unigui::Panel>("datatable", "DataTable<T> — Group Rows (click ▶/▼), Multi-Select, Filter, Add/Del, Sort All");
     pDT->SetContentCallback([]() {
-        struct Pos { std::string sym; int lv, sv; double pnl, cost; };
+        struct Pos { std::string sym; int v1, v2; double v3, v4; };
         static std::vector<Pos> data;
         static bool init = true;
         if (init) {
-            // Group A: rows 0-4
-            data.push_back({"IF2406.CF",100,0,8000.0,5000.0}); data.push_back({"IF2409.CF",200,0,1200.0,5100.0});
-            data.push_back({"IF2412.CF",0,150,-300.0,4900.0}); data.push_back({"IF2503.CF",50,0,600.0,5050.0});
-            data.push_back({"IF2506.CF",0,0,0.0,5000.0});
-            // Group B: rows 5-8
-            data.push_back({"IH2406.CF",0,300,-500.0,4800.0}); data.push_back({"IH2409.CF",150,0,900.0,5100.0});
-            data.push_back({"IH2412.CF",200,100,400.0,5000.0}); data.push_back({"IH2503.CF",0,0,0.0,5000.0});
+            // Group 1: rows 0-4
+            data.push_back({"第一组-A001",100,0,8000.0,5000.0}); data.push_back({"第一组-A002",200,0,1200.0,5100.0});
+            data.push_back({"第一组-A003",0,150,-300.0,4900.0}); data.push_back({"第一组-A004",50,0,600.0,5050.0});
+            data.push_back({"第一组-A005",0,0,0.0,5000.0});
+            // Group 2: rows 5-8
+            data.push_back({"第二组-B001",0,300,-500.0,4800.0}); data.push_back({"第二组-B002",150,0,900.0,5100.0});
+            data.push_back({"第二组-B003",200,100,400.0,5000.0}); data.push_back({"第二组-B004",0,0,0.0,5000.0});
             // Ungrouped: rows 9-10
-            data.push_back({"IC2406.CF",300,0,1500.0,5200.0}); data.push_back({"IC2409.CF",100,200,-200.0,4900.0});
+            data.push_back({"独立行-C001",300,0,1500.0,5200.0}); data.push_back({"独立行-C002",100,200,-200.0,4900.0});
             init = false;
         }
 
@@ -41,21 +41,20 @@ int main(int argc, char** argv) {
         static unigui::Button addBtn("add","+Add"); addBtn.Render(); ImGui::SameLine();
         static unigui::Button delBtn("del","-Del"); delBtn.Render();
 
-        static unigui::DataTable<Pos> t("持仓",{{"合约",110},{"多头",60},{"空头",60},{"盈亏",80},{"成本",80}});
+        static unigui::DataTable<Pos> t("持仓",{{"属性1",110},{"属性2",60},{"属性3",60},{"属性4",80},{"属性5",80}});
         t.SetDataSource(&data); t.SetMultiSelect(true); t.SetColumnAutoWidth(0,true);
         t.SetCellFormatter([](int,int c,const Pos& p)->std::string{
-            switch(c){case 0:return p.sym;case 1:return p.lv>0?std::to_string(p.lv):"-";
-            case 2:return p.sv>0?std::to_string(p.sv):"-";
-            case 3:{char b[32];snprintf(b,32,"%.0f",p.pnl);return b;}
-            case 4:{char b[32];snprintf(b,32,"%.0f",p.cost);return b;}}return"-";
+            switch(c){case 0:return p.sym;case 1:return p.v1>0?std::to_string(p.v1):"-";
+            case 2:return p.v2>0?std::to_string(p.v2):"-";
+            case 3:{char b[32];snprintf(b,32,"%.0f",p.v3);return b;}
+            case 4:{char b[32];snprintf(b,32,"%.0f",p.v4);return b;}}return"-";
         });
-        t.SetRowColor([](int,const Pos& p){return p.pnl>=0?IM_COL32(0,160,80,80):IM_COL32(220,60,60,80);});
+        t.SetRowColor([](int,const Pos& p){return p.v3>=0?IM_COL32(0,160,80,80):IM_COL32(220,60,60,80);});
         if(filter[0])t.SetFilterText(filter);else t.SetFilterText("");
 
-        // Group model
         static std::vector<unigui::DataTable<Pos>::GroupInfo> groups;
         static bool ginit = true;
-        if(ginit){groups={{.label="IF 品种组",.startRow=0,.endRow=5},{.label="IH 品种组",.startRow=5,.endRow=9}};t.SetGroups(groups);ginit=false;}
+        if(ginit){groups={{.label="第一组",.startRow=0,.endRow=5},{.label="第二组",.startRow=5,.endRow=9}};t.SetGroups(groups);ginit=false;}
         t.Render();
 
         if(addBtn.WasClicked()){int n=(int)data.size();data.push_back({"NEW"+std::to_string(6001+n),500,0,1200.0,5100.0});}
