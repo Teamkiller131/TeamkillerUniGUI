@@ -86,8 +86,7 @@ public:
 
         for (auto& col : columns_)
             ImGui::TableSetupColumn(col.name.c_str(),
-                (col.resizable ? ImGuiTableColumnFlags_None : ImGuiTableColumnFlags_NoResize)
-                | (col.sortable ? ImGuiTableColumnFlags_DefaultSort : 0),
+                (col.resizable ? ImGuiTableColumnFlags_None : ImGuiTableColumnFlags_NoResize),
                 col.width);
 
         ImGui::TableHeadersRow();
