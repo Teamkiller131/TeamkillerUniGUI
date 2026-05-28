@@ -84,10 +84,12 @@ public:
         if (!ImGui::BeginTable(GetName().c_str(), (int)columns_.size(), flags,
                                ImVec2(0, tableH))) return;
 
-        for (auto& col : columns_)
+        for (size_t ci = 0; ci < columns_.size(); ++ci) {
+            auto& col = columns_[ci];
             ImGui::TableSetupColumn(col.name.c_str(),
                 (col.resizable ? ImGuiTableColumnFlags_None : ImGuiTableColumnFlags_NoResize),
-                col.width);
+                col.width, (ImGuiID)ci);
+        }
 
         ImGui::TableHeadersRow();
 
