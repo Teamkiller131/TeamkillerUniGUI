@@ -276,28 +276,17 @@ public:
             for (size_t gi = 0; gi < groups_.size(); ++gi) {
                 auto& g = groups_[gi];
 
-                // ── Group header (full-width separator row) ──────────
+                // ── Group header (full-width SpanAllColumns row) ──────
                 ImGui::TableNextRow();
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, groupBg);
                 ImGui::TableSetColumnIndex(0);
                 char hdr[256];
                 int childCount = g.endRow < 0 ? (int)data_->size() - g.startRow
                                : std::min((int)data_->size(), g.endRow) - g.startRow;
-                snprintf(hdr, sizeof(hdr), "  %s  %s  (%d rows)",
+                snprintf(hdr, sizeof(hdr), "%s  %s  (%d rows)",
                          g.expanded ? "▼" : "▶", g.label.c_str(), childCount);
-                ImGui::PushID((int)(gi + 1000));
-                ImGui::PushStyleColor(ImGuiCol_Button, groupBg);
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(55,58,75,255));
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(35,38,50,255));
-                // Compute full row width from all column widths
-                float fullW = 0.f; for (auto& c : columns_) fullW += c.width;
-                bool clicked = ImGui::Button(hdr, ImVec2(fullW, 0));
-                ImGui::PopStyleColor(3);
-                ImGui::PopID();
-                if (clicked) g.expanded = !g.expanded;
-                // Skip remaining columns (button already fills visual row)
-                for (int c = 1; c < (int)columns_.size(); ++c)
-                    ImGui::TableSetColumnIndex(c);
+                if (ImGui::Selectable(hdr, false, ImGuiSelectableFlags_SpanAllColumns))
+                    g.expanded = !g.expanded;
 
                 // ── Sort mini-header ─────────────────────────────────
                 if (g.expanded) {
