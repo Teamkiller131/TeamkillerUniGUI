@@ -1,5 +1,28 @@
 # Changelog
 
+## v3.2.7 (2026-05-28) — Group Rows + Cross-Platform Foundation
+
+### Added
+- **DataTable group rows**: `SetGroups(vector<GroupInfo>)`. Collapsible group headers (▼/▶), per-group sort mini-headers with ▲/▼ 3-state toggle, "Ungrouped" separator section.
+- **DataTable context menu**: `SetContextMenu(fn(row))` — right-click popup.
+- **DataTable column reorder / FlashRow**: `SetColumnReorderable`, `FlashRow(row,color,duration)`.
+- **TimeSeriesChart**: crosshair formatter, multi Y-axis, reference lines, X-axis formatter, rubber band zoom.
+- **ProgressBar gradient**: `SetGradient(t1,c1,t2,c2,c3)`.
+- **MultiSplitter ratio persistence**: `GetRatios()/SetRatios()`.
+- **InputInt/InputFloat suffix**: `SetSuffix(string)`.
+- **Window/TabWidget**: `SetCloseToTray`, `SetTabShortcut`.
+- **unigui::format**: `MoneyCN(amount)` → "5300万", `VolumeCN(vol)` → "1500手".
+- **Linux**: Fedora 43/GCC 15.2 compile — 225/225 targets, 236/244 tests.
+- **macOS**: Metal renderer ObjC++ (code ready, untested).
+- **Emscripten**: HTML shell + platform backend (code ready, untested).
+- **CI/CD**: GitHub Actions Win/Lin/Mac 3-job matrix.
+
+### Fixed
+- All interactive widgets: `PushID(name)` scoping prevents same-label ID collisions.
+- DataTable: column header sort by correct column (was always col 0); default string sort; multi-select.
+- TimeSeriesChart: SetupAxis now inside BeginPlot block.
+- EventBus exit crash: `~Bus()` destructor calls `Shutdown()`.
+
 ## v3.2.5 (2026-05-27) — Widget ID Sanitation + DataTable Sort
 
 ### Fixed
