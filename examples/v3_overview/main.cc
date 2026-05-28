@@ -55,8 +55,7 @@ int main(int argc, char** argv) {
         // Group model
         static std::vector<unigui::DataTable<Pos>::GroupInfo> groups;
         static bool ginit = true;
-        if(ginit){groups={{.label="IF 品种组",.startRow=0,.endRow=5},{.label="IH 品种组",.startRow=5,.endRow=9}};ginit=false;}
-        t.SetGroups(groups);
+        if(ginit){groups={{.label="IF 品种组",.startRow=0,.endRow=5},{.label="IH 品种组",.startRow=5,.endRow=9}};t.SetGroups(groups);ginit=false;}
         t.Render();
 
         if(addBtn.WasClicked()){int n=(int)data.size();data.push_back({"NEW"+std::to_string(6001+n),500,0,1200.0,5100.0});}
