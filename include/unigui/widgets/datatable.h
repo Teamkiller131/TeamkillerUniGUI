@@ -57,10 +57,13 @@ public:
     void SetOnSelect(SelectFn cb)       { onSelect_ = std::move(cb); }
     void SetOnDoubleClick(DoubleClickFn cb) { onDblClick_ = std::move(cb); }
     void SetOnSelectionChanged(std::function<void()> cb) { onSelChanged_ = std::move(cb); }
+    void SetContextMenu(std::function<void(int row)> fn) { ctxMenuFn_ = std::move(fn); }
 
     // ── Column auto-width ─────────────────────────────────────────────────
     void SetColumnAutoWidth(int col, bool on) {
         if (on) autoWidthCols_.insert(col); else autoWidthCols_.erase(col); }
+    void SetColumnReorderable(bool on) { columnReorder_ = on; }
+    void FlashRow(int row, ImU32 color, float duration) { flashRow_=row;flashColor_=color;flashDuration_=duration;flashElapsed_=0.f; }
 
     // ── Inline editing ───────────────────────────────────────────────────
     /// Enable inline editing on a column. Double-click to edit.
@@ -85,7 +88,8 @@ public:
         // ── Header ──────────────────────────────────────────────────────
         int flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                     ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
-                    ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingFixedFit;
+                    ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingFixedFit
+                    | (columnReorder_ ? ImGuiTableFlags_Reorderable : 0);
 
         float tableH = virtualScroll_ ? ImGui::GetContentRegionAvail().y : 0.f;
         if (!ImGui::BeginTable(GetName().c_str(), (int)columns_.size(), flags,
@@ -177,6 +181,14 @@ public:
                         ? sortIndices_[row] : row;
             if (!rowPasses(idx)) continue;
 
+            if (flashRow_ == idx && flashElapsed_ < flashDuration_) {
+                flashElapsed_ += ImGui::GetIO().DeltaTime;
+                float a = 1.f - flashElapsed_ / flashDuration_;
+                ImU32 c = (flashColor_ & 0x00FFFFFF) | ((ImU32)((flashColor_ >> 24) * a) << 24);
+                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, c);
+                if (flashElapsed_ >= flashDuration_) flashRow_ = -1;
+            }
+
             ImGui::TableNextRow();
             if (rowColorFn_) {
                 ImU32 bg = rowColorFn_(idx, (*data_)[idx]);
@@ -227,11 +239,20 @@ public:
                             }
                             if (onDblClick_) onDblClick_(idx);
                         }
+                        if (ctxMenuFn_ && ImGui::BeginPopupContextItem()) {
+                            ctxMenuFn_(idx);
+                            ImGui::EndPopup();
+                        }
                     }
                 } else {
                     // Remaining columns: just text (already covered by SpanAllColumns)
                     ImGui::TextUnformatted(text.c_str());
                 }
+            }
+
+            if (ctxMenuFn_ && ImGui::BeginPopupContextItem()) {
+                ctxMenuFn_(idx);
+                ImGui::EndPopup();
             }
         }
 
@@ -261,6 +282,9 @@ private:
     char editBuf_[256] = {};
     bool multiSelect_ = false;
     std::vector<int> selectedRows_;
+    std::function<void(int)> ctxMenuFn_;
+    int flashRow_ = -1; ImU32 flashColor_ = 0; float flashDuration_ = 0, flashElapsed_ = 0;
+    bool columnReorder_ = false;
 };
 
 } // namespace unigui

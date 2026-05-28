@@ -58,7 +58,7 @@ void Window::Render() {
 
     if (!open) {
         Hide();
-        if (on_close_) on_close_();
+        if (!closeToTray_ && on_close_) on_close_();
     }
 }
 

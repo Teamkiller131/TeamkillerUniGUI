@@ -20,6 +20,7 @@ public:
     bool HasMenuBar() const;
     void SetOnClose(std::function<void()> callback);
     void SetPosition(float x, float y);
+    void SetCloseToTray(bool on) { closeToTray_ = on; }
 
     /// v1.6: file drag-drop support
     void SetDropCallback(std::function<void(std::vector<std::string>)> cb) { onDrop_ = std::move(cb); }
@@ -36,6 +37,7 @@ private:
     float pos_x_ = -1, pos_y_ = -1;
     std::function<void()> on_close_;
     std::function<void(std::vector<std::string>)> onDrop_;
+    bool closeToTray_ = false;
 };
 
 } // namespace unigui

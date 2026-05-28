@@ -1,5 +1,6 @@
 #include <unigui/widgets/multisplitter.h>
 #include <imgui.h>
+#include <algorithm>
 
 namespace unigui {
 
@@ -9,6 +10,21 @@ MultiSplitter::MultiSplitter(std::string name, Orientation ori)
 void MultiSplitter::AddPanel(float ratio, std::function<void()> content) {
     panels_.push_back({ratio, std::move(content)});
     // Normalize ratios to sum 1.0
+    float total = 0.f;
+    for (auto& p : panels_) total += p.ratio;
+    if (total > 0.f) for (auto& p : panels_) p.ratio /= total;
+}
+
+std::vector<float> MultiSplitter::GetRatios() const {
+    std::vector<float> ratios;
+    ratios.reserve(panels_.size());
+    for (auto& p : panels_) ratios.push_back(p.ratio);
+    return ratios;
+}
+
+void MultiSplitter::SetRatios(const std::vector<float>& ratios) {
+    int count = (int)std::min(panels_.size(), ratios.size());
+    for (int i = 0; i < count; ++i) panels_[i].ratio = ratios[i];
     float total = 0.f;
     for (auto& p : panels_) total += p.ratio;
     if (total > 0.f) for (auto& p : panels_) p.ratio /= total;
