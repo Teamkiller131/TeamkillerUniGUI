@@ -6,7 +6,9 @@ CheckBox::CheckBox(std::string name, std::string label, bool checked)
 void CheckBox::Render() {
     if (!IsVisible()) return;
     bool prev = checked_;
+    ImGui::PushID(GetName().c_str());
     ImGui::Checkbox(label_.c_str(), &checked_);
+    ImGui::PopID();
     if (checked_ != prev && on_change_) on_change_(checked_);
 }
 bool CheckBox::IsChecked() const { return checked_; }

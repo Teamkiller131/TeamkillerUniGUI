@@ -22,6 +22,7 @@ void LineEdit::Render() {
     if (multiline_) flags |= ImGuiInputTextFlags_None;
     if (read_only_) flags |= ImGuiInputTextFlags_ReadOnly;
     if (has_error_) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.4f, 0.1f, 0.1f, 1.0f));
+    ImGui::PushID(GetName().c_str());
     bool changed = false;
     if (multiline_) {
         changed = ImGui::InputTextMultiline(label_.c_str(), buffer_, max_length_, ImVec2(-1, 80), flags);
@@ -33,6 +34,7 @@ void LineEdit::Render() {
         if (validator_ && !validator_(value_)) has_error_ = true;
         PushUndo();
     }
+    ImGui::PopID();
     if (has_error_) ImGui::PopStyleColor();
 }
 void LineEdit::Undo() {

@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.2.5 (2026-05-27) — Widget ID Sanitation + DataTable Sort
+
+### Fixed
+- **Widget ID collisions**: `PushID(name)/PopID()` on Button, CheckBox, ToggleSwitch, ComboBox, LineEdit, InputInt, InputFloat. Multiple widgets with same label no longer conflict.
+- **DataTable sort**: `TableSetupColumn(user_id=ci)` — clicking column header now sorts by that column (was always column 0).
+- **DataTable default sort**: columns without `SetSortCompare` auto-sort via `CellFormatter` string compare.
+
+### Changed
+- v3_overview: stable 5-panel demo (Theme/Table+Btn/Btn+Toast/Badge+Text/Anim), pure UniGUI API.
+
 ## v3.2.4 (2026-05-27)
 
 ### Added

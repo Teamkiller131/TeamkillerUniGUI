@@ -5,6 +5,7 @@ ComboBox::ComboBox(std::string name, std::string label, std::vector<std::string>
     : Widget(std::move(name)), label_(std::move(label)), items_(std::move(items)), selected_(selected) {}
 void ComboBox::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     const char* preview = selected_ < (int)items_.size() ? items_[selected_].c_str() : "";
     if (searchable_) {
         ImGui::InputText("##search", search_buf_, sizeof(search_buf_));
@@ -37,6 +38,7 @@ void ComboBox::Render() {
         }
         ImGui::EndCombo();
     }
+    ImGui::PopID();
 }
 int ComboBox::GetSelectedIndex() const { return selected_; }
 void ComboBox::SetSelectedIndex(int idx) { selected_ = idx; }
