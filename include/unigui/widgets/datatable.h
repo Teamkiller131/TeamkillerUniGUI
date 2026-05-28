@@ -27,9 +27,10 @@ public:
 
     struct GroupInfo {
         std::string label;
-        int startRow = 0;
-        int endRow = -1;
+        int startRow = 0, endRow = -1;
         bool expanded = true;
+        int sortCol = -1;      // -1 = unsorted, 0..N = sorted by column
+        bool sortAsc = true;   // sort direction
     };
 
     using CellFormatter = std::function<std::string(int row, int col, const T&)>;
@@ -294,43 +295,68 @@ public:
                     for (int c = 0; c < (int)columns_.size(); ++c) {
                         ImGui::TableSetColumnIndex(c);
                         auto& col = columns_[c];
-                        // Click column header to sort within this group
                         ImGui::PushID((int)(gi * 100 + c + 5000));
-                        if (ImGui::Selectable(col.name.c_str(), false,
-                                ImGuiSelectableFlags_AllowDoubleClick)) {
-                            // Local sort within group
+
+                        // Sort indicator label
+                        const char* arrow = "";
+                        if (g.sortCol == c) arrow = g.sortAsc ? " ▲" : " ▼";
+                        char slabel[128];
+                        snprintf(slabel, sizeof(slabel), "%s%s", col.name.c_str(), arrow);
+
+                        if (ImGui::Selectable(slabel, false, ImGuiSelectableFlags_AllowDoubleClick)) {
                             int gStart = std::max(0, g.startRow);
                             int gEnd = g.endRow < 0 ? (int)data_->size()
                                       : std::min((int)data_->size(), g.endRow);
                             if (cellFmt_) {
-                                bool asc = (groupSortCol_ == c && groupSortAsc_);
-                                groupSortCol_ = c; groupSortAsc_ = !asc;
-                                std::vector<std::pair<std::string,int>> sv;
-                                for (int r = gStart; r < gEnd; ++r)
-                                    sv.push_back({cellFmt_(r,c,(*data_)[r]), r});
-                                if (groupSortAsc_)
-                                    std::sort(sv.begin(), sv.end(), [](auto&a,auto&b){return a.first<b.first;});
-                                else
-                                    std::sort(sv.begin(), sv.end(), [](auto&a,auto&b){return a.first>b.first;});
-                                groupSortMap_.clear();
-                                int pos = gStart;
-                                for (auto& [s, row] : sv) groupSortMap_[row] = pos++;
+                                // 3-state: none→asc→desc→none
+                                if (g.sortCol != c) { g.sortCol = c; g.sortAsc = true; }
+                                else if (g.sortAsc)  { g.sortAsc = false; }
+                                else                  { g.sortCol = -1; }
+
+                                // Do sort if any
+                                if (g.sortCol >= 0) {
+                                    std::vector<std::pair<std::string,int>> sv;
+                                    for (int r = gStart; r < gEnd; ++r)
+                                        sv.push_back({cellFmt_(r, g.sortCol, (*data_)[r]), r});
+                                    if (g.sortAsc)
+                                        std::sort(sv.begin(), sv.end(), [](auto&a,auto&b){return a.first<b.first;});
+                                    else
+                                        std::sort(sv.begin(), sv.end(), [](auto&a,auto&b){return a.first>b.first;});
+                                    groupSortMap_.clear();
+                                    int pos = gStart;
+                                    for (auto& [s, row] : sv) groupSortMap_[row] = pos++;
+                                } else {
+                                    // Clear sort for this group
+                                    for (int r = gStart; r < gEnd; ++r) groupSortMap_.erase(r);
+                                }
                             }
                         }
                         ImGui::PopID();
                     }
                 }
 
-                // ── Child rows ─────────────────────────────────────────
+                // ── Child rows (sorted if group sort active) ─────────
                 int groupStart = std::max(0, g.startRow);
                 int groupEnd = g.endRow < 0 ? (int)data_->size() : std::min((int)data_->size(), g.endRow);
                 trailingRow = std::max(trailingRow, groupEnd);
 
                 if (!g.expanded) continue;
-                for (int row = groupStart; row < groupEnd; ++row) {
-                    int idx = groupSortMap_.count(row) ? groupSortMap_[row] : row;
-                    idx = (sortColumn_ >= 0 && !sortIndices_.empty()) ? sortIndices_[idx] : idx;
-                    renderRow(idx);
+
+                if (g.sortCol >= 0 && !groupSortMap_.empty()) {
+                    // Render in sorted order: build position→original index map
+                    std::vector<int> sortedIdx(groupEnd - groupStart);
+                    for (int r = groupStart; r < groupEnd; ++r)
+                        sortedIdx[groupSortMap_[r] - groupStart] = r;
+                    for (int pos = 0; pos < (int)sortedIdx.size(); ++pos) {
+                        int idx = sortedIdx[pos];
+                        idx = (sortColumn_ >= 0 && !sortIndices_.empty()) ? sortIndices_[idx] : idx;
+                        renderRow(idx);
+                    }
+                } else {
+                    for (int row = groupStart; row < groupEnd; ++row) {
+                        int idx = (sortColumn_ >= 0 && !sortIndices_.empty()) ? sortIndices_[row] : row;
+                        renderRow(idx);
+                    }
                 }
             }
 
@@ -381,7 +407,6 @@ private:
     int flashRow_ = -1; ImU32 flashColor_ = 0; float flashDuration_ = 0, flashElapsed_ = 0;
     bool columnReorder_ = false;
     std::vector<GroupInfo> groups_;
-    int groupSortCol_ = -1; bool groupSortAsc_ = true;
     std::map<int, int> groupSortMap_;
 };
 
