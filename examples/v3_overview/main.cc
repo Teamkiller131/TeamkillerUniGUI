@@ -111,19 +111,37 @@ int main(int argc, char** argv) {
     });
     win->AddPanel(pTV);
 
-    // ──── P4: MultiSplitter — 3-column layout ────────────────────────────
+    // ──── P4: MultiSplitter — 3-column H + V nested ───────────────────
     auto pMS = std::make_shared<unigui::Panel>("multisplitter",
-        "4. MultiSplitter — 3-Column Resizable Layout (FSA: pods | positions | chart)");
+        "4. MultiSplitter — Horizontal 3-col + Vertical nested (FSA layout)");
     pMS->SetContentCallback([]() {
-        static unigui::MultiSplitter ms("ms3", unigui::MultiSplitter::Horizontal);
+        static unigui::MultiSplitter msH("msH", unigui::MultiSplitter::Horizontal);
         static bool built = false;
         if (!built) {
-            ms.AddPanel(0.25f, []() { ImGui::Text("Left: Pod List"); ImGui::Button("Pod 1"); ImGui::Button("Pod 2"); ImGui::Button("Pod 3"); });
-            ms.AddPanel(0.35f, []() { ImGui::Text("Center: Position Details"); ImGui::TextUnformatted("IF2406.CF | Long: 100 | PnL: +500"); });
-            ms.AddPanel(0.40f, []() { ImGui::Text("Right: Price Chart"); ImGui::TextUnformatted("[Chart placeholder — TimeSeriesChart]"); });
+            // Left: pod list (vertical split nested)
+            msH.AddPanel(0.25f, []() {
+                static unigui::MultiSplitter msV("msV", unigui::MultiSplitter::Vertical);
+                static bool vb = false;
+                if(!vb){msV.AddPanel(0.4f,[](){ImGui::Text("Pod List");ImGui::Button("Pod 1");ImGui::Button("Pod 2");});
+                        msV.AddPanel(0.6f,[](){ImGui::Text("Account Info");ImGui::Text("Group: A");ImGui::Text("Total: 5,300万");});vb=true;}
+                msV.Render();
+            });
+            // Center: position details
+            msH.AddPanel(0.35f, []() {
+                ImGui::Text("Position Details");
+                ImGui::Separator();
+                ImGui::TextUnformatted("IF2406.CF  Long: 100  PnL: +500");
+                ImGui::TextUnformatted("IH2406.CF  Short: 200  PnL: -300");
+                ImGui::TextUnformatted("IC2406.CF  Long: 300  PnL: +800");
+            });
+            // Right: chart
+            msH.AddPanel(0.40f, []() {
+                ImGui::Text("Price Chart (TimeSeriesChart)");
+                ImGui::TextUnformatted("[Chart rendering here]");
+            });
             built = true;
         }
-        ms.Render();
+        msH.Render();
     });
     win->AddPanel(pMS);
 

@@ -18,28 +18,27 @@ void MultiSplitter::Render() {
     if (!IsVisible() || panels_.empty()) return;
 
     auto avail = ImGui::GetContentRegionAvail();
-    ImGuiID baseID = ImGui::GetID(GetName().c_str());
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
     float totalLen = (ori_ == Horizontal) ? avail.y : avail.x;
-    float cursor = 0.f;
 
     for (int i = 0; i < (int)panels_.size(); ++i) {
         float panelLen = totalLen * panels_[i].ratio;
 
-        // Begin panel
-        ImGui::BeginChild((int)(baseID + i + 1),
-            ori_ == Horizontal ? ImVec2(avail.x, panelLen)
-                               : ImVec2(panelLen, avail.y),
-            ImGuiChildFlags_Borders);
+        // Panel with unique PushID
+        ImGui::PushID(i);
+        ImGui::BeginChild("##panel", ori_ == Horizontal ? ImVec2(avail.x, panelLen) : ImVec2(panelLen, avail.y), ImGuiChildFlags_Borders);
         if (panels_[i].content) panels_[i].content();
         ImGui::EndChild();
+        ImGui::PopID();
 
-        // Drag handle (between panels, not after last)
+        // Drag handle (unique ID per index)
         if (i < (int)panels_.size() - 1) {
+            char handleID[64];
+            snprintf(handleID, sizeof(handleID), "##ms_%s_%d", GetName().c_str(), i);
             if (ori_ == Horizontal) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.35f, 1));
-                ImGui::Button("##msplit", ImVec2(avail.x, 5));
+                ImGui::Button(handleID, ImVec2(avail.x, 5));
                 ImGui::PopStyleColor();
                 if (ImGui::IsItemActive()) {
                     float delta = ImGui::GetIO().MouseDelta.y;
@@ -51,13 +50,13 @@ void MultiSplitter::Render() {
             } else {
                 ImGui::SameLine();
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.35f, 1));
-                ImGui::Button("##vmsplit", ImVec2(5, avail.y));
+                ImGui::Button(handleID, ImVec2(5, avail.y));
                 ImGui::PopStyleColor();
                 if (ImGui::IsItemActive()) {
                     float delta = ImGui::GetIO().MouseDelta.x;
                     panels_[i].ratio += delta / totalLen;
                     panels_[i+1].ratio -= delta / totalLen;
-                    if (panels_[i].ratio < 0.05f) { panels_[i+1].ratio += panels_[i].ratio - 0.05f; panels_[i].ratio = 0.05f; }
+                    if (panels_[i].ratio < 0.05f) { panels_[i+1].ratio += panels_[i].ratio - 0.05f; panels_[i+1].ratio = 0.05f; }
                     if (panels_[i+1].ratio < 0.05f) { panels_[i].ratio += panels_[i+1].ratio - 0.05f; panels_[i+1].ratio = 0.05f; }
                 }
                 ImGui::SameLine();
