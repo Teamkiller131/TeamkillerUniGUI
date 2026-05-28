@@ -11,6 +11,11 @@ void TabWidget::Render() {
         transAnim_.Play(0.2f, fx::EasingCurve::EaseOut);
         prevActive_ = active_;
     }
+    for (auto& [index, key] : tabShortcuts_) {
+        if (index >= 0 && index < (int)tabs_.size() && ImGui::IsKeyPressed(key)) {
+            active_ = index;
+        }
+    }
     float t = transAnim_.Update(ImGui::GetIO().DeltaTime);
     float alpha = 0.7f + 0.3f * t;  // smooth fade-in
 
@@ -37,5 +42,6 @@ void TabWidget::RemoveTab(const std::string& tab_name) {
 }
 int TabWidget::GetActiveTab() const { return active_; }
 void TabWidget::SetActiveTab(int index) { active_ = index; }
+void TabWidget::SetTabShortcut(int index, ImGuiKey key) { tabShortcuts_[index] = key; }
 const std::vector<TabPage>& TabWidget::GetTabs() const { return tabs_; }
 }

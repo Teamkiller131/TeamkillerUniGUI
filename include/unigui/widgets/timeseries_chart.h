@@ -13,6 +13,7 @@ struct TimeSeriesDef {
     std::string label;
     ImU32 color = IM_COL32(14, 165, 233, 255);
     float lineWeight = 1.5f;
+    int yAxisId = 1;
 };
 
 /// TimeSeriesChart — real-time time-series plot via implot.
@@ -57,22 +58,33 @@ public:
 
     /// Grid and background colors.
     void SetGridColor(ImU32 c) { gridColor_ = c; }
+    void SetCrosshairFormatter(std::function<std::string(double,const std::vector<double>&)> fn) { crosshairFmt_=std::move(fn); }
+    void SetXAxisFormatter(std::function<int(double,char*,int,void*)> fn) { xAxisFmt_ = std::move(fn); }
+    void SetRubberBandZoom(bool on) { rubberBandZoom_ = on; }
+    int AddRefLine(std::string label, double value, ImU32 color);
+    void RemoveRefLine(int id);
 
 private:
     struct Series {
         int id; TimeSeriesDef def;
         std::deque<std::pair<double, float>> points;  // timestamp → value
     };
+    struct RefLine { int id; std::string label; double value; ImU32 color; };
     std::vector<Series> series_;
+    std::vector<RefLine> refLines_;
     int nextId_ = 1;
+    int nextRefId_ = 1;
     int slidingWindow_ = 500;
     bool yAutoFit_ = true;
     double yMin_ = 0, yMax_ = 100;
     std::string xLabel_, yLabel_;
     bool crosshair_ = false;
+    std::function<std::string(double, const std::vector<double>&)> crosshairFmt_;
+    std::function<int(double, char*, int, void*)> xAxisFmt_;
     bool legend_ = true;
     bool panEnabled_ = true;
     bool zoomEnabled_ = true;
+    bool rubberBandZoom_ = true;
     ImU32 gridColor_ = IM_COL32(60, 60, 70, 70);
     double frameCounter_ = 0;
 };

@@ -15,6 +15,8 @@ public:
 
     void Render() override;
     void AddPanel(float ratio, std::function<void()> content);
+    std::vector<float> GetRatios() const;
+    void SetRatios(const std::vector<float>& ratios);
 
 private:
     Orientation ori_;

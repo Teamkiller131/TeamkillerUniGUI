@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <unordered_map>
 
 namespace unigui {
 struct TabPage {
@@ -20,11 +21,13 @@ public:
     void RemoveTab(const std::string& tab_name);
     int GetActiveTab() const;
     void SetActiveTab(int index);
+    void SetTabShortcut(int index, ImGuiKey key);
     const std::vector<TabPage>& GetTabs() const;
 private:
     std::vector<TabPage> tabs_;
     int active_ = 0;
     int prevActive_ = 0;
     fx::AnimationState transAnim_;
+    std::unordered_map<int, ImGuiKey> tabShortcuts_;
 };
 }

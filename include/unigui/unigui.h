@@ -18,6 +18,7 @@
 #include <unigui/core/undo_stack.h>
 #include <unigui/core/log.h>
 #include <unigui/core/main_thread.h>
+#include <unigui/core/format_cn.h>
 #include <unigui/backend/platform_backend.h>
 #include <unigui/backend/renderer_backend.h>
 #include <unigui/backend/backend_types.h>

@@ -25,6 +25,16 @@ void TimeSeriesChart::SetYAxisAutoFit(bool on)        { yAutoFit_ = on; }
 void TimeSeriesChart::SetYAxisRange(double min, double max) { yMin_ = min; yMax_ = max; }
 void TimeSeriesChart::SetXAxisLabel(const std::string& l)   { xLabel_ = l; }
 void TimeSeriesChart::SetYAxisLabel(const std::string& l)   { yLabel_ = l; }
+int TimeSeriesChart::AddRefLine(std::string label, double value, ImU32 color) {
+    int id = nextRefId_++;
+    refLines_.push_back({id, std::move(label), value, color});
+    return id;
+}
+
+void TimeSeriesChart::RemoveRefLine(int id) {
+    refLines_.erase(std::remove_if(refLines_.begin(), refLines_.end(),
+        [id](const auto& line) { return line.id == id; }), refLines_.end());
+}
 void TimeSeriesChart::AppendPoint(int seriesId, float value, double timestamp) {
     for (auto& s : series_) {
         if (s.id != seriesId) continue;
@@ -57,7 +67,7 @@ void TimeSeriesChart::Render() {
         }
     }
 
-    ImPlotFlags plotFlags = ImPlotFlags_Crosshairs * (crosshair_ ? 1 : 0);
+    ImPlotFlags plotFlags = crosshair_ ? ImPlotFlags_Crosshairs : 0;
     ImPlotAxisFlags axisFlags = (panEnabled_  ? 0 : ImPlotAxisFlags_NoMenus) |
                                 (zoomEnabled_ ? 0 : ImPlotAxisFlags_NoMenus);
     (void)axisFlags; // flags applied via ImPlot default — pan/zoom enabled by default
@@ -66,6 +76,16 @@ void TimeSeriesChart::Render() {
         // ── Axis labels ───────────────────────────────────────────────
         if (!xLabel_.empty()) ImPlot::SetupAxis(ImAxis_X1, xLabel_.c_str());
         if (!yLabel_.empty()) ImPlot::SetupAxis(ImAxis_Y1, yLabel_.c_str());
+        if (std::any_of(series_.begin(), series_.end(), [](const auto& s) { return s.def.yAxisId == 3; })) {
+            ImPlot::SetupAxis(ImAxis_Y3, yLabel_.empty() ? nullptr : yLabel_.c_str());
+        }
+        if (xAxisFmt_) {
+            ImPlot::SetupAxisFormat(ImAxis_X1,
+                [](double value, char* buff, int size, void* data) -> int {
+                    auto* fn = static_cast<std::function<int(double, char*, int, void*)>*>(data);
+                    return (*fn)(value, buff, size, nullptr);
+                }, &xAxisFmt_);
+        }
         ImPlot::SetupAxesLimits(0, 0, yMin_, yMax_, ImPlotCond_Once);
 
         // ── Grid ──────────────────────────────────────────────────────
@@ -84,12 +104,37 @@ void TimeSeriesChart::Render() {
                 xs.push_back(ts); ys.push_back((double)v);
             }
 
+            ImPlot::SetAxis(s.def.yAxisId == 3 ? ImAxis_Y3 : ImAxis_Y1);
             ImPlot::PlotLine(s.def.label.c_str(), xs.data(), ys.data(),
                             (int)xs.size());
         }
 
+        for (auto& line : refLines_) {
+            ImPlot::SetAxis(ImAxis_Y1);
+            ImPlotSpec spec;
+            spec.LineColor = ImGui::ColorConvertU32ToFloat4(line.color);
+            ImPlot::PlotInfLines(line.label.c_str(), &line.value, 1, spec);
+        }
+
         ImPlot::PopStyleColor();
         ImPlot::EndPlot();
+    }
+
+    if (crosshairFmt_ && ImPlot::IsPlotHovered()) {
+        ImPlotPoint mouse = ImPlot::GetPlotMousePos();
+        std::vector<double> values;
+        for (auto& s : series_) {
+            if (s.points.empty()) { values.push_back(0); continue; }
+            double best = s.points[0].second;
+            double bestDist = std::abs(s.points[0].first - mouse.x);
+            for (auto& [ts, v] : s.points) {
+                double d = std::abs(ts - mouse.x);
+                if (d < bestDist) { bestDist = d; best = v; }
+            }
+            values.push_back(best);
+        }
+        std::string tip = crosshairFmt_(mouse.x, values);
+        ImGui::SetTooltip("%s", tip.c_str());
     }
 
     // Legend
