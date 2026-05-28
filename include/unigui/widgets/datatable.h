@@ -286,12 +286,16 @@ public:
 
                 if (!g.expanded) continue;
                 for (int row = groupStart; row < groupEnd; ++row) {
-                    renderRow(row);
+                    int idx = (sortColumn_ >= 0 && !sortIndices_.empty())
+                                ? sortIndices_[row] : row;
+                    renderRow(idx);
                 }
             }
 
             for (int row = trailingRow; row < totalRows; ++row) {
-                renderRow(row);
+                int idx = (sortColumn_ >= 0 && !sortIndices_.empty())
+                            ? sortIndices_[row] : row;
+                renderRow(idx);
             }
         }
 
