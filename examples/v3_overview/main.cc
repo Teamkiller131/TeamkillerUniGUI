@@ -15,6 +15,7 @@ int main(int argc, char** argv) {
     cfg.title = "UniGUI v3 — Feature Overview (pure UniGUI widgets)";
     if (!unigui::Init(cfg)) return 1;
     std::printf("[v3_overview] Init OK\n");
+    fflush(stdout);
 
     // ── Build UI once ────────────────────────────────────────────────────
     auto win = std::make_shared<unigui::Window>("main", "UniGUI v3 Features");
@@ -351,5 +352,6 @@ int main(int argc, char** argv) {
     }
     unigui::Shutdown();
     std::printf("[v3_overview] Done — %d frames\n", frame);
+    fflush(stdout);
     return 0;
 }
