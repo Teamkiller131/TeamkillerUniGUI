@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
+#include <map>
 #include <cstring>
 #include <imgui.h>
 
@@ -266,36 +267,88 @@ public:
                 renderRow(idx);
             }
         } else {
+            // Group-aware rendering: disable global sort, each group self-sorts
+            ImU32 groupBg = IM_COL32(45, 48, 62, 255);
+            ImU32 ungroupedBg = IM_COL32(55, 50, 40, 255);
             int trailingRow = 0;
-            for (size_t gi = 0; gi < groups_.size(); ++gi) {
-                const auto& g = groups_[gi];
 
+            for (size_t gi = 0; gi < groups_.size(); ++gi) {
+                auto& g = groups_[gi];
+
+                // ── Group header row ───────────────────────────────────
                 ImGui::TableNextRow();
-                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(35, 38, 50, 255));
+                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, groupBg);
                 ImGui::TableSetColumnIndex(0);
                 char hdr[256];
-                snprintf(hdr, sizeof(hdr), "%s %s (%d rows)", g.expanded ? "▼" : "▶", g.label.c_str(),
-                    g.endRow < 0 ? (int)data_->size() - g.startRow : g.endRow - g.startRow);
-                if (ImGui::Selectable(hdr, false, ImGuiSelectableFlags_SpanAllColumns)) {
-                    groups_[gi].expanded = !groups_[gi].expanded;
+                int childCount = g.endRow < 0 ? (int)data_->size() - g.startRow
+                               : std::min((int)data_->size(), g.endRow) - g.startRow;
+                snprintf(hdr, sizeof(hdr), "%s  %s  (%d rows)",
+                         g.expanded ? "▼" : "▶", g.label.c_str(), childCount);
+                ImGui::PushID((int)(gi + 1000));
+                if (ImGui::Button(hdr, ImVec2(-1, 0))) {
+                    g.expanded = !g.expanded;
+                }
+                ImGui::PopID();
+
+                // ── Sort mini-header for this group ────────────────────
+                if (g.expanded) {
+                    for (int c = 0; c < (int)columns_.size(); ++c) {
+                        ImGui::TableSetColumnIndex(c);
+                        auto& col = columns_[c];
+                        // Click column header to sort within this group
+                        ImGui::PushID((int)(gi * 100 + c + 5000));
+                        if (ImGui::Selectable(col.name.c_str(), false,
+                                ImGuiSelectableFlags_AllowDoubleClick)) {
+                            // Local sort within group
+                            int gStart = std::max(0, g.startRow);
+                            int gEnd = g.endRow < 0 ? (int)data_->size()
+                                      : std::min((int)data_->size(), g.endRow);
+                            if (cellFmt_) {
+                                bool asc = (groupSortCol_ == c && groupSortAsc_);
+                                groupSortCol_ = c; groupSortAsc_ = !asc;
+                                std::vector<std::pair<std::string,int>> sv;
+                                for (int r = gStart; r < gEnd; ++r)
+                                    sv.push_back({cellFmt_(r,c,(*data_)[r]), r});
+                                if (groupSortAsc_)
+                                    std::sort(sv.begin(), sv.end(), [](auto&a,auto&b){return a.first<b.first;});
+                                else
+                                    std::sort(sv.begin(), sv.end(), [](auto&a,auto&b){return a.first>b.first;});
+                                groupSortMap_.clear();
+                                int pos = gStart;
+                                for (auto& [s, row] : sv) groupSortMap_[row] = pos++;
+                            }
+                        }
+                        ImGui::PopID();
+                    }
                 }
 
+                // ── Child rows ─────────────────────────────────────────
                 int groupStart = std::max(0, g.startRow);
                 int groupEnd = g.endRow < 0 ? (int)data_->size() : std::min((int)data_->size(), g.endRow);
                 trailingRow = std::max(trailingRow, groupEnd);
 
                 if (!g.expanded) continue;
                 for (int row = groupStart; row < groupEnd; ++row) {
-                    int idx = (sortColumn_ >= 0 && !sortIndices_.empty())
-                                ? sortIndices_[row] : row;
+                    int idx = groupSortMap_.count(row) ? groupSortMap_[row] : row;
+                    idx = (sortColumn_ >= 0 && !sortIndices_.empty()) ? sortIndices_[idx] : idx;
                     renderRow(idx);
                 }
             }
 
-            for (int row = trailingRow; row < totalRows; ++row) {
-                int idx = (sortColumn_ >= 0 && !sortIndices_.empty())
-                            ? sortIndices_[row] : row;
-                renderRow(idx);
+            // ── Ungrouped rows ────────────────────────────────────────
+            if (trailingRow < totalRows) {
+                ImGui::TableNextRow();
+                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ungroupedBg);
+                ImGui::TableSetColumnIndex(0);
+                char ughdr[128];
+                snprintf(ughdr, sizeof(ughdr), "▸  Ungrouped (%d rows)", totalRows - trailingRow);
+                ImGui::TextUnformatted(ughdr);
+
+                for (int row = trailingRow; row < totalRows; ++row) {
+                    int idx = (sortColumn_ >= 0 && !sortIndices_.empty())
+                                ? sortIndices_[row] : row;
+                    renderRow(idx);
+                }
             }
         }
 
@@ -329,6 +382,8 @@ private:
     int flashRow_ = -1; ImU32 flashColor_ = 0; float flashDuration_ = 0, flashElapsed_ = 0;
     bool columnReorder_ = false;
     std::vector<GroupInfo> groups_;
+    int groupSortCol_ = -1; bool groupSortAsc_ = true;
+    std::map<int, int> groupSortMap_;
 };
 
 } // namespace unigui
