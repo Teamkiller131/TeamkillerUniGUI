@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-3.2.5-blueviolet)]()
 [![Tests](https://img.shields.io/badge/tests-244%20(236%2F244%20Linux)-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-66-blue)]()
+[![Widgets](https://img.shields.io/badge/widgets-68-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
 A C++23 Dear ImGui wrapper providing a unified dark+light theme engine, high-level widget components, declarative DSL, CSS styling, plugin system, and EventBus. Supports 7 backends: GLFW+OpenGL3, SDL3+Vulkan, DX11, DX12, Metal, WebGPU, and Emscripten.
@@ -42,7 +42,7 @@ User Code
     ↓
 unigui:: API
     ├── Theme Engine (53-color dark + light theme, StyleScope RAII)
-    ├── Widget Library (66 widgets, form validation, undo/redo, serialization)
+    ├── Widget Library (68 widgets, form validation, undo/redo, serialization)
     ├── Declarative DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
     ├── EventBus (unigui::events::Bus — publish/subscribe with wildcards)
     ├── CSS Styling (unigui::styling::Engine — selector engine + variables)
@@ -184,7 +184,8 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | ProgressBar | `SetFraction()`, state colors |
 | | LoadingIndicator | `SetActive(bool)`, spinner animation |
 | Lists | VirtualList | `SetItemCount(n)`, `SetItemGetter(fn)` — 100k+ |
-| | DataTable\<T\> | virtual scroll, sort, row color, inline edit, filter (v3.2) |
+| | DataTable\<T\> | virtual scroll, sort, row color, group rows, inline edit, filter (v3.2) |
+| | MultiSplitter | N-panel H/V resizable layout (v3.2) |
 | | ListView | `SetItems()`, `SetOnSelect()` |
 | | Table | `AddRow()`, `ExportCSV()`, `ImportCSV()` |
 | | TreeView | `SetRoot()`, multi-select support |
