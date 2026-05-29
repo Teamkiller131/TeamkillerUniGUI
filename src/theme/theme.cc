@@ -254,6 +254,17 @@ void ApplyTheme(const ThemeConfig& config) {
 
     // Scale all sizes by DPI (AFTER setting values so they get scaled)
     style.ScaleAllSizes(dpi);
+
+    // Runtime font size change: rebuild atlas if size changed since last call
+    static float lastFontSize = 0.f;
+    float targetSize = config.font_size * dpi;
+    if (lastFontSize > 0.f && std::abs(targetSize - lastFontSize) > 0.5f) {
+        UNIGUI_LOG_INFO("Theme: font size changed {}→{}px — rebuilding atlas", (int)lastFontSize, (int)targetSize);
+        io.Fonts->Clear();
+        LoadDefaultFont(targetSize, config.font_path);
+        io.Fonts->Build();
+    }
+    lastFontSize = targetSize;
 }
 
 static const char* kColorNames[] = {"Text","TextDisabled","WindowBg","ChildBg","PopupBg","Border","BorderShadow","FrameBg","FrameBgHovered","FrameBgActive","TitleBg","TitleBgActive","TitleBgCollapsed","MenuBarBg","ScrollbarBg","ScrollbarGrab","ScrollbarGrabHovered","ScrollbarGrabActive","CheckMark","SliderGrab","SliderGrabActive","Button","ButtonHovered","ButtonActive","Header","HeaderHovered","HeaderActive","Separator","SeparatorHovered","SeparatorActive","ResizeGrip","ResizeGripHovered","ResizeGripActive","Tab","TabHovered","TabActive","TabUnfocused","TabUnfocusedActive","DockingPreview","DockingEmptyBg","PlotLines","PlotLinesHovered","PlotHistogram","PlotHistogramHovered","TableHeaderBg","TableBorderStrong","TableBorderLight","TableRowBg","TableRowBgAlt","TextLink","TreeLines","TextSelectedBg","DragDropTarget","DragDropTargetBg","UnsavedMarker","NavCursor","NavWindowingHighlight","NavWindowingDimBg","ModalWindowDimBg"};
