@@ -153,10 +153,7 @@ public:
                 sortSpecs->SpecsDirty = false;
             }
         }
-        if (sortColumn_ >= 0) {
-            ImGui::TableSetColumnSortDirection(sortColumn_,
-                sortAscending_ ? ImGuiSortDirection_Ascending : ImGuiSortDirection_Descending, true);
-        }
+        // Sort direction indicator uses column flags set in TableSetupColumn
 
         // ── Virtual scroll: clamp visible rows ───────────────────────────
         int totalRows = (int)data_->size();
