@@ -94,6 +94,7 @@ public:
 
     // ── Virtual scrolling ─────────────────────────────────────────────────
     void SetVirtualScroll(bool on) { virtualScroll_ = on; }
+    void SetStickyHeader(bool on)  { stickyHeader_ = on; }
     void ScrollToRow(int row) { scrollToRow_ = row; }
 
     // ── Render ────────────────────────────────────────────────────────────
@@ -107,7 +108,8 @@ public:
                     | (columnReorder_ ? ImGuiTableFlags_Reorderable : 0)
                     | (groups_.empty() ? ImGuiTableFlags_Sortable : 0);
 
-        float tableH = virtualScroll_ ? ImGui::GetContentRegionAvail().y : 0.f;
+        float tableH = (virtualScroll_ || stickyHeader_)
+            ? ImGui::GetContentRegionAvail().y : 0.f;
         if (!ImGui::BeginTable(GetName().c_str(), (int)columns_.size(), flags,
                                ImVec2(0, tableH))) return;
 
@@ -408,6 +410,7 @@ private:
     bool sortAscending_ = true;
     bool virtualScroll_ = true;
     int scrollToRow_ = -1;
+    bool stickyHeader_ = false;
     SelectFn onSelect_;
     DoubleClickFn onDblClick_;
     std::function<void()> onSelChanged_;
