@@ -109,6 +109,7 @@ events::Bus::Instance().Shutdown();
 bool NewFrame(){
     if(!g_initialized)return false;
     g_platform->PollEvents();
+    ApplyPendingFontRebuild();
 #ifdef UNIGUI_HAS_DX11
     if(g_backend==BackendType::DX11)ImGui_ImplDX11_NewFrame();
 #endif

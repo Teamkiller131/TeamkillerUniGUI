@@ -39,6 +39,13 @@ bool ThemeRegistry::Apply(const std::string& name) {
     auto* p = Get(name);
     if (!p) { UNIGUI_LOG_WARN("Theme not found: {}", name); return false; }
     p->apply(ImGui::GetStyle());
+    // Auto-derived table colors — follow the new theme's palette
+    auto& c = ImGui::GetStyle().Colors;
+    c[ImGuiCol_TableHeaderBg]    = ImVec4(c[ImGuiCol_FrameBg].x * 0.7f, c[ImGuiCol_FrameBg].y * 0.7f, c[ImGuiCol_FrameBg].z * 0.75f, 1.00f);
+    c[ImGuiCol_TableBorderStrong]= ImVec4(c[ImGuiCol_Border].x * 0.9f, c[ImGuiCol_Border].y * 0.9f, c[ImGuiCol_Border].z * 0.95f, 1.00f);
+    c[ImGuiCol_TableBorderLight] = ImVec4(c[ImGuiCol_Border].x * 0.7f, c[ImGuiCol_Border].y * 0.7f, c[ImGuiCol_Border].z * 0.75f, 1.00f);
+    c[ImGuiCol_TableRowBg]       = ImVec4(c[ImGuiCol_WindowBg].x, c[ImGuiCol_WindowBg].y, c[ImGuiCol_WindowBg].z, 1.00f);
+    c[ImGuiCol_TableRowBgAlt]    = ImVec4(c[ImGuiCol_WindowBg].x * 1.04f, c[ImGuiCol_WindowBg].y * 1.04f, c[ImGuiCol_WindowBg].z * 1.06f, 1.00f);
     current_ = name;
     if (onChange_) onChange_(name);
     UNIGUI_LOG_INFO("Theme applied: {}", name);
