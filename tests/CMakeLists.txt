@@ -251,5 +251,17 @@ target_link_libraries(test_effect_bench PRIVATE GTest::gtest GTest::gtest_main u
 target_compile_features(test_effect_bench PRIVATE cxx_std_23)
 gtest_discover_tests(test_effect_bench)
 
+# v3.2.7 sticky header tests
+add_executable(test_datatable_sticky widgets/datatable_sticky_test.cc)
+target_link_libraries(test_datatable_sticky PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_datatable_sticky PRIVATE cxx_std_23)
+gtest_discover_tests(test_datatable_sticky)
+
+# v3.2.7 font reload tests
+add_executable(test_font_reload theme/font_reload_test.cc)
+target_link_libraries(test_font_reload PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_font_reload PRIVATE cxx_std_23)
+gtest_discover_tests(test_font_reload)
+
 # v3.0 effect scope tests — manual-only (needs GL context)
 # add_executable(test_effect_scope fx/effect_scope_test.cc)
