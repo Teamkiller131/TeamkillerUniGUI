@@ -110,8 +110,13 @@ public:
 
         float tableH = (virtualScroll_ || stickyHeader_)
             ? ImGui::GetContentRegionAvail().y : 0.f;
+
+        // Sticky header: wrap table in fixed-height child so ScrollY header stays
+        if (stickyHeader_ && !virtualScroll_)
+            ImGui::BeginChild("##sticky_container", ImVec2(0, tableH), ImGuiChildFlags_None);
+
         if (!ImGui::BeginTable(GetName().c_str(), (int)columns_.size(), flags,
-                               ImVec2(0, tableH))) return;
+                                ImVec2(0, tableH))) return;
 
         for (size_t ci = 0; ci < columns_.size(); ++ci) {
             auto& col = columns_[ci];
@@ -395,6 +400,7 @@ public:
         }
 
         ImGui::EndTable();
+        if (stickyHeader_ && !virtualScroll_) ImGui::EndChild();
     }
 
 private:
