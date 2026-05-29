@@ -22,21 +22,11 @@ int main(int argc, char** argv) {
     pDT->SetContentCallback([]() {
         struct Pos { std::string sym; int lv, sv; double pnl, cost; bool today; };
         static std::vector<Pos> data;
-
-        // Populate once
-        if (data.empty()) {
-            data.push_back({"第一组-A001",100,0,8000.0,5000.0,false});
-            data.push_back({"第一组-A002",200,0,1200.0,5100.0,true});
-            data.push_back({"第一组-A003",0,150,-300.0,4900.0,false});
-            data.push_back({"第一组-A004",50,0,600.0,5050.0,true});
-            data.push_back({"第一组-A005",0,0,0.0,5000.0,false});
-            data.push_back({"第二组-B001",0,300,-500.0,4800.0,false});
-            data.push_back({"第二组-B002",150,0,900.0,5100.0,true});
-            data.push_back({"第二组-B003",200,100,400.0,5000.0,false});
-            data.push_back({"第二组-B004",0,0,0.0,5000.0,false});
-            data.push_back({"独立行-C001",300,0,1500.0,5200.0,true});
-            data.push_back({"独立行-C002",100,200,-200.0,4900.0,false});
-        }
+        // 50 rows to ensure scrolling (tests sticky header)
+        if (data.empty()) for(int i=0;i<50;i++) data.push_back(Pos{
+            std::string(1,'A'+i%4)+std::to_string(6000+i)+".CF",
+            (i%3==0)?(i+1)*100:0,(i%3!=0)?(i+1)*100:0,
+            (i%2)?(i+1)*500.0:-(i+1)*300.0,5000.0+i*100.0,(i%5==0)});
 
         static char filter[64] = "";
         ImGui::InputTextWithHint("##f", "Filter...", filter, sizeof(filter));
@@ -64,7 +54,7 @@ int main(int argc, char** argv) {
 
         static std::vector<unigui::DataTable<Pos>::GroupInfo> groups;
         if (groups.empty()) {
-            groups = {{"第一组",0,5},{.label="第二组",.startRow=5,.endRow=9}};
+            groups = {{.label="第一组",.startRow=0,.endRow=20},{.label="第二组",.startRow=20,.endRow=40}};
             t.SetGroups(groups);
         }
         t.SetStickyHeader(true);
@@ -92,7 +82,7 @@ int main(int argc, char** argv) {
         // Font size toggle
         ImGui::SameLine();static unigui::Button bFont("bfont","Font 24px");
         bFont.Render();static bool bigFont=false;
-        if(bFont.WasClicked()){bigFont=!bigFont;unigui::ThemeConfig tc;tc.font_size=bigFont?24.f:16.f;unigui::ApplyTheme(tc);}
+        if(bFont.WasClicked()){bigFont=!bigFont;unigui::ThemeConfig tc;tc.dpi_scale=1.5f;tc.font_size=bigFont?24.f:16.f;unigui::ApplyTheme(tc);}
         ImGui::SameLine(400);
         static unigui::Badge dot("");dot.SetVariant(unigui::Badge::Dot);dot.Render();ImGui::SameLine(20);
         static unigui::Badge cnt("");cnt.SetCount(12);cnt.SetColor(IM_COL32(233,69,96,255));cnt.Render();ImGui::SameLine(60);
