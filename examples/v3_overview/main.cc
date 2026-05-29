@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
             groups = {{"第一组",0,5},{.label="第二组",.startRow=5,.endRow=9}};
             t.SetGroups(groups);
         }
+        t.SetStickyHeader(true);
         t.Render();
     });
     win->AddPanel(pDT);
@@ -88,6 +89,10 @@ int main(int argc, char** argv) {
         static unigui::Button b2("b2","Danger");b2.SetColorVariant(unigui::Button::Danger);b2.Render();ImGui::SameLine();
         static unigui::Button b3("b3","Success");b3.SetColorVariant(unigui::Button::Success);b3.Render();
         if(b1.WasClicked())unigui::Toast::Info("Primary");if(b2.WasClicked())unigui::Toast::Error("Danger");if(b3.WasClicked())unigui::Toast::Success("Success");
+        // Font size toggle
+        ImGui::SameLine();static unigui::Button bFont("bfont","Font 24px");
+        bFont.Render();static bool bigFont=false;
+        if(bFont.WasClicked()){bigFont=!bigFont;unigui::ThemeConfig tc;tc.font_size=bigFont?24.f:16.f;unigui::ApplyTheme(tc);}
         ImGui::SameLine(400);
         static unigui::Badge dot("");dot.SetVariant(unigui::Badge::Dot);dot.Render();ImGui::SameLine(20);
         static unigui::Badge cnt("");cnt.SetCount(12);cnt.SetColor(IM_COL32(233,69,96,255));cnt.Render();ImGui::SameLine(60);
