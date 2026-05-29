@@ -104,7 +104,7 @@ public:
         // ── Header ──────────────────────────────────────────────────────
         int flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                     ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
-                    ImGuiTableFlags_SizingFixedFit
+                    ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoHostExtendY
                     | (columnReorder_ ? ImGuiTableFlags_Reorderable : 0)
                     | (groups_.empty() ? ImGuiTableFlags_Sortable : 0);
 
