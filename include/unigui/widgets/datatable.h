@@ -35,6 +35,8 @@ public:
 
     using CellFormatter = std::function<std::string(int row, int col, const T&)>;
     using RowColorFn     = std::function<ImU32(int row, const T&)>;
+    using CellColorFn    = std::function<ImU32(int row, int col, const T&)>;
+    using CellBoldFn     = std::function<bool(int row, int col, const T&)>;
     using SortCompare    = std::function<bool(const T& a, const T& b)>;
     using SelectFn       = std::function<void(int row)>;
     using DoubleClickFn  = std::function<void(int row)>;
@@ -53,6 +55,8 @@ public:
 
     // ── Row color (profit/loss, etc.) ────────────────────────────────────
     void SetRowColor(RowColorFn fn) { rowColorFn_ = std::move(fn); }
+    void SetCellColor(CellColorFn fn) { cellColorFn_ = std::move(fn); }
+    void SetCellBold(CellBoldFn fn)   { cellBoldFn_ = std::move(fn); }
 
     // ── Sorting ───────────────────────────────────────────────────────────
     void SetSortCompare(int col, SortCompare cmp) { sortComps_[col] = std::move(cmp); }
@@ -251,7 +255,16 @@ public:
                         }
                     }
                 } else {
+                    // Cell-level styling
+                    if (cellColorFn_) {
+                        ImU32 c = cellColorFn_(idx, col, (*data_)[idx]);
+                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(c&0xFF, (c>>8)&0xFF, (c>>16)&0xFF, (c>>24)&0xFF));
+                    }
+                    if (cellBoldFn_ && cellBoldFn_(idx, col, (*data_)[idx]))
+                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
                     ImGui::TextUnformatted(text.c_str());
+                    int pops = (cellColorFn_ ? 1 : 0) + (cellBoldFn_ && cellBoldFn_(idx,col,(*data_)[idx]) ? 1 : 0);
+                    ImGui::PopStyleColor(pops);
                 }
             }
 
@@ -385,6 +398,8 @@ private:
     const std::vector<T>* data_ = nullptr;
     CellFormatter cellFmt_;
     RowColorFn rowColorFn_;
+    CellColorFn cellColorFn_;
+    CellBoldFn cellBoldFn_;
     std::unordered_map<int, SortCompare> sortComps_;
     std::vector<int> sortIndices_;
     int sortColumn_ = -1;
