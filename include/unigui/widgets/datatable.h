@@ -159,7 +159,7 @@ public:
         int totalRows = (int)data_->size();
         int firstRow = 0;
         int lastRow = totalRows;
-        if (virtualScroll_ && totalRows > 0) {
+        if (virtualScroll_ && totalRows > 0 && !stickyHeader_) {
             float rowHeight = ImGui::GetTextLineHeightWithSpacing();
             float scrollY   = ImGui::GetScrollY();
             firstRow = std::max(0, (int)(scrollY / rowHeight));
