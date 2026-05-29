@@ -13,6 +13,9 @@
 
 namespace unigui {
 
+static bool  pendingFontRebuild_ = false;
+static float pendingFontSize_ = 16.f;
+
 float DetectDPIScale(void* native_window) {
 #ifdef _WIN32
     HWND hwnd = (HWND)native_window;
@@ -262,16 +265,26 @@ void ApplyTheme(const ThemeConfig& config) {
     // Scale all sizes by DPI (AFTER setting values so they get scaled)
     style.ScaleAllSizes(dpi);
 
-    // Runtime font size change: rebuild atlas if size changed since last call
+    // Runtime font size change: defer atlas rebuild (can't do it mid-frame)
     static float lastFontSize = 0.f;
     float targetSize = config.font_size * dpi;
     if (lastFontSize > 0.f && std::abs(targetSize - lastFontSize) > 0.5f) {
-        UNIGUI_LOG_INFO("Theme: font size changed {}→{}px — rebuilding atlas", (int)lastFontSize, (int)targetSize);
-        io.Fonts->Clear();
-        LoadDefaultFont(targetSize, config.font_path);
-        io.Fonts->Build();
+        UNIGUI_LOG_INFO("Theme: font size change {}→{}px — queued for next NewFrame", (int)lastFontSize, (int)targetSize);
+        pendingFontRebuild_ = true;
+        pendingFontSize_ = targetSize;
     }
     lastFontSize = targetSize;
+}
+
+bool HasPendingFontRebuild()   { return pendingFontRebuild_; }
+void ApplyPendingFontRebuild() {
+    if (!pendingFontRebuild_) return;
+    UNIGUI_LOG_INFO("Theme: rebuilding font atlas at {}px", (int)pendingFontSize_);
+    auto& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    LoadDefaultFont(pendingFontSize_, nullptr);
+    io.Fonts->Build();
+    pendingFontRebuild_ = false;
 }
 
 static const char* kColorNames[] = {"Text","TextDisabled","WindowBg","ChildBg","PopupBg","Border","BorderShadow","FrameBg","FrameBgHovered","FrameBgActive","TitleBg","TitleBgActive","TitleBgCollapsed","MenuBarBg","ScrollbarBg","ScrollbarGrab","ScrollbarGrabHovered","ScrollbarGrabActive","CheckMark","SliderGrab","SliderGrabActive","Button","ButtonHovered","ButtonActive","Header","HeaderHovered","HeaderActive","Separator","SeparatorHovered","SeparatorActive","ResizeGrip","ResizeGripHovered","ResizeGripActive","Tab","TabHovered","TabActive","TabUnfocused","TabUnfocusedActive","DockingPreview","DockingEmptyBg","PlotLines","PlotLinesHovered","PlotHistogram","PlotHistogramHovered","TableHeaderBg","TableBorderStrong","TableBorderLight","TableRowBg","TableRowBgAlt","TextLink","TreeLines","TextSelectedBg","DragDropTarget","DragDropTargetBg","UnsavedMarker","NavCursor","NavWindowingHighlight","NavWindowingDimBg","ModalWindowDimBg"};

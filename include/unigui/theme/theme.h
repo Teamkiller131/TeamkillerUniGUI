@@ -35,6 +35,9 @@ void EndTextWrap();
 /// Applies a complete theme (colors + style + DPI scaling + font).
 /// Must be called after ImGui context is created.
 void ApplyTheme(const ThemeConfig& config);
+/// Deferred font atlas rebuild (call before ImGui::NewFrame, not mid-frame)
+bool HasPendingFontRebuild();
+void ApplyPendingFontRebuild();
 
 /// Export/Import current ImGui theme colors to/from JSON.
 std::string ExportThemeJSON();
