@@ -252,6 +252,13 @@ void ApplyTheme(const ThemeConfig& config) {
         colors[ImGuiCol_ModalWindowDimBg]      = ImVec4(0.00f, 0.00f, 0.00f, 0.35f);
     }
 
+    // ── Auto-derived table colors (follow theme) ─────────────────────────
+    colors[ImGuiCol_TableHeaderBg]    = ImVec4(colors[ImGuiCol_FrameBg].x * 0.7f, colors[ImGuiCol_FrameBg].y * 0.7f, colors[ImGuiCol_FrameBg].z * 0.75f, 1.00f);
+    colors[ImGuiCol_TableBorderStrong]= ImVec4(colors[ImGuiCol_Border].x * 0.9f, colors[ImGuiCol_Border].y * 0.9f, colors[ImGuiCol_Border].z * 0.95f, 1.00f);
+    colors[ImGuiCol_TableBorderLight] = ImVec4(colors[ImGuiCol_Border].x * 0.7f, colors[ImGuiCol_Border].y * 0.7f, colors[ImGuiCol_Border].z * 0.75f, 1.00f);
+    colors[ImGuiCol_TableRowBg]       = ImVec4(colors[ImGuiCol_WindowBg].x, colors[ImGuiCol_WindowBg].y, colors[ImGuiCol_WindowBg].z, 1.00f);
+    colors[ImGuiCol_TableRowBgAlt]    = ImVec4(colors[ImGuiCol_WindowBg].x * 1.04f, colors[ImGuiCol_WindowBg].y * 1.04f, colors[ImGuiCol_WindowBg].z * 1.06f, 1.00f);
+
     // Scale all sizes by DPI (AFTER setting values so they get scaled)
     style.ScaleAllSizes(dpi);
 
