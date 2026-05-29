@@ -193,6 +193,7 @@ public:
 
         auto renderRow = [&](int idx) {
             if (!rowPasses(idx)) return;
+            ImGui::PushID(idx);
 
             if (flashRow_ == idx && flashElapsed_ < flashDuration_) {
                 flashElapsed_ += ImGui::GetIO().DeltaTime;
@@ -272,6 +273,7 @@ public:
                 ctxMenuFn_(idx);
                 ImGui::EndPopup();
             }
+            ImGui::PopID();
         };
 
         // ── Render rows ──────────────────────────────────────────────────
