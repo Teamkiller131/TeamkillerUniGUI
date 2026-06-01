@@ -17,10 +17,12 @@ bool MultiLine::CanUndo()const{return undoIndex_>0;}
 bool MultiLine::CanRedo()const{return undoIndex_+1<(int)undoStack_.size();}
 void MultiLine::Render(){
     if(!IsVisible())return;
+    ImGui::PushID(GetName().c_str());
     float h=ImGui::GetTextLineHeight()*maxLines_;
     ImGuiInputTextFlags flags=editable_?0:ImGuiInputTextFlags_ReadOnly;
     if(ImGui::InputTextMultiline(GetName().c_str(),buf_,sizeof(buf_),ImVec2(-1,h),flags)){
         text_=buf_;PushUndo();
     }
+    ImGui::PopID();
 }
 }

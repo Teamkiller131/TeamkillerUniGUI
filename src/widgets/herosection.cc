@@ -18,6 +18,8 @@ void HeroSection::SetHeight(float h) { height_ = h; }
 void HeroSection::Render() {
     if (!IsVisible()) return;
 
+    ImGui::PushID(GetName().c_str());
+
     auto* dl = ImGui::GetWindowDrawList();
     ImVec2 cursor = ImGui::GetCursorScreenPos();
     float w = ImGui::GetContentRegionAvail().x;
@@ -60,6 +62,7 @@ void HeroSection::Render() {
     }
 
     ImGui::Dummy(size);
+    ImGui::PopID();
 }
 
 } // namespace unigui

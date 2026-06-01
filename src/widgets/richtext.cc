@@ -10,6 +10,7 @@ RichText::RichText(std::string name, std::string text)
 
 void RichText::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     ImGui::BeginGroup();
     if (spans_.empty()) {
         ImGui::TextUnformatted(plain_text_.c_str());
@@ -29,6 +30,7 @@ void RichText::Render() {
         }
     }
     ImGui::EndGroup();
+    ImGui::PopID();
 }
 
 void RichText::SetText(std::string text) {

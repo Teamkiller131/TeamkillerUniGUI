@@ -85,6 +85,7 @@ void Form::SetOnSubmit(std::function<void()> callback) { on_submit_ = std::move(
 
 void Form::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     ImGui::Begin(title_.c_str());
 
     for (auto& f : fields_) {
@@ -138,6 +139,7 @@ void Form::Render() {
     }
 
     ImGui::End();
+    ImGui::PopID();
 }
 
 std::string Form::Serialize() const {

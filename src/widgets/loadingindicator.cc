@@ -7,6 +7,7 @@ LoadingIndicator::LoadingIndicator(std::string n, float r):Widget(std::move(n)),
 void LoadingIndicator::SetActive(bool a){active_=a;} bool LoadingIndicator::IsActive()const{return active_;}
 void LoadingIndicator::Render(){
     if(!IsVisible()||!active_)return;
+    ImGui::PushID(GetName().c_str());
     angle_ += ImGui::GetIO().DeltaTime * 3.0f;
     auto* dl = ImGui::GetWindowDrawList();
     auto pos = ImGui::GetCursorScreenPos();
@@ -18,5 +19,6 @@ void LoadingIndicator::Render(){
         dl->AddCircleFilled(p, 3, IM_COL32(255,255,255,(int)(alpha*255)));
     }
     ImGui::Dummy(ImVec2(radius_*2, radius_*2));
+    ImGui::PopID();
 }
 }

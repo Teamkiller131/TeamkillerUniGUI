@@ -25,6 +25,7 @@ void MultiHandleSlider::RemoveTick(int id) {
 
 void MultiHandleSlider::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
 
     auto* dl = ImGui::GetWindowDrawList();
     ImVec2 cursor = ImGui::GetCursorScreenPos();
@@ -88,6 +89,7 @@ void MultiHandleSlider::Render() {
     }
 
     ImGui::Dummy(ImVec2(barW + 20.f, 60.f));
+    ImGui::PopID();
 }
 
 } // namespace unigui

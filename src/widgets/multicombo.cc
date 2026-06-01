@@ -9,6 +9,7 @@ MultiCombo::MultiCombo(std::string name, std::string label, std::vector<std::str
 
 void MultiCombo::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     std::string preview = GetPreview();
     if (ImGui::BeginCombo(label_.c_str(), preview.c_str())) {
         for (int i = 0; i < (int)items_.size(); i++) {
@@ -20,6 +21,7 @@ void MultiCombo::Render() {
         }
         ImGui::EndCombo();
     }
+    ImGui::PopID();
 }
 
 void MultiCombo::SetItems(std::vector<std::string> items) { items_ = std::move(items); selected_.clear(); }

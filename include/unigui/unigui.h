@@ -32,6 +32,8 @@
 #include <unigui/widgets/form.h>
 #include <unigui/widgets/window.h>
 #include <unigui/widgets/checkbox.h>
+#include <unigui/widgets/collapsingheader.h>
+#include <unigui/widgets/selectable.h>
 #include <unigui/widgets/slider.h>
 #include <unigui/widgets/progressbar.h>
 #include <unigui/widgets/radiogroup.h>
@@ -47,12 +49,16 @@
 #include <unigui/widgets/toolbar.h>
 #include <unigui/widgets/table.h>
 #include <unigui/widgets/colorpicker.h>
+#include <unigui/widgets/coloredit.h>
 #include <unigui/widgets/filepath.h>
 #include <unigui/widgets/dirpath.h>
 #include <unigui/widgets/spinbox.h>
 #include <unigui/widgets/toggleswitch.h>
 #include <unigui/widgets/inputint.h>
 #include <unigui/widgets/inputfloat.h>
+#include <unigui/widgets/dragfloat.h>
+#include <unigui/widgets/dragint.h>
+#include <unigui/widgets/listbox.h>
 #include <unigui/widgets/splitter.h>
 #include <unigui/widgets/separator.h>
 #include <unigui/widgets/scrollarea.h>

@@ -20,6 +20,7 @@ void Toast::Show(std::string msg, ToastType type, float duration, std::function<
 }
 
 void Toast::Render() {
+    ImGui::PushID(GetName().c_str());
     auto now = std::chrono::steady_clock::now();
 
     // Remove expired from front
@@ -30,7 +31,7 @@ void Toast::Render() {
             queue_.pop_front();
         } else { break; }
     }
-    if (queue_.empty()) return;
+    if (queue_.empty()) { ImGui::PopID(); return; }
 
     float dt = ImGui::GetIO().DeltaTime;
 
@@ -73,6 +74,7 @@ void Toast::Render() {
         ImGuiWindow* w = ImGui::FindWindowByName(winName);
         if (w) ImGui::BringWindowToDisplayFront(w);
     }
+    ImGui::PopID();
 }
 
 } // namespace unigui

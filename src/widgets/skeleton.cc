@@ -31,6 +31,7 @@ SkeletonScreen SkeletonScreen::FromSize(float w, float h, int lineCount) {
 }
 
 void SkeletonScreen::Render() {
+    ImGui::PushID(this);
     auto* dl = ImGui::GetWindowDrawList();
     ImVec2 cursor = ImGui::GetCursorScreenPos();
 
@@ -66,6 +67,7 @@ void SkeletonScreen::Render() {
     }
 
     if (!elements_.empty()) ImGui::Dummy(ImVec2(0, maxY + 4));
+    ImGui::PopID();
 }
 
 } // namespace unigui

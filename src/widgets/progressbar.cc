@@ -7,6 +7,7 @@ ProgressBar::ProgressBar(std::string name, float fraction)
     : Widget(std::move(name)), fraction_(fraction) {}
 void ProgressBar::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
 
     // Animated fill
     float target = fraction_;
@@ -49,6 +50,7 @@ void ProgressBar::Render() {
         anim_.Stop();
         anim_.progress = target;
     }
+    ImGui::PopID();
 }
 void ProgressBar::SetFraction(float f) { fraction_ = f; }
 float ProgressBar::GetFraction() const { return fraction_; }

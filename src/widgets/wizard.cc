@@ -16,6 +16,7 @@ void Wizard::GoTo(int step) { if (step >= 0 && step < (int)steps_.size()) curSte
 
 void Wizard::Render() {
     if (!IsVisible() || steps_.empty()) return;
+    ImGui::PushID(GetName().c_str());
     ImGui::Begin(title_.c_str(), nullptr, ImGuiWindowFlags_NoDocking);
 
     // Step header
@@ -45,6 +46,7 @@ void Wizard::Render() {
     if (ImGui::Button("Cancel")) { if (onCancel_) onCancel_(); }
 
     ImGui::End();
+    ImGui::PopID();
 }
 
 } // namespace unigui

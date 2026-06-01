@@ -25,6 +25,7 @@ void Table::RestoreColumnWidths() {
 }
 void Table::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
     if (sortable_) flags |= ImGuiTableFlags_Sortable;
     if (resizable_) flags |= ImGuiTableFlags_Resizable;
@@ -44,6 +45,7 @@ void Table::Render() {
         }
         ImGui::EndTable();
     }
+    ImGui::PopID();
 }
 
 std::string Table::ExportCSV() const {

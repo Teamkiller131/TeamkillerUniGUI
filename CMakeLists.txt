@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.26)
 
 project(unigui
-    VERSION 3.2.8
+    VERSION 3.3.0
     DESCRIPTION "Modular Dear ImGui C++ wrapper — core + backends + optional modules"
     HOMEPAGE_URL "https://github.com/Teamkiller131/TeamkillerUniGUI"
     LANGUAGES CXX
@@ -24,6 +24,7 @@ option(UNIGUI_BACKEND_GLFW3    "GLFW+OpenGL3 backend" ON)
 option(UNIGUI_BUILD_SHARED     "Build as DLL"         OFF)
 option(UNIGUI_BUILD_TESTS      "Build test suite"     ON)
 option(UNIGUI_BUILD_EXAMPLES   "Build examples"       ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile_commands.json for clang-tidy/IDE")
 
 # ── Subdirectories ───────────────────────────────────────────────────────────
 add_subdirectory(src)
@@ -84,3 +85,77 @@ install(EXPORT unigui-targets
     NAMESPACE unigui::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/unigui
 )
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Lint — run clang-tidy on all UniGUI sources (standalone, outside build)
+# ═══════════════════════════════════════════════════════════════════════════════
+find_program(CLANG_TIDY_EXE clang-tidy)
+if(CLANG_TIDY_EXE)
+    # Collect all UniGUI source files for linting
+    file(GLOB_RECURSE UNIGUI_SOURCES
+        "${PROJECT_SOURCE_DIR}/src/*.cc"
+        "${PROJECT_SOURCE_DIR}/include/unigui/*.h"
+        "${PROJECT_SOURCE_DIR}/include/unigui/**/*.h"
+    )
+
+    # Only lint tests if built
+    if(UNIGUI_BUILD_TESTS)
+        file(GLOB_RECURSE UNIGUI_TEST_SOURCES "${PROJECT_SOURCE_DIR}/tests/*.cc")
+        list(APPEND UNIGUI_SOURCES ${UNIGUI_TEST_SOURCES})
+    endif()
+
+    add_custom_target(lint
+        COMMENT "Running clang-tidy on ${PROJECT_NAME} sources..."
+        COMMAND ${CLANG_TIDY_EXE}
+            -p ${CMAKE_BINARY_DIR}
+            --config-file=${PROJECT_SOURCE_DIR}/.clang-tidy
+            ${UNIGUI_SOURCES}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        USES_TERMINAL
+    )
+    message(STATUS "Lint target available: cmake --build <dir> --target lint")
+endif()
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Coverage — run tests + generate HTML coverage report (clang source-based)
+# ═══════════════════════════════════════════════════════════════════════════════
+find_program(LLVM_PROFDATA_EXE llvm-profdata)
+find_program(LLVM_COV_EXE llvm-cov)
+if(LLVM_PROFDATA_EXE AND LLVM_COV_EXE)
+    set(COVERAGE_DIR "${CMAKE_BINARY_DIR}/coverage")
+    set(COVERAGE_PROFRAW "${COVERAGE_DIR}/unigui-%p.profraw")
+    set(COVERAGE_PROFDATA "${COVERAGE_DIR}/unigui.profdata")
+
+    add_custom_target(coverage
+        COMMENT "Collecting coverage data..."
+        # Step 1: Run tests with LLVM_PROFILE_FILE set
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${COVERAGE_DIR}
+        COMMAND ${CMAKE_COMMAND} -E env
+            "LLVM_PROFILE_FILE=${COVERAGE_PROFRAW}"
+            ${CMAKE_CTEST_COMMAND}
+                --test-dir ${CMAKE_BINARY_DIR}
+                --output-on-failure
+        # Step 2: Merge raw profiles
+        COMMAND ${LLVM_PROFDATA_EXE} merge -sparse
+            ${COVERAGE_DIR}/*.profraw
+            -o ${COVERAGE_PROFDATA}
+        # Step 3: Generate HTML report
+        COMMAND ${LLVM_COV_EXE} show
+            -format=html
+            -output-dir=${COVERAGE_DIR}/html
+            -instr-profile=${COVERAGE_PROFDATA}
+            $<TARGET_FILE:unigui>
+            -show-line-counts-or-regions
+            -show-instantiation-summary
+        # Step 4: Generate text summary
+        COMMAND ${LLVM_COV_EXE} report
+            -instr-profile=${COVERAGE_PROFDATA}
+            $<TARGET_FILE:unigui>
+        COMMENT "Coverage report: ${COVERAGE_DIR}/html/index.html"
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        USES_TERMINAL
+    )
+    message(STATUS "Coverage target available: cmake --build <dir> --target coverage")
+else()
+    message(STATUS "Coverage target unavailable: install llvm-profdata + llvm-cov")
+endif()

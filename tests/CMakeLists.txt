@@ -136,7 +136,7 @@ target_compile_features(test_app PRIVATE cxx_std_23)
 gtest_discover_tests(test_app)
 
 # Core widget tests — always compiled
-foreach(_widget checkbox progressbar radiogroup combobox lineedit groupbox tabwidget separator scrollarea menubar statusbar toolbar dialog)
+foreach(_widget checkbox progressbar radiogroup combobox lineedit groupbox tabwidget separator scrollarea menubar statusbar toolbar dialog collapsingheader selectable)
     add_executable(test_${_widget} widgets/${_widget}_test.cc)
     target_link_libraries(test_${_widget} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_widget} PRIVATE cxx_std_23)
@@ -145,7 +145,7 @@ endforeach()
 
 # Extended widget tests — only when UNIGUI_MODULE_WIDGETS=ON
 if(UNIGUI_MODULE_WIDGETS)
-    foreach(_widget treeview listview table colorpicker filepath dirpath toggleswitch inputint inputfloat splitter tooltip datepicker image loadingindicator notification hyperlink tag breadcrumb multiline iconbutton space contextmenu shortcut richtext imagebutton markdown virtuallist multicombo propertygrid searchbox toast passwordinput wizard)
+    foreach(_widget treeview listview table colorpicker coloredit listbox filepath dirpath toggleswitch inputint inputfloat splitter tooltip datepicker image loadingindicator notification hyperlink tag breadcrumb multiline iconbutton space contextmenu shortcut richtext imagebutton markdown virtuallist multicombo propertygrid searchbox toast passwordinput wizard dragfloat dragint)
         add_executable(test_${_widget} widgets/${_widget}_test.cc)
         target_link_libraries(test_${_widget} PRIVATE GTest::gtest GTest::gtest_main unigui)
         target_compile_features(test_${_widget} PRIVATE cxx_std_23)

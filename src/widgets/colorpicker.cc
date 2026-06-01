@@ -4,6 +4,7 @@ namespace unigui {
 ColorPicker::ColorPicker(std::string name, std::string label, std::array<float, 3> color) : Widget(std::move(name)), label_(std::move(label)), color_(color) {}
 void ColorPicker::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     auto prev = color_;
     if (has_alpha_) {
         float c4[4] = {color4_[0], color4_[1], color4_[2], color4_[3]};
@@ -15,6 +16,7 @@ void ColorPicker::Render() {
         ImGui::ColorEdit3(label_.c_str(), color_.data());
         if (color_ != prev && on_change_) on_change_(color_);
     }
+    ImGui::PopID();
 }
 std::array<float, 3> ColorPicker::GetColor() const { return color_; }
 void ColorPicker::SetColor(std::array<float, 3> color) { color_ = color; }

@@ -6,6 +6,8 @@ TabWidget::TabWidget(std::string name) : Widget(std::move(name)) {}
 void TabWidget::Render() {
     if (!IsVisible()) return;
 
+    ImGui::PushID(GetName().c_str());
+
     // Animated transition on tab switch
     if (active_ != prevActive_) {
         transAnim_.Play(0.2f, fx::EasingCurve::EaseOut);
@@ -34,6 +36,7 @@ void TabWidget::Render() {
         }
         ImGui::EndTabBar();
     }
+    ImGui::PopID();
 }
 void TabWidget::AddTab(TabPage page) { tabs_.push_back(std::move(page)); }
 void TabWidget::RemoveTab(const std::string& tab_name) {

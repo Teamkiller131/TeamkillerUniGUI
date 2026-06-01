@@ -13,6 +13,7 @@ Window::Window(std::string name, std::string title)
 
 void Window::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     UNIGUI_LOG_TRACE("Window::Render '{}': {} panels", title_, panels_.size());
 
     if (pos_x_ >= 0)
@@ -60,6 +61,7 @@ void Window::Render() {
         Hide();
         if (!closeToTray_ && on_close_) on_close_();
     }
+    ImGui::PopID();
 }
 
 void Window::AddPanel(std::shared_ptr<Panel> panel) {

@@ -8,6 +8,7 @@ VirtualList::VirtualList(std::string name, int itemCount)
 
 void VirtualList::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     ImGui::BeginChild(GetName().c_str(), ImVec2(0, 0), ImGuiChildFlags_Borders);
     ImGuiListClipper clipper;
     clipper.Begin(count_);
@@ -21,6 +22,7 @@ void VirtualList::Render() {
         }
     }
     ImGui::EndChild();
+    ImGui::PopID();
 }
 
 } // namespace unigui
