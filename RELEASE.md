@@ -1,3 +1,39 @@
+# TeamkillerUniGUI v3.3.1 Release Notes
+
+**Release Date:** 2026-06-01 | **Version:** 3.3.1 | **Widgets:** 83 | **Tests:** 579
+
+---
+
+## Highlights
+
+### 9 New Widgets for Production Use
+
+| Widget | Category | Purpose |
+|--------|----------|---------|
+| PanelBox | Container | Dark panel with title bar + tinted content |
+| RiskBar | Display | Colored progress bar with warn/danger thresholds |
+| StatusLamp | Display | Circular status indicator with draft blink |
+| AlertBar | Feedback | Persistent top alert banner with animation |
+| ConfirmDialog | Feedback | Modal confirmation popup with danger style |
+| CascadingCombo | Input | N-level cascading dropdown (BeginCombo/EndCombo) |
+| SliderBar | Input | Multi-tick draggable slider bar |
+| FuturesRiskBar | Display | Multi-marker progress bar (actual/estimated/overnight) |
+
+### Enhancements
+
+- **TreeView**: RowRenderer callback + 6 new TreeNode fields (icon, suffix, progress, bgColor, labelColor, progressColor)
+- **DataTable**: RowClickCallback, sort indicators, SetColumnMinWidth
+- **ThemeRegistry**: GetCurrentThemeName()
+- **FontManager**: LoadSystemEmoji() for auto emoji fallback
+- **Theme**: SetFontScale() / GetFontScale()
+
+### Bug Fixes
+
+- **DataTable StickyHeader**: Added TableSetupScrollFreeze(0,1) — header now stays fixed
+- **Emoji rendering**: Auto-loads Segoe UI Emoji on Windows
+
+---
+
 # TeamkillerUniGUI v3.3.0 Release Notes
 
 **Release Date:** 2026-06-01  
