@@ -5,6 +5,7 @@ MenuBar::MenuBar(std::string name) : Widget(std::move(name)) {}
 void MenuBar::SetMenus(std::vector<MenuDef> menus) { menus_ = std::move(menus); }
 void MenuBar::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     if (ImGui::BeginMainMenuBar()) {
         for (auto& menu : menus_) {
             if (ImGui::BeginMenu(menu.label.c_str())) {
@@ -16,5 +17,6 @@ void MenuBar::Render() {
         }
         ImGui::EndMainMenuBar();
     }
+    ImGui::PopID();
 }
 }

@@ -9,6 +9,7 @@
     {
       "name": "windows-msvc-debug",
       "displayName": "Windows MSVC Debug",
+      "description": "MSVC debug build. Requires: cmake-msvc.cmd --preset windows-msvc-debug",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/windows-msvc-debug",
       "cacheVariables": {
@@ -21,11 +22,57 @@
     {
       "name": "windows-msvc-release",
       "displayName": "Windows MSVC Release",
+      "description": "MSVC release build. Requires: cmake-msvc.cmd --preset windows-msvc-release",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/windows-msvc-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_CXX_STANDARD": "23",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "windows-msvc-debug-asan",
+      "displayName": "Windows MSVC Debug + ASAN",
+      "description": "MSVC debug with AddressSanitizer. Requires cmake-msvc.cmd wrapper.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-msvc-debug-asan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "23",
+        "CMAKE_CXX_FLAGS": "-fsanitize=address -fno-omit-frame-pointer -g",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "windows-clang-tidy",
+      "displayName": "Windows Clang + clang-tidy",
+      "description": "Clang debug build with clang-tidy static analysis on every compile.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-clang-tidy",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "23",
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--config-file=${sourceDir}/.clang-tidy",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "windows-clang-coverage",
+      "displayName": "Windows Clang + Coverage",
+      "description": "Clang debug with source-based coverage. Run: cmake --build <dir> --target coverage",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-clang-coverage",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "23",
+        "CMAKE_CXX_FLAGS": "-fprofile-instr-generate -fcoverage-mapping -g",
+        "CMAKE_EXE_LINKER_FLAGS": "-fprofile-instr-generate",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fprofile-instr-generate",
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
@@ -38,6 +85,18 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_STANDARD": "23"
+      }
+    },
+    {
+      "name": "linux-gcc-debug-asan",
+      "displayName": "Linux GCC Debug + ASAN/UBSAN",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-gcc-debug-asan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "23",
+        "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address,undefined"
       }
     },
     {
@@ -78,73 +137,27 @@
     }
   ],
   "buildPresets": [
-    {
-      "name": "windows-msvc-debug",
-      "configurePreset": "windows-msvc-debug"
-    },
-    {
-      "name": "windows-msvc-release",
-      "configurePreset": "windows-msvc-release"
-    },
-    {
-      "name": "linux-gcc-debug",
-      "configurePreset": "linux-gcc-debug"
-    },
-    {
-      "name": "macos-clang-debug",
-      "configurePreset": "macos-clang-debug"
-    },
-    {
-      "name": "windows-msvc-sdl3-vulkan-debug",
-      "configurePreset": "windows-msvc-sdl3-vulkan-debug"
-    },
-    {
-      "name": "windows-msvc-sdl3-vulkan-release",
-      "configurePreset": "windows-msvc-sdl3-vulkan-release"
-    }
+    { "name": "windows-msvc-debug",              "configurePreset": "windows-msvc-debug" },
+    { "name": "windows-msvc-release",            "configurePreset": "windows-msvc-release" },
+    { "name": "windows-msvc-debug-asan",         "configurePreset": "windows-msvc-debug-asan" },
+    { "name": "windows-clang-tidy",              "configurePreset": "windows-clang-tidy" },
+    { "name": "windows-clang-coverage",          "configurePreset": "windows-clang-coverage" },
+    { "name": "linux-gcc-debug",                 "configurePreset": "linux-gcc-debug" },
+    { "name": "linux-gcc-debug-asan",            "configurePreset": "linux-gcc-debug-asan" },
+    { "name": "macos-clang-debug",               "configurePreset": "macos-clang-debug" },
+    { "name": "windows-msvc-sdl3-vulkan-debug",  "configurePreset": "windows-msvc-sdl3-vulkan-debug" },
+    { "name": "windows-msvc-sdl3-vulkan-release","configurePreset": "windows-msvc-sdl3-vulkan-release" }
   ],
   "testPresets": [
-    {
-      "name": "windows-msvc-debug",
-      "configurePreset": "windows-msvc-debug",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "windows-msvc-release",
-      "configurePreset": "windows-msvc-release",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "linux-gcc-debug",
-      "configurePreset": "linux-gcc-debug",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "macos-clang-debug",
-      "configurePreset": "macos-clang-debug",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "windows-msvc-sdl3-vulkan-debug",
-      "configurePreset": "windows-msvc-sdl3-vulkan-debug",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "windows-msvc-sdl3-vulkan-release",
-      "configurePreset": "windows-msvc-sdl3-vulkan-release",
-      "output": {
-        "outputOnFailure": true
-      }
-    }
+    { "name": "windows-msvc-debug",              "configurePreset": "windows-msvc-debug",              "output": { "outputOnFailure": true } },
+    { "name": "windows-msvc-release",            "configurePreset": "windows-msvc-release",            "output": { "outputOnFailure": true } },
+    { "name": "windows-msvc-debug-asan",         "configurePreset": "windows-msvc-debug-asan",         "output": { "outputOnFailure": true } },
+    { "name": "windows-clang-tidy",              "configurePreset": "windows-clang-tidy",              "output": { "outputOnFailure": true } },
+    { "name": "windows-clang-coverage",          "configurePreset": "windows-clang-coverage",          "output": { "outputOnFailure": true } },
+    { "name": "linux-gcc-debug",                 "configurePreset": "linux-gcc-debug",                 "output": { "outputOnFailure": true } },
+    { "name": "linux-gcc-debug-asan",            "configurePreset": "linux-gcc-debug-asan",            "output": { "outputOnFailure": true } },
+    { "name": "macos-clang-debug",               "configurePreset": "macos-clang-debug",               "output": { "outputOnFailure": true } },
+    { "name": "windows-msvc-sdl3-vulkan-debug",  "configurePreset": "windows-msvc-sdl3-vulkan-debug",  "output": { "outputOnFailure": true } },
+    { "name": "windows-msvc-sdl3-vulkan-release","configurePreset": "windows-msvc-sdl3-vulkan-release","output": { "outputOnFailure": true } }
   ]
 }

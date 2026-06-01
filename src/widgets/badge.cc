@@ -9,6 +9,7 @@ void Badge::SetColor(ImU32 c)              { color_ = c; }
 void Badge::SetCount(int n)                { count_ = n; variant_ = Count; }
 
 void Badge::Render() {
+    ImGui::PushID(this);
     auto* dl = ImGui::GetWindowDrawList();
     ImVec2 cursor = ImGui::GetCursorScreenPos();
 
@@ -50,6 +51,7 @@ void Badge::Render() {
         }
         break;
     }
+    ImGui::PopID();
 }
 
 } // namespace unigui

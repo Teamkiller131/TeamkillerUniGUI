@@ -63,6 +63,7 @@ void PropertyGrid::SetValue(const std::string& name, PropValue val) {
 
 void PropertyGrid::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     if (ImGui::BeginTable(GetName().c_str(), 2, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable)) {
         ImGui::TableSetupColumn("Property");
         ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
@@ -70,6 +71,7 @@ void PropertyGrid::Render() {
         for (auto& p : props_) RenderProp(p);
         ImGui::EndTable();
     }
+    ImGui::PopID();
 }
 
 } // namespace unigui

@@ -36,6 +36,7 @@ void Shimmer::SetSpeed(float s) {
 
 void Shimmer::Render() {
     if (!playing_) return;
+    ImGui::PushID(this);
 
     float t = anim_.Update(ImGui::GetIO().DeltaTime);
     auto* dl = ImGui::GetWindowDrawList();
@@ -88,6 +89,7 @@ void Shimmer::Render() {
         for (auto& e : elements_) maxY = std::max(maxY, e.y + e.h);
         ImGui::Dummy(ImVec2(0, maxY));
     }
+    ImGui::PopID();
 }
 
 } // namespace unigui

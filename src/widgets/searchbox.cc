@@ -10,6 +10,7 @@ SearchBox::SearchBox(std::string name, std::string hint)
 
 void SearchBox::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     ImGui::SetNextItemWidth(-1);
     bool changed = ImGui::InputTextWithHint(GetName().c_str(), hint_.c_str(), buf_, sizeof(buf_));
     if (changed) {
@@ -32,6 +33,7 @@ void SearchBox::Render() {
             ImGui::EndTooltip();
         }
     }
+    ImGui::PopID();
 }
 
 std::vector<std::string> SearchBox::GetMatches() const {

@@ -4,6 +4,7 @@ namespace unigui {
 Dialog::Dialog(std::string name, std::string title, std::string message) : Widget(std::move(name)), title_(std::move(title)), message_(std::move(message)) {}
 void Dialog::Render() {
     if (!open_) return;
+    ImGui::PushID(GetName().c_str());
     ImGui::OpenPopup(title_.c_str());
     if (ImGui::BeginPopupModal(title_.c_str(), &open_)) {
         ImGui::TextUnformatted(message_.c_str());
@@ -12,6 +13,7 @@ void Dialog::Render() {
         if (!cancelText_.empty()) { ImGui::SameLine(); if (ImGui::Button(cancelText_.c_str())) { if (onCancel_) onCancel_(); open_ = false; ImGui::CloseCurrentPopup(); } }
         ImGui::EndPopup();
     }
+    ImGui::PopID();
 }
 void Dialog::Open() { open_ = true; }
 void Dialog::Close() { open_ = false; }

@@ -49,6 +49,7 @@ void TimeSeriesChart::AppendPoint(int seriesId, float value, double timestamp) {
 
 void TimeSeriesChart::Render() {
     if (!IsVisible() || series_.empty()) return;
+    ImGui::PushID(GetName().c_str());
 
     frameCounter_ += ImGui::GetIO().DeltaTime;
 
@@ -147,6 +148,7 @@ void TimeSeriesChart::Render() {
             ImGui::TextUnformatted(s.def.label.c_str());
         }
     }
+    ImGui::PopID();
 }
 
 } // namespace unigui

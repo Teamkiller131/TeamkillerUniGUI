@@ -1,0 +1,68 @@
+# TeamkillerUniGUI clang-format config
+# Matches existing code style: 4-space indent, K&R-like braces, left-aligned pointers
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+
+# Brace style: keep opening brace on same line (matches existing code)
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeElse: false
+  BeforeCatch: false
+
+# Spacing
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: true
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceBeforeAssignmentOperators: true
+
+# Pointer/reference alignment (left = int *p, matches existing)
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Include ordering: project → third-party → standard
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<unigui/'
+    Priority: 1
+  - Regex: '^<(imgui|implot|glad|glfw|spdlog|SDL|vulkan|d3d|windows)'
+    Priority: 2
+  - Regex: '^<'
+    Priority: 3
+SortIncludes: CaseSensitive
+
+# Preprocessor
+IndentPPDirectives: None
+
+# Access modifiers
+AccessModifierOffset: -4
+
+# Short blocks on single line
+AllowShortBlocksOnASingleLine: Always
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Trailing comments
+AlignTrailingComments: true
+
+# Break after return type
+AlwaysBreakAfterReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 200
+
+# Constructor initializers
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerIndentWidth: 8
+
+# Don't add/remove spaces inside brackets of initializer lists
+Cpp11BracedListStyle: true

@@ -4,9 +4,9 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.2.8-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-244%20(236%2F244%20Linux)-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-68-blue)]()
+[![Version](https://img.shields.io/badge/version-3.3.0-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-285-brightgreen)]()
+[![Widgets](https://img.shields.io/badge/widgets-74-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20production%29-orange)]()
 
 C++23 Dear ImGui 封装库——提供统一的明暗主题引擎、高层组件、声明式 DSL、CSS 样式引擎、插件系统与 EventBus。支持 7 种渲染后端：GLFW+OpenGL3、SDL3+Vulkan、DX11、DX12、Metal、WebGPU 和 Emscripten。
@@ -21,6 +21,9 @@ cd TeamkillerUniGUI
 cmake --preset windows-msvc-release
 cmake --build --preset windows-msvc-release
 ctest --preset windows-msvc-release
+
+# 或使用一键脚本（自动配置 MSVC 环境）
+.\cmake-msvc.cmd
 
 # SDL3 + Vulkan
 cmake --preset windows-msvc-sdl3-vulkan-release
@@ -42,7 +45,7 @@ ctest --test-dir build
     ↓
 unigui:: API
     ├── 主题引擎 (53 色明暗主题，StyleScope RAII)
-    ├── 组件库 (68 个组件，表单校验/撤销重做/序列化)
+    ├── 组件库 (74 个组件，100% PushID 安全，表单校验/撤销重做/序列化)
     ├── 声明式 DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
     ├── 事件总线 (unigui::events::Bus — 发布/订阅，支持通配符)
     ├── CSS 样式引擎 (unigui::styling::Engine — 选择器引擎 + 变量)
@@ -151,7 +154,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
       -DUNIGUI_MODULE_IPC=ON -DUNIGUI_BACKEND_DX12=ON ...
 ```
 
-## 组件列表（66 个）
+## 组件列表（74 个）
 
 | 分类 | 组件 | 核心 API |
 |------|------|----------|
@@ -161,6 +164,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | TabWidget | `AddTab()`, `RemoveTab()` |
 | | Card | `SetTitle()`, `SetContent(fn)`, `SetFooter(fn)` (v3.0) |
 | | HeroSection | `SetTitle()`, `SetSubtitle()`, `SetActionButton()` (v3.0) |
+| | CollapsingHeader | `SetContentCallback(fn)`, `SetOpen(bool)` (v3.3) |
 | 输入 | LineEdit | `SetValue()`, `SetValidator()`, `Undo()`/`Redo()` |
 | | MultiLine | `SetText()`, `Undo()`/`Redo()` |
 | | PasswordInput | `GetStrengthScore()` (0-4)，显示/隐藏切换 |
@@ -169,12 +173,16 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | SearchBox | `SetItems(v)`, `GetQuery()`, `SetOnSelect(fn)` |
 | | Slider\<T\> | `SetMin()`, `SetMax()`, `SetValue()` |
 | | MultiHandleSlider | 多游标可拖拽滑块 (v3.2) |
+| | DragFloat / DragInt | `GetValue()`, `SetValue()`, `SetSpeed()` (v3.3) |
 | | InputInt/InputFloat | `GetValue()`, `SetValue()` |
 | | SpinBox\<T\> | `GetValue()`, `SetRange()` |
 | | DatePicker | `GetDate()`, `SetDate()` |
 | | ColorPicker | `GetColor()`, `SetColor()` |
+| | ColorEdit | `GetColor()`, `SetColor()` (v3.3) |
 | | FilePath | `SetPath()`，文件选择 |
 | | DirPath | 目录选择 |
+| 选择 | Selectable | `SetLabel()`, `SetOnClick()`, `IsSelected()` (v3.3) |
+| | ListBox | `SetItems()`, `GetSelectedIndex()`, `SetOnChange()` (v3.3) |
 | 展示 | Label | `GetText()`, `SetText()` |
 | | Button | `WasClicked()`, `SetEnabled()` |
 | | ImageButton | `SetImage(texID, w, h)`, `SetLabel()` |
@@ -218,6 +226,19 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | SkeletonScreen | 骨架屏占位 (v3.0) |
 | | Shimmer | 骨架屏流光动画 (v3.0) |
 
+> 完整组件 API 文档请参阅 [docs/WIDGET_API.md](docs/WIDGET_API.md)
+
+## ID 安全
+
+所有 74 个组件均通过 `PushID`/`PopID` 自动管理 ImGui ID 栈，无需手动处理 ID 冲突。
+
+```cpp
+auto btn1 = std::make_shared<unigui::Button>("ok", "确定");
+auto btn2 = std::make_shared<unigui::Button>("cancel", "确定"); // 相同文字，不再冲突！
+```
+
+每个组件自动为其内部所有 ImGui 控件建立唯一 ID 作用域，即使创建多个相同标签的组件也能正常工作。
+
 ## 后端选择
 
 ```cpp
@@ -259,9 +280,18 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5（桩）
 
 ## 平台说明
 
-- **Windows**：主力平台。Visual Studio 2022 + MSVC 19.40+。DX11 为默认后端。244/244 测试通过。
+- **Windows**：主力平台。Visual Studio 2022 + MSVC 19.40+。DX11 为默认后端。285/285 测试通过。
 - **Linux**：GCC 14+/Clang 18+，GLFW+OpenGL3。支持 X11/Wayland。236/244 测试通过（8 项 GL 上下文失败为无头环境预期）。x64-linux triplet 依赖见 [vcpkg.json](vcpkg.json)。
 - **macOS**：Apple 已弃用 OpenGL（上限 4.1），推荐通过 MoltenVK 使用 Vulkan。
+
+## 开发工具
+
+| 命令 | 说明 |
+|------|------|
+| `.\cmake-msvc.cmd` | 一键配置 MSVC 构建环境并运行 CMake 预设 |
+| `cmake --preset windows-msvc-release` | 配置 CMake 预设（Release 模式） |
+| `cmake --build --preset windows-msvc-release` | 构建项目 |
+| `ctest --preset windows-msvc-release` | 运行全部测试 |
 
 ## 字体
 

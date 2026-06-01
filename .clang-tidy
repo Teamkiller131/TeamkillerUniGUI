@@ -1,0 +1,62 @@
+# TeamkillerUniGUI clang-tidy config
+# LLVM 22.1.6 — enables bug/performance/modernize checks without breaking existing code style.
+#
+# Usage:
+#   cmake --preset windows-clang-tidy      # build + lint simultaneously
+#   cmake --build build/... --target lint  # lint only (fast)
+#   run-clang-tidy -p build/...            # manual run
+
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-implicit-widening-of-multiplication-result,
+  performance-*,
+  -performance-avoid-endl,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -modernize-use-nodiscard,
+  readability-*,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  -readability-avoid-return-with-void-value,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  misc-*,
+  -misc-include-cleaner,
+  -misc-const-correctness,
+  -misc-no-recursion
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: 'include/unigui/.*\.h$'
+
+CheckOptions:
+  # Allow Dear ImGui naming conventions (PascalCase for globals like ImGui::)
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.VariableCase
+    value: camelBack
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: '_'
+  # Allow existing code patterns
+  - key: modernize-use-auto.MinTypeNameLength
+    value: '8'
+  - key: readability-function-size.LineThreshold
+    value: '120'
+  - key: readability-function-size.StatementThreshold
+    value: '40'
+  # Use nullptr (C++23 already expects this)
+  - key: modernize-use-nullptr.NullptrMacros
+    value: 'NULL'

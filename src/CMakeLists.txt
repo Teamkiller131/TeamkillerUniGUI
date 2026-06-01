@@ -143,6 +143,8 @@ target_sources(unigui PRIVATE
     widgets/menubar.cc
     widgets/statusbar.cc
     widgets/toolbar.cc
+    widgets/collapsingheader.cc
+    widgets/selectable.cc
 )
 
 # ── Extended widgets (UNIGUI_MODULE_WIDGETS) ──────────────────────────────────
@@ -187,7 +189,11 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/multihandleslider.cc
         widgets/timeseries_chart.cc
         widgets/multisplitter.cc
+        widgets/dragfloat.cc
+        widgets/dragint.cc
+        widgets/listbox.cc
         fonts/gradient_text.cc
+        widgets/coloredit.cc
     )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)
     message(STATUS "Extended widgets enabled")

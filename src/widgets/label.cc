@@ -9,7 +9,9 @@ Label::Label(std::string name, std::string text)
 
 void Label::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     ImGui::TextUnformatted(text_.c_str());
+    ImGui::PopID();
 }
 
 void Label::SetText(std::string text) { text_ = std::move(text); }

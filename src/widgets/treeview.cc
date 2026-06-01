@@ -5,12 +5,14 @@ namespace unigui {
 TreeView::TreeView(std::string name) : Widget(std::move(name)) {}
 void TreeView::Render() {
     if (!IsVisible() || root_.label.empty()) return;
+    ImGui::PushID(GetName().c_str());
     nodeCounter_ = 0; selected_.clear();
     if (hideRoot_) {
         for (auto& child : root_.children) RenderNode(child, 0);
     } else {
         RenderNode(root_, 0);
     }
+    ImGui::PopID();
 }
 void TreeView::SetRoot(TreeNode root) { root_ = std::move(root); }
 const TreeNode& TreeView::GetRoot() const { return root_; }

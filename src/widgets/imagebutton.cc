@@ -8,6 +8,7 @@ ImageButton::ImageButton(std::string name, std::string label)
 
 void ImageButton::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     if (!enabled_) ImGui::BeginDisabled();
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, framePadding_);
     clicked_ = ImGui::ImageButton(GetName().c_str(), texture_,
@@ -20,6 +21,7 @@ void ImageButton::Render() {
         ImGui::TextUnformatted(label_.c_str());
     }
     if (!enabled_) ImGui::EndDisabled();
+    ImGui::PopID();
 }
 
 void ImageButton::SetImage(ImTextureID textureID, float width, float height) {

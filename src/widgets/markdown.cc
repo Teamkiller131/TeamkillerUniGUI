@@ -126,6 +126,7 @@ void Markdown::RenderLine(const std::string& line) {
 
 void Markdown::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     ImGui::BeginGroup();
     std::istringstream stream(source_);
     std::string line;
@@ -135,6 +136,7 @@ void Markdown::Render() {
         RenderLine(line);
     }
     ImGui::EndGroup();
+    ImGui::PopID();
 }
 
 } // namespace unigui

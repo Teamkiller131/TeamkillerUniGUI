@@ -4,9 +4,9 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.2.8-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-244%20(236%2F244%20Linux)-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-68-blue)]()
+[![Version](https://img.shields.io/badge/version-3.3.0-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-285%20(100%25%20on%20Win)-brightgreen)]()
+[![Widgets](https://img.shields.io/badge/widgets-74-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
 A C++23 Dear ImGui wrapper providing a unified dark+light theme engine, high-level widget components, declarative DSL, CSS styling, plugin system, and EventBus. Supports 7 backends: GLFW+OpenGL3, SDL3+Vulkan, DX11, DX12, Metal, WebGPU, and Emscripten.
@@ -17,9 +17,9 @@ A C++23 Dear ImGui wrapper providing a unified dark+light theme engine, high-lev
 git clone https://xbw-nas.iepose.cn/Teamkiller131/TeamkillerUniGUI.git
 cd TeamkillerUniGUI
 
-# Default: GLFW + OpenGL3
-cmake --preset windows-msvc-release
-cmake --build --preset windows-msvc-release
+# Windows MSVC: use the cmake-msvc.cmd wrapper for correct MSVC environment
+cmake-msvc.cmd --preset windows-msvc-release
+cmake-msvc.cmd --build --preset windows-msvc-release
 ctest --preset windows-msvc-release
 
 # SDL3 + Vulkan
@@ -42,7 +42,7 @@ User Code
     ↓
 unigui:: API
     ├── Theme Engine (53-color dark + light theme, StyleScope RAII)
-    ├── Widget Library (68 widgets, form validation, undo/redo, serialization)
+    ├── Widget Library (74 widgets (100% PushID-safe), form validation, undo/redo, serialization)
     ├── Declarative DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
     ├── EventBus (unigui::events::Bus — publish/subscribe with wildcards)
     ├── CSS Styling (unigui::styling::Engine — selector engine + variables)
@@ -151,7 +151,16 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
       -DUNIGUI_MODULE_IPC=ON -DUNIGUI_BACKEND_DX12=ON ...
 ```
 
-## Widgets (66 total)
+## ID Safety
+
+All 74 widgets automatically scope their ImGui IDs via `PushID(name)/PopID()`.
+No manual ID management needed — just give each widget instance a unique name:
+```cpp
+auto btn1 = std::make_shared<unigui::Button>("ok", "OK");
+auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label, no conflict!
+```
+
+## Widgets (74 total)
 
 | Category | Widget | Key API |
 |----------|--------|---------|
@@ -159,6 +168,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | Panel | `SetContentCallback(fn)`, `SetWrapEnabled(bool)` |
 | | GroupBox | `SetContentCallback(fn)`, `SetTitle()` |
 | | TabWidget | `AddTab()`, `RemoveTab()` |
+| | CollapsingHeader | `SetContentCallback(fn)`, `SetOpen(bool)` (v3.3) |
 | Inputs | LineEdit | `SetValue()`, `SetValidator()`, `Undo()`/`Redo()` |
 | | MultiLine | `SetText()`, `Undo()`/`Redo()` |
 | | PasswordInput | `GetStrengthScore()` (0-4), show/hide toggle |
@@ -173,6 +183,8 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | ColorPicker | `GetColor()`, `SetColor()` |
 | | FilePath | `SetPath()`, file picker |
 | | DirPath | directory picker |
+| | DragFloat\<T\>/DragInt\<T\> | `GetValue()`, `SetRange()`, `SetSpeed()` (v3.3) |
+| | ColorEdit | `GetColor()`, `SetColor()`, `SetFormat()` (v3.3) |
 | Display | Label | `GetText()`, `SetText()` |
 | | Button | `WasClicked()`, `SetEnabled()` |
 | | ImageButton | `SetImage(texID, w, h)`, `SetLabel()` |
@@ -189,6 +201,8 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | ListView | `SetItems()`, `SetOnSelect()` |
 | | Table | `AddRow()`, `ExportCSV()`, `ImportCSV()` |
 | | TreeView | `SetRoot()`, multi-select support |
+| Selection | Selectable | `SetLabel()`, `SetSelected()`, `SetOnClick()` (v3.3) |
+| | ListBox | `SetItems()`, `GetSelectedIndex()`, `SetOnChange()` (v3.3) |
 | Layout | Splitter | `SetOrientation()`, drag to resize |
 | | ScrollArea | `SetContentCallback(fn)` |
 | | Separator | horizontal/vertical dividers |
@@ -254,7 +268,7 @@ All sub-module headers are also pulled in by `<unigui/unigui.h>` for convenience
 
 ## Platform Notes
 
-- **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022. DX11 is default. 244/244 tests pass.
+- **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022. DX11 is default. 285/285 tests pass.
 - **Linux**: GCC 14+/Clang 18+ via GLFW+OpenGL3. X11/Wayland. 236/244 tests pass (8 GL-context failures expected in headless). See [vcpkg.json](vcpkg.json) for x64-linux triplet deps.
 - **macOS**: OpenGL deprecated by Apple (capped at 4.1). Vulkan via MoltenVK.
 
@@ -281,6 +295,20 @@ glfw3, sdl3, vulkan, glad, freetype, gtest, spdlog
 Optional: sqlite3, cpptoml, nlohmann-json, cppzmq, cpp-httplib, ixwebsocket
 Windows: d3d11, d3d12, d3dcompiler, dxgi, dxguid
 ```
+
+## Development Tools
+
+| Tool | Command |
+|------|---------|
+| Build (MSVC) | `cmake-msvc.cmd --preset windows-msvc-debug` |
+| Build (Clang) | `cmake --preset windows-clang-coverage` |
+| Test | `ctest --test-dir build/windows-msvc-debug --output-on-failure -j4` |
+| Coverage | `cmake --build build/windows-clang-coverage --target coverage` |
+| Lint | `cmake --preset windows-clang-tidy` |
+| Format | `clang-format -i src/widgets/*.cc` |
+
+Full API documentation: [docs/WIDGET_API.md](docs/WIDGET_API.md)
+Build workflow guide: [cpp-build-workflow skill](/.hermes/skills/cpp-build-workflow/SKILL.md)
 
 ## License
 

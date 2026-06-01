@@ -16,6 +16,7 @@ void Card::SetBorderColor(ImU32 c)              { borderColor_ = c; }
 void Card::SetBorderRadius(float r)              { borderRadius_ = r; }
 
 void Card::Render() {
+    ImGui::PushID(title_.c_str());
     float r = (borderRadius_ > 0.f) ? borderRadius_ : 8.f;
 
     // ── Push padding + rounding ──────────────────────────────────────────
@@ -63,6 +64,7 @@ void Card::Render() {
     if (variant_ == Outlined)
         ImGui::PopStyleColor();
     ImGui::PopStyleVar(3);
+    ImGui::PopID();
 }
 
 } // namespace unigui

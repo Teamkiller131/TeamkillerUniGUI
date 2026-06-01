@@ -1,5 +1,32 @@
 # Changelog
 
+## v3.3.0 (2026-06-01) — ID Safety + New Widgets + Developer Tooling
+
+### Added
+- **6 new widgets**: `CollapsingHeader`, `Selectable`, `ColorEdit`, `DragFloat`, `DragInt`, `ListBox` — all with PushID/PopID ID safety.
+- **ID Safety (PushID/PopID)**: All 62 widget Render() methods now auto-scope ImGui IDs via `PushID(name)/PopID()`. Zero ID collisions regardless of label duplication. Non-Widget classes (Badge, Shimmer, Skeleton) use `PushID(this)`.
+- **`.clang-format`**: Code style config (4-space indent, K&R braces).
+- **`.clang-tidy`**: Static analysis config — bugprone, performance, modernize, readability, cppcoreguidelines checks.
+- **Coverage**: `windows-clang-coverage` CMake preset with source-based coverage instrumentation (`llvm-profdata` + `llvm-cov`). HTML report at `cmake --build <dir> --target coverage`.
+- **Clang-tidy preset**: `windows-clang-tidy` — runs clang-tidy on every compile.
+- **`cmake-msvc.cmd`**: Portable MSVC build wrapper (uses vswhere to locate VS).
+- **`compile_commands.json`**: Auto-generated in all builds (IDE + clang-tidy support).
+- **`cmake --build <dir> --target lint`**: Standalone clang-tidy across all sources.
+- **`cmake --build <dir> --target coverage`**: Full coverage pipeline (test → merge → HTML report).
+- **ASAN presets**: `windows-msvc-debug-asan` and `linux-gcc-debug-asan`.
+- **API documentation**: `docs/WIDGET_API.md` — 1746 lines, 74+ widgets with C++23 examples.
+
+### Changed
+- **Test suite**: 245 → 285 tests (100% pass on both MSVC and Clang).
+- **Widget count**: 68 → 74.
+- **CMakePresets.json**: Expanded from 6 to 10 presets (added clang-tidy, clang-coverage, MSVC-asan, Linux-asan).
+- **`.bashrc`**: Added useful aliases (`cl`, `ct`, `cb`, `ctb`).
+
+### Fixed
+- **ID collisions**: 47 widgets were missing PushID/PopID scoping — all now fixed.
+- **badge.cc**: Fixed non-Widget class incorrectly receiving Widget-only API calls.
+- **listbox.cc**: Fixed ImGui::ListBox getter signature (captureless lambda → function pointer).
+
 ## v3.2.7 (2026-05-28) — Group Rows + Cross-Platform Foundation
 
 ### Added

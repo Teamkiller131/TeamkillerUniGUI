@@ -11,6 +11,10 @@ Panel::Panel(std::string name, std::string title)
 void Panel::Render() {
     if (!IsVisible()) return;
 
+    struct PopGuard { ~PopGuard() { ImGui::PopID(); } };
+    ImGui::PushID(GetName().c_str());
+    PopGuard popGuard;
+
     // ── Shadow (v3.0) ─────────────────────────────────────────────────────
     if (shadow_.enabled) {
         auto* dl = ImGui::GetWindowDrawList();

@@ -39,6 +39,7 @@ int PasswordInput::GetStrengthScore() const { return CalcStrength(value_); }
 
 void PasswordInput::Render() {
     if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
     ImGuiInputTextFlags flags = showPassword_ ? 0 : ImGuiInputTextFlags_Password;
     ImGui::SetNextItemWidth(-1);
     if (ImGui::InputText(label_.c_str(), buf_, sizeof(buf_), flags)) {
@@ -58,6 +59,7 @@ void PasswordInput::Render() {
             ImGui::PopStyleColor();
         }
     }
+    ImGui::PopID();
 }
 
 } // namespace unigui
