@@ -15,6 +15,9 @@ struct FormField {
     enum class Type { Text, Checkbox, Combo, Slider, Number } type = Type::Text;
     bool required = false;
     std::string value;
+    std::vector<std::string> options;
+    double min = 0;
+    double max = 100;
 };
 
 struct FormError {

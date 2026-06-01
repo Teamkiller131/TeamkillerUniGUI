@@ -23,7 +23,28 @@ void Shutdown();
 bool NewFrame();
 void Render();
 bool ShouldClose();
-void Run(const std::function<void()>& callback);
+
+/// Run the main loop, invoking @p callback once per frame between NewFrame()
+/// and Render(). Calls Shutdown() automatically when the loop ends.
+///
+/// @param callback  Per-frame UI code.
+/// @param maxFrames Stop after this many frames (0 = run until the window
+///                  closes). Useful for screenshots, tests and CI smoke runs.
+void Run(const std::function<void()>& callback, int maxFrames = 0);
+
+/// One-call entry point: Init(config) followed by Run(callback, maxFrames),
+/// with initialization-failure handling. Reduces a typical main() to:
+///
+///     int main() {
+///         unigui::AppConfig cfg; cfg.title = "My App";
+///         return unigui::RunApp(cfg, [] { ImGui::Text("Hello"); });
+///     }
+///
+/// @return 0 on success, 1 if initialization failed.
+int RunApp(const AppConfig& config,
+           const std::function<void()>& callback,
+           int maxFrames = 0);
+
 
 /// v1.9: Get native window handle. Returns HWND on Windows, GLFWwindow* elsewhere.
 void* GetNativeWindowHandle();

@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <utility>
 #include <imgui.h>
 
 namespace unigui {
@@ -42,6 +43,22 @@ public:
     void RenderTooltip() {
         if (!tooltip_.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_DelayShort))
             ImGui::SetTooltip("%s", tooltip_.c_str());
+    }
+
+    // ── Fluent configuration (chainable) ────────────────────────────────
+    // Additive wrappers around the setters above so a widget can be
+    // configured in a single expression, e.g.:
+    //     btn.WithTooltip("Save").WithEnabled(false).WithShadow();
+    Widget& WithTooltip(std::string t)         { SetTooltip(std::move(t)); return *this; }
+    Widget& WithEnabled(bool on)               { SetEnabled(on); return *this; }
+    Widget& WithVisible(bool v)                { if (v) Show(); else Hide(); return *this; }
+    Widget& WithUserData(void* data)           { SetUserData(data); return *this; }
+    Widget& WithAccessibleName(std::string n)  { SetAccessibleName(std::move(n)); return *this; }
+    Widget& WithAccessibleDescription(std::string d) { SetAccessibleDescription(std::move(d)); return *this; }
+    Widget& WithMinSize(float w, float h)      { SetMinSize(w, h); return *this; }
+    Widget& WithMaxSize(float w, float h)      { SetMaxSize(w, h); return *this; }
+    Widget& WithShadow(bool enable = true, float radius = 4.f, float offX = 2.f, float offY = 2.f) {
+        SetShadow(enable, radius, offX, offY); return *this;
     }
 
 protected:

@@ -1,12 +1,12 @@
 #include <unigui/unigui.h>
 #include <gtest/gtest.h>
 
-TEST(BuildSystemWorks, VersionMajorIsZero) {
-    EXPECT_EQ(UNIGUI_VERSION_MAJOR, 0);
+TEST(BuildSystemWorks, VersionMajorIsThree) {
+    EXPECT_EQ(UNIGUI_VERSION_MAJOR, 3);
 }
 
-TEST(BuildSystemWorks, VersionMinorIsOne) {
-    EXPECT_EQ(UNIGUI_VERSION_MINOR, 1);
+TEST(BuildSystemWorks, VersionMinorIsFour) {
+    EXPECT_EQ(UNIGUI_VERSION_MINOR, 4);
 }
 
 TEST(BuildSystemWorks, VersionPatchIsZero) {

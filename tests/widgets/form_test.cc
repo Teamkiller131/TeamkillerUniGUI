@@ -253,6 +253,7 @@ TEST_F(FormTest, SerializeRoundtrip_ComplexData) {
     EXPECT_TRUE(restored.Deserialize(json));
 
     EXPECT_EQ(restored.GetFieldValue("username"), "charlie");
+    EXPECT_EQ(restored.GetFieldValue("bio"), "A long bio with\nspecial chars: \"quotes\", \\backslashes\\");
     EXPECT_EQ(restored.GetFieldValue("premium"), "1");
     EXPECT_EQ(restored.GetFieldValue("verified"), "0");
     EXPECT_EQ(restored.GetFieldValue("role"), "Editor");
@@ -329,4 +330,17 @@ TEST_F(FormTest, Serialize_Modify_Deserialize_Roundtrip) {
 
     EXPECT_EQ(copy2.GetFieldValue("name"), "Epsilon");
     EXPECT_EQ(copy2.GetFieldValue("color"), "Blue");
+}
+
+TEST_F(FormTest, ComboAndRanges_UseConfiguredValues) {
+    unigui::Form form("frm_cfg", "Configured");
+    form.AddComboField("role", "Role", {"Admin", "Editor", "Viewer"});
+    form.AddNumberField("port", "Port", 1024, 65535);
+    form.AddSliderField("zoom", "Zoom", 10, 200);
+
+    EXPECT_EQ(form.GetFieldValue("role"), "Admin");
+    form.SetFieldValue("port", "80");
+    form.SetFieldValue("zoom", "250");
+    auto errors = form.Validate();
+    EXPECT_GE(errors.size(), 2u);
 }

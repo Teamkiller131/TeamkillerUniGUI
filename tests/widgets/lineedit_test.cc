@@ -108,6 +108,14 @@ TEST_F(LineEditTest, SetMaxLength_DoesNotCrash) {
     le.Render();
 }
 
+TEST_F(LineEditTest, SetMaxLength_ClampsToInternalBuffer) {
+    unigui::LineEdit le("le", "Limited");
+    le.SetMaxLength(1000000);
+    le.SetValue(std::string(2000, 'x'));
+    le.Render();
+    EXPECT_FALSE(le.GetValue().empty());
+}
+
 // 12. Undo stack depth tracking
 TEST_F(LineEditTest, UndoStackDepth_TracksChanges) {
     unigui::LineEdit le("le", "Field");
