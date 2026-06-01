@@ -29,6 +29,7 @@
 #include <unigui/widgets/label.h>
 #include <unigui/widgets/button.h>
 #include <unigui/widgets/panel.h>
+#include <unigui/widgets/panelbox.h>
 #include <unigui/widgets/form.h>
 #include <unigui/widgets/window.h>
 #include <unigui/widgets/checkbox.h>
@@ -36,6 +37,8 @@
 #include <unigui/widgets/selectable.h>
 #include <unigui/widgets/slider.h>
 #include <unigui/widgets/progressbar.h>
+#include <unigui/widgets/riskbar.h>
+#include <unigui/widgets/alertbar.h>
 #include <unigui/widgets/radiogroup.h>
 #include <unigui/widgets/combobox.h>
 #include <unigui/widgets/lineedit.h>
@@ -113,6 +116,11 @@
 #include <unigui/widgets/multihandleslider.h>
 #include <unigui/widgets/timeseries_chart.h>
 #include <unigui/widgets/multisplitter.h>
+#include <unigui/widgets/statuslamp.h>
+#include <unigui/widgets/confirmdialog.h>
+#include <unigui/widgets/cascadingcombo.h>
+#include <unigui/widgets/sliderbar.h>
+#include <unigui/widgets/futuresriskbar.h>
 #include <unigui/app/app.h>
 #include <unigui/fx/easing.h>
 #include <unigui/fx/effect_scope.h>

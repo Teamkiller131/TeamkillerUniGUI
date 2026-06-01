@@ -1,5 +1,6 @@
 #include <unigui/theme/theme.h>
 #include <unigui/core/log.h>
+#include <unigui/fonts/font_manager.h>
 #include <sstream>
 #include <regex>
 #include <cstdio>
@@ -107,6 +108,9 @@ void LoadDefaultFont(float size_pixels, const char* ttf_path) {
             fclose(fp);
         }
     }
+
+    // Load emoji fallback font (platform-specific system emoji)
+    fonts::Manager::Instance().LoadSystemEmoji(size_pixels);
 }
 
 void BeginTextWrap(float width) {

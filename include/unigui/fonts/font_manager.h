@@ -53,6 +53,12 @@ public:
     /// once — this avoids pointer churn.
     void Build();
 
+    /// Load the system emoji font and set it as a fallback of the default font.
+    /// size=0 uses the current default font size. On Windows loads
+    /// "Segoe UI Emoji", on macOS "Apple Color Emoji", on Linux attempts
+    /// "Noto Color Emoji".
+    void LoadSystemEmoji(float size = 0);
+
 private:
     Manager() = default;
     std::unordered_map<std::string, FontEntry> fonts_;

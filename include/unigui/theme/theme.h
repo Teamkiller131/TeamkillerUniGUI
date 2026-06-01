@@ -16,6 +16,7 @@ struct ThemeConfig {
     float dpi_scale = 0.0f;  // 0 = auto-detect from system DPI
     float font_size = 16.0f; // logical px at 96 DPI (scaled by auto-DPI)
     const char* font_path = nullptr; // nullptr = auto-detect system CJK font
+    bool emoji_fallback = true;  // auto-load system emoji font
 };
 
 /// Detect system DPI scale factor. Returns 1.0 on failure.
@@ -39,6 +40,10 @@ void ApplyTheme(const ThemeConfig& config);
 bool HasPendingFontRebuild();
 void ApplyPendingFontRebuild();
 
+/// Set global font scale. Wraps ImGui::GetIO().FontGlobalScale.
+/// Call after Init(), before the render loop. Default is 1.0f.
+inline void SetFontScale(float scale) { ImGui::GetIO().FontGlobalScale = scale; }
+inline float GetFontScale() { return ImGui::GetIO().FontGlobalScale; }
 /// Export/Import current ImGui theme colors to/from JSON.
 std::string ExportThemeJSON();
 bool ImportThemeJSON(const std::string& json);

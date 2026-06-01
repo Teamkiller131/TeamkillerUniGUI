@@ -128,6 +128,7 @@ target_sources(unigui PRIVATE
     widgets/label.cc
     widgets/button.cc
     widgets/panel.cc
+    widgets/panelbox.cc
     widgets/form.cc
     widgets/window.cc
     widgets/checkbox.cc
@@ -145,6 +146,9 @@ target_sources(unigui PRIVATE
     widgets/toolbar.cc
     widgets/collapsingheader.cc
     widgets/selectable.cc
+    widgets/riskbar.cc
+    widgets/alertbar.cc
+    widgets/confirmdialog.cc
 )
 
 # ── Extended widgets (UNIGUI_MODULE_WIDGETS) ──────────────────────────────────
@@ -194,6 +198,10 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/listbox.cc
         fonts/gradient_text.cc
         widgets/coloredit.cc
+        widgets/statuslamp.cc
+        widgets/cascadingcombo.cc
+        widgets/sliderbar.cc
+        widgets/futuresriskbar.cc
     )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)
     message(STATUS "Extended widgets enabled")

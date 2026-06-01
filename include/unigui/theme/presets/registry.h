@@ -23,6 +23,7 @@ public:
     const ThemePreset* Get(const std::string& name) const;
     std::vector<std::string> List() const;
     bool Apply(const std::string& name);
+    std::string GetCurrentThemeName() const { return current_; }
 
     /// Set callback fired when theme changes.  Receives the new theme name.
     void SetOnChange(std::function<void(const std::string&)> cb) { onChange_ = std::move(cb); }

@@ -1,0 +1,53 @@
+#include <unigui/widgets/cascadingcombo.h>
+#include <imgui.h>
+#include <cstdio>
+
+namespace unigui {
+
+CascadingCombo::CascadingCombo(std::string name, std::vector<Level> levels)
+    : Widget(std::move(name)), levels_(std::move(levels)) {}
+
+void CascadingCombo::Render() {
+    if (!IsVisible()) return;
+    ImGui::PushID(GetName().c_str());
+    for (int lvl = 0; lvl < (int)levels_.size(); ++lvl) {
+        auto& level = levels_[lvl];
+        int prev = level.selectedIndex;
+        char lbl[64];
+        snprintf(lbl, sizeof(lbl), "%s##lvl%d", level.label.c_str(), lvl);
+        const char* preview = level.options.empty() ? "" : level.options[level.selectedIndex].c_str();
+        if (ImGui::BeginCombo(lbl, preview)) {
+            for (int i = 0; i < (int)level.options.size(); ++i) {
+                bool isSel = (i == level.selectedIndex);
+                if (ImGui::Selectable(level.options[i].c_str(), isSel))
+                    level.selectedIndex = i;
+                if (isSel) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+        if (level.selectedIndex != prev && onChanged_)
+            onChanged_(lvl, level.selectedIndex);
+    }
+    ImGui::PopID();
+}
+
+void CascadingCombo::SetLevels(std::vector<Level> levels) { levels_ = std::move(levels); }
+void CascadingCombo::SetOptions(int level, std::vector<std::string> options) {
+    if (level >= 0 && level < (int)levels_.size()) {
+        levels_[level].options = std::move(options);
+        if (levels_[level].selectedIndex >= (int)levels_[level].options.size())
+            levels_[level].selectedIndex = 0;
+    }
+}
+int CascadingCombo::GetSelectedIndex(int level) const {
+    return (level >= 0 && level < (int)levels_.size()) ? levels_[level].selectedIndex : -1;
+}
+std::string CascadingCombo::GetSelectedText(int level) const {
+    if (level < 0 || level >= (int)levels_.size()) return {};
+    auto& l = levels_[level];
+    return (l.selectedIndex >= 0 && l.selectedIndex < (int)l.options.size())
+        ? l.options[l.selectedIndex] : std::string{};
+}
+void CascadingCombo::SetOnChanged(OnChanged fn) { onChanged_ = std::move(fn); }
+
+} // namespace unigui
