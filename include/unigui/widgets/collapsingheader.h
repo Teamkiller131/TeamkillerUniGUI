@@ -11,10 +11,12 @@ public:
     bool IsOpen() const;
     void SetOpen(bool open);
     void SetContentCallback(std::function<void()> cb);
+    void SetOnToggle(std::function<void(bool)> fn);
     const std::string& GetLabel() const;
 private:
     std::string label_;
     bool open_;
     std::function<void()> content_callback_;
+    std::function<void(bool)> onToggle_;
 };
 }

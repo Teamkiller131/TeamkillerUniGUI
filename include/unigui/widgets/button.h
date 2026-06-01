@@ -3,6 +3,7 @@
 #include <unigui/widgets/widget_base.h>
 #include <unigui/fx/animation.h>
 #include <string>
+#include <functional>
 
 namespace unigui {
 
@@ -20,6 +21,7 @@ public:
     void SetLabel(std::string label);
     void SetColorVariant(ColorVariant variant);
     void SetSize(Size size);
+    void SetOnClick(std::function<void()> fn);
 
 private:
     std::string label_;
@@ -28,6 +30,7 @@ private:
     ColorVariant variant_ = Default;
     Size sz_ = Medium;
     fx::AnimationState anim_;
+    std::function<void()> onClick_;
 };
 
 } // namespace unigui

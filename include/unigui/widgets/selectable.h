@@ -1,6 +1,7 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
 #include <string>
+#include <functional>
 
 namespace unigui {
 
@@ -12,11 +13,13 @@ public:
     void SetSelected(bool selected);
     bool WasClicked() const;
     const std::string& GetLabel() const;
+    void SetOnClick(std::function<void()> fn);
 
 private:
     std::string label_;
     bool selected_;
     bool clicked_;
+    std::function<void()> onClick_;
 };
 
 } // namespace unigui

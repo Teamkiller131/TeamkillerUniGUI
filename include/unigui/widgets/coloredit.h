@@ -1,6 +1,7 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
 #include <string>
+#include <functional>
 
 namespace unigui {
 
@@ -12,11 +13,13 @@ public:
     void SetColor(float r, float g, float b, float a = 1.0f);
     bool WasChanged() const;
     const std::string& GetLabel() const;
+    void SetOnChange(std::function<void(ImVec4)> fn);
 
 private:
     std::string label_;
     float color_[4];
     bool changed_;
+    std::function<void(ImVec4)> onChange_;
 };
 
 } // namespace unigui

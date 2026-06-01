@@ -1,17 +1,16 @@
 #pragma once
-#include <unigui/widgets/widget_base.h>
+#include <unigui/widgets/value_widget.h>
 #include <string>
 
 namespace unigui {
 
 /// Password input with visibility toggle and strength indicator.
-class PasswordInput : public Widget {
+class PasswordInput : public ValueWidget<std::string> {
 public:
     PasswordInput(std::string name, std::string label, std::string value = "");
 
     void Render() override;
 
-    std::string GetValue() const { return value_; }
     void SetValue(std::string val);
 
     void SetShowStrength(bool on) { showStrength_ = on; }
@@ -22,7 +21,6 @@ private:
     int CalcStrength(const std::string& pw) const;
 
     std::string label_;
-    std::string value_;
     bool showPassword_ = false;
     bool showStrength_ = true;
     char buf_[256] = {};

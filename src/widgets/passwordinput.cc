@@ -7,7 +7,7 @@
 namespace unigui {
 
 PasswordInput::PasswordInput(std::string name, std::string label, std::string value)
-    : Widget(std::move(name)), label_(std::move(label)), value_(std::move(value)) {
+    : ValueWidget<std::string>(std::move(name), std::move(value)), label_(std::move(label)) {
     SetValue(value_);
 }
 
@@ -42,8 +42,10 @@ void PasswordInput::Render() {
     ImGui::PushID(GetName().c_str());
     ImGuiInputTextFlags flags = showPassword_ ? 0 : ImGuiInputTextFlags_Password;
     ImGui::SetNextItemWidth(-1);
+    std::string oldValue = value_;
     if (ImGui::InputText(label_.c_str(), buf_, sizeof(buf_), flags)) {
         value_ = buf_;
+        NotifyChange(oldValue);
     }
     ImGui::SameLine();
     if (ImGui::Button(showPassword_ ? "Hide" : "Show")) showPassword_ = !showPassword_;
