@@ -5,6 +5,16 @@ namespace unigui {
 
 ConfirmDialog::ConfirmDialog(std::string name) : Widget(std::move(name)) {}
 
+void ConfirmDialog::Open() {
+    open_ = true;
+    confirmed_ = false;
+    justOpened_ = true;
+}
+
+bool ConfirmDialog::WasConfirmed() const {
+    return confirmed_;
+}
+
 void ConfirmDialog::Render() {
     if (!IsVisible()) return;
     ImGui::PushID(GetName().c_str());
