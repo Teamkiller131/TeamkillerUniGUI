@@ -163,6 +163,7 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/toggleswitch.cc
         widgets/inputint.cc
         widgets/inputfloat.cc
+        widgets/inputtext.cc
         widgets/splitter.cc
         widgets/datepicker.cc
         widgets/image.cc

@@ -49,6 +49,7 @@ void Button::Render() {
     ImGui::PushID(GetName().c_str());
     if (size.x > 0) clicked_ = ImGui::Button(label_.c_str(), size);
     else clicked_ = ImGui::Button(label_.c_str());
+    if (clicked_ && onClick_) onClick_();
     ImGui::PopID();
 
     ImGui::PopStyleColor(3);
@@ -62,5 +63,6 @@ const std::string& Button::GetLabel() const { return label_; }
 void Button::SetLabel(std::string label) { label_ = std::move(label); }
 void Button::SetColorVariant(ColorVariant v) { variant_ = v; }
 void Button::SetSize(Size s) { sz_ = s; }
+void Button::SetOnClick(std::function<void()> fn) { onClick_ = std::move(fn); }
 
 } // namespace unigui

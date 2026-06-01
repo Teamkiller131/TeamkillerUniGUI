@@ -15,6 +15,7 @@ void ColorEdit::Render() {
     if (!IsVisible()) return;
     ImGui::PushID(GetName().c_str());
     changed_ = ImGui::ColorEdit4(label_.c_str(), color_);
+    if (changed_ && onChange_) onChange_(GetColor());
     ImGui::PopID();
 }
 
@@ -36,5 +37,7 @@ bool ColorEdit::WasChanged() const {
 const std::string& ColorEdit::GetLabel() const {
     return label_;
 }
+
+void ColorEdit::SetOnChange(std::function<void(ImVec4)> fn) { onChange_ = std::move(fn); }
 
 } // namespace unigui

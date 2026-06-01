@@ -60,6 +60,7 @@
 #include <unigui/widgets/toggleswitch.h>
 #include <unigui/widgets/inputint.h>
 #include <unigui/widgets/inputfloat.h>
+#include <unigui/widgets/inputtext.h>
 #include <unigui/widgets/dragfloat.h>
 #include <unigui/widgets/dragint.h>
 #include <unigui/widgets/listbox.h>

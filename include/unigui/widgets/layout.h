@@ -14,7 +14,6 @@ inline void HBox(std::initializer_list<std::function<void()>> children) {
     for (auto& c : children) { c(); if (&c != children.end() - 1) ImGui::SameLine(); }
 }
 
-/// Vertical box: render children stacked.
 inline void VBox(std::initializer_list<std::function<void()>> children) {
     for (auto& c : children) { c(); }
 }
@@ -36,4 +35,41 @@ inline void NextHSplit() {
 inline void EndHSplit() { ImGui::EndChild(); }
 
 } // namespace Layout
+
+// ── RAII horizontal layout ───────────────────────────────────────────────
+/// Auto SameLine between children + restores spacing.
+/// Usage: { HBox h; Button...; Button...; }
+class HBox {
+public:
+    HBox(float spacing = -1.0f) : spacing_(spacing) {
+        if (spacing_ >= 0)
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(spacing_, 0));
+    }
+    ~HBox() {
+        if (spacing_ >= 0)
+            ImGui::PopStyleVar();
+    }
+    static void VSeparator() { ImGui::SameLine(); ImGui::TextUnformatted("|"); }
+private:
+private:
+    float spacing_ = -1.0f;
+};
+
+// ── RAII vertical layout ──────────────────────────────────────────────────
+/// Auto-stacks children vertically with optional spacing override.
+/// Usage: { VBox v; Button...; Button...; }
+class VBox {
+public:
+    VBox(float spacing = -1.0f) : spacing_(spacing) {
+        if (spacing_ >= 0)
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, spacing_));
+    }
+    ~VBox() {
+        if (spacing_ >= 0)
+            ImGui::PopStyleVar();
+    }
+private:
+    float spacing_ = -1.0f;
+};
+
 } // namespace unigui

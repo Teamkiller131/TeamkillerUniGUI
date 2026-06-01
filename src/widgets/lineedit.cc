@@ -3,7 +3,7 @@
 #include <algorithm>
 namespace unigui {
 LineEdit::LineEdit(std::string name, std::string label, std::string value)
-    : Widget(std::move(name)), label_(std::move(label)), value_(std::move(value)) {
+    : ValueWidget<std::string>(std::move(name), std::move(value)), label_(std::move(label)) {
     SetValue(value_);
 }
 void LineEdit::PushUndo() {
@@ -23,6 +23,7 @@ void LineEdit::Render() {
     if (read_only_) flags |= ImGuiInputTextFlags_ReadOnly;
     if (has_error_) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.4f, 0.1f, 0.1f, 1.0f));
     ImGui::PushID(GetName().c_str());
+    std::string oldValue = value_;
     bool changed = false;
     if (multiline_) {
         changed = ImGui::InputTextMultiline(label_.c_str(), buffer_, max_length_, ImVec2(-1, 80), flags);
@@ -33,6 +34,7 @@ void LineEdit::Render() {
         value_ = buffer_; has_error_ = false;
         if (validator_ && !validator_(value_)) has_error_ = true;
         PushUndo();
+        NotifyChange(oldValue);
     }
     ImGui::PopID();
     if (has_error_) ImGui::PopStyleColor();
@@ -45,7 +47,6 @@ void LineEdit::Redo() {
 }
 bool LineEdit::CanUndo() const { return undoIndex_ > 0; }
 bool LineEdit::CanRedo() const { return undoIndex_ + 1 < (int)undoStack_.size(); }
-std::string LineEdit::GetValue() const { return value_; }
 void LineEdit::SetValue(std::string value) {
     value_ = std::move(value);
     size_t n = std::min(value_.size(), sizeof(buffer_) - 1);
