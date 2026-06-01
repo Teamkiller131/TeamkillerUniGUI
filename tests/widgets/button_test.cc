@@ -53,6 +53,27 @@ TEST_F(ButtonTest, SetEnabled_DisablesAndEnables) {
     EXPECT_TRUE(btn.IsEnabled());
 }
 
+TEST_F(ButtonTest, BasePointerSetEnabled_UpdatesButtonState) {
+    unigui::Button btn("btn", "Click");
+    unigui::Widget* widget = &btn;
+    widget->SetEnabled(false);
+    EXPECT_FALSE(btn.IsEnabled());
+}
+
+// Fluent (chainable) configuration returns the same widget and applies state.
+TEST_F(ButtonTest, FluentApi_ChainsAndAppliesState) {
+    unigui::Button btn("btn", "Click");
+    unigui::Widget& ref = btn.WithTooltip("save").WithEnabled(false).WithShadow();
+    EXPECT_EQ(&ref, static_cast<unigui::Widget*>(&btn));
+    EXPECT_FALSE(btn.IsEnabled());
+    EXPECT_TRUE(btn.GetShadowConfig().enabled);
+    btn.WithVisible(false);
+    EXPECT_FALSE(btn.IsVisible());
+    btn.WithVisible(true).WithEnabled(true);
+    EXPECT_TRUE(btn.IsVisible());
+    EXPECT_TRUE(btn.IsEnabled());
+}
+
 // 6. Disabled button renders without crash
 TEST_F(ButtonTest, Disabled_RendersWithoutCrash) {
     unigui::Button btn("btn", "Click");

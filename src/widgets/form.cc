@@ -2,28 +2,79 @@
 #include <imgui.h>
 #include <sstream>
 #include <regex>
+#include <cctype>
+#include <algorithm>
 
 namespace unigui {
+
+namespace {
+std::string EscapeJsonString(const std::string& value) {
+    std::string out;
+    out.reserve(value.size() + 8);
+    for (char ch : value) {
+        switch (ch) {
+        case '\\': out += "\\\\"; break;
+        case '"': out += "\\\""; break;
+        case '\n': out += "\\n"; break;
+        case '\r': out += "\\r"; break;
+        case '\t': out += "\\t"; break;
+        default: out += ch; break;
+        }
+    }
+    return out;
+}
+
+bool ParseJsonString(const std::string& json, size_t& pos, std::string& out) {
+    if (pos >= json.size() || json[pos] != '"') return false;
+    pos++;
+    out.clear();
+    while (pos < json.size()) {
+        char ch = json[pos++];
+        if (ch == '"') return true;
+        if (ch != '\\') { out += ch; continue; }
+        if (pos >= json.size()) return false;
+        char esc = json[pos++];
+        switch (esc) {
+        case '"': out += '"'; break;
+        case '\\': out += '\\'; break;
+        case 'n': out += '\n'; break;
+        case 'r': out += '\r'; break;
+        case 't': out += '\t'; break;
+        default: out += esc; break;
+        }
+    }
+    return false;
+}
+
+void SkipJsonWhitespace(const std::string& json, size_t& pos) {
+    while (pos < json.size() && std::isspace(static_cast<unsigned char>(json[pos]))) pos++;
+}
+} // namespace
 
 Form::Form(std::string name, std::string title)
     : Widget(std::move(name)), title_(std::move(title)) {
 }
 
 void Form::AddTextField(std::string name, std::string label, bool required) {
-    fields_.push_back({std::move(name), std::move(label), FormField::Type::Text, required, ""});
+    fields_.push_back({std::move(name), std::move(label), FormField::Type::Text, required, "", {}, 0, 100});
 }
 
 void Form::AddCheckbox(std::string name, std::string label) {
-    fields_.push_back({std::move(name), std::move(label), FormField::Type::Checkbox, false, "0"});
+    fields_.push_back({std::move(name), std::move(label), FormField::Type::Checkbox, false, "0", {}, 0, 100});
 }
-void Form::AddComboField(std::string name, std::string label, std::vector<std::string>) {
-    fields_.push_back({std::move(name), std::move(label), FormField::Type::Combo, false, "0"});
+void Form::AddComboField(std::string name, std::string label, std::vector<std::string> options) {
+    std::string initial = options.empty() ? "" : options.front();
+    fields_.push_back({std::move(name), std::move(label), FormField::Type::Combo, false, std::move(initial), std::move(options), 0, 100});
 }
-void Form::AddSliderField(std::string name, std::string label, float, float) {
-    fields_.push_back({std::move(name), std::move(label), FormField::Type::Slider, false, "0"});
+void Form::AddSliderField(std::string name, std::string label, float min, float max) {
+    auto fieldName = name;
+    fields_.push_back({std::move(name), std::move(label), FormField::Type::Slider, false, std::to_string(min), {}, min, max});
+    SetFieldMinMax(fieldName, min, max);
 }
-void Form::AddNumberField(std::string name, std::string label, int, int) {
-    fields_.push_back({std::move(name), std::move(label), FormField::Type::Number, false, "0"});
+void Form::AddNumberField(std::string name, std::string label, int min, int max) {
+    auto fieldName = name;
+    fields_.push_back({std::move(name), std::move(label), FormField::Type::Number, false, std::to_string(min), {}, static_cast<double>(min), static_cast<double>(max)});
+    SetFieldMinMax(fieldName, min, max);
 }
 
 std::string Form::GetFieldValue(const std::string& name) const {
@@ -106,17 +157,32 @@ void Form::Render() {
             break;
         }
         case FormField::Type::Combo: {
-            int idx = f.value.empty() ? 0 : std::stoi(f.value);
-            if (ImGui::Combo(f.label.c_str(), &idx, "Item 0\0Item 1\0Item 2\0")) f.value = std::to_string(idx);
+            int idx = 0;
+            for (int i = 0; i < (int)f.options.size(); ++i) {
+                if (f.value == f.options[i]) { idx = i; break; }
+            }
+            if (!f.value.empty() && std::all_of(f.value.begin(), f.value.end(), [](unsigned char ch){ return std::isdigit(ch) != 0; })) {
+                int parsed = std::stoi(f.value);
+                if (parsed >= 0 && parsed < (int)f.options.size()) idx = parsed;
+            }
+            const char* preview = f.options.empty() ? "" : f.options[idx].c_str();
+            if (ImGui::BeginCombo(f.label.c_str(), preview)) {
+                for (int i = 0; i < (int)f.options.size(); ++i) {
+                    bool selected = (i == idx);
+                    if (ImGui::Selectable(f.options[i].c_str(), selected)) f.value = f.options[i];
+                    if (selected) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
             break;
         }
         case FormField::Type::Slider: {
             float val = f.value.empty() ? 0.0f : std::stof(f.value);
-            if (ImGui::SliderFloat(f.label.c_str(), &val, 0, 100, "%.1f")) f.value = std::to_string(val);
+            if (ImGui::SliderFloat(f.label.c_str(), &val, (float)f.min, (float)f.max, "%.1f")) f.value = std::to_string(val);
             break;
         }
         case FormField::Type::Number: {
-            int val = f.value.empty() ? 0 : std::stoi(f.value);
+            int val = f.value.empty() ? (int)f.min : std::stoi(f.value);
             if (ImGui::InputInt(f.label.c_str(), &val)) f.value = std::to_string(val);
             break;
         }
@@ -147,24 +213,34 @@ std::string Form::Serialize() const {
     ss << "{";
     for (size_t i = 0; i < fields_.size(); i++) {
         if (i > 0) ss << ",";
-        ss << "\"" << fields_[i].name << "\":\"" << fields_[i].value << "\"";
+        ss << "\"" << EscapeJsonString(fields_[i].name) << "\":\"" << EscapeJsonString(fields_[i].value) << "\"";
     }
     ss << "}";
     return ss.str();
 }
 
 bool Form::Deserialize(const std::string& json) {
-    // Parse simple JSON: {"key1":"val1","key2":"val2"}
-    std::regex re("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"");
-    std::smatch m;
-    std::string s = json;
+    size_t pos = 0;
+    SkipJsonWhitespace(json, pos);
+    if (pos >= json.size() || json[pos++] != '{') return false;
+    SkipJsonWhitespace(json, pos);
     bool any = false;
-    while (std::regex_search(s, m, re)) {
-        SetFieldValue(m[1].str(), m[2].str());
-        s = m.suffix().str();
+    if (pos < json.size() && json[pos] == '}') return true;
+    while (pos < json.size()) {
+        std::string key, value;
+        if (!ParseJsonString(json, pos, key)) return false;
+        SkipJsonWhitespace(json, pos);
+        if (pos >= json.size() || json[pos++] != ':') return false;
+        SkipJsonWhitespace(json, pos);
+        if (!ParseJsonString(json, pos, value)) return false;
+        SetFieldValue(key, value);
         any = true;
+        SkipJsonWhitespace(json, pos);
+        if (pos < json.size() && json[pos] == ',') { pos++; SkipJsonWhitespace(json, pos); continue; }
+        if (pos < json.size() && json[pos] == '}') return any;
+        return false;
     }
-    return any || json == "{}";
+    return false;
 }
 
 } // namespace unigui

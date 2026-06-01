@@ -19,6 +19,9 @@
 #include <unigui/backend/dx11_renderer.h>
 #include <imgui_impl_dx11.h>
 #endif
+#ifdef UNIGUI_HAS_DX12
+#include <unigui/backend/dx12_renderer.h>
+#endif
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -28,6 +31,13 @@ static bool g_initialized=false;
 static BackendType g_backend=BackendType::GLFW_GL3;
 static std::unique_ptr<PlatformBackend> g_platform;
 static std::unique_ptr<RendererBackend> g_renderer;
+
+static void CleanupAppResources(bool destroy_imgui_context){
+    if(g_renderer){g_renderer->Shutdown();g_renderer.reset();}
+    if(g_platform){g_platform->Shutdown();g_platform.reset();}
+    if(ImPlot::GetCurrentContext()) ImPlot::DestroyContext();
+    if(destroy_imgui_context && ImGui::GetCurrentContext()) ImGui::DestroyContext();
+}
 
 bool Init(const AppConfig& config){
     if(g_initialized)return false;
@@ -50,7 +60,7 @@ bool Init(const AppConfig& config){
     auto be=CreateBackend(config.backend);
     g_backend=config.backend; g_platform=std::move(be.platform); g_renderer=std::move(be.renderer);
 
-    if(!g_platform||!g_platform->Init(nullptr)){UNIGUI_LOG_ERROR("Platform init failed");return false;}
+    if(!g_platform||!g_platform->Init(nullptr)){UNIGUI_LOG_ERROR("Platform init failed");CleanupAppResources(true);return false;}
     g_platform->SetTitle(config.title); g_platform->SetSize(config.width,config.height);
 
 #ifdef UNIGUI_HAS_DX11
@@ -61,13 +71,28 @@ bool Init(const AppConfig& config){
         if(pw<=0){pw=config.width;ph=config.height;}
         ID3D11Device* dev=nullptr;ID3D11DeviceContext* ctx=nullptr;
         IDXGISwapChain* swap=nullptr;ID3D11RenderTargetView* rtv=nullptr;
-        if(!CreateDX11DeviceAndSwapChain(hwnd,pw,ph,&dev,&ctx,&swap,&rtv)){g_platform->Shutdown();return false;}
+        if(!CreateDX11DeviceAndSwapChain(hwnd,pw,ph,&dev,&ctx,&swap,&rtv)){CleanupAppResources(true);return false;}
         auto* dxr=static_cast<DX11Renderer*>(g_renderer.get());
         dxr->device_=dev;dxr->ctx_=ctx;dxr->swapchain_=swap;dxr->rtv_=rtv;
     }
 #endif
 
-    if(!g_renderer||!g_renderer->Init(ImGui::GetCurrentContext())){g_platform->Shutdown();return false;}
+#ifdef UNIGUI_HAS_DX12
+    if(config.backend==BackendType::DX12){
+        auto hwnd=g_platform->GetWindowHandle();
+        int pw=0,ph=0;
+        g_platform->GetClientSize(&pw,&ph);
+        if(pw<=0){pw=config.width;ph=config.height;}
+        ID3D12Device* dev=nullptr;ID3D12CommandQueue* queue=nullptr;
+        ID3D12GraphicsCommandList* cmdList=nullptr;IDXGISwapChain3* swap=nullptr;
+        ID3D12DescriptorHeap* rtvHeap=nullptr;ID3D12DescriptorHeap* srvHeap=nullptr;
+        if(!CreateDX12DeviceAndSwapChain(hwnd,pw,ph,&dev,&queue,&cmdList,&swap,&rtvHeap,&srvHeap)){CleanupAppResources(true);return false;}
+        auto* dxr=static_cast<DX12Renderer*>(g_renderer.get());
+        dxr->device_=dev;dxr->cmdQueue_=queue;dxr->cmdList_=cmdList;dxr->swapchain_=swap;dxr->rtvHeap_=rtvHeap;dxr->srvHeap_=srvHeap;
+    }
+#endif
+
+    if(!g_renderer||!g_renderer->Init(ImGui::GetCurrentContext())){CleanupAppResources(true);return false;}
 
     // Build font atlas AFTER renderer Init (RendererHasTextures flag is set)
     ImGui::GetIO().Fonts->Build();
@@ -104,7 +129,7 @@ void Shutdown(){if(!g_initialized)return;
 events::Bus::Instance().Publish("app.shutdown",int{0});
 events::Bus::Instance().Shutdown();
 #endif
-    if(g_renderer){g_renderer->Shutdown();g_renderer.reset();}if(g_platform){g_platform->Shutdown();g_platform.reset();}ImPlot::DestroyContext();Settings::Shutdown();g_initialized=false;}
+    CleanupAppResources(true);Settings::Shutdown();g_initialized=false;}
 
 bool NewFrame(){
     if(!g_initialized)return false;
@@ -147,5 +172,20 @@ void Render(){
 
 bool ShouldClose(){return g_platform?g_platform->ShouldClose():true;}
 void* GetNativeWindowHandle(){return g_platform?g_platform->GetNativeWindowHandle():nullptr;}
-void Run(const std::function<void()>& cb){while(!ShouldClose()){g_platform->PollEvents();NewFrame();cb();Render();}Shutdown();}
+void Run(const std::function<void()>& cb,int maxFrames){
+    int frame=0;
+    // NewFrame() already polls platform events; do not poll again here.
+    while(!ShouldClose()){
+        if(!NewFrame())break;
+        if(cb)cb();
+        Render();
+        if(maxFrames>0 && ++frame>=maxFrames)break;
+    }
+    Shutdown();
+}
+int RunApp(const AppConfig& config,const std::function<void()>& cb,int maxFrames){
+    if(!Init(config)){UNIGUI_LOG_ERROR("App init failed; cannot start main loop");return 1;}
+    Run(cb,maxFrames);
+    return 0;
+}
 }

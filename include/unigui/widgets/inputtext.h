@@ -1,6 +1,7 @@
 #pragma once
 #include <unigui/widgets/value_widget.h>
 #include <string>
+#include <vector>
 #include <imgui.h>
 
 namespace unigui {
@@ -21,7 +22,8 @@ private:
     std::string label_;
     std::string hint_;
     ImGuiInputTextFlags flags_ = 0;
-    char buf_[4096] = {};
+    bool multiline_ = false;
+    std::vector<char> buffer_;
 };
 
 } // namespace unigui

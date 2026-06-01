@@ -1,5 +1,6 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/table.h>
+#include <unigui/widgets/datatable.h>
 #include <imgui.h>
 #include <gtest/gtest.h>
 class TableTest : public ::testing::Test {
@@ -31,4 +32,18 @@ TEST_F(TableTest, ImportCSV_AddsRows) {
     std::string csv = "A,B\n1,2\n3,4\n";
     tbl.ImportCSV(csv);
     tbl.Render();
+}
+
+TEST_F(TableTest, DataTableVirtualScroll_DoesNotCrash) {
+    struct Row { std::string name; int value; };
+    std::vector<Row> rows;
+    for (int i = 0; i < 100; ++i) rows.push_back({"R" + std::to_string(i), i});
+
+    unigui::DataTable<Row> table("dt", {{"Name", 120}, {"Value", 80}});
+    table.SetDataSource(&rows);
+    table.SetVirtualScroll(true);
+    table.SetCellFormatter([](int, int col, const Row& row) {
+        return col == 0 ? row.name : std::to_string(row.value);
+    });
+    table.Render();
 }

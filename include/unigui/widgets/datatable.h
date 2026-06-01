@@ -141,7 +141,7 @@ public:
 
         // ── Sort handling ───────────────────────────────────────────────
         if (ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs()) {
-            if (sortSpecs->SpecsDirty) {
+            if (sortSpecs->SpecsDirty && sortSpecs->SpecsCount > 0 && sortSpecs->Specs) {
                 sortColumn_    = sortSpecs->Specs->ColumnUserID;
                 sortAscending_ = sortSpecs->Specs->SortDirection == ImGuiSortDirection_Ascending;
                 if (sortComps_.count(sortColumn_)) {
@@ -166,25 +166,12 @@ public:
                         });
                     sortIndices_ = std::move(indices);
                 }
-                sortSpecs->SpecsDirty = false;
             }
+            sortSpecs->SpecsDirty = false;
         }
         // Sort direction indicator uses column flags set in TableSetupColumn
 
-        // ── Virtual scroll: clamp visible rows ───────────────────────────
         int totalRows = (int)data_->size();
-        int firstRow = 0;
-        int lastRow = totalRows;
-        if (virtualScroll_ && totalRows > 0 && !stickyHeader_) {
-            float rowHeight = ImGui::GetTextLineHeightWithSpacing();
-            float scrollY   = ImGui::GetScrollY();
-            firstRow = std::max(0, (int)(scrollY / rowHeight));
-            lastRow  = std::min(totalRows, firstRow + (int)(tableH / rowHeight) + 2);
-            ImGuiListClipper clipper;
-            clipper.Begin(totalRows, rowHeight);
-            firstRow = clipper.DisplayStart;
-            lastRow  = clipper.DisplayEnd;
-        }
 
         // ── Scroll-to-row gesture ────────────────────────────────────────
         if (scrollToRow_ >= 0 && scrollToRow_ < totalRows) {
@@ -301,10 +288,28 @@ public:
 
         // ── Render rows ──────────────────────────────────────────────────
         if (groups_.empty()) {
-            for (int row = firstRow; row < lastRow; ++row) {
-                int idx = (sortColumn_ >= 0 && !sortIndices_.empty())
-                            ? sortIndices_[row] : row;
-                renderRow(idx);
+            auto mapRow = [&](int row) -> int {
+                if (sortColumn_ >= 0 && sortIndices_.size() == data_->size()) return sortIndices_[row];
+                return row;
+            };
+
+            std::vector<int> displayRows;
+            displayRows.reserve(data_->size());
+            for (int row = 0; row < totalRows; ++row) {
+                int idx = mapRow(row);
+                if (rowPasses(idx)) displayRows.push_back(idx);
+            }
+
+            if (virtualScroll_ && !stickyHeader_) {
+                ImGuiListClipper clipper;
+                clipper.Begin((int)displayRows.size(), ImGui::GetTextLineHeightWithSpacing());
+                while (clipper.Step()) {
+                    for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
+                        renderRow(displayRows[row]);
+                    }
+                }
+            } else {
+                for (int idx : displayRows) renderRow(idx);
             }
         } else {
             // Group-aware rendering: disable global sort, each group self-sorts

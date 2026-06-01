@@ -258,7 +258,8 @@ static void ApplyProp(const std::string& key, const std::string& val) {
         // Format: "4px 2px 2px rgba(0,0,0,0.3)" or "#RRGGBBAA opacity"
         float offX=2,offY=2,blur=4; unsigned int sr=0,sg=0,sb=0,sa=0;
         int n = sscanf(val.c_str(),"%fpx %fpx %fpx rgba(%u,%u,%u,%u)",&offX,&offY,&blur,&sr,&sg,&sb,&sa);
-        if (n < 7) sscanf(val.c_str(),"%fpx %fpx %fpx #%02x%02x%02x%02x",&offX,&offY,&blur,&sr,&sg,&sb);
+        if (n < 7) n = sscanf(val.c_str(),"%fpx %fpx %fpx #%02x%02x%02x%02x",&offX,&offY,&blur,&sr,&sg,&sb,&sa);
+        if (n < 7) sscanf(val.c_str(),"%fpx %fpx %fpx #%02x%02x%02x",&offX,&offY,&blur,&sr,&sg,&sb);
         if (sa == 0) sa = 80;
         // Store as style vars (applied per-widget)
         style.Colors[ImGuiCol_BorderShadow] = ImVec4(sr/255.f, sg/255.f, sb/255.f, sa/255.f);

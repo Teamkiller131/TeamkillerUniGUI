@@ -4,14 +4,34 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.3.1-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-579%20(100%25%20on%20Win)-brightgreen)]()
+[![Version](https://img.shields.io/badge/version-3.4.0-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-598%20(100%25%20on%20Win)-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-83-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
 A C++23 Dear ImGui wrapper providing a unified dark+light theme engine, high-level widget components, declarative DSL, CSS styling, plugin system, and EventBus. Supports 7 backends: GLFW+OpenGL3, SDL3+Vulkan, DX11, DX12, Metal, WebGPU, and Emscripten.
 
 ## Quick Start
+
+### Windows: one command (recommended)
+
+```powershell
+git clone https://github.com/Teamkiller131/TeamkillerUniGUI.git
+cd TeamkillerUniGUI
+
+# Check the toolchain first (Visual Studio / CMake / Ninja / vcpkg):
+pwsh -File scripts/check_env.ps1
+
+# Configure + build + (optional) test in one go:
+pwsh -File scripts/build.ps1                       # release build
+pwsh -File scripts/build.ps1 -Preset windows-msvc-debug -Test
+pwsh -File scripts/build.ps1 -Clean                # fresh build dir
+```
+
+`build.ps1` runs the environment self-check, then drives the build through
+`cmake-msvc.cmd` so the MSVC toolset is always pinned correctly.
+
+### Manual steps
 
 ```bash
 git clone https://github.com/Teamkiller131/TeamkillerUniGUI.git
@@ -34,6 +54,42 @@ cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cm
 cmake --build build
 ctest --test-dir build
 ```
+
+## Troubleshooting / FAQ
+
+First line of defense: run `pwsh -File scripts/check_env.ps1`. It detects a
+missing C++ workload, an out-of-date CMake, a missing Ninja, an unset
+`VCPKG_ROOT`, and — importantly — multiple MSVC toolsets on `PATH`.
+
+**Q: `cl.exe`/`link.exe` "CreateProcess failed" or "系统找不到指定的路径" after a Visual Studio update.**
+A: CMake cached the path of an MSVC toolset that no longer exists. Always build
+through `cmake-msvc.cmd` (it re-runs `vcvars64.bat` to pin the current toolset).
+If a build directory was already configured against the stale toolset, delete it
+and reconfigure: `Remove-Item -Recurse -Force build/windows-msvc-release` then
+re-run the preset (or use `scripts/build.ps1 -Clean`).
+
+**Q: "Could not find toolchain file .../vcpkg.cmake" or vcpkg packages don't resolve.**
+A: `VCPKG_ROOT` isn't set. Either set it to your standalone vcpkg checkout, or
+rely on the copy bundled with Visual Studio (the wrapper picks it up). The
+self-check script reports which vcpkg it found.
+
+**Q: "ninja: command not found" / generator errors.**
+A: Every preset uses the Ninja generator. Install it with
+`winget install Ninja-build.Ninja`, or build through `cmake-msvc.cmd`, which
+inherits the Ninja that ships with Visual Studio.
+
+**Q: I'm on a non-default Visual Studio edition (Professional/Enterprise/BuildTools) and the wrapper can't find it.**
+A: `cmake-msvc.cmd` locates VS via `vswhere` and works across editions. If your
+install is in an unusual location, set `VS_INSTALL_DIR` to its root before
+running the wrapper.
+
+**Q: One test (`AppTest.Init_WithoutDisplay_ReturnsFalse`) hangs in CI / headless.**
+A: It needs a window/graphics device. Exclude it in headless runs:
+`ctest --preset windows-msvc-release -E "AppTest\.Init_WithoutDisplay_ReturnsFalse"`.
+
+**Q: clang presets fail to link (`oldnames.lib`/`msvcrtd.lib` not found).**
+A: clang-cl still needs the MSVC environment. Run clang presets through
+`cmake-msvc.cmd` so `vcvars64.bat` sets the library paths.
 
 ## Architecture
 
@@ -68,19 +124,56 @@ ImGui (v1.92.8, docking + multi-viewport)
 
 ### Core Loop
 
+The simplest way — one call handles `Init`, the loop, and `Shutdown`:
+
 ```cpp
 #include <unigui/unigui.h>
 
+int main() {
+    unigui::AppConfig cfg;
+    cfg.title = "My App";
+    // cfg.backend = unigui::BackendType::DX11; // default on Windows
+    return unigui::RunApp(cfg, [] {
+        ImGui::ShowDemoWindow(); // raw ImGui works + auto-themed
+    });
+}
+```
+
+`RunApp` returns `0` on success or `1` if `Init` failed.  Pass an optional
+`maxFrames` argument to stop after a fixed number of frames (useful for CI):
+
+```cpp
+return unigui::RunApp(cfg, myUiCallback, /*maxFrames=*/10);
+```
+
+For manual control (e.g. when you need setup/teardown between frames):
+
+```cpp
 unigui::AppConfig cfg;
-cfg.backend = unigui::BackendType::DX11; // or GLFW_GL3, SDL3_Vulkan, DX12
-unigui::Init(cfg);
+if (!unigui::Init(cfg)) return 1;
 
 while (!unigui::ShouldClose()) {
     unigui::NewFrame();
-    ImGui::ShowDemoWindow(); // raw ImGui works + auto-themed
+    ImGui::ShowDemoWindow();
     unigui::Render();
 }
 unigui::Shutdown();
+```
+
+### Widget Fluent API
+
+All widgets inherit chainable `With*` wrappers from the base class, enabling
+one-liner configuration:
+
+```cpp
+auto btn = std::make_shared<unigui::Button>("save", "Save");
+btn->WithTooltip("Ctrl+S — Save the file")
+   .WithEnabled(dirty)
+   .WithShadow();
+
+auto lbl = std::make_shared<unigui::Label>("hint", "Read-only");
+lbl->WithVisible(false).WithAccessibleName("Hint label");
+```
 ```
 
 ### Declarative DSL

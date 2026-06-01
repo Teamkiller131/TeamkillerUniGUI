@@ -15,8 +15,6 @@ public:
     Button(std::string name, std::string label);
     void Render() override;
     bool WasClicked() const;
-    void SetEnabled(bool enabled);
-    bool IsEnabled() const;
     const std::string& GetLabel() const;
     void SetLabel(std::string label);
     void SetColorVariant(ColorVariant variant);
@@ -25,7 +23,6 @@ public:
 
 private:
     std::string label_;
-    bool enabled_ = true;
     bool clicked_ = false;
     ColorVariant variant_ = Default;
     Size sz_ = Medium;

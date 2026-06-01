@@ -1,3 +1,23 @@
+## v3.4.0 (2026-06-01) — API Ergonomics + Developer Tooling
+
+### Added
+- **`unigui::RunApp(config, callback, maxFrames=0)`**: One-call entry point — `Init` + main loop + `Shutdown` with init-failure handling. Reduces a typical `main()` to a single expression returning an exit code.
+- **`Run(callback, maxFrames=0)`**: Optional frame-count cap on the main loop; useful for CI smoke runs, screenshots, and headless tests without writing a manual `while` loop.
+- **Widget fluent API**: `Widget::With*` chainable configuration wrappers — `WithTooltip`, `WithEnabled`, `WithVisible`, `WithUserData`, `WithAccessibleName`, `WithAccessibleDescription`, `WithMinSize`, `WithMaxSize`, `WithShadow`. Return `Widget&` for one-liner setup, e.g. `btn.WithTooltip("Save").WithEnabled(false).WithShadow()`.
+- **`scripts/check_env.ps1`**: Toolchain self-check script — detects VS/CMake/Ninja/vcpkg, flags stale MSVC toolsets on `PATH`, prints PASS/WARN/FAIL with concrete fix suggestions.
+- **`scripts/build.ps1`**: One-command configure+build+test wrapper (supports `-Preset`, `-Test`, `-Clean`, `-SkipCheck`).
+- **`cmake-msvc.cmd` enhanced**: Locates Visual Studio dynamically via `vswhere` — works across all editions and version upgrades without hard-coded paths. Adds friendly error messages for missing C++ workload, `cl.exe`, or `cmake`.
+
+### Fixed
+- **`Run()` double event poll**: The old implementation called `PollEvents()` explicitly then `NewFrame()` called it again. Fixed so only `NewFrame()` polls.
+- **`version.h` alignment**: Bumped to match the canonical project version (was stuck at 0.1.0).
+
+### Changed
+- **Tests**: 597 → 598 (+1 `FluentApi_ChainsAndAppliesState`)
+- **`hello_unigui` example**: Refactored to demonstrate `RunApp` and the new fluent widget API.
+
+---
+
 ## v3.3.1 (2026-06-01) — 9 New Widgets + Customer Requirements
 
 ### Added

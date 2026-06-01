@@ -59,5 +59,7 @@ bool LineEdit::HasError() const { return has_error_; }
 void LineEdit::SetPasswordMode(bool on) { password_ = on; }
 void LineEdit::SetMultiline(bool on) { multiline_ = on; }
 void LineEdit::SetReadOnly(bool on) { read_only_ = on; }
-void LineEdit::SetMaxLength(int maxLen) { max_length_ = maxLen; }
+void LineEdit::SetMaxLength(int maxLen) {
+    max_length_ = std::clamp(maxLen, 1, static_cast<int>(sizeof(buffer_)));
+}
 }
