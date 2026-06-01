@@ -1,16 +1,25 @@
 #pragma once
-#include <unigui/widgets/widget_base.h>
+#include <unigui/widgets/value_widget.h>
 #include <unigui/fx/animation.h>
 #include <string>
-#include <functional>
+
 namespace unigui {
-class ToggleSwitch : public Widget {
+class ToggleSwitch : public ValueWidget<bool> {
 public:
+    using ValueWidget::SetValue;
+    using ValueWidget::GetValue;
+
     ToggleSwitch(std::string name, std::string label, bool on = false);
     void Render() override;
-    bool IsOn() const; void SetOn(); void SetOff(); void Toggle();
-    void SetOnChange(std::function<void(bool)> cb);
-private: std::string label_; bool on_; std::function<void(bool)> on_change_;
+
+    bool IsOn() const { return GetValue(); }
+    void SetOn() { SetValue(true); }
+    void SetOff() { SetValue(false); }
+    void Toggle() { SetValue(!GetValue()); }
+
+    // SetOnChange inherited from ValueWidget<bool>
+private:
+    std::string label_;
     fx::AnimationState anim_;
 };
 }
