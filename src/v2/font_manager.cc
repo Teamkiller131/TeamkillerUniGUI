@@ -75,4 +75,74 @@ void Manager::Pop() { ImGui::PopFont(); }
 
 void Manager::Build() { ImGui::GetIO().Fonts->Build(); }
 
+void Manager::LoadSystemEmoji(float size) {
+    auto& io = ImGui::GetIO();
+
+    if (size <= 0.f) {
+        ImFont* def = io.FontDefault;
+        size = def ? ImGui::GetFontSize() : 16.0f;
+    }
+
+    // Emoji glyph ranges: misc symbols, dingbats, emoticons, pictographs
+    static const ImWchar emoji_ranges[] = {
+        0x2600, 0x26FF,   // Misc symbols
+        0x2700, 0x27BF,   // Dingbats
+        0x1F300, 0x1F5FF, // Misc Symbols and Pictographs
+        0x1F600, 0x1F64F, // Emoticons
+        0x1F680, 0x1F6FF, // Transport and Map
+        0x1F900, 0x1F9FF, // Supplemental Symbols and Pictographs
+        0x1FA00, 0x1FA6F, // Chess Symbols
+        0x1FA70, 0x1FAFF, // Symbols and Pictographs Extended-A
+        0,
+    };
+
+#ifdef _WIN32
+    const char* emoji_path = "C:/Windows/Fonts/seguiemj.ttf";
+#elif defined(__APPLE__)
+    const char* emoji_path = "/System/Library/Fonts/Apple Color Emoji.ttc";
+#else
+    const char* emoji_path = "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf";
+#endif
+
+    // Try primary path; fallback for Linux
+    FILE* fp = fopen(emoji_path, "rb");
+#ifdef __linux__
+    if (!fp) {
+        emoji_path = "/usr/share/fonts/noto/NotoColorEmoji.ttf";
+        fp = fopen(emoji_path, "rb");
+    }
+#endif
+    if (!fp) {
+        UNIGUI_LOG_WARN("Emoji font not found at {}", emoji_path);
+        return;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    long sz = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    if (sz <= 0) { fclose(fp); return; }
+
+    void* data = IM_ALLOC(sz);
+    fread(data, 1, sz, fp);
+    fclose(fp);
+
+    ImFontConfig cfg;
+    cfg.MergeMode = true;
+    cfg.FontDataOwnedByAtlas = true;
+
+    ImFont* font = io.Fonts->AddFontFromMemoryTTF(data, (int)sz, size, &cfg, emoji_ranges);
+    if (font) {
+        FontEntry e;
+        e.name = "emoji";
+        e.font = font;
+        e.data = data;
+        e.dataSize = (int)sz;
+        fonts_["emoji"] = e;
+        UNIGUI_LOG_INFO("Emoji font loaded: {} ({}px)", emoji_path, (int)size);
+    } else {
+        IM_FREE(data);
+        UNIGUI_LOG_WARN("Failed to load emoji font from {}", emoji_path);
+    }
+}
+
 } // namespace unigui::fonts

@@ -1,3 +1,21 @@
+## v3.3.1 (2026-06-01) — 9 New Widgets + Customer Requirements
+
+### Added
+- **9 new widgets**: PanelBox, RiskBar, StatusLamp, AlertBar, ConfirmDialog, CascadingCombo, SliderBar, FuturesRiskBar, CollapsibleTree (TreeView enhanced)
+- **TreeView enhancements**: RowRenderer callback, icon/suffix/progress/color fields on TreeNode, leaf markers
+- **DataTable enhancements**: Row click callback (SetRowClickCallback/SetSelectedRow), sort indicators (DefaultSort arrows), SetColumnMinWidth
+- **Theme persistence**: ThemeRegistry::GetCurrentThemeName()
+- **Font scale API**: unigui::SetFontScale() / GetFontScale()
+
+### Changed
+- **Tests**: 449 → 579 (+130)
+- **Widgets**: 74 → 83
+
+### Fixed
+- DataTable StickyHeader: added TableSetupScrollFreeze(0,1) for proper header freeze
+- Emoji rendering: FontManager::LoadSystemEmoji() auto-loads Segoe UI Emoji on Windows
+- CascadingCombo: simplified to BeginCombo/EndCombo pattern for MSVC compatibility
+
 # Changelog
 
 ## v3.3.0 (2026-06-01) — ID Safety + New Widgets + Developer Tooling

@@ -65,12 +65,19 @@ public:
 
     // ── Selection ─────────────────────────────────────────────────────────
     void SetMultiSelect(bool on)        { multiSelect_ = on; }
-    int  GetSelectedRow() const         { return selectedRows_.empty() ? -1 : selectedRows_[0]; }
+    int  GetSelectedRow() const         { return selectedRow_ >= 0 ? selectedRow_ : (selectedRows_.empty() ? -1 : selectedRows_[0]); }
     std::vector<int> GetSelectedRows() const { return selectedRows_; }
     void SetOnSelect(SelectFn cb)       { onSelect_ = std::move(cb); }
     void SetOnDoubleClick(DoubleClickFn cb) { onDblClick_ = std::move(cb); }
     void SetOnSelectionChanged(std::function<void()> cb) { onSelChanged_ = std::move(cb); }
     void SetContextMenu(std::function<void(int row)> fn) { ctxMenuFn_ = std::move(fn); }
+
+    // ── Row click callback ────────────────────────────────────────────
+    void SetRowClickCallback(std::function<void(int row)> fn) { rowClickCallback_ = std::move(fn); }
+    void SetSelectedRow(int row) { selectedRow_ = row; }
+
+    // ── Column min width ──────────────────────────────────────────────
+    void SetColumnMinWidth(int col, float minWidth) { minWidths_[col] = minWidth; }
 
     // ── Column auto-width ─────────────────────────────────────────────────
     void SetColumnAutoWidth(int col, bool on) {
@@ -106,7 +113,7 @@ public:
                     ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
                     ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoHostExtendY
                     | (columnReorder_ ? ImGuiTableFlags_Reorderable : 0)
-                    | (groups_.empty() ? ImGuiTableFlags_Sortable : 0);
+                    | ((groups_.empty() || stickyHeader_) ? ImGuiTableFlags_Sortable : 0);
 
         float tableH = (virtualScroll_ || stickyHeader_)
             ? ImGui::GetContentRegionAvail().y : 0.f;
@@ -114,11 +121,20 @@ public:
         if (!ImGui::BeginTable(GetName().c_str(), (int)columns_.size(), flags,
                                 ImVec2(0, tableH))) return;
 
+        if (stickyHeader_) ImGui::TableSetupScrollFreeze(0, 1);
+
         for (size_t ci = 0; ci < columns_.size(); ++ci) {
             auto& col = columns_[ci];
-            ImGui::TableSetupColumn(col.name.c_str(),
-                (col.resizable ? ImGuiTableColumnFlags_None : ImGuiTableColumnFlags_NoResize),
-                autoWidthCols_.count((int)ci) ? 0.f : col.width, (ImGuiID)ci);
+            ImGuiTableColumnFlags colFlags = col.resizable ? ImGuiTableColumnFlags_None : ImGuiTableColumnFlags_NoResize;
+            if (sortColumn_ == (int)ci) {
+                colFlags |= sortAscending_ ? ImGuiTableColumnFlags_DefaultSort
+                                           : ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_PreferSortDescending;
+            }
+            float colWidth = autoWidthCols_.count((int)ci) ? 0.f : col.width;
+            auto it = minWidths_.find((int)ci);
+            if (it != minWidths_.end() && colWidth < it->second)
+                colWidth = it->second;
+            ImGui::TableSetupColumn(col.name.c_str(), colFlags, colWidth, (ImGuiID)ci);
         }
 
         ImGui::TableHeadersRow();
@@ -208,6 +224,9 @@ public:
                 ImU32 bg = rowColorFn_(idx, (*data_)[idx]);
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, bg);
             }
+            if (selectedRow_ == idx) {
+                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(60, 80, 130, 255));
+            }
 
             bool isSelected = std::find(selectedRows_.begin(), selectedRows_.end(), idx) != selectedRows_.end();
             for (int col = 0; col < (int)columns_.size(); ++col) {
@@ -242,6 +261,10 @@ public:
                         }
                         if (onSelect_) onSelect_(idx);
                         if (onSelChanged_) onSelChanged_();
+                        if (rowClickCallback_) {
+                            selectedRow_ = idx;
+                            rowClickCallback_(idx);
+                        }
                         if (ImGui::IsMouseDoubleClicked(0)) {
                             if (editableCols_.count(col)) {
                                 editRow_ = idx; editCol_ = col;
@@ -426,6 +449,9 @@ private:
     bool columnReorder_ = false;
     std::vector<GroupInfo> groups_;
     std::map<int, int> groupSortMap_;
+    std::function<void(int)> rowClickCallback_;
+    int selectedRow_ = -1;
+    std::unordered_map<int, float> minWidths_;
 };
 
 } // namespace unigui
