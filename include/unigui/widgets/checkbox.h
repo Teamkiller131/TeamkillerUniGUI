@@ -1,20 +1,22 @@
 #pragma once
-#include <unigui/widgets/widget_base.h>
+#include <unigui/widgets/value_widget.h>
 #include <string>
-#include <functional>
 
 namespace unigui {
-class CheckBox : public Widget {
+class CheckBox : public ValueWidget<bool> {
 public:
+    using ValueWidget::SetValue;
+    using ValueWidget::GetValue;
+
     CheckBox(std::string name, std::string label, bool checked = false);
     void Render() override;
-    bool IsChecked() const;
-    void SetChecked(bool checked);
+
+    bool IsChecked() const { return GetValue(); }
+    void SetChecked(bool checked) { SetValue(checked); }
     const std::string& GetLabel() const;
-    void SetOnChange(std::function<void(bool)> callback);
+
+    // SetOnChange inherited from ValueWidget<bool>
 private:
     std::string label_;
-    bool checked_;
-    std::function<void(bool)> on_change_;
 };
 }

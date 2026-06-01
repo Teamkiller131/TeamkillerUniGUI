@@ -28,11 +28,36 @@ public:
     // ── v3.0 Shadow ────────────────────────────────────────────────────
     void SetShadow(bool enable, float radius = 4.f, float offX = 2.f, float offY = 2.f);
     const ShadowConfig& GetShadowConfig() const { return shadow_; }
+
+    // ── Enabled ─────────────────────────────────────────────────────────
+    void SetEnabled(bool on) { enabled_ = on; }
+    bool IsEnabled() const { return enabled_; }
+
+    // ── User Data ───────────────────────────────────────────────────────
+    void SetUserData(void* data) { userData_ = data; }
+    void* GetUserData() const { return userData_; }
+    template<typename T> T* GetUserDataAs() const { return static_cast<T*>(userData_); }
+
+    // ── Tooltip Render ──────────────────────────────────────────────────
+    void RenderTooltip() {
+        if (!tooltip_.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_DelayShort))
+            ImGui::SetTooltip("%s", tooltip_.c_str());
+    }
+
 protected:
+    // ── Lifecycle Hooks ─────────────────────────────────────────────────
+    virtual void OnBeforeRender() {}
+    virtual void OnAfterRender() {}
+
+    // ── Disabled Helpers ────────────────────────────────────────────────
+    static void BeginDisabled() { ImGui::BeginDisabled(); }
+    static void EndDisabled() { ImGui::EndDisabled(); }
+
     ShadowConfig shadow_;
 private:
     std::string name_,tooltip_,accessibleName_,accessibleDesc_;
-    bool visible_=true,focused_=false;
+    bool visible_=true,focused_=false,enabled_=true;
+    void* userData_ = nullptr;
     ImVec2 minSize_=ImVec2(0,0),maxSize_=ImVec2(0,0);
 };
 

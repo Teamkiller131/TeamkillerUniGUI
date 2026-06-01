@@ -26,6 +26,7 @@
 #include <unigui/theme/theme.h>
 #include <unigui/theme/style_scope.h>
 #include <unigui/widgets/widget_base.h>
+#include <unigui/widgets/value_widget.h>
 #include <unigui/widgets/label.h>
 #include <unigui/widgets/button.h>
 #include <unigui/widgets/panel.h>

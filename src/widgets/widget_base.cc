@@ -4,7 +4,7 @@
 namespace unigui {
 
 Widget::Widget(std::string name)
-    : name_(std::move(name)) {
+    : name_(std::move(name)), enabled_(true), userData_(nullptr) {
 }
 
 void Widget::Show() { visible_ = true; }

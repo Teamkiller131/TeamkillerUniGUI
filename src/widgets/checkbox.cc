@@ -2,17 +2,14 @@
 #include <imgui.h>
 namespace unigui {
 CheckBox::CheckBox(std::string name, std::string label, bool checked)
-    : Widget(std::move(name)), label_(std::move(label)), checked_(checked) {}
+    : ValueWidget<bool>(std::move(name), checked), label_(std::move(label)) {}
 void CheckBox::Render() {
     if (!IsVisible()) return;
-    bool prev = checked_;
+    bool prev = value_;
     ImGui::PushID(GetName().c_str());
-    ImGui::Checkbox(label_.c_str(), &checked_);
+    ImGui::Checkbox(label_.c_str(), &value_);
     ImGui::PopID();
-    if (checked_ != prev && on_change_) on_change_(checked_);
+    NotifyChange(prev);
 }
-bool CheckBox::IsChecked() const { return checked_; }
-void CheckBox::SetChecked(bool checked) { checked_ = checked; }
 const std::string& CheckBox::GetLabel() const { return label_; }
-void CheckBox::SetOnChange(std::function<void(bool)> callback) { on_change_ = std::move(callback); }
 }
