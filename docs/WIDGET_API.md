@@ -1,14 +1,39 @@
 # UniGUI Widget API Reference
 
-> **Version**: 0.1.0 (C++23) | **Widgets**: 74+ | **Backend**: Dear ImGui
+> **Version**: 3.5.0 (C++23) · **Widgets**: 82 · **Backend**: Dear ImGui (docking + multi-viewport)
 >
-> UniGUI is a modern C++23 wrapper around Dear ImGui. All widgets live in `namespace unigui`.
-> Every constructor takes a `std::string name` as its first argument — this becomes the ImGui ID
-> and the library handles `PushID`/`PopID` automatically.
+> UniGUI is a modern C++23 wrapper around Dear ImGui. Every widget lives in `namespace unigui`.
+> Each constructor takes a `std::string name` as its first argument — this becomes the ImGui ID and the
+> library calls `PushID`/`PopID` for you automatically, so identical labels never collide.
 
 ---
 
-## Quick Start
+## Table of Contents
+
+1. [Getting Started](#1-getting-started)
+2. [Core Concepts](#2-core-concepts)
+3. [Containers & Layout](#3-containers--layout)
+4. [Text & Display](#4-text--display)
+5. [Buttons & Actions](#5-buttons--actions)
+6. [Text Input](#6-text-input)
+7. [Numeric Input](#7-numeric-input)
+8. [Selection & Pickers](#8-selection--pickers)
+9. [Lists, Tables & Trees](#9-lists-tables--trees)
+10. [Navigation](#10-navigation)
+11. [Dialogs & Feedback](#11-dialogs--feedback)
+12. [Forms & Properties](#12-forms--properties)
+13. [Charts & Domain Widgets](#13-charts--domain-widgets)
+14. [Loading & Skeleton](#14-loading--skeleton)
+15. [Utilities](#15-utilities)
+16. [Dedicated Component Guides](#16-dedicated-component-guides)
+
+---
+
+## 1. Getting Started
+
+### Minimal app — one call
+
+`RunApp` performs `Init` + the render loop + `Shutdown`, returning `0` on success or `1` if init failed:
 
 ```cpp
 #include <unigui/unigui.h>
@@ -16,1765 +41,1083 @@
 int main() {
     unigui::AppConfig cfg;
     cfg.title = "My App";
-    unigui::Init(cfg);
-
-    // Create widgets once (outside the render loop)
-    auto btn = std::make_shared<unigui::Button>("btn_ok", "OK");
-    btn->SetColorVariant(unigui::Button::Primary);
-
-    unigui::Run([&] {
-        // --- Render loop ---
-        btn->Render();
-        if (btn->WasClicked())
-            std::println("Button clicked!");
+    // cfg.backend = unigui::BackendType::DX11; // default on Windows
+    return unigui::RunApp(cfg, [] {
+        ImGui::ShowDemoWindow();   // raw ImGui works and is auto-themed
     });
-
-    unigui::Shutdown();
 }
 ```
 
-Every widget must be `Render()`-ed every frame. The `Run()` callback is your frame loop.
-
----
-
-## ID Safety: PushID / PopID
-
-Dear ImGui requires **unique IDs** per widget to avoid label collisions. UniGUI handles this
-**completely automatically**:
-
-- Every widget constructor takes a `std::string name` that becomes its stable ImGui ID.
-- Containers that render children (Window, Panel, Card, GroupBox, TreeView, etc.) manage
-  `PushID` / `PopID` internally — user code never touches them.
-- Nested widgets with the same label **just work** because each has its own name-based ID.
+Pass an optional `maxFrames` to stop after N frames (handy for CI / screenshots):
 
 ```cpp
-auto panel = std::make_shared<unigui::Panel>("settings", "Settings");
-// Create any widgets inside — no ID conflicts, ever.
+return unigui::RunApp(cfg, myUiCallback, /*maxFrames=*/10);
 ```
 
-**You never need to call `ImGui::PushID` or `ImGui::PopID` yourself.**
+### Manual loop
+
+When you need setup/teardown between frames:
+
+```cpp
+unigui::AppConfig cfg;
+if (!unigui::Init(cfg)) return 1;
+while (!unigui::ShouldClose()) {
+    unigui::NewFrame();
+    myUi();                 // create + Render() your widgets here
+    unigui::Render();
+}
+unigui::Shutdown();
+```
+
+### Top-level API
+
+| Function | Description |
+|----------|-------------|
+| `bool Init(const AppConfig& cfg)` | Create window + backend. Returns `false` on failure. |
+| `void Shutdown()` | Tear down backend + window. |
+| `bool NewFrame()` | Begin a frame (polls events). |
+| `void Render()` | End + present the frame. |
+| `bool ShouldClose()` | `true` when the window is closing. |
+| `void Run(callback, maxFrames = 0)` | Drive the loop with a per-frame callback. |
+| `int RunApp(cfg, callback, maxFrames = 0)` | `Init` + `Run` + `Shutdown` in one call. |
+| `void* GetNativeWindowHandle()` | Native OS window handle (HWND etc.). |
+
+`AppConfig` fields: `int width`, `int height`, `const char* title`, `ThemeConfig theme`, `BackendType backend`.
 
 ---
 
-## Containers
+## 2. Core Concepts
+
+### Create once, render every frame
+
+Construct widgets **once** (outside the loop, usually as `shared_ptr`), then call `Render()` on each every frame:
+
+```cpp
+auto btn = std::make_shared<unigui::Button>("btn_ok", "OK");
+unigui::Run([&] {
+    btn->Render();
+    if (btn->WasClicked()) doSave();
+});
+```
+
+### Automatic ID safety
+
+You never call `ImGui::PushID`/`PopID`. The unique `name` you pass to each constructor becomes the ID,
+so two buttons with the same visible label but different names never conflict:
+
+```cpp
+auto ok     = std::make_shared<unigui::Button>("btn_ok",     "OK");
+auto okAgain= std::make_shared<unigui::Button>("btn_ok2",    "OK"); // no collision
+```
+
+### Fluent configuration (`With*`)
+
+Every widget inherits chainable wrappers from the base `Widget` class:
+
+```cpp
+btn->WithTooltip("Ctrl+S — Save")
+   .WithEnabled(dirty)
+   .WithShadow();
+```
+
+Available on all widgets: `WithTooltip`, `WithEnabled`, `WithVisible`, `WithUserData`,
+`WithAccessibleName`, `WithAccessibleDescription`, `WithMinSize`, `WithMaxSize`, `WithShadow`.
+Base setters: `Show/Hide/IsVisible`, `SetTooltip`, `SetEnabled/IsEnabled`, `SetFocused/IsFocused`,
+`SetAccessibleName/Description`, `SetMinSize/SetMaxSize`, `SetShadow`, `SetUserData/GetUserData`.
+
+---
+
+## 3. Containers & Layout
 
 ### Window
 
-Top-level application window. Owns panels.
+Top-level application window that owns panels and can persist its layout.
 
 ```cpp
-// Constructor
 Window(std::string name, std::string title);
-
-// Key methods
-void AddPanel(std::shared_ptr<Panel> panel);
-void SetSize(float width, float height);
-void SetPosition(float x, float y);
-void SetMenuBarEnabled(bool enabled);
-void SetDropCallback(std::function<void(std::vector<std::string>)> cb);
-std::string SaveLayout() const;
-void RestoreLayout(const std::string& json);
-
-// Example
-auto win = std::make_shared<unigui::Window>("main", "My App");
-win->SetSize(800, 600);
-auto panel = std::make_shared<unigui::Panel>("content", "Dashboard");
-win->AddPanel(panel);
-win->Render();
 ```
 
-> **PushID**: The Window name is the ImGui window ID. Panels are rendered inside via `BeginChild`.
+| Method | Purpose |
+|--------|---------|
+| `void AddPanel(std::shared_ptr<Panel> panel)` | Dock a panel into the window. |
+| `void RemovePanel(const std::string& name)` | Remove a panel by name. |
+| `void SetSize(float w, float h)` / `void SetPosition(float x, float y)` | Geometry. |
+| `void SetMenuBarEnabled(bool)` / `bool HasMenuBar() const` | Menu bar toggle. |
+| `void SetOnClose(std::function<void()>)` | Close handler. |
+| `void SetCloseToTray(bool)` | Minimize-to-tray instead of close. |
+| `void SetDropCallback(std::function<void(std::vector<std::string>)>)` | OS file-drop paths. |
+| `std::string SaveLayout() const` / `void RestoreLayout(const std::string& json)` | Persist docking layout. |
 
----
+```cpp
+auto win = std::make_shared<unigui::Window>("main", "Dashboard");
+win->SetMenuBarEnabled(true);
+win->AddPanel(std::make_shared<unigui::Panel>("left", "Explorer"));
+```
 
 ### Panel
 
-Collapsible section inside a Window with a content callback.
+Collapsible titled container; render children inside its content callback.
 
 ```cpp
 Panel(std::string name, std::string title);
-
-// Key methods
-void SetContentCallback(std::function<void()> callback);
-void SetTitle(std::string title);
+void SetContentCallback(std::function<void()> cb);
+void SetWrapEnabled(bool on);
+void SetTitle(std::string); const std::string& GetTitle() const;
 bool IsCollapsed() const;
-
-// Example
-auto panel = std::make_shared<unigui::Panel>("props", "Properties");
-panel->SetContentCallback([&] {
-    // Render child widgets here — IDs are scoped automatically
-    unigui::Label{"lbl_name", "Name:"}.Render();
-});
-panel->Render();
 ```
 
----
+### PanelBox
+
+Dark panel with a title bar and optionally tinted content area.
+
+```cpp
+PanelBox(std::string name, std::string title);
+void SetTintColor(ImU32 color);
+void SetContentCallback(std::function<void()> cb);
+void SetTitle(std::string); const std::string& GetTitle() const;
+```
 
 ### GroupBox
 
-Bordered group with a title and content callback.
+Titled box that groups arbitrary content.
 
 ```cpp
 GroupBox(std::string name, std::string title);
-
-void SetContentCallback(std::function<void()> callback);
-
-// Example
-auto gb = std::make_shared<unigui::GroupBox>("gb_style", "Style");
-gb->SetContentCallback([&] {
-    unigui::CheckBox{"cb_bold", "Bold"}.Render();
-});
-gb->Render();
+void SetTitle(std::string);
+void SetContentCallback(std::function<void()> cb);
 ```
-
----
-
-### TabWidget
-
-Multi-tab container. Tabs are defined as `TabPage` structs.
-
-```cpp
-TabWidget(std::string name);
-
-void AddTab(TabPage page);
-void RemoveTab(const std::string& tab_name);
-int  GetActiveTab() const;
-void SetActiveTab(int index);
-
-// Example
-auto tabs = std::make_shared<unigui::TabWidget>("tabs_main");
-tabs->AddTab({"general", "General", [&] {
-    // Tab content — automatically scoped
-    unigui::Label{"lbl1", "General settings"}.Render();
-}});
-tabs->AddTab({"advanced", "Advanced", [&] {
-    unigui::Label{"lbl2", "Advanced settings"}.Render();
-}});
-tabs->Render();
-```
-
----
 
 ### Card
 
-Elevated surface card with title, content, footer, and shadow.
+Elevated surface with shadow, rounded corners, optional title/footer.
 
 ```cpp
 Card(const std::string& title = "");
-
-void SetContent(std::function<void()> fn);
-void SetFooter(std::function<void()> fn);
-void SetVariant(Variant v);  // Elevated, Outlined, Filled
-void SetShadow(bool enable);
-void SetPadding(float p);
-
-// Example
-unigui::Card card{"User Profile"};
-card.SetVariant(unigui::Card::Elevated);
-card.SetContent([&] {
-    unigui::Label{"card_name", "John Doe"}.Render();
-});
-card.SetFooter([&] {
-    unigui::Button{"card_btn", "Edit"}.Render();
-});
-card.Render();
+enum Variant { Elevated, Outlined, Filled };
+void SetTitle(const std::string&);
+void SetContent(std::function<void()>); void SetFooter(std::function<void()>);
+void SetVariant(Variant);
+void SetShadow(bool); void SetShadowRadius(float);
+void SetPadding(float); void SetBorderColor(ImU32); void SetBorderRadius(float);
 ```
 
-> **Note**: Card is NOT a `Widget` subclass — it's a standalone RAII-style renderer.
+### CollapsingHeader
 
----
-
-### HeroSection
-
-Tall gradient banner with title, subtitle, and CTA button.
+Expandable section with a content callback.
 
 ```cpp
-HeroSection(std::string name, std::string title = "", std::string subtitle = "");
-
-void SetBackground(ImU32 topColor, ImU32 bottomColor);
-void SetActionButton(std::string label, std::function<void()> callback);
-void SetHeight(float h);
-
-// Example
-auto hero = std::make_shared<unigui::HeroSection>("hero", "Welcome", "v2.0");
-hero->SetBackground(IM_COL32(40, 49, 237, 255), IM_COL32(233, 69, 96, 255));
-hero->SetActionButton("Get Started", [] { /* ... */ });
-hero->Render();
-```
-
----
-
-### ScrollArea
-
-Scrollable region with a content callback.
-
-```cpp
-ScrollArea(std::string name, float width = 0, float height = 200);
-
+CollapsingHeader(std::string name, std::string label, bool default_open = false);
+bool IsOpen() const; void SetOpen(bool);
 void SetContentCallback(std::function<void()> cb);
-void SetSize(float w, float h);
-
-// Example
-auto scroll = std::make_shared<unigui::ScrollArea>("log_area", 0, 300);
-scroll->SetContentCallback([&] {
-    for (int i = 0; i < 100; ++i)
-        unigui::Label{"log_" + std::to_string(i), "Line " + std::to_string(i)}.Render();
-});
-scroll->Render();
+void SetOnToggle(std::function<void(bool)> fn);
 ```
 
----
+### TabWidget
+
+Tabbed interface with closable tabs and keyboard shortcuts.
+
+```cpp
+TabWidget(std::string name);
+struct TabPage { std::string name; std::string label; std::function<void()> content_callback; bool closable = false; };
+void AddTab(TabPage page); void RemoveTab(const std::string& tab_name);
+int GetActiveTab() const; void SetActiveTab(int index);
+void SetTabShortcut(int index, ImGuiKey key);
+```
+
+```cpp
+auto tabs = std::make_shared<unigui::TabWidget>("editor");
+tabs->AddTab({"file1", "main.cpp", []{ ImGui::TextUnformatted("..."); }, true});
+```
 
 ### Splitter
 
-Two-panel resizable split (horizontal or vertical).
+Resizable two-panel split (drag the divider).
 
 ```cpp
 Splitter(std::string name, Orientation orientation = Horizontal, float split = 0.5f);
-
+enum Orientation { Horizontal, Vertical };
 float GetSplit() const;
-void SetContentA(std::function<void()> cb);
-void SetContentB(std::function<void()> cb);
-
-// Example
-auto split = std::make_shared<unigui::Splitter>("split_main", unigui::Splitter::Horizontal, 0.3f);
-split->SetContentA([&] { /* sidebar */ });
-split->SetContentB([&] { /* main content */ });
-split->Render();
+void SetContentA(std::function<void()> cb); void SetContentB(std::function<void()> cb);
 ```
-
----
 
 ### MultiSplitter
 
 N-panel resizable layout with drag handles.
 
 ```cpp
-MultiSplitter(std::string name, Orientation ori = Horizontal);
-
+MultiSplitter(std::string name, Orientation ori = Horizontal); // enum { Horizontal, Vertical }
 void AddPanel(float ratio, std::function<void()> content);
-std::vector<float> GetRatios() const;
-
-// Example
-auto ms = std::make_shared<unigui::MultiSplitter>("ms", unigui::MultiSplitter::Vertical);
-ms->AddPanel(0.3f, [&] { /* top */ });
-ms->AddPanel(0.4f, [&] { /* middle */ });
-ms->AddPanel(0.3f, [&] { /* bottom */ });
-ms->Render();
+std::vector<float> GetRatios() const; void SetRatios(const std::vector<float>&);
 ```
 
----
+### ScrollArea
 
-### DockSpace
-
-Dear ImGui docking space (full-window docking layout).
+Scrollable content region.
 
 ```cpp
-DockSpace(std::string name);
-
-// Example
-auto dockspace = std::make_shared<unigui::DockSpace>("main_dock");
-dockspace->Render();
-// Windows can then dock into this space via ImGui::DockBuilder
-```
-
----
-
-### CollapsingHeader
-
-Expandable/collapsible header section.
-
-```cpp
-CollapsingHeader(std::string name, std::string label, bool default_open = false);
-
-bool IsOpen() const;
+ScrollArea(std::string name, float width = 0, float height = 200);
 void SetContentCallback(std::function<void()> cb);
-
-// Example
-auto hdr = std::make_shared<unigui::CollapsingHeader>("hdr_details", "Details", true);
-hdr->SetContentCallback([&] {
-    unigui::Label{"detail", "Additional information..."}.Render();
-});
-hdr->Render();
+void SetSize(float w, float h);
 ```
 
----
-
-## Inputs
-
-### Button
-
-Clickable button with color variants and sizes.
+### DockSpace (`space.h`)
 
 ```cpp
-Button(std::string name, std::string label);
-
-bool WasClicked() const;
-void SetEnabled(bool enabled);
-void SetColorVariant(ColorVariant variant);  // Default, Primary, Danger, Success
-void SetSize(Size size);                      // Small, Medium, Large
-
-// Example
-auto btn = std::make_shared<unigui::Button>("btn_save", "Save");
-btn->SetColorVariant(unigui::Button::Primary);
-btn->SetSize(unigui::Button::Large);
-btn->Render();
-if (btn->WasClicked())
-    SaveData();
+DockSpace(std::string name);   // host ImGui docking; Render() each frame
 ```
 
----
+### HBox / VBox (`layout.h`) — RAII helpers
 
-### CheckBox
-
-Boolean toggle with label.
+Scope-based horizontal/vertical layout. Construct on the stack; items added until it goes out of scope.
 
 ```cpp
-CheckBox(std::string name, std::string label, bool checked = false);
-
-bool IsChecked() const;
-void SetChecked(bool checked);
-void SetOnChange(std::function<void(bool)> callback);
-
-// Example
-auto cb = std::make_shared<unigui::CheckBox>("cb_vsync", "VSync", true);
-cb->SetOnChange([](bool on) { std::println("VSync: {}", on); });
-cb->Render();
+{ unigui::HBox row(8.0f);          // 8px spacing between items
+  btnA->Render();
+  unigui::HBox::VSeparator();
+  btnB->Render(); }                // row ends at brace
 ```
 
----
-
-### ToggleSwitch
-
-Animated on/off toggle switch.
+### Separator / Space
 
 ```cpp
-ToggleSwitch(std::string name, std::string label, bool on = false);
-
-bool IsOn() const;
-void SetOn(); void SetOff(); void Toggle();
-void SetOnChange(std::function<void(bool)> cb);
-
-// Example
-auto tog = std::make_shared<unigui::ToggleSwitch>("dark_mode", "Dark Mode", true);
-tog->Render();
+Separator(std::string name, std::string label = "");  void SetLabel(std::string);
 ```
 
 ---
 
-### ComboBox
-
-Dropdown selection with optional search and editability.
-
-```cpp
-ComboBox(std::string name, std::string label,
-         std::vector<std::string> items = {}, int selected = 0);
-
-int  GetSelectedIndex() const;
-void SetSelectedIndex(int idx);
-void SetItems(std::vector<std::string> items);
-void SetEditable(bool on);
-void SetSearchable(bool on);
-void SetOnChange(std::function<void(int)> callback);
-
-// Example
-const std::vector<std::string> themes = {"Dark", "Light", "Solarized"};
-auto combo = std::make_shared<unigui::ComboBox>("theme_pick", "Theme", themes, 0);
-combo->SetSearchable(true);
-combo->SetOnChange([](int idx) { std::println("Selected: {}", idx); });
-combo->Render();
-```
-
----
-
-### MultiCombo
-
-Multi-select combo with checkboxes.
-
-```cpp
-MultiCombo(std::string name, std::string label, std::vector<std::string> items = {});
-
-bool IsSelected(int index) const;
-void SetSelected(int index, bool sel);
-std::vector<int> GetSelectedIndices() const;
-std::string GetPreview() const;  // "Item1, Item2, +3 more..."
-
-// Example
-auto mc = std::make_shared<unigui::MultiCombo>("features", "Features",
-    std::vector<std::string>{"Export", "Import", "Sync", "Backup"});
-mc->Render();
-for (int idx : mc->GetSelectedIndices())
-    EnableFeature(idx);
-```
-
----
-
-### RadioGroup
-
-Radio button group (single selection).
-
-```cpp
-RadioGroup(std::string name, std::vector<std::string> options, int selected = 0);
-
-int  GetSelected() const;
-void SetSelected(int index);
-void SetOnChange(std::function<void(int)> callback);
-
-// Example
-auto rg = std::make_shared<unigui::RadioGroup>("align",
-    std::vector<std::string>{"Left", "Center", "Right"}, 0);
-rg->Render();
-```
-
----
-
-### LineEdit
-
-Single-line text input with validation, undo/redo, password mode.
-
-```cpp
-LineEdit(std::string name, std::string label, std::string value = "");
-
-std::string GetValue() const;
-void SetValue(std::string value);
-void SetPlaceholder(std::string text);
-void SetValidator(std::function<bool(const std::string&)> fn);
-void SetPasswordMode(bool on);
-void SetReadOnly(bool on);
-void SetMaxLength(int maxLen);
-void Undo(); void Redo();
-
-// Example
-auto edit = std::make_shared<unigui::LineEdit>("email", "Email", "");
-edit->SetPlaceholder("user@example.com");
-edit->SetValidator([](const std::string& s) {
-    return s.contains('@');  // simple check
-});
-edit->Render();
-if (edit->HasError())
-    std::println("Invalid email!");
-```
-
----
-
-### MultiLine
-
-Multi-line text editor with undo/redo.
-
-```cpp
-MultiLine(std::string name, std::string text = "", int maxLines = 10);
-
-void SetText(std::string t);
-std::string GetText() const;
-void SetEditable(bool on);
-void Undo(); void Redo();
-
-// Example
-auto ml = std::make_shared<unigui::MultiLine>("notes", "", 15);
-ml->SetEditable(true);
-ml->Render();
-SaveNotes(ml->GetText());
-```
-
----
-
-### PasswordInput
-
-Password field with visibility toggle and strength indicator.
-
-```cpp
-PasswordInput(std::string name, std::string label, std::string value = "");
-
-std::string GetValue() const;
-int GetStrengthScore() const;  // 0=empty, 1=weak, 2=fair, 3=good, 4=strong
-
-// Example
-auto pwd = std::make_shared<unigui::PasswordInput>("pwd_new", "New Password");
-pwd->Render();
-if (pwd->GetStrengthScore() < 3)
-    std::println("Password too weak!");
-```
-
----
-
-### SearchBox
-
-Search input with filtered dropdown suggestions.
-
-```cpp
-SearchBox(std::string name, std::string hint = "Search...");
-
-void SetItems(std::vector<std::string> items);
-const std::string& GetQuery() const;
-void SetOnSelect(std::function<void(const std::string&)> fn);
-
-// Example
-auto sb = std::make_shared<unigui::SearchBox>("global_search", "Type to search...");
-sb->SetItems({"apple", "banana", "cherry", "date"});
-sb->SetOnSelect([](const std::string& item) { OpenItem(item); });
-sb->Render();
-```
-
----
-
-### InputInt / InputFloat
-
-Numeric input fields with range clamping.
-
-```cpp
-InputInt(std::string name, std::string label, int value = 0, int min = 0, int max = 100);
-InputFloat(std::string name, std::string label, float value = 0.0f, float min = 0.0f, float max = 100.0f);
-
-int/float GetValue() const;
-void SetValue(T v);
-void SetRange(T min, T max);
-void SetOnChange(std::function<void(T)> cb);
-
-// Example
-auto age = std::make_shared<unigui::InputInt>("age", "Age", 25, 0, 120);
-auto height = std::make_shared<unigui::InputFloat>("height", "Height (cm)", 170.0f, 50.0f, 250.0f);
-age->Render();
-height->Render();
-```
-
----
-
-### DragFloat / DragInt
-
-Draggable numeric inputs.
-
-```cpp
-DragFloat(std::string name, std::string label, float value = 0, float speed = 1.0f,
-          float vmin = 0, float vmax = 0);
-DragInt(std::string name, std::string label, int value = 0, float speed = 1.0f,
-        int vmin = 0, int vmax = 0);
-
-T GetValue() const;
-bool WasChanged() const;
-
-// Example
-auto drag = std::make_shared<unigui::DragFloat>("scale", "Scale", 1.0f, 0.01f, 0.1f, 5.0f);
-drag->Render();
-if (drag->WasChanged())
-    ApplyScale(drag->GetValue());
-```
-
----
-
-### Slider
-
-Templated slider (`Slider<float>`, `Slider<int>`).
-
-```cpp
-Slider<T>(std::string name, std::string label, T value = T{}, T min = T{}, T max = T{100});
-
-T GetValue() const;
-void SetRange(T min, T max);
-void SetFormat(const char* fmt);
-void SetOnChange(std::function<void(T)> callback);
-
-// Example
-auto vol = std::make_shared<unigui::Slider<float>>("volume", "Volume", 0.75f, 0.0f, 1.0f);
-vol->SetFormat("%.0f%%");
-vol->SetOnChange([](float v) { SetVolume(v); });
-vol->Render();
-```
-
----
-
-### MultiHandleSlider
-
-Range slider with multiple draggable tick handles.
-
-```cpp
-MultiHandleSlider(std::string name);
-
-void SetTicks(const std::vector<SliderTick>& ticks);
-void AddTick(SliderTick tick);
-void SetRange(float min, float max);
-void SetOnTickChanged(TickChangedFn fn);
-void SetCurrentMarker(float pos, ImU32 color);
-
-// Example
-auto mhs = std::make_shared<unigui::MultiHandleSlider>("timeline");
-mhs->SetRange(0.f, 100.f);
-mhs->AddTick({1, 25.f, IM_COL32(233, 69, 96, 255)});
-mhs->AddTick({2, 75.f, IM_COL32(34, 197, 94, 255)});
-mhs->SetCurrentMarker(50.f, IM_COL32(255, 255, 255, 200));
-mhs->Render();
-```
-
----
-
-### SpinBox
-
-Templated spin box (`SpinBox<int>`, `SpinBox<float>`) — numeric input with +/- buttons.
-
-```cpp
-SpinBox<T>(std::string name, std::string label, T val = T{}, T mn = T{}, T mx = T{100}, T step = T{1});
-
-T GetValue() const;
-void SetRange(T min, T max);
-void SetStep(T step);
-void SetOnChange(std::function<void(T)> cb);
-
-// Example
-auto count = std::make_shared<unigui::SpinBox<int>>("count", "Count", 5, 1, 100, 1);
-count->Render();
-```
-
----
-
-### ColorEdit
-
-RGBA color editor (4 floats).
-
-```cpp
-ColorEdit(std::string name, std::string label,
-          float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f);
-
-ImVec4 GetColor() const;
-void SetColor(float r, float g, float b, float a = 1.0f);
-bool WasChanged() const;
-
-// Example
-auto ce = std::make_shared<unigui::ColorEdit>("bg_color", "Background", 0.1f, 0.1f, 0.1f, 1.0f);
-ce->Render();
-if (ce->WasChanged()) {
-    auto [r, g, b, a] = std::tuple{ce->GetColor().x, ce->GetColor().y,
-                                    ce->GetColor().z, ce->GetColor().w};
-}
-```
-
----
-
-### ColorPicker
-
-RGB/HSV color picker with optional alpha channel.
-
-```cpp
-ColorPicker(std::string name, std::string label,
-            std::array<float, 3> color = {0.0f, 0.0f, 0.0f});
-
-std::array<float, 3> GetColor() const;
-void SetAlpha(bool on);
-void SetOnChange(std::function<void(std::array<float, 3>)> callback);
-
-// Example
-auto cp = std::make_shared<unigui::ColorPicker>("accent", "Accent Color");
-cp->SetOnChange([](auto color) {
-    ApplyAccent(color[0], color[1], color[2]);
-});
-cp->Render();
-```
-
----
-
-### DatePicker
-
-Date selection with year/month/day.
-
-```cpp
-DatePicker(std::string name, std::string label);
-
-std::array<int, 3> GetDate() const;  // {year, month, day}
-void SetDate(int y, int m, int d);
-void SetOnChange(std::function<void(int, int, int)> cb);
-
-// Example
-auto dp = std::make_shared<unigui::DatePicker>("birthday", "Birthday");
-dp->SetDate(1990, 6, 15);
-dp->SetOnChange([](int y, int m, int d) {
-    std::println("Date: {}-{:02}-{:02}", y, m, d);
-});
-dp->Render();
-```
-
----
-
-### FilePath / DirPath
-
-File/directory path picker with native dialog support.
-
-```cpp
-FilePath(std::string name, std::string label, Mode mode = Open);  // Open or Save
-DirPath(std::string name, std::string label);
-
-std::string GetPath() const;
-void SetFilter(std::string filter);  // FilePath only
-void SetOnPathChanged(std::function<void(std::string)> cb);
-
-// Example
-auto fp = std::make_shared<unigui::FilePath>("project_file", "Project",
-                                              unigui::FilePath::Open);
-fp->SetFilter("*.json");
-fp->Render();
-
-auto dp = std::make_shared<unigui::DirPath>("workspace_dir", "Workspace");
-dp->Render();
-```
-
----
-
-## Display
+## 4. Text & Display
 
 ### Label
 
-Simple text display.
-
 ```cpp
 Label(std::string name, std::string text = "");
-
-void SetText(std::string text);
-
-// Example
-unigui::Label{"status", "Connected"}.Render();
+void SetText(std::string); const std::string& GetText() const;
 ```
-
----
-
-### Separator
-
-Horizontal separator with optional label.
-
-```cpp
-Separator(std::string name, std::string label = "");
-
-// Example
-unigui::Separator{"sep1", "Section A"}.Render();
-```
-
----
-
-### Image
-
-Image display with scaling modes.
-
-```cpp
-Image(std::string name, void* textureID = nullptr, float w = 0, float h = 0);
-
-void SetTexture(void* tex, float w, float h);
-void SetScaleMode(ScaleMode mode);  // Fit, Stretch, Original
-
-// Example
-auto img = std::make_shared<unigui::Image>("logo", myTextureID, 128, 128);
-img->Render();
-```
-
----
-
-### ImageButton
-
-Button with an image and optional label.
-
-```cpp
-ImageButton(std::string name, std::string label = "");
-
-void SetImage(ImTextureID textureID, float width, float height);
-bool WasClicked() const;
-void SetEnabled(bool enabled);
-
-// Example
-auto ibtn = std::make_shared<unigui::ImageButton>("save_icon", "Save");
-ibtn->SetImage(myTextureID, 24, 24);
-ibtn->Render();
-```
-
----
-
-### IconButton
-
-Button with an icon character/string (use with icon fonts).
-
-```cpp
-IconButton(std::string name, std::string icon, std::string label = "");
-
-bool WasClicked() const;
-void SetEnabled(bool e);
-
-// Example
-auto ib = std::make_shared<unigui::IconButton>("close_icon", "✕", "Close");
-ib->Render();
-```
-
----
-
-### Hyperlink
-
-Clickable hyperlink with URL.
-
-```cpp
-Hyperlink(std::string name, std::string label, std::string url = "");
-
-bool WasClicked() const;
-void SetURL(std::string url);
-
-// Example
-unigui::Hyperlink{"docs", "Documentation", "https://example.com/docs"}.Render();
-```
-
----
 
 ### RichText
 
-Formatted text with bold/italic/color spans.
+Inline styled spans (bold/italic/color).
 
 ```cpp
 RichText(std::string name, std::string text = "");
-
-void SetSpans(std::vector<RichTextSpan> spans);
+struct RichTextSpan { std::string text; bool bold=false; bool italic=false; ImVec4 color=ImVec4(1,1,1,1); };
+void SetText(std::string); std::string GetText() const;
+void SetSpans(std::vector<RichTextSpan>);
 void AddSpan(std::string text, ImVec4 color, bool bold = false, bool italic = false);
-
-// Example
-auto rt = std::make_shared<unigui::RichText>("intro");
-rt->AddSpan("Hello ", ImVec4{1, 1, 1, 1});
-rt->AddSpan("World!", ImVec4{0.2f, 0.7f, 1.0f, 1.0f}, true);
-rt->Render();
 ```
 
----
+```cpp
+auto rt = std::make_shared<unigui::RichText>("rt");
+rt->AddSpan("Error: ", ImVec4(1,0.3f,0.3f,1), /*bold=*/true);
+rt->AddSpan("disk full", ImVec4(1,1,1,1));
+```
 
 ### Markdown
 
-Simple Markdown renderer (headers, bold, italic, code, bullets, horizontal rules).
+Renders `#` headers, `**bold**`, `*italic*`, `- lists`, and `[links](url)`.
 
 ```cpp
 Markdown(std::string name, std::string markdown = "");
-
-void SetMarkdown(std::string md);
+void SetMarkdown(std::string md); const std::string& GetMarkdown() const;
 void SetLinkCallback(std::function<void(const std::string& url)> cb);
 void SetMaxWidth(float w);
-
-// Example
-constexpr std::string_view helpText = R"md(
-# Getting Started
-Welcome to **UniGUI**. Here's how to begin:
-
-- Install the library
-- Create your first window
-- Enjoy!
-
-See [docs](https://example.com) for more.
-)md";
-auto md = std::make_shared<unigui::Markdown>("help", std::string{helpText});
-md->SetLinkCallback([](const std::string& url) { OpenBrowser(url); });
-md->Render();
 ```
 
----
+### Image
+
+```cpp
+Image(std::string name, void* textureID = nullptr, float w = 0, float h = 0);
+enum ScaleMode { Fit, Stretch, Original };
+void SetTexture(void* tex, float w, float h);
+void SetScaleMode(ScaleMode);
+```
 
 ### ProgressBar
 
-Animated progress bar with gradient and state colors.
-
 ```cpp
 ProgressBar(std::string name, float fraction = 0.0f);
-
-void SetFraction(float f);
-void SetState(State s);  // Normal, Warning, Error
-void SetOverlayText(std::string text);
-
-// Example
-auto pb = std::make_shared<unigui::ProgressBar>("upload", 0.65f);
-pb->SetOverlayText("65%");
-pb->SetState(unigui::ProgressBar::Normal);
-pb->Render();
+enum State { Normal, Warning, Error };
+void SetFraction(float); float GetFraction() const;
+void SetState(State);
+void SetOverlayText(std::string);
+void SetGradient(float t1, ImU32 c1, float t2, ImU32 c2, ImU32 c3);
 ```
 
----
-
-### LoadingIndicator
-
-Animated spinning loading indicator.
-
-```cpp
-LoadingIndicator(std::string name, float radius = 16.0f);
-
-void SetActive(bool active);
-
-// Example
-auto spinner = std::make_shared<unigui::LoadingIndicator>("loading");
-spinner->SetActive(isLoading);
-spinner->Render();
-```
-
----
-
-### GradientText
-
-Renders text with a horizontal color gradient.
-
-```cpp
-// Static methods
-static void Render(const char* text, ImU32 leftColor, ImU32 rightColor);
-static void RenderHex(const char* text, unsigned lr, unsigned lg, unsigned lb,
-                      unsigned rr, unsigned rg, unsigned rb);
-
-// Example
-unigui::GradientText::Render("Hello World",
-    IM_COL32(233, 69, 96, 255), IM_COL32(40, 49, 237, 255));
-```
-
----
-
-## Selection & Lists
-
-### Selectable
-
-A selectable item (like a list entry).
-
-```cpp
-Selectable(std::string name, std::string label, bool selected = false);
-
-bool IsSelected() const;
-bool WasClicked() const;
-
-// Example
-auto sel = std::make_shared<unigui::Selectable>("item1", "Item One");
-sel->Render();
-```
-
----
-
-### ListView
-
-Simple string list with single or multi-select.
-
-```cpp
-ListView(std::string name, std::vector<std::string> items = {});
-
-int  GetSelected() const;
-void SetItems(std::vector<std::string> items);
-void SetOnSelect(std::function<void(int)> callback);
-void SetMultiSelect(bool on);
-std::vector<int> GetSelectedItems() const;
-
-// Example
-auto lv = std::make_shared<unigui::ListView>("files",
-    std::vector<std::string>{"file1.txt", "file2.txt", "file3.txt"});
-lv->SetMultiSelect(true);
-lv->SetOnSelect([](int idx) { OpenFile(idx); });
-lv->Render();
-```
-
----
-
-### ListBox
-
-Labeled list box with change callback.
-
-```cpp
-ListBox(std::string name, std::string label,
-        std::vector<std::string> items = {}, int selected = -1);
-
-int  GetSelectedIndex() const;
-void SetItems(std::vector<std::string>);
-void SetOnChange(std::function<void(int)> cb);
-
-// Example
-auto lb = std::make_shared<unigui::ListBox>("lang", "Language",
-    std::vector<std::string>{"C++", "Python", "Rust"}, 0);
-lb->Render();
-```
-
----
-
-### Table
-
-Simple string table with real column sorting, resizing, CSV import/export, and
-per-cell custom rendering (embed **any** widget — ProgressBar, Button, icon, …).
-
-```cpp
-Table(std::string name, std::vector<std::string> columns);
-
-void AddRow(std::vector<std::string> row);
-void ClearRows();
-int  GetSelectedRow() const;
-void SetSortable(bool on);                 // click headers to sort (numeric-aware)
-void SetResizable(bool on);
-const std::string& CellText(int row, int col) const;
-
-// Embed arbitrary widgets in a cell. Return true if you drew the cell,
-// or false to fall back to the default text/selectable rendering.
-void SetCellRenderer(std::function<bool(int row, int col)> fn);
-// Override the sort order of a column (default is numeric-aware string compare).
-void SetColumnSortComparator(int col,
-        std::function<bool(const std::string& a, const std::string& b)> cmp);
-
-std::string ExportCSV() const;
-bool ImportCSV(const std::string& csv);
-
-// Example: embed a ProgressBar in column 2 and sort numerically
-auto tbl = std::make_shared<unigui::Table>("data",
-    std::vector<std::string>{"Name", "Age", "Load"});
-tbl->SetSortable(true);
-tbl->AddRow({"Alice", "30", "0.75"});
-tbl->AddRow({"Bob",   "25", "0.40"});
-tbl->SetCellRenderer([&](int row, int col) -> bool {
-    if (col == 2) {
-        float v = std::stof(tbl->CellText(row, col));
-        ImGui::ProgressBar(v, ImVec2(-1, 0));
-        return true;                       // handled — skip default text
-    }
-    return false;                          // other cells: default rendering
-});
-tbl->Render();
-```
-
-> Tip: for large, type-aware datasets backed by your own structs (virtual
-> scrolling, inline editing, grouping), prefer `DataTable<T>` below.
-
----
-
-### DataTable\<T\>
-
-High-performance templated data table with virtual scrolling, sorting, row coloring,
-cell formatting, inline editing, text filtering, and group-aware rendering.
-
-```cpp
-DataTable<T>(std::string name, std::vector<ColumnDef> columns);
-
-// Data binding (zero-copy pointer)
-void SetDataSource(const std::vector<T>* data);
-
-// Cell rendering
-void SetCellFormatter(CellFormatter fmt);   // (int row, int col, const T&) -> string
-void SetRowColor(RowColorFn fn);            // (int row, const T&) -> ImU32
-void SetCellColor(CellColorFn fn);          // per-cell color
-void SetCellBold(CellBoldFn fn);
-
-// Sorting
-void SetSortCompare(int col, SortCompare cmp);
-
-// Selection
-void SetMultiSelect(bool on);
-std::vector<int> GetSelectedRows() const;
-void SetOnSelect(SelectFn cb);
-void SetOnDoubleClick(DoubleClickFn cb);
-
-// Inline editing
-void SetCellEditable(int col, bool editable);
-void SetOnCellCommit(CellCommitFn fn);  // (row, col, newValue)
-
-// Filtering
-void SetFilterText(const std::string& text);
-void SetFilterFn(FilterFn fn);
-
-// Groups
-void SetGroups(const std::vector<GroupInfo>& groups);
-
-// Scrolling
-void SetVirtualScroll(bool on);
-void ScrollToRow(int row);
-
-// Example
-struct Person { std::string name; int age; std::string city; };
-std::vector<Person> people = {{"Alice", 30, "NYC"}, {"Bob", 25, "SF"}};
-
-auto dt = std::make_shared<unigui::DataTable<Person>>("people_table",
-    std::vector<unigui::DataTable<Person>::ColumnDef>{
-        {"Name", 150.f}, {"Age", 60.f}, {"City", 120.f}
-    });
-dt->SetDataSource(&people);
-dt->SetCellFormatter([](int row, int col, const Person& p) -> std::string {
-    switch (col) {
-        case 0: return p.name;
-        case 1: return std::to_string(p.age);
-        case 2: return p.city;
-        default: return "";
-    }
-});
-dt->SetMultiSelect(true);
-dt->SetOnSelect([](int row) { std::println("Selected row: {}", row); });
-dt->Render();
-```
-
----
-
-### TreeView
-
-Hierarchical tree with multi-select, node icons, inline progress bars, and fully
-custom composite rows (e.g. *account name + position-weight ProgressBar*).
-
-📖 **Full guide:** [`docs/TREEVIEW.md`](TREEVIEW.md)
-
-```cpp
-TreeView(std::string name);
-
-void SetRoot(TreeNode root);
-void SetHideRoot(bool on);
-void SetMultiSelect(bool on);
-std::vector<int> GetSelectedNodes() const;
-
-// Composite rows — option A: built-in TreeNode fields (zero custom code)
-//   label / icon / suffix / labelColor / bgColor / progress / progressColor
-// Composite rows — option B: full custom row
-void SetRowRenderer(std::function<void(int id, int depth, const TreeNode&, bool selected)> fn);
-// Legacy: append content after the default label
-void SetNodeRenderer(std::function<void(int id, int depth, const TreeNode&)> fn);
-
-// Example: account group with position-weight progress bars
-unigui::TreeNode group;
-group.label = "Stock accounts";
-unigui::TreeNode acc;
-acc.label = "Account A";
-acc.progress = 0.92f;                          // position weight 0..1
-acc.progressColor = IM_COL32(0xE5,0x3E,0x3E,0xFF);
-group.children.push_back(acc);
-
-auto tv = std::make_shared<unigui::TreeView>("accounts");
-tv->SetRoot(std::move(group));
-tv->Render();
-```
-
----
-
-### VirtualList
-
-Virtual scrolling list for 100k+ entries. Uses `ImGuiListClipper` internally.
-
-```cpp
-VirtualList(std::string name, int itemCount = 0);
-
-void SetItemCount(int n);
-void SetItemGetter(std::function<std::string(int)> fn);
-void SetOnSelect(std::function<void(int)> fn);
-int  GetSelected() const;
-
-// Example
-auto vl = std::make_shared<unigui::VirtualList>("big_list", 100000);
-vl->SetItemGetter([](int i) { return "Item " + std::to_string(i); });
-vl->SetOnSelect([](int idx) { SelectItem(idx); });
-vl->Render();
-```
-
----
-
-### PropertyGrid
-
-Property editor grid (like Visual Studio Properties window). Supports bool/int/float/string/color/combo.
-
-```cpp
-PropertyGrid(std::string name);
-
-void AddProperty(PropertyDef prop);
-template<typename T> T GetValue(const std::string& name, T defaultVal = T{}) const;
-void SetOnChange(std::function<void(const std::string& name, const PropValue& val)> fn);
-
-// Example
-auto pg = std::make_shared<unigui::PropertyGrid>("props");
-pg->AddProperty({"visible", "Visible", unigui::PropType::Bool, true});
-pg->AddProperty({"opacity", "Opacity", unigui::PropType::Float, 0.75f, {}, 0.0f, 1.0f});
-pg->AddProperty({"mode", "Mode", unigui::PropType::Combo,
-    std::string{"Dark"}, {"Dark", "Light", "Auto"}});
-pg->SetOnChange([](const std::string& name, const unigui::PropValue& val) {
-    if (name == "visible")
-        SetVisible(std::get<bool>(val));
-});
-pg->Render();
-```
-
----
-
-## Navigation
-
-### MenuBar
-
-Top-level menu bar with nested menus and items.
-
-```cpp
-MenuBar(std::string name);
-
-void SetMenus(std::vector<MenuDef> menus);
-
-// Example
-auto mb = std::make_shared<unigui::MenuBar>("main_menu");
-mb->SetMenus({
-    {"File", {
-        {"New", [] { NewFile(); }},
-        {"Open", [] { OpenFile(); }},
-        {"Exit", [] { Quit(); }}
-    }},
-    {"Edit", {
-        {"Undo", [] { Undo(); }},
-        {"Redo", [] { Redo(); }}
-    }}
-});
-mb->Render();
-```
-
----
-
-### Breadcrumb
-
-Breadcrumb navigation bar. Click items to navigate.
-
-```cpp
-Breadcrumb(std::string name);
-
-void SetItems(std::vector<std::string> items);
-int  GetSelected() const;
-void SetOnSelect(std::function<void(int)> cb);
-
-// Example
-auto bc = std::make_shared<unigui::Breadcrumb>("path");
-bc->SetItems({"Home", "Projects", "MyApp", "src"});
-bc->SetOnSelect([](int idx) { NavigateTo(idx); });
-bc->Render();
-```
-
----
-
-### ContextMenu
-
-Static right-click context menu. No constructor — use static methods.
-
-```cpp
-// Show on current item (call inside any widget):
-static void Show(const char* id, std::vector<ContextMenuItem> items);
-
-// Show on window background:
-static void ShowWindow(const char* id, std::vector<ContextMenuItem> items);
-
-// Example
-// Inside any Render callback:
-unigui::ContextMenu::Show("ctx", {
-    {"Copy",  [] { Copy(); }},
-    {"Paste", [] { Paste(); }},
-    {"", nullptr, true},  // separator
-    {"Delete", [] { Delete(); }}
-});
-```
-
----
-
-### ShortcutManager
-
-Global keyboard shortcut manager. Register shortcuts, call `Process()` each frame.
-
-```cpp
-void Register(ImGuiKey key, bool ctrl, std::function<void()> action, std::string desc = "");
-void Process();
-
-// Example
-unigui::ShortcutManager shortcuts;
-shortcuts.Register(ImGuiKey_S, true, [] { SaveFile(); }, "Ctrl+S: Save");
-shortcuts.Register(ImGuiKey_Z, true, [] { Undo(); }, "Ctrl+Z: Undo");
-// In render loop:
-shortcuts.Process();
-```
-
----
-
-### Wizard
-
-Multi-step wizard with Next/Previous navigation.
-
-```cpp
-Wizard(std::string name, std::string title = "Wizard");
-
-void AddStep(std::string name, std::string title, std::function<void()> renderFn);
-int  GetCurrentStep() const;
-void Next(); void Previous(); void GoTo(int step);
-void SetOnFinish(std::function<void()> fn);
-
-// Example
-auto wiz = std::make_shared<unigui::Wizard>("setup", "Setup Wizard");
-wiz->AddStep("welcome", "Welcome", [&] {
-    unigui::Label{"welcome_lbl", "Welcome to setup!"}.Render();
-});
-wiz->AddStep("config", "Configuration", [&] {
-    unigui::CheckBox{"opt_auto", "Auto-start"}.Render();
-});
-wiz->SetOnFinish([] { CompleteSetup(); });
-wiz->Render();
-```
-
----
-
-### ToolBar
-
-Horizontal toolbar with labeled action buttons.
-
-```cpp
-ToolBar(std::string name);
-
-void SetItems(std::vector<ToolBarItem> items);
-
-// Example
-auto tb = std::make_shared<unigui::ToolBar>("toolbar");
-tb->SetItems({
-    {"New",  [] { NewFile(); }, true},
-    {"Open", [] { OpenFile(); }, true},
-    {"Save", [] { SaveFile(); }, false}  // disabled
-});
-tb->Render();
-```
-
----
-
-### StatusBar
-
-Bottom status bar with text.
-
-```cpp
-StatusBar(std::string name, std::string text = "");
-
-void SetText(std::string text);
-
-// Example
-auto sb = std::make_shared<unigui::StatusBar>("status", "Ready");
-// Update during render loop:
-sb->SetText("Processing...");
-sb->Render();
-```
-
----
-
-## Feedback
-
-### Tooltip
-
-Simple tooltip. Static helper — hover over last-rendered widget.
-
-```cpp
-static void Show(std::string text);
-
-// Example
-unigui::Button{"btn_help", "?"}.Render();
-if (ImGui::IsItemHovered())
-    unigui::Tooltip::Show("Click for help");
-```
-
-> Alternatively, any Widget can have a tooltip via `widget->SetTooltip("text")`.
-
----
-
-### Notification
-
-In-app notification stack displayed in the top-right corner.
-
-```cpp
-Notification(std::string name);
-
-void Show(std::string title, std::string msg, float duration = 3.0f);
-
-// Example
-auto notif = std::make_shared<unigui::Notification>("notifications");
-notif->Show("Saved", "File saved successfully!", 3.0f);
-notif->Render();
-```
-
----
-
-### Toast
-
-Singleton popup notification system. Call static methods from anywhere.
-
-```cpp
-static Toast& Instance();
-static void Info(std::string msg);
-static void Success(std::string msg);
-static void Warn(std::string msg);
-static void Error(std::string msg);
-
-// Example
-// One-time: add Toast to render loop
-auto& toast = unigui::Toast::Instance();
-toast.Render();
-
-// From anywhere:
-unigui::Toast::Success("Export complete!");
-unigui::Toast::Error("Connection failed!");
-```
-
----
-
-### Badge
-
-Small notification badge (dot, count, or label). Call `Render()` after the parent widget.
+### Badge / Tag
 
 ```cpp
 Badge(const std::string& label = "");
-
-void SetVariant(Variant v);  // Dot, Count, Label
-void SetCount(int n);
-void SetColor(ImU32 color);
-
-// Example
-unigui::Button{"inbox", "Inbox"}.Render();
-unigui::Badge badge{"5"};
-badge.SetVariant(unigui::Badge::Count);
-badge.SetCount(5);
-badge.Render();  // renders overlaid on the button
+enum Variant { Dot, Count, Label };
+void SetText(const std::string&); void SetVariant(Variant); void SetColor(ImU32); void SetCount(int);
 ```
-
----
-
-### Tag
-
-Colored tag/chip widget, optionally removable.
 
 ```cpp
-Tag(std::string name, std::string text, std::array<float, 3> color = {0.2f, 0.5f, 1.0f});
+Tag(std::string name, std::string text, std::array<float,3> color = {0.2f,0.5f,1.0f});
+void SetText(std::string); void SetColor(std::array<float,3>);
+void SetRemovable(bool); bool RemoveClicked() const;
+```
 
-void SetRemovable(bool r);
-bool RemoveClicked() const;
+### StatusBar
 
-// Example
-auto tag = std::make_shared<unigui::Tag>("tag_cpp", "C++", {0.2f, 0.5f, 1.0f});
-tag->SetRemovable(true);
-tag->Render();
-if (tag->RemoveClicked())
-    RemoveTag("C++");
+```cpp
+StatusBar(std::string name, std::string text = "");
+void SetText(std::string); const std::string& GetText() const;
+```
+
+### StatusLamp
+
+Glossy circular LED with glow and named states. See [StatusLamp tips](#statuslamp-glow).
+
+```cpp
+StatusLamp(std::string name, State state = Off);
+enum State { Off, Running, Draft, Error, Warning, Paused };
+void SetState(State); State GetState() const;
+void SetTooltip(std::string); void SetRadius(float); void SetColor(ImU32 rgba);
+void SetGlowEnabled(bool on);
 ```
 
 ---
+
+## 5. Buttons & Actions
+
+### Button
+
+```cpp
+Button(std::string name, std::string label);
+enum ColorVariant { Default, Primary, Danger, Success };
+enum Size { Small, Medium, Large };
+bool WasClicked() const;
+void SetLabel(std::string); const std::string& GetLabel() const;
+void SetColorVariant(ColorVariant); void SetSize(Size);
+void SetOnClick(std::function<void()> fn);
+```
+
+```cpp
+auto save = std::make_shared<unigui::Button>("save", "Save");
+save->SetColorVariant(unigui::Button::Primary);
+save->SetOnClick([]{ doSave(); });
+```
+
+### IconButton
+
+```cpp
+IconButton(std::string name, std::string icon, std::string label = "");
+bool WasClicked() const;
+void SetIcon(std::string); void SetLabel(std::string); void SetEnabled(bool);
+```
+
+### ImageButton
+
+```cpp
+ImageButton(std::string name, std::string label = "");
+void SetImage(ImTextureID textureID, float width, float height);
+void SetLabel(std::string); const std::string& GetLabel() const;
+bool WasClicked() const;
+void SetEnabled(bool); bool IsEnabled() const;
+void SetFramePadding(float x, float y);
+```
+
+### Hyperlink
+
+```cpp
+Hyperlink(std::string name, std::string label, std::string url = "");
+void SetURL(std::string); void SetLabel(std::string); bool WasClicked() const;
+```
+
+### ToggleSwitch
+
+Animated boolean switch (a `ValueWidget<bool>`).
+
+```cpp
+ToggleSwitch(std::string name, std::string label, bool on = false);
+bool IsOn() const; void SetOn(); void SetOff(); void Toggle();
+void SetOnChange(/* from ValueWidget<bool> */);
+```
+
+### CheckBox
+
+```cpp
+CheckBox(std::string name, std::string label, bool checked = false);
+bool IsChecked() const; void SetChecked(bool);
+const std::string& GetLabel() const;
+```
+
+### RadioGroup
+
+```cpp
+RadioGroup(std::string name, std::vector<std::string> options, int selected = 0);
+int GetSelected() const; void SetSelected(int index);
+const std::vector<std::string>& GetOptions() const;
+void SetOnChange(std::function<void(int)> callback);
+```
+
+### ToolBar
+
+```cpp
+ToolBar(std::string name);
+void SetItems(std::vector<ToolBarItem> items);
+```
+
+---
+
+## 6. Text Input
+
+### InputText
+
+```cpp
+InputText(std::string name, std::string label, std::string value = "", ImGuiInputTextFlags flags = 0);
+void SetHint(std::string); void SetPassword(bool); void SetMultiline(bool); void SetReadOnly(bool);
+```
+
+### LineEdit
+
+Single-line input with validation and undo/redo history.
+
+```cpp
+LineEdit(std::string name, std::string label, std::string value = "");
+void SetValue(std::string); void SetPlaceholder(std::string);
+void SetValidator(std::function<bool(const std::string&)> fn); bool HasError() const;
+void SetPasswordMode(bool); void SetMultiline(bool); void SetReadOnly(bool); void SetMaxLength(int);
+void Undo(); void Redo(); bool CanUndo() const; bool CanRedo() const;
+int GetUndoDepth() const; int GetRedoDepth() const;
+```
+
+```cpp
+auto email = std::make_shared<unigui::LineEdit>("email", "Email");
+email->SetValidator([](const std::string& s){ return s.find('@') != std::string::npos; });
+```
+
+### MultiLine
+
+```cpp
+MultiLine(std::string name, std::string text = "", int maxLines = 10);
+void SetText(std::string); std::string GetText() const;
+void SetMaxLines(int); void SetEditable(bool);
+void Undo(); void Redo(); bool CanUndo() const; bool CanRedo() const;
+```
+
+### PasswordInput
+
+Masked input with a strength score (0–4) and show/hide toggle.
+
+```cpp
+PasswordInput(std::string name, std::string label, std::string value = "");
+void SetValue(std::string); void SetShowStrength(bool); int GetStrengthScore() const;
+```
+
+### SearchBox
+
+Search input with a filtered suggestion dropdown.
+
+```cpp
+SearchBox(std::string name, std::string hint = "Search...");
+void SetItems(std::vector<std::string> items);
+const std::string& GetQuery() const; std::vector<std::string> GetMatches() const;
+void SetOnSelect(std::function<void(const std::string&)> fn);
+void SetOnChange(std::function<void(const std::string&)> fn);
+```
+
+---
+
+## 7. Numeric Input
+
+### InputInt / InputFloat
+
+```cpp
+InputInt(std::string name, std::string label, int value = 0, int min = 0, int max = 100);
+void SetRange(int min, int max); void SetSuffix(std::string);
+
+InputFloat(std::string name, std::string label, float value = 0.0f, float min = 0.0f, float max = 100.0f);
+void SetRange(float min, float max); void SetFormat(const char* fmt); void SetSuffix(std::string);
+```
+
+### Slider\<T>
+
+Templated slider; `GetValue()/SetValue()` inherited from `ValueWidget<T>`.
+
+```cpp
+Slider(std::string name, std::string label, T value = T{}, T min = T{}, T max = T{100});
+void SetRange(T min, T max);
+void SetFormat(const char* fmt); const char* GetFormat() const;
+```
+
+### SpinBox\<T>
+
+```cpp
+SpinBox(std::string name, std::string label, T val = T{}, T mn = T{}, T mx = T{100}, T step = T{1});
+void SetRange(T min, T max); void SetStep(T step);
+```
+
+### DragFloat\<T> / DragInt\<T>
+
+Drag-to-adjust numeric inputs.
+
+```cpp
+DragFloat(std::string name, std::string label, float value = 0.0f, float speed = 1.0f, float vmin = 0.0f, float vmax = 0.0f);
+DragInt(std::string name, std::string label, int value = 0, float speed = 1.0f, int vmin = 0, int vmax = 0);
+bool WasChanged() const;  // GetValue()/SetValue() inherited
+```
+
+### MultiHandleSlider
+
+Multiple draggable handles on one bar (e.g. range/markers).
+
+```cpp
+MultiHandleSlider(std::string name);
+struct SliderTick { int id = -1; float position = 0.f; ImU32 color = IM_COL32(14,165,233,255); };
+enum Orientation { Horizontal, Vertical };
+void SetTicks(const std::vector<SliderTick>&); const std::vector<SliderTick>& GetTicks() const;
+void AddTick(SliderTick); void RemoveTick(int id);
+void SetRange(float min, float max);
+void SetOnTickChanged(std::function<void(int id, float newPos)> fn);
+void SetTickOverlay(std::function<void(int id, int index, float x, float barWidth)> fn);
+void SetCurrentMarker(float pos, ImU32 color);
+```
+
+---
+
+## 8. Selection & Pickers
+
+### ComboBox
+
+```cpp
+ComboBox(std::string name, std::string label, std::vector<std::string> items = {}, int selected = 0);
+int GetSelectedIndex() const; void SetSelectedIndex(int);
+const std::string& GetSelectedValue() const;
+const std::vector<std::string>& GetItems() const; void SetItems(std::vector<std::string>);
+void SetOnChange(std::function<void(int)> callback);
+void SetEditable(bool); void SetSearchable(bool);
+void SetItemIcon(int index, ImTextureID textureID); ImTextureID GetItemIcon(int index) const;
+```
+
+### MultiCombo
+
+Multi-select dropdown with checkboxes.
+
+```cpp
+MultiCombo(std::string name, std::string label, std::vector<std::string> items = {});
+const std::vector<std::string>& GetItems() const; void SetItems(std::vector<std::string>);
+bool IsSelected(int index) const; void SetSelected(int index, bool sel);
+std::vector<int> GetSelectedIndices() const; void SetSelectedIndices(const std::vector<int>&);
+std::string GetPreview() const; void SetOnChange(std::function<void()> fn);
+```
+
+### CascadingCombo
+
+Multi-level linked dropdowns with horizontal/vertical layout and width control.
+Full guide: [docs/CASCADINGCOMBO.md](CASCADINGCOMBO.md).
+
+```cpp
+CascadingCombo(std::string name, std::vector<Level> levels = {});
+struct Level { std::string label; std::vector<std::string> options; int selectedIndex = 0; float width = 0.f; };
+enum class Layout { Vertical, Horizontal };
+void SetLayout(Layout); Layout GetLayout() const;
+void SetItemWidth(float); void SetItemWidth(int level, float); float GetItemWidth() const;
+void SetSpacing(float); float GetSpacing() const;
+void SetHorizontal(bool on);          // convenience wrapper over SetLayout
+CascadingCombo& WithLayout(Layout); CascadingCombo& WithItemWidth(float); CascadingCombo& WithSpacing(float);
+void SetLevels(std::vector<Level>); void SetOptions(int level, std::vector<std::string>);
+int GetSelectedIndex(int level) const; std::string GetSelectedText(int level) const;
+void SetOnChanged(std::function<void(int level, int index)> fn);
+```
+
+### Selectable
+
+```cpp
+Selectable(std::string name, std::string label, bool selected = false);
+bool IsSelected() const; void SetSelected(bool); bool WasClicked() const;
+void SetOnClick(std::function<void()> fn);
+```
+
+### ColorEdit / ColorPicker
+
+```cpp
+ColorEdit(std::string name, std::string label, float r=1, float g=1, float b=1, float a=1);
+ImVec4 GetColor() const; void SetColor(float r, float g, float b, float a = 1.0f);
+bool WasChanged() const; void SetOnChange(std::function<void(ImVec4)> fn);
+
+ColorPicker(std::string name, std::string label, std::array<float,3> color = {0,0,0});
+std::array<float,3> GetColor() const; void SetColor(std::array<float,3>);
+std::array<float,4> GetColorRGBA() const; void SetColorRGBA(std::array<float,4>);
+void SetAlpha(bool on); void SetOnChange(std::function<void(std::array<float,3>)> callback);
+```
+
+### DatePicker
+
+```cpp
+DatePicker(std::string name, std::string label);
+std::array<int,3> GetDate() const;     // {year, month, day}
+void SetDate(int y, int m, int d);
+void SetOnChange(std::function<void(int,int,int)> cb);
+```
+
+### FilePath / DirPath
+
+Native OS file/folder pickers.
+
+```cpp
+FilePath(std::string name, std::string label, Mode mode = Open);  // enum Mode { Open, Save }
+std::string GetPath() const; void SetPath(std::string);
+void SetFilter(std::string); void SetTitle(std::string); void SetMode(Mode);
+void SetOnPathChanged(std::function<void(std::string)> cb);
+
+DirPath(std::string name, std::string label);
+std::string GetPath() const; void SetPath(std::string); void SetTitle(std::string);
+void SetOnPathChanged(std::function<void(std::string)> cb);
+```
+
+---
+
+## 9. Lists, Tables & Trees
+
+### ListBox
+
+```cpp
+ListBox(std::string name, std::string label, std::vector<std::string> items = {}, int selected = -1);
+int GetSelectedIndex() const; void SetSelectedIndex(int); std::string GetSelectedValue() const;
+const std::vector<std::string>& GetItems() const; void SetItems(std::vector<std::string>);
+void SetOnChange(std::function<void(int)> cb);
+```
+
+### ListView
+
+Single- or multi-select scrollable list.
+
+```cpp
+ListView(std::string name, std::vector<std::string> items = {});
+int GetSelected() const; void SetItems(std::vector<std::string>);
+void SetOnSelect(std::function<void(int)> callback);
+void SetMultiSelect(bool on); std::vector<int> GetSelectedItems() const;
+```
+
+### VirtualList
+
+Virtual scrolling for 100k+ rows via `ImGuiListClipper`.
+
+```cpp
+VirtualList(std::string name, int itemCount = 0);
+void SetItemCount(int n); int GetItemCount() const;
+void SetItemGetter(std::function<std::string(int)> fn);
+void SetOnSelect(std::function<void(int)> fn);
+int GetSelected() const; void SetSelected(int idx);
+```
+
+```cpp
+auto vl = std::make_shared<unigui::VirtualList>("rows", 100000);
+vl->SetItemGetter([](int i){ return "Row #" + std::to_string(i); });
+```
+
+### Table
+
+String-cell table with sorting, resizing, custom cell rendering, and CSV I/O.
+Full guide for cell embedding & sorting is folded into this section.
+
+```cpp
+Table(std::string name, std::vector<std::string> columns);
+using CellRenderer   = std::function<bool(int row, int col)>;  // return true if you drew the cell
+using SortComparator = std::function<bool(const std::string& a, const std::string& b)>;
+void AddRow(std::vector<std::string> row); void ClearRows();
+int RowCount() const; int ColumnCount() const;
+const std::string& CellText(int row, int col) const;
+int GetSelectedRow() const; void SetOnSelect(std::function<void(int)> callback);
+void SetSortable(bool on); void SetResizable(bool on);
+void SetColumnSortComparator(int col, SortComparator cmp);
+void SetCellRenderer(CellRenderer fn);
+void SaveColumnWidths(); void RestoreColumnWidths();
+std::string ExportCSV() const; bool ImportCSV(const std::string& csv);
+```
+
+```cpp
+auto t = std::make_shared<unigui::Table>("grid", std::vector<std::string>{"Name","Qty"});
+t->AddRow({"Apples", "12"});
+t->SetSortable(true);                 // numeric-aware sort on click
+t->SetCellRenderer([&](int r, int c){ // embed a widget in a cell
+    if (c == 1) { ImGui::ProgressBar(0.4f, ImVec2(-1,0)); return true; }
+    return false;                     // false → fall back to text
+});
+```
+
+### DataTable\<T>
+
+Templated, high-performance table bound to your `std::vector<T>` data source: virtual scroll,
+sorting, filtering, grouping, inline editing, checkbox columns, row/cell coloring.
+
+```cpp
+DataTable(std::string name, std::vector<ColumnDef> columns);
+struct ColumnDef { std::string name; float width = 100.f; bool sortable = true; bool resizable = true; };
+struct GroupInfo { std::string label; int startRow = 0, endRow = -1; bool expanded = true; int sortCol = -1; bool sortAsc = true; };
+void SetDataSource(const std::vector<T>* data); const std::vector<T>* GetDataSource() const;
+void SetCellFormatter(CellFormatter fmt);
+void SetRowColor(RowColorFn); void SetCellColor(CellColorFn); void SetCellBold(CellBoldFn);
+void SetSortCompare(int col, SortCompare); int GetSortColumn() const; bool GetSortAscending() const;
+void SetMultiSelect(bool); int GetSelectedRow() const; std::vector<int> GetSelectedRows() const;
+void SetOnSelect(SelectFn); void SetOnDoubleClick(DoubleClickFn); void SetOnSelectionChanged(std::function<void()>);
+void SetContextMenu(std::function<void(int row)>); void SetRowClickCallback(std::function<void(int row)>);
+void SetSelectedRow(int);
+void SetColumnMinWidth(int col, float); void SetColumnAutoWidth(int col, bool); void SetColumnReorderable(bool);
+void FlashRow(int row, ImU32 color, float duration);
+void SetGroups(const std::vector<GroupInfo>&); void ToggleGroup(int idx);
+void SetCellEditable(int col, bool); void SetOnCellCommit(CellCommitFn);
+void SetCellCheckbox(int col, CellCheckboxFn);        // inline checkbox column
+void SetFilterText(const std::string&); const std::string& GetFilterText() const; void SetFilterFn(FilterFn);
+void SetVirtualScroll(bool); void SetStickyHeader(bool); void ScrollToRow(int row);
+```
+
+### TreeView
+
+Hierarchical tree with multi-select, built-in composite rows, and full custom row rendering.
+Full guide: [docs/TREEVIEW.md](TREEVIEW.md).
+
+```cpp
+TreeView(std::string name);
+void SetRoot(TreeNode root); const TreeNode& GetRoot() const;
+void SetHideRoot(bool on); void SetMultiSelect(bool on);
+std::vector<int> GetSelectedNodes() const;
+void SetNodeRenderer(std::function<void(int id, int depth, const TreeNode& node)> fn);
+void SetRowRenderer(std::function<void(int id, int depth, const TreeNode& node, bool selected)> fn);
+```
+
+---
+
+## 10. Navigation
+
+### MenuBar
+
+```cpp
+MenuBar(std::string name);
+struct MenuItem { std::string label; std::function<void()> action; };
+struct MenuDef  { std::string label; std::vector<MenuItem> items; };
+void SetMenus(std::vector<MenuDef> menus);
+```
+
+```cpp
+auto mb = std::make_shared<unigui::MenuBar>("menu");
+mb->SetMenus({{"File", {{"Open", []{}}, {"Quit", []{ std::exit(0); }}}}});
+```
+
+### Breadcrumb
+
+```cpp
+Breadcrumb(std::string name);
+void SetItems(std::vector<std::string> items);
+int GetSelected() const; void SetOnSelect(std::function<void(int)> cb);
+```
+
+### Wizard
+
+Multi-step flow with Next/Previous and finish/cancel callbacks.
+
+```cpp
+Wizard(std::string name, std::string title = "Wizard");
+void AddStep(std::string name, std::string title, std::function<void()> renderFn); void Clear();
+int GetCurrentStep() const; int GetStepCount() const;
+void Next(); void Previous(); void GoTo(int step);
+void SetOnFinish(std::function<void()> fn); void SetOnCancel(std::function<void()> fn);
+```
+
+---
+
+## 11. Dialogs & Feedback
 
 ### Dialog
 
-Modal/popup dialog with OK/Cancel buttons.
+Modal with OK/Cancel.
 
 ```cpp
 Dialog(std::string name, std::string title, std::string message);
-
-void Open(); void Close();
+void Open(); void Close(); bool IsOpen() const;
 void SetButtons(std::string okText, std::string cancelText = "");
-void SetOnOk(std::function<void()> callback);
-void SetOnCancel(std::function<void()> callback);
+void SetOnOk(std::function<void()>); void SetOnCancel(std::function<void()>);
 bool WasOkClicked() const;
+```
 
-// Example
-auto dlg = std::make_shared<unigui::Dialog>("confirm", "Delete", "Are you sure?");
-dlg->SetButtons("Delete", "Cancel");
-dlg->SetOnOk([] { PerformDelete(); });
-dlg->Open();
-dlg->Render();
+### ConfirmDialog
+
+Confirmation popup with optional danger styling.
+
+```cpp
+ConfirmDialog(std::string name);
+void Open(); bool WasConfirmed() const; bool IsOpen() const;
+void SetTitle(std::string); void SetMessage(std::string); void SetIcon(std::string);
+void SetConfirmLabel(std::string); void SetCancelLabel(std::string);
+void SetConfirmColor(ImU32); void SetDangerStyle(bool on);
+```
+
+### Toast
+
+Singleton transient popups.
+
+```cpp
+static Toast& Instance();
+void Show(std::string msg, ToastType type = ToastType::Info, float duration = 3.0f, std::function<void()> onDismiss = nullptr);
+static void Info(std::string);  static void Success(std::string);
+static void Warn(std::string);  static void Error(std::string);
+void SetPosition(int anchor, float offsetX = 10, float offsetY = 10);
+```
+
+```cpp
+unigui::Toast::Success("Saved!");   // remember to Render() a Toast instance each frame
+```
+
+### AlertBar
+
+Persistent animated banner.
+
+```cpp
+AlertBar(std::string name);
+void Show(std::string message); void Hide(); bool IsShown() const;
+```
+
+### Notification
+
+Queued notifications.
+
+```cpp
+Notification(std::string name);
+void Show(std::string title, std::string msg, float duration = 3.0f);
+size_t PendingCount() const;
+```
+
+### Tooltip / ContextMenu
+
+```cpp
+unigui::Tooltip::Show("Hello");      // static helper
+
+struct ContextMenuItem { std::string label; std::function<void()> action; bool separator = false; };
+static void ContextMenu::Show(const char* id, std::vector<ContextMenuItem> items);
+static void ContextMenu::ShowWindow(const char* id, std::vector<ContextMenuItem> items);
+```
+
+### TrayIcon
+
+System tray icon with menu + balloon notifications.
+
+```cpp
+TrayIcon(std::string name, std::string title = "UniGUI", int iconId = 0);
+bool Show(); void Hide();
+void SetMenu(std::vector<TrayMenuItem> items);
+void UpdateTooltip(std::string title);
+void ShowNotification(std::string title, std::string msg, NotifyType type = NotifyType::Info);
+void SetOnExit(std::function<void()> cb);
 ```
 
 ---
 
-## Layout & Utilities
+## 12. Forms & Properties
 
 ### Form
 
-Declarative form with automatic layout and validation.
+Field-based form with validation and JSON serialization.
 
 ```cpp
 Form(std::string name, std::string title);
-
 void AddTextField(std::string name, std::string label, bool required = false);
 void AddCheckbox(std::string name, std::string label);
 void AddComboField(std::string name, std::string label, std::vector<std::string> options);
 void AddSliderField(std::string name, std::string label, float min = 0, float max = 100);
 void AddNumberField(std::string name, std::string label, int min = 0, int max = 100);
-std::string GetFieldValue(const std::string& name) const;
-std::vector<FormError> Validate() const;
+std::string GetFieldValue(const std::string& name) const; void SetFieldValue(const std::string& name, std::string value);
+std::vector<FormError> Validate() const; const std::vector<FormError>& GetErrors() const;
+void SetFieldValidatorRegex(const std::string& name, std::string pattern, std::string errorMsg);
+void SetFieldMinMax(const std::string& name, double min, double max);
 void SetOnSubmit(std::function<void()> callback);
-std::string Serialize() const;
-bool Deserialize(const std::string& json);
-
-// Example
-auto form = std::make_shared<unigui::Form>("login_form", "Login");
-form->AddTextField("username", "Username", true);
-form->AddTextField("password", "Password", true);
-form->SetOnSubmit([&] {
-    auto errors = form->Validate();
-    if (errors.empty())
-        Login(form->GetFieldValue("username"), form->GetFieldValue("password"));
-});
-form->Render();
+std::string Serialize() const; bool Deserialize(const std::string& json);
 ```
-
----
-
-### Layout (namespace)
-
-Declarative layout helpers: `HBox`, `VBox`, `BeginHBox/EndHBox`, `BeginHSplit/NextHSplit/EndHSplit`.
 
 ```cpp
-namespace unigui::Layout {
-    void HBox(std::initializer_list<std::function<void()>> children);
-    void VBox(std::initializer_list<std::function<void()>> children);
-    void BeginHBox(); void EndHBox();
-    void BeginHSplit(float leftRatio = 0.5f);
-    void NextHSplit(); void EndHSplit();
-}
-
-// Example
-unigui::Layout::HBox({
-    [] { unigui::Button{"ok", "OK"}.Render(); },
-    [] { unigui::Button{"cancel", "Cancel"}.Render(); }
-});
+auto form = std::make_shared<unigui::Form>("signup", "Sign Up");
+form->AddTextField("user", "Username", /*required=*/true);
+form->SetFieldValidatorRegex("user", "^[a-z0-9_]{3,}$", "lowercase, 3+ chars");
 ```
 
----
+### PropertyGrid
 
-### Animate (namespace)
-
-Simple animation helpers: `FadeIn`, `SlideIn`, `Lerp`, `FadeScope`.
+Two-column key/value editor (like a VS Properties pane).
 
 ```cpp
-namespace unigui::Animate {
-    float FadeIn(float duration = 0.3f);
-    float SlideIn(float duration = 0.3f, float fromOffset = -50.0f);
-    float Lerp(float current, float target, float speed = 0.1f);
-    struct FadeScope { /* RAII alpha push/pop */ };
-}
-
-// Example
-{
-    unigui::Animate::FadeScope fade{1.0f, 0.5f};  // fade in over 500ms
-    unigui::Label{"fade_text", "Fading in..."}.Render();
-}  // alpha restored here
+PropertyGrid(std::string name);
+struct PropertyDef { std::string name; std::string label; PropType type = PropType::String; PropValue value;
+                     std::vector<std::string> options; float minVal = 0, maxVal = 100; bool readOnly = false; };
+void AddProperty(PropertyDef prop); void Clear();
+template<typename T> T GetValue(const std::string& name, T defaultVal = T{}) const;
+void SetValue(const std::string& name, PropValue val);
+void SetOnChange(std::function<void(const std::string& name, const PropValue& val)> fn);
+const std::vector<PropertyDef>& GetProperties() const;
 ```
 
 ---
 
-### Clipboard (namespace)
-
-Wrappers for ImGui clipboard.
-
-```cpp
-namespace unigui::Clipboard {
-    void Copy(const std::string& text);
-    std::string Paste();
-}
-
-// Example
-unigui::Clipboard::Copy("Hello, world!");
-auto text = unigui::Clipboard::Paste();
-```
-
----
-
-### DragDrop (namespace)
-
-Generic drag-and-drop helpers.
-
-```cpp
-template<typename T>
-bool BeginDragSource(const char* type, const T& data);
-template<typename T>
-const T* AcceptDragDrop(const char* type);
-
-// Example
-struct Item { int id; std::string name; };
-Item myItem{42, "Widget"};
-
-if (unigui::BeginDragSource("MY_ITEM", myItem)) {
-    // source is being dragged
-}
-if (auto* dropped = unigui::AcceptDragDrop<Item>("MY_ITEM")) {
-    std::println("Received: {}", dropped->name);
-}
-```
-
----
-
-## FX
-
-### Shimmer
-
-Animated loading placeholder with gradient sweep (blocks, circles).
-
-```cpp
-Shimmer();
-
-void AddBlock(float width, float height, float x = 0, float y = 0);
-void AddCircle(float radius, float x = 0, float y = 0);
-void Start(); void Stop();
-void SetSpeed(float s);
-void Render();
-
-// Example
-unigui::Shimmer shimmer;
-shimmer.AddBlock(200, 16);
-shimmer.AddBlock(150, 16, 0, 24);
-shimmer.Start();
-shimmer.Render();
-```
-
----
-
-### SkeletonScreen
-
-Static loading skeleton with optional built-in shimmer animation.
-
-```cpp
-SkeletonScreen();
-
-void AddBlock(float width, float height, float x = 0, float y = 0);
-void AddLine(float width, float x = 0, float y = 0);
-void AddCircle(float radius, float x = 0, float y = 0);
-void SetShimmer(bool enable, float speed = 1.2f);
-static SkeletonScreen FromSize(float w, float h, int lineCount = 4);
-void Render();
-
-// Example
-auto skel = unigui::SkeletonScreen::FromSize(300, 100, 3);
-skel.SetShimmer(true);
-skel.Render();
-```
-
----
-
-### TrayIcon
-
-Windows system tray icon with context menu and notifications.
-
-```cpp
-TrayIcon(std::string name, std::string title = "UniGUI", int iconId = 0);
-
-bool Show(); void Hide();
-void SetMenu(std::vector<TrayMenuItem> items);
-void ShowNotification(std::string title, std::string msg, NotifyType type = Info);
-
-// Example
-#ifdef _WIN32
-auto tray = std::make_shared<unigui::TrayIcon>("app_tray", "MyApp", 101);
-tray->SetMenu({
-    {"Show", [] { ShowWindow(); }},
-    {"", nullptr, true},  // separator
-    {"Exit", [] { QuitApp(); }}
-});
-tray->Show();
-#endif
-```
-
----
+## 13. Charts & Domain Widgets
 
 ### TimeSeriesChart
 
-Real-time time-series chart using implot. Supports multiple series, sliding window,
-crosshair, legend, pan/zoom.
+Real-time implot plot with a sliding window, auto-fit Y, crosshair, reference lines, and pan/zoom.
 
 ```cpp
 TimeSeriesChart(std::string name);
-
-int  AddSeries(TimeSeriesDef def);
-void AppendPoint(int seriesId, float value, double timestamp = -1.0);
+int AddSeries(TimeSeriesDef def); void RemoveSeries(int id);
+void AppendPoint(int seriesId, float value, double timestamp = -1.0); void ClearAll();
 void SetSlidingWindow(int maxPoints);
-void SetYAxisAutoFit(bool on);
-void SetCrosshairEnabled(bool on);
-void SetLegendEnabled(bool on);
-void SetPanEnabled(bool on);
-void SetZoomEnabled(bool on);
+void SetYAxisAutoFit(bool on); void SetYAxisRange(double min, double max);
+void SetXAxisLabel(const std::string&); void SetYAxisLabel(const std::string&);
+void SetCrosshairEnabled(bool); void SetLegendEnabled(bool);
+void SetPanEnabled(bool); void SetZoomEnabled(bool); void SetRubberBandZoom(bool on);
+void SetGridColor(ImU32 c); void SetThemeBackground(bool on);
+void SetCrosshairFormatter(std::function<std::string(double,const std::vector<double>&)> fn);
+void SetXAxisFormatter(std::function<int(double,char*,int,void*)> fn);
+int AddRefLine(std::string label, double value, ImU32 color); void RemoveRefLine(int id);
+```
 
-// Example
-auto chart = std::make_shared<unigui::TimeSeriesChart>("perf_chart");
-int seriesId = chart->AddSeries({"FPS", IM_COL32(34, 197, 94, 255)});
-chart->SetSlidingWindow(300);
-chart->SetCrosshairEnabled(true);
+### RiskBar
 
-// In render loop:
-chart->AppendPoint(seriesId, currentFPS);
-chart->Render();
+Animated progress bar with warn/danger thresholds (finance-oriented).
+
+```cpp
+RiskBar(std::string name);
+void SetRatio(double); double GetRatio() const; void SetMaxRatio(double);
+void SetDisplayText(std::string);
+void SetWarnThreshold(double); void SetDangerThreshold(double);
+void SetInverted(bool); void SetAnimated(bool);
+```
+
+### FuturesRiskBar
+
+Multi-marker risk bar showing actual/estimated/overnight ratios.
+
+```cpp
+FuturesRiskBar(std::string name);
+void SetAccountName(std::string); void SetMarginText(std::string);
+void SetActualRatio(double); void SetEstimatedRatio(double); void SetOvernightRatio(double);
+void SetAnimated(bool);
+```
+
+### SliderBar
+
+Interactive bar with futures/price tick marks, fill state, and edit/confirm/rollback callbacks.
+
+```cpp
+SliderBar(std::string name);
+struct Tick { int futuresLots = 0; double price = 0.0; };
+void SetMaxValue(int maxLots); void SetTickColors(std::vector<ImU32> colors);
+void SetTicks(std::vector<Tick>); std::vector<Tick> GetTicks() const;
+int GetActiveTickIndex(double currentPrice, int currentLots) const;
+void SetCurrentLots(int lots); void SetActiveFill(int from, int to, ImU32 color);
+void SetOnChanged(std::function<void(const std::vector<Tick>&)> fn);
+void SetLeftLabel(std::string); void SetLeftSubLabel(std::string);
+void SetOnAdd(std::function<void()>); void SetOnConfirm(std::function<void()>);
+void SetOnRollback(std::function<void()>); void SetOnSubmit(std::function<void()>);
+bool HasUnsavedChanges() const;
+```
+
+### HeroSection
+
+Full-width gradient banner with title/subtitle/action.
+
+```cpp
+HeroSection(std::string name, std::string title = "", std::string subtitle = "");
+void SetTitle(std::string); void SetSubtitle(std::string);
+void SetBackground(ImU32 topColor, ImU32 bottomColor);
+void SetActionButton(std::string label, std::function<void()> callback); void SetHeight(float h);
 ```
 
 ---
 
-## Widget Base Class
+## 14. Loading & Skeleton
 
-All widgets (except a few standalone types like Card, Badge, Shimmer, SkeletonScreen,
-GradientText) inherit from `unigui::Widget`:
+### LoadingIndicator
 
 ```cpp
-class Widget {
-public:
-    explicit Widget(std::string name);
-    virtual void Render() = 0;
+LoadingIndicator(std::string name, float radius = 16.0f);
+void SetActive(bool active); bool IsActive() const;
+```
 
-    // Visibility
-    void Show(); void Hide();
-    bool IsVisible() const;
+### Skeleton (`SkeletonScreen`)
 
-    // Identity
-    const std::string& GetName() const;
-    ImGuiID GetID() const;
+Content placeholder built from blocks/lines/circles, with optional shimmer.
 
-    // Tooltip
-    void SetTooltip(std::string t);
+```cpp
+SkeletonScreen();
+void AddBlock(float width, float height, float x = 0.f, float y = 0.f);
+void AddLine(float width, float x = 0.f, float y = 0.f);
+void AddCircle(float radius, float x = 0.f, float y = 0.f);
+void SetShimmer(bool enable, float speed = 1.2f);
+static SkeletonScreen FromSize(float w, float h, int lineCount = 4);
+```
 
-    // Focus
-    void SetFocused();
-    bool IsFocused() const;
-    static void SetNextFocused();
+### Shimmer
 
-    // Size constraints
-    void SetMinSize(float w, float h);
-    void SetMaxSize(float w, float h);
+Standalone animated gradient sweep over blocks/circles.
 
-    // Shadow (v3.0)
-    void SetShadow(bool enable, float radius = 4.f,
-                   float offX = 2.f, float offY = 2.f);
-
-    // Accessibility
-    void SetAccessibleName(std::string n);
-    void SetAccessibleDescription(std::string d);
-};
+```cpp
+Shimmer();
+void AddBlock(float width, float height, float x = 0.f, float y = 0.f);
+void AddCircle(float radius, float x = 0.f, float y = 0.f);
+void Start(); void Stop(); bool IsPlaying() const; void SetSpeed(float s);
 ```
 
 ---
 
-## Complete Application Template
+## 15. Utilities
+
+### Animate (`unigui::Animate`)
 
 ```cpp
-#include <unigui/unigui.h>
-#include <memory>
-#include <print>
-
-int main() {
-    using namespace unigui;
-
-    AppConfig cfg;
-    cfg.title  = "UniGUI Demo";
-    cfg.width  = 1280;
-    cfg.height = 720;
-
-    Init(cfg);
-
-    // ── Create widgets ─────────────────────────────────────────────
-    auto window   = std::make_shared<Window>("main", "UniGUI Demo");
-    auto panel    = std::make_shared<Panel>("main_panel", "Dashboard");
-    auto split    = std::make_shared<Splitter>("layout", Splitter::Horizontal, 0.3f);
-    auto btn      = std::make_shared<Button>("btn_action", "Click Me");
-    auto lbl      = std::make_shared<Label>("lbl_status", "Ready");
-    auto progress = std::make_shared<ProgressBar>("pbar", 0.0f);
-    auto& toast   = Toast::Instance();
-
-    btn->SetColorVariant(Button::Primary);
-    split->SetContentA([&] {
-        // Sidebar
-        lbl->Render();
-        btn->Render();
-        if (btn->WasClicked()) {
-            Toast::Success("Button clicked!");
-            progress->SetFraction(0.75f);
-        }
-        progress->Render();
-    });
-    split->SetContentB([&] {
-        // Main area
-        static auto cb = std::make_shared<CheckBox>("opt_debug", "Debug Mode", false);
-        cb->Render();
-    });
-
-    panel->SetContentCallback([&] { split->Render(); });
-    window->AddPanel(panel);
-
-    // Shortcuts
-    ShortcutManager shortcuts;
-    shortcuts.Register(ImGuiKey_Q, true, [] { /* quit */ }, "Ctrl+Q: Quit");
-
-    // ── Main loop ──────────────────────────────────────────────────
-    Run([&] {
-        shortcuts.Process();
-        window->Render();
-        toast.Render();
-    });
-
-    Shutdown();
-    return 0;
-}
+float Animate::FadeIn(float duration = 0.3f); void Animate::FadeInReset();
+float Animate::SlideIn(float duration = 0.3f, float fromOffset = -50.0f);
+float Animate::Lerp(float current, float target, float speed = 0.1f);
+struct Animate::FadeScope { FadeScope(float target = 1.0f, float duration = 0.3f); };
 ```
+
+### Clipboard (`unigui::Clipboard`)
+
+```cpp
+void Clipboard::Copy(const std::string& text);
+std::string Clipboard::Paste();
+```
+
+### DragDrop (`unigui::DragDrop`)
+
+```cpp
+template<typename T> bool DragDrop::BeginDragSource(const char* type, const T& data);
+template<typename T> const T* DragDrop::AcceptDragDrop(const char* type);
+```
+
+### ShortcutManager
+
+```cpp
+ShortcutManager mgr;
+mgr.Register(ImGuiKey_S, /*ctrl=*/true, []{ doSave(); }, "Save");
+// each frame:
+mgr.Process();
+```
+
+### ValueWidget\<T> (base)
+
+Base for value-holding widgets (sliders, spinboxes, drag inputs, toggles):
+
+```cpp
+T GetValue() const; void SetValue(T val);
+void SetOnChange(std::function<void(T)> fn);
+```
+
+---
+
+## 16. Dedicated Component Guides
+
+Some components have their own in-depth guide:
+
+| Component | Guide |
+|-----------|-------|
+| TreeView (composite rows, custom renderers) | [docs/TREEVIEW.md](TREEVIEW.md) |
+| CascadingCombo (layout & width) | [docs/CASCADINGCOMBO.md](CASCADINGCOMBO.md) |
+
+### StatusLamp glow
+
+`StatusLamp` draws a glossy LED whose glow can be toggled with `SetGlowEnabled(true)`. The glow's
+vertical padding is included in the widget bounds, so it lays out correctly inside tables and rows.
+
+---
+
+> Sub-modules (DSL, EventBus, CSS styling, fonts, plugins, config, SQLite, IPC, networking) are
+> documented in the [main README](../README.md#sub-modules). All sub-module headers are pulled in by
+> `<unigui/unigui.h>`.
