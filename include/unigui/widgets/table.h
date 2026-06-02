@@ -9,6 +9,12 @@
 namespace unigui {
 class Table : public Widget {
 public:
+    enum class Alignment {
+        Left,
+        Center,
+        Right
+    };
+
     Table(std::string name, std::vector<std::string> columns);
     void Render() override;
     void AddRow(std::vector<std::string> row);
@@ -17,6 +23,10 @@ public:
     void SetOnSelect(std::function<void(int)> callback);
     void SetSortable(bool on);
     void SetResizable(bool on);
+    void SetColumnAlignment(int col, Alignment alignment);
+    Alignment GetColumnAlignment(int col) const;
+    void SetColumnUnit(int col, std::string unit);
+    const std::string& GetColumnUnit(int col) const;
     void SaveColumnWidths();
     void RestoreColumnWidths();
 
@@ -48,6 +58,8 @@ private:
 
     std::vector<std::string> columns_;
     std::vector<std::vector<std::string>> rows_;
+    std::vector<Alignment> alignments_;
+    std::vector<std::string> units_;
     int selected_ = -1;
     bool sortable_ = false;
     bool resizable_ = false;

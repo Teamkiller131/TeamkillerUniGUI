@@ -165,3 +165,9 @@ TEST_F(CascadingComboTest, PerLevelItemWidthOverride) {
     cc.Render();
     SUCCEED();
 }
+
+TEST_F(CascadingComboTest, AutoWidthLongOptionsRender) {
+    unigui::CascadingCombo cc("cc", {{{"L1", {"特别特别长的省份名称", "B"}}}});
+    cc.Render();
+    SUCCEED();
+}

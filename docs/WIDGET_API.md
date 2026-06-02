@@ -593,6 +593,7 @@ void SetItemIcon(int index, ImTextureID textureID); ImTextureID GetItemIcon(int 
 ### MultiCombo
 
 Multi-select dropdown with checkboxes.
+Width auto-expands from the current/available text and reserves extra space for the arrow button.
 
 ```cpp
 MultiCombo(std::string name, std::string label, std::vector<std::string> items = {});
@@ -714,6 +715,7 @@ Full guide for cell embedding & sorting is folded into this section.
 
 ```cpp
 Table(std::string name, std::vector<std::string> columns);
+enum class Alignment { Left, Center, Right };
 using CellRenderer   = std::function<bool(int row, int col)>;  // return true if you drew the cell
 using SortComparator = std::function<bool(const std::string& a, const std::string& b)>;
 void AddRow(std::vector<std::string> row); void ClearRows();
@@ -721,6 +723,8 @@ int RowCount() const; int ColumnCount() const;
 const std::string& CellText(int row, int col) const;
 int GetSelectedRow() const; void SetOnSelect(std::function<void(int)> callback);
 void SetSortable(bool on); void SetResizable(bool on);
+void SetColumnAlignment(int col, Alignment);
+void SetColumnUnit(int col, std::string unit);
 void SetColumnSortComparator(int col, SortComparator cmp);
 void SetCellRenderer(CellRenderer fn);
 void SaveColumnWidths(); void RestoreColumnWidths();
@@ -731,6 +735,8 @@ std::string ExportCSV() const; bool ImportCSV(const std::string& csv);
 auto t = std::make_shared<unigui::Table>("grid", std::vector<std::string>{"Name","Qty"});
 t->AddRow({"Apples", "12"});
 t->SetSortable(true);                 // numeric-aware sort on click
+t->SetColumnAlignment(1, unigui::Table::Alignment::Right);
+t->SetColumnUnit(1, "手");            // renders 12手 and sorts 8 / 702 numerically
 t->SetCellRenderer([&](int r, int c){ // embed a widget in a cell
     if (c == 1) { ImGui::ProgressBar(0.4f, ImVec2(-1,0)); return true; }
     return false;                     // false → fall back to text

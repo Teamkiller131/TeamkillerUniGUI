@@ -1,8 +1,21 @@
 #include <unigui/widgets/cascadingcombo.h>
 #include <imgui.h>
 #include <cstdio>
+#include <algorithm>
 
 namespace unigui {
+
+namespace {
+
+float CalcComboWidth(const std::vector<std::string>& options, const char* preview) {
+    float maxTextWidth = ImGui::CalcTextSize(preview ? preview : "").x;
+    for (const auto& option : options)
+        maxTextWidth = std::max(maxTextWidth, ImGui::CalcTextSize(option.c_str()).x);
+    const ImGuiStyle& style = ImGui::GetStyle();
+    return maxTextWidth + style.FramePadding.x * 2.0f + ImGui::GetFrameHeight() + style.ItemInnerSpacing.x + 4.0f;
+}
+
+} // namespace
 
 CascadingCombo::CascadingCombo(std::string name, std::vector<Level> levels)
     : Widget(std::move(name)), levels_(std::move(levels)) {}
@@ -15,11 +28,11 @@ void CascadingCombo::Render() {
         if (layout_ == Layout::Horizontal && lvl > 0)
             ImGui::SameLine(0.0f, spacing_);
         float width = level.width > 0.f ? level.width : itemWidth_;
-        if (width > 0.f) ImGui::SetNextItemWidth(width);
         int prev = level.selectedIndex;
         char lbl[64];
         snprintf(lbl, sizeof(lbl), "%s##lvl%d", level.label.c_str(), lvl);
         const char* preview = level.options.empty() ? "" : level.options[level.selectedIndex].c_str();
+        ImGui::SetNextItemWidth(width > 0.f ? width : CalcComboWidth(level.options, preview));
         if (ImGui::BeginCombo(lbl, preview)) {
             for (int i = 0; i < (int)level.options.size(); ++i) {
                 bool isSel = (i == level.selectedIndex);
