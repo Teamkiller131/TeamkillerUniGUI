@@ -125,6 +125,68 @@ Available on all widgets: `WithTooltip`, `WithEnabled`, `WithVisible`, `WithUser
 Base setters: `Show/Hide/IsVisible`, `SetTooltip`, `SetEnabled/IsEnabled`, `SetFocused/IsFocused`,
 `SetAccessibleName/Description`, `SetMinSize/SetMaxSize`, `SetShadow`, `SetUserData/GetUserData`.
 
+Widgets that derive from the CRTP base `FluentWidget<Derived>` (e.g. `Button`) keep the **derived
+type** through the chain, so base helpers and widget-specific helpers compose:
+
+```cpp
+btn->WithTooltip("Ctrl+S — Save")  // Widget helper → Button&
+   .WithPrimary()                  // Button helper → Button&
+   .WithOnClick([]{ save(); });    // Button helper → Button&
+```
+
+`Button` adds: `WithLabel`, `WithVariant`, `WithPrimary`, `WithDanger`, `WithSuccess`, `WithSize`, `WithOnClick`.
+
+### Immediate mode (`unigui::im`) vs retained mode
+
+For simple, stateless controls, skip the `shared_ptr`/name/`Render()` ceremony and call a
+themed immediate-mode free function from `<unigui/im/im.h>`:
+
+```cpp
+namespace im = unigui::im;
+if (im::Button("Save", im::ButtonVariant::Primary)) save();
+im::Checkbox("Enabled", &enabled);
+im::SliderFloat("Gain", &gain, 0.f, 1.f);
+im::InputText("Name", &name);           // bound to a std::string
+im::Combo("Mode", &mode, {"Fast", "Safe"});
+im::SameLine(); im::Text("ok");
+```
+
+Functions: `Button`, `SmallButton`, `Text`, `TextWrapped`, `TextDisabled`, `TextColored`,
+`BulletText`, `LabelText`, `Checkbox`, `RadioButton`, `SliderFloat`, `SliderInt`, `DragFloat`,
+`DragInt`, `InputInt`, `InputFloat`, `InputText`, `InputTextMultiline`, `Combo`, and layout
+helpers `SameLine`, `NewLine`, `Spacing`, `Separator`, `SeparatorText`, `Dummy`, `Indent`,
+`Unindent`, `Bullet`.
+
+**Choosing a layer**: use `unigui::im` for one-off, stateless controls; use the retained-mode
+widget classes when you need persistent state, validation, undo/redo or serialization. The two
+layers coexist — immediate-mode functions live in `unigui::im` to avoid clashing with the
+retained-mode widget *classes* of the same name in `unigui`.
+
+### RAII scopes
+
+Move-only guards in `<unigui/core/scope.h>` balance ImGui's `Begin*/Push*` with their matching
+`End*/Pop*` automatically:
+
+```cpp
+if (unigui::WindowScope w{"Settings"}) {
+    unigui::IDScope id{"row"};
+    unigui::DisabledScope d{readOnly};
+    im::Button("Apply");
+}   // End() / PopID() / EndDisabled() run automatically, in reverse order
+```
+
+Available: `WindowScope`, `ChildScope`, `IDScope`, `DisabledScope`, `GroupScope`, `TabBarScope`,
+`TabItemScope` (plus the existing `StyleScope` in `<unigui/theme/style_scope.h>`).
+
+### Factory helpers
+
+`<unigui/core/make.h>` trims the `std::make_shared` boilerplate and can auto-name widgets:
+
+```cpp
+auto btn = unigui::Make<unigui::Button>("save", "Save");   // explicit name
+auto lbl = unigui::MakeNamed<unigui::Label>("Read-only");  // auto unique name
+```
+
 ---
 
 ## 3. Containers & Layout

@@ -5,7 +5,7 @@
 namespace unigui {
 
 Button::Button(std::string name, std::string label)
-    : Widget(std::move(name)), label_(std::move(label)) {
+    : FluentWidget<Button>(std::move(name)), label_(std::move(label)) {
 }
 
 void Button::Render() {
