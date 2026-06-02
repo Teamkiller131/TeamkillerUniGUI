@@ -49,6 +49,9 @@ public:
 
     using OnChanged = std::function<void(int level, int index)>;
     void SetOnChanged(OnChanged fn);
+    /// Render levels horizontally (SameLine between combos) instead of stacked.
+    /// Convenience wrapper around SetLayout(Layout::Horizontal|Vertical).
+    void SetHorizontal(bool on) { SetLayout(on ? Layout::Horizontal : Layout::Vertical); }
 
 private:
     std::vector<Level> levels_;
