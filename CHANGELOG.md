@@ -1,9 +1,11 @@
 ## v3.5.0 (2026-06-02) — TreeView Docs, Table Cell Embedding & Sorting
 
 ### Added
+- **`CascadingCombo` layout & width control**: New `SetLayout(Layout::Horizontal|Vertical)` arranges the per-level combos side-by-side or stacked; `SetItemWidth(float)` sets a global combo width with per-level overrides via `SetItemWidth(int level, float)` / `Level::width`; `SetSpacing(float)` controls the gap in horizontal layout. Fluent `WithLayout/WithItemWidth/WithSpacing` wrappers included.
 - **`Table` cell embedding**: Cells can now host custom-rendered content via a cell renderer callback, allowing arbitrary widgets/markup inside table cells instead of plain text only.
 - **`Table` column sorting**: `SetSortable()` enables interactive column sorting backed by Dear ImGui sort specs, with a numeric-aware default comparator and support for per-column custom comparators (`SortComparator`).
 - **`docs/TREEVIEW.md`**: Documentation for the `TreeView` component.
+- **`docs/CASCADINGCOMBO.md`**: Usage guide for the `CascadingCombo` component (layout & width).
 
 ### Changed
 - **Chart theme background**: Charts now follow the active theme background.
@@ -15,7 +17,7 @@
 
 ---
 
-
+## v3.4.1 (2026-06-02) — PanelBox Bounds Fix
 
 ### Fixed
 - **`PanelBox` ImGui bounds growth**: `PanelBox::Render()` now submits a real `Dummy()` item covering the full panel bounds instead of only moving the cursor with `SetCursorScreenPos()`. This removes Dear ImGui boundary warnings when `PanelBox` is used inside nested splitter/child layouts and keeps parent windows sizing correctly.

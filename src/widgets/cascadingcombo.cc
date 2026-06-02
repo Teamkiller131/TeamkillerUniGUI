@@ -12,6 +12,10 @@ void CascadingCombo::Render() {
     ImGui::PushID(GetName().c_str());
     for (int lvl = 0; lvl < (int)levels_.size(); ++lvl) {
         auto& level = levels_[lvl];
+        if (layout_ == Layout::Horizontal && lvl > 0)
+            ImGui::SameLine(0.0f, spacing_);
+        float width = level.width > 0.f ? level.width : itemWidth_;
+        if (width > 0.f) ImGui::SetNextItemWidth(width);
         int prev = level.selectedIndex;
         char lbl[64];
         snprintf(lbl, sizeof(lbl), "%s##lvl%d", level.label.c_str(), lvl);
@@ -48,6 +52,13 @@ std::string CascadingCombo::GetSelectedText(int level) const {
     return (l.selectedIndex >= 0 && l.selectedIndex < (int)l.options.size())
         ? l.options[l.selectedIndex] : std::string{};
 }
+void CascadingCombo::SetLayout(Layout layout) { layout_ = layout; }
+void CascadingCombo::SetItemWidth(float width) { itemWidth_ = width; }
+void CascadingCombo::SetItemWidth(int level, float width) {
+    if (level >= 0 && level < (int)levels_.size())
+        levels_[level].width = width > 0.f ? width : 0.f;
+}
+void CascadingCombo::SetSpacing(float spacing) { spacing_ = spacing; }
 void CascadingCombo::SetOnChanged(OnChanged fn) { onChanged_ = std::move(fn); }
 
 } // namespace unigui
