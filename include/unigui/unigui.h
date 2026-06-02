@@ -19,6 +19,8 @@
 #include <unigui/core/log.h>
 #include <unigui/core/main_thread.h>
 #include <unigui/core/format_cn.h>
+#include <unigui/core/scope.h>
+#include <unigui/core/make.h>
 #include <unigui/backend/platform_backend.h>
 #include <unigui/backend/renderer_backend.h>
 #include <unigui/backend/backend_types.h>
@@ -128,6 +130,7 @@
 #include <unigui/widgets/sliderbar.h>
 #include <unigui/widgets/futuresriskbar.h>
 #include <unigui/app/app.h>
+#include <unigui/im/im.h>
 #include <unigui/fx/easing.h>
 #include <unigui/fx/effect_scope.h>
 #include <unigui/fx/animation.h>
