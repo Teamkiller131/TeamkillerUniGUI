@@ -6,7 +6,7 @@ TreeView::TreeView(std::string name) : Widget(std::move(name)) {}
 void TreeView::Render() {
     if (!IsVisible() || root_.label.empty()) return;
     ImGui::PushID(GetName().c_str());
-    nodeCounter_ = 0; selected_.clear();
+    nodeCounter_ = 0;
     if (hideRoot_) {
         for (auto& child : root_.children) RenderNode(child, 0);
     } else {
@@ -24,6 +24,7 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
     if (node.children.empty()) flags |= ImGuiTreeNodeFlags_Leaf;
     int id = nodeCounter_++;
+    ImGui::PushID(id);
     bool isSelected = std::find(selected_.begin(), selected_.end(), id) != selected_.end();
     if (isSelected) flags |= ImGuiTreeNodeFlags_Selected;
 
@@ -42,10 +43,15 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
     }
 
     bool open = false;
+    bool treeItemClicked = false;
+    bool treeItemToggled = false;
     if (rowRenderer_) {
-        // Use invisible label; row renderer draws everything
         open = ImGui::TreeNodeEx("##node", flags);
-        if (open) rowRenderer_(id, depth, node, isSelected);
+        treeItemClicked = ImGui::IsItemClicked();
+        treeItemToggled = ImGui::IsItemToggledOpen();
+        ImGui::SameLine(0.0f, 0.0f);
+        rowRenderer_(id, depth, node, isSelected);
+        treeItemClicked = treeItemClicked || ImGui::IsItemClicked();
     } else {
         // Default rendering with icon/suffix/progress
         std::string displayLabel;
@@ -57,6 +63,8 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
             ImGui::PushStyleColor(ImGuiCol_Text, node.labelColor);
 
         open = ImGui::TreeNodeEx(displayLabel.c_str(), flags);
+        treeItemClicked = ImGui::IsItemClicked();
+        treeItemToggled = ImGui::IsItemToggledOpen();
 
         if (node.labelColor != 0)
             ImGui::PopStyleColor();
@@ -85,15 +93,17 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
     if (isSelected)
         ImGui::PopStyleColor();
 
+    if (treeItemClicked && !treeItemToggled) {
+        if (multiSelect_) {
+            auto it = std::find(selected_.begin(), selected_.end(), id);
+            if (it != selected_.end()) selected_.erase(it); else selected_.push_back(id);
+        } else { selected_ = {id}; }
+    }
+
     if (open) {
-        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-            if (multiSelect_) {
-                auto it = std::find(selected_.begin(), selected_.end(), id);
-                if (it != selected_.end()) selected_.erase(it); else selected_.push_back(id);
-            } else { selected_ = {id}; }
-        }
         for (auto& child : node.children) RenderNode(child, depth + 1);
         ImGui::TreePop();
     }
+    ImGui::PopID();
 }
 }

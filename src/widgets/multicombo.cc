@@ -1,8 +1,21 @@
 #include <unigui/widgets/multicombo.h>
 #include <imgui.h>
 #include <sstream>
+#include <algorithm>
 
 namespace unigui {
+
+namespace {
+
+float CalcComboWidth(const std::vector<std::string>& items, const std::string& preview) {
+    float maxTextWidth = ImGui::CalcTextSize(preview.c_str()).x;
+    for (const auto& item : items)
+        maxTextWidth = std::max(maxTextWidth, ImGui::CalcTextSize(item.c_str()).x);
+    const ImGuiStyle& style = ImGui::GetStyle();
+    return maxTextWidth + style.FramePadding.x * 2.0f + ImGui::GetFrameHeight() + style.ItemInnerSpacing.x + 4.0f;
+}
+
+} // namespace
 
 MultiCombo::MultiCombo(std::string name, std::string label, std::vector<std::string> items)
     : Widget(std::move(name)), label_(std::move(label)), items_(std::move(items)) {}
@@ -11,6 +24,7 @@ void MultiCombo::Render() {
     if (!IsVisible()) return;
     ImGui::PushID(GetName().c_str());
     std::string preview = GetPreview();
+    ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
     if (ImGui::BeginCombo(label_.c_str(), preview.c_str())) {
         for (int i = 0; i < (int)items_.size(); i++) {
             bool sel = selected_.count(i) > 0;

@@ -9,10 +9,14 @@ MultiSplitter::MultiSplitter(std::string name, Orientation ori)
 
 void MultiSplitter::AddPanel(float ratio, std::function<void()> content) {
     panels_.push_back({ratio, std::move(content)});
-    // Normalize ratios to sum 1.0
-    float total = 0.f;
-    for (auto& p : panels_) total += p.ratio;
-    if (total > 0.f) for (auto& p : panels_) p.ratio /= total;
+    float total = 0.0f;
+    for (auto& panel : panels_) total += std::max(0.0f, panel.ratio);
+    if (total <= 0.0f) {
+        const float even = panels_.empty() ? 0.0f : 1.0f / static_cast<float>(panels_.size());
+        for (auto& panel : panels_) panel.ratio = even;
+        return;
+    }
+    for (auto& panel : panels_) panel.ratio = std::max(0.0f, panel.ratio) / total;
 }
 
 std::vector<float> MultiSplitter::GetRatios() const {
@@ -25,9 +29,14 @@ std::vector<float> MultiSplitter::GetRatios() const {
 void MultiSplitter::SetRatios(const std::vector<float>& ratios) {
     int count = (int)std::min(panels_.size(), ratios.size());
     for (int i = 0; i < count; ++i) panels_[i].ratio = ratios[i];
-    float total = 0.f;
-    for (auto& p : panels_) total += p.ratio;
-    if (total > 0.f) for (auto& p : panels_) p.ratio /= total;
+    float total = 0.0f;
+    for (auto& panel : panels_) total += std::max(0.0f, panel.ratio);
+    if (total <= 0.0f) {
+        const float even = panels_.empty() ? 0.0f : 1.0f / static_cast<float>(panels_.size());
+        for (auto& panel : panels_) panel.ratio = even;
+        return;
+    }
+    for (auto& panel : panels_) panel.ratio = std::max(0.0f, panel.ratio) / total;
 }
 
 void MultiSplitter::Render() {
@@ -36,44 +45,56 @@ void MultiSplitter::Render() {
     auto avail = ImGui::GetContentRegionAvail();
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
+    constexpr float kHandleThickness = 5.0f;
     float totalLen = (ori_ == Horizontal) ? avail.y : avail.x;
+    const float handlesLen = kHandleThickness * std::max(0, (int)panels_.size() - 1);
+    const float panelSpace = std::max(0.0f, totalLen - handlesLen);
+    const float minRatio = panelSpace > 0.0f ? std::min(0.45f, 24.0f / panelSpace) : 0.0f;
+    float remainingLen = panelSpace;
+    auto normalizeRatios = [&]() {
+        float total = 0.0f;
+        for (auto& panel : panels_) total += std::max(0.0f, panel.ratio);
+        if (total <= 0.0f) return;
+        for (auto& panel : panels_) panel.ratio = std::max(0.0f, panel.ratio) / total;
+    };
 
     for (int i = 0; i < (int)panels_.size(); ++i) {
-        float panelLen = totalLen * panels_[i].ratio;
+        float panelLen = (i == (int)panels_.size() - 1) ? remainingLen : panelSpace * panels_[i].ratio;
+        remainingLen = std::max(0.0f, remainingLen - panelLen);
 
-        // Panel with unique PushID
         ImGui::PushID(i);
         ImGui::BeginChild("##panel", ori_ == Horizontal ? ImVec2(avail.x, panelLen) : ImVec2(panelLen, avail.y), ImGuiChildFlags_Borders);
         if (panels_[i].content) panels_[i].content();
         ImGui::EndChild();
         ImGui::PopID();
 
-        // Drag handle (unique ID per index)
         if (i < (int)panels_.size() - 1) {
             char handleID[64];
             snprintf(handleID, sizeof(handleID), "##ms_%s_%d", GetName().c_str(), i);
             if (ori_ == Horizontal) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.35f, 1));
-                ImGui::Button(handleID, ImVec2(avail.x, 5));
+                ImGui::Button(handleID, ImVec2(avail.x, kHandleThickness));
                 ImGui::PopStyleColor();
                 if (ImGui::IsItemActive()) {
-                    float delta = ImGui::GetIO().MouseDelta.y;
-                    panels_[i].ratio += delta / totalLen;
-                    panels_[i+1].ratio -= delta / totalLen;
-                    if (panels_[i].ratio < 0.05f) { panels_[i+1].ratio += panels_[i].ratio - 0.05f; panels_[i].ratio = 0.05f; }
-                    if (panels_[i+1].ratio < 0.05f) { panels_[i].ratio += panels_[i+1].ratio - 0.05f; panels_[i+1].ratio = 0.05f; }
+                    float deltaRatio = panelSpace > 0.0f ? ImGui::GetIO().MouseDelta.y / panelSpace : 0.0f;
+                    panels_[i].ratio += deltaRatio;
+                    panels_[i + 1].ratio -= deltaRatio;
+                    if (panels_[i].ratio < minRatio) { panels_[i + 1].ratio += panels_[i].ratio - minRatio; panels_[i].ratio = minRatio; }
+                    if (panels_[i + 1].ratio < minRatio) { panels_[i].ratio += panels_[i + 1].ratio - minRatio; panels_[i + 1].ratio = minRatio; }
+                    normalizeRatios();
                 }
             } else {
                 ImGui::SameLine();
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.35f, 1));
-                ImGui::Button(handleID, ImVec2(5, avail.y));
+                ImGui::Button(handleID, ImVec2(kHandleThickness, avail.y));
                 ImGui::PopStyleColor();
                 if (ImGui::IsItemActive()) {
-                    float delta = ImGui::GetIO().MouseDelta.x;
-                    panels_[i].ratio += delta / totalLen;
-                    panels_[i+1].ratio -= delta / totalLen;
-                    if (panels_[i].ratio < 0.05f) { panels_[i+1].ratio += panels_[i].ratio - 0.05f; panels_[i+1].ratio = 0.05f; }
-                    if (panels_[i+1].ratio < 0.05f) { panels_[i].ratio += panels_[i+1].ratio - 0.05f; panels_[i+1].ratio = 0.05f; }
+                    float deltaRatio = panelSpace > 0.0f ? ImGui::GetIO().MouseDelta.x / panelSpace : 0.0f;
+                    panels_[i].ratio += deltaRatio;
+                    panels_[i + 1].ratio -= deltaRatio;
+                    if (panels_[i].ratio < minRatio) { panels_[i + 1].ratio += panels_[i].ratio - minRatio; panels_[i].ratio = minRatio; }
+                    if (panels_[i + 1].ratio < minRatio) { panels_[i].ratio += panels_[i + 1].ratio - minRatio; panels_[i + 1].ratio = minRatio; }
+                    normalizeRatios();
                 }
                 ImGui::SameLine();
             }

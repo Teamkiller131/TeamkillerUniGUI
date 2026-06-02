@@ -1,4 +1,3 @@
-#include <unigui/unigui.h>
 #include <unigui/widgets/table.h>
 #include <unigui/widgets/datatable.h>
 #include <imgui.h>
@@ -46,4 +45,40 @@ TEST_F(TableTest, DataTableVirtualScroll_DoesNotCrash) {
         return col == 0 ? row.name : std::to_string(row.value);
     });
     table.Render();
+}
+
+TEST_F(TableTest, ColumnAlignmentAndUnit_RenderDoesNotCrash) {
+    unigui::Table tbl("tbl", {"Name", "Volume", "Price"});
+    tbl.SetColumnAlignment(1, unigui::Table::Alignment::Center);
+    tbl.SetColumnAlignment(2, unigui::Table::Alignment::Right);
+    tbl.SetColumnUnit(1, "手");
+    tbl.AddRow({"IF2506", "702", "12.5"});
+    tbl.AddRow({"IH2506", "8", "9.2"});
+    tbl.Render();
+    EXPECT_EQ(tbl.GetColumnAlignment(1), unigui::Table::Alignment::Center);
+    EXPECT_EQ(tbl.GetColumnAlignment(2), unigui::Table::Alignment::Right);
+    EXPECT_EQ(tbl.GetColumnUnit(1), "手");
+}
+
+TEST_F(TableTest, ApplySort_ParsesUnitSuffixedNumbers) {
+    unigui::Table tbl("tbl", {"Volume"});
+    tbl.AddRow({"8手"});
+    tbl.AddRow({"702手"});
+    tbl.SortByColumn(0, true);
+    EXPECT_EQ(tbl.CellText(0, 0), "8手");
+    EXPECT_EQ(tbl.CellText(1, 0), "702手");
+
+    tbl.SortByColumn(0, false);
+    EXPECT_EQ(tbl.CellText(0, 0), "702手");
+    EXPECT_EQ(tbl.CellText(1, 0), "8手");
+}
+
+TEST_F(TableTest, ApplySort_UsesConfiguredUnitForRawNumbers) {
+    unigui::Table tbl("tbl", {"Volume"});
+    tbl.SetColumnUnit(0, "手");
+    tbl.AddRow({"8"});
+    tbl.AddRow({"702"});
+    tbl.SortByColumn(0, false);
+    EXPECT_EQ(tbl.CellText(0, 0), "702");
+    EXPECT_EQ(tbl.CellText(1, 0), "8");
 }
