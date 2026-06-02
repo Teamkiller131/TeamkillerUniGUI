@@ -44,5 +44,26 @@
     {
         "name": "spdlog"
     }
-  ]
+  ],
+  "features": {
+    "sqlite": {
+      "description": "SQLite database module",
+      "dependencies": [
+        "sqlite3"
+      ]
+    },
+    "config": {
+      "description": "TOML/JSON config module",
+      "dependencies": [
+        "cpptoml",
+        "nlohmann-json"
+      ]
+    },
+    "ipc": {
+      "description": "Shared memory IPC module",
+      "dependencies": [
+        "cppzmq"
+      ]
+    }
+  }
 }
