@@ -74,8 +74,8 @@ void DrawAlignedText(const std::string& text, float width, Table::Alignment alig
 }
 
 bool DrawSelectableAlignedText(const std::string& text, bool selected, float width, Table::Alignment alignment) {
+    ImGui::SetNextItemAllowOverlap();
     const bool clicked = ImGui::Selectable("##cell", selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
-    ImGui::SetItemAllowOverlap();
     const ImVec2 start = ImGui::GetItemRectMin();
     const ImVec2 end = ImGui::GetItemRectMax();
     const ImVec2 size = ImGui::CalcTextSize(text.c_str());
