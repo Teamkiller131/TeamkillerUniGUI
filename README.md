@@ -4,9 +4,9 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.4.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-598%20(100%25%20on%20Win)-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-83-blue)]()
+[![Version](https://img.shields.io/badge/version-3.5.0-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-637-brightgreen)]()
+[![Widgets](https://img.shields.io/badge/widgets-82-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
 A C++23 Dear ImGui wrapper providing a unified dark+light theme engine, high-level widget components, declarative DSL, CSS styling, plugin system, and EventBus. Supports 7 backends: GLFW+OpenGL3, SDL3+Vulkan, DX11, DX12, Metal, WebGPU, and Emscripten.
@@ -98,7 +98,7 @@ User Code
     ↓
 unigui:: API
     ├── Theme Engine (53-color dark + light theme, StyleScope RAII)
-    ├── Widget Library (74 widgets (100% PushID-safe), form validation, undo/redo, serialization)
+    ├── Widget Library (82 widgets (100% PushID-safe), form validation, undo/redo, serialization)
     ├── Declarative DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
     ├── EventBus (unigui::events::Bus — publish/subscribe with wildcards)
     ├── CSS Styling (unigui::styling::Engine — selector engine + variables)
@@ -174,7 +174,6 @@ btn->WithTooltip("Ctrl+S — Save the file")
 auto lbl = std::make_shared<unigui::Label>("hint", "Read-only");
 lbl->WithVisible(false).WithAccessibleName("Hint label");
 ```
-```
 
 ### Declarative DSL
 
@@ -246,19 +245,25 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 
 ## ID Safety
 
-All 74 widgets automatically scope their ImGui IDs via `PushID(name)/PopID()`.
+All 82 widgets automatically scope their ImGui IDs via `PushID(name)/PopID()`.
 No manual ID management needed — just give each widget instance a unique name:
 ```cpp
 auto btn1 = std::make_shared<unigui::Button>("ok", "OK");
 auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label, no conflict!
 ```
 
-## Widgets (74 total)
+## Widgets (82 total)
+
+> Full, detailed API reference with examples: **[docs/WIDGET_API.md](docs/WIDGET_API.md)**.
+> In-depth component guides: **[TreeView](docs/TREEVIEW.md)**, **[CascadingCombo](docs/CASCADINGCOMBO.md)**.
+
 
 | Category | Widget | Key API |
 |----------|--------|---------|
 | Containers | Window | `AddPanel()`, `SetMenuBarEnabled()`, `SetPosition()` |
 | | Panel | `SetContentCallback(fn)`, `SetWrapEnabled(bool)` |
+| | PanelBox | dark titled panel, `SetTintColor()` |
+| | Card | elevated/outlined/filled surface, shadow |
 | | GroupBox | `SetContentCallback(fn)`, `SetTitle()` |
 | | TabWidget | `AddTab()`, `RemoveTab()` |
 | | CollapsingHeader | `SetContentCallback(fn)`, `SetOpen(bool)` (v3.3) |
@@ -267,6 +272,7 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | PasswordInput | `GetStrengthScore()` (0-4), show/hide toggle |
 | | ComboBox | `SetItems()`, `SetOnChange()`, `SetSearchable()` |
 | | MultiCombo | `GetSelectedIndices()`, `SetSelected()` |
+| | CascadingCombo | N-level linked dropdowns, H/V layout + width control ([guide](docs/CASCADINGCOMBO.md)) |
 | | SearchBox | `SetItems(v)`, `GetQuery()`, `SetOnSelect(fn)` |
 | | Slider\<T\> | `SetMin()`, `SetMax()`, `SetValue()` |
 | | MultiHandleSlider | multi-draggable tick handles (v3.2) |
@@ -287,13 +293,18 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | Markdown | `SetMarkdown()`, supports # ** * - [links] |
 | | Image | `SetTexture(texID)`, scale modes |
 | | ProgressBar | `SetFraction()`, state colors |
+| | StatusLamp | named states + glow (`SetGlowEnabled`) |
+| | RiskBar | thresholds, animated ratio bar |
+| | FuturesRiskBar | actual/estimated/overnight markers |
+| | Badge / Tag | dot/count/label badges, removable tags |
+| | HeroSection | gradient banner + action button |
 | | LoadingIndicator | `SetActive(bool)`, spinner animation |
 | Lists | VirtualList | `SetItemCount(n)`, `SetItemGetter(fn)` — 100k+ |
-| | DataTable\<T\> | virtual scroll, sort, row color, group rows, inline edit, filter (v3.2) |
+| | DataTable\<T\> | virtual scroll, sort, row color, group rows, inline edit, checkbox columns, filter |
 | | MultiSplitter | N-panel H/V resizable layout (v3.2) |
 | | ListView | `SetItems()`, `SetOnSelect()` |
-| | Table | `AddRow()`, `ExportCSV()`, `ImportCSV()` |
-| | TreeView | `SetRoot()`, multi-select support |
+| | Table | `AddRow()`, sortable, cell embedding, `ExportCSV()`/`ImportCSV()` |
+| | TreeView | `SetRoot()`, multi-select, composite/custom rows ([guide](docs/TREEVIEW.md)) |
 | Selection | Selectable | `SetLabel()`, `SetSelected()`, `SetOnClick()` (v3.3) |
 | | ListBox | `SetItems()`, `GetSelectedIndex()`, `SetOnChange()` (v3.3) |
 | Layout | Splitter | `SetOrientation()`, drag to resize |
@@ -304,6 +315,8 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | Breadcrumb | `SetItems()`, path navigation |
 | | Wizard | `AddStep()`, `Next()`, `Previous()` |
 | Dialogs | Dialog | `Open()`, `Close()`, modal/ non-modal |
+| | ConfirmDialog | confirm popup, danger styling |
+| | AlertBar | persistent animated banner |
 | | Tooltip | `Show(text)`, hover tooltips |
 | | ContextMenu | `Show()`, right-click popup |
 | | Toast | `Toast::Info()`, `Success()`, `Warn()`, `Error()` |
@@ -313,7 +326,8 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | RadioGroup | `SetSelected()`, option groups |
 | | ToggleSwitch | `SetOn(bool)`, toggle with label |
 | Misc | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
-| | TimeSeriesChart | real-time implot chart, sliding window (v3.2) |
+| | TimeSeriesChart | real-time implot chart, sliding window |
+| | SliderBar | futures/price tick bar with confirm/rollback |
 | | ShortcutManager | `Register()`, global shortcuts |
 | | Notification | `Show()`, pending count |
 | | TrayIcon | `Show()`, `Hide()`, `SetMenu()`, `ShowNotification()` |
@@ -361,8 +375,8 @@ All sub-module headers are also pulled in by `<unigui/unigui.h>` for convenience
 
 ## Platform Notes
 
-- **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022. DX11 is default. 285/285 tests pass.
-- **Linux**: GCC 14+/Clang 18+ via GLFW+OpenGL3. X11/Wayland. 236/244 tests pass (8 GL-context failures expected in headless). See [vcpkg.json](vcpkg.json) for x64-linux triplet deps.
+- **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022. DX11 is default. Full test suite (637) passes.
+- **Linux**: GCC 14+/Clang 18+ via GLFW+OpenGL3. X11/Wayland. A small number of GL-context tests are skipped in headless runs. See [vcpkg.json](vcpkg.json) for x64-linux triplet deps.
 - **macOS**: OpenGL deprecated by Apple (capped at 4.1). Vulkan via MoltenVK.
 
 ## Fonts
