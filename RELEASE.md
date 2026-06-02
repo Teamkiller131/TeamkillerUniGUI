@@ -1,3 +1,75 @@
+# TeamkillerUniGUI v3.5.0 Release Notes
+
+**Release Date:** 2026-06-02 | **Version:** 3.5.0 | **Widgets:** 82 | **Tests:** 637
+
+---
+
+## Highlights
+
+### Better UX for CascadingCombo
+
+The cascading dropdown is no longer locked to a vertical stack and is much easier to size:
+
+- `SetLayout(Layout::Horizontal | Vertical)` — arrange combos side-by-side or stacked.
+- `SetItemWidth(float)` — set one width for all combos; `SetItemWidth(int level, float)` or `Level::width` to override a single level.
+- `SetSpacing(float)` — control the gap between combos in horizontal layout.
+- Fluent `WithLayout(...).WithItemWidth(...).WithSpacing(...)`; `SetHorizontal(bool)` retained for compatibility.
+
+See the new guide: [docs/CASCADINGCOMBO.md](docs/CASCADINGCOMBO.md).
+
+### Table & DataTable improvements
+
+- **Table**: interactive column sorting (`SetSortable`, numeric-aware default + custom `SortComparator`) and cell embedding (`SetCellRenderer`) to host any ImGui content inside a cell. Sorting now parses each cell key once for better performance.
+- **DataTable**: inline checkbox columns via `SetCellCheckbox(col, fn)`, with `SpanAllColumns` auto-disabled when checkbox columns are present so clicks register correctly.
+
+### Display polish
+
+- **StatusLamp** gains a glow effect (`SetGlowEnabled`), with the glow's vertical padding included in the widget bounds so it lays out correctly in tables/rows.
+- **Charts** follow the active theme background (`SetThemeBackground`).
+- Broader embedded font glyph coverage.
+
+### Documentation overhaul
+
+- [docs/WIDGET_API.md](docs/WIDGET_API.md) was rewritten as a verified, categorized reference for **all 82 widgets** — constructors, methods, and copy-paste examples.
+- New in-depth guides: [docs/TREEVIEW.md](docs/TREEVIEW.md) and [docs/CASCADINGCOMBO.md](docs/CASCADINGCOMBO.md).
+- `README.md` / `README_zh.md` synced: correct widget (82) and test (637) counts, version, new components, and guide links.
+
+---
+
+## Upgrade Guide
+
+### From v3.4.x
+
+1. **Pull latest**: `git pull origin master`
+2. **Rebuild** with your usual preset (e.g. `cmake-msvc.cmd --build --preset windows-msvc-release`).
+3. **No breaking changes** — existing code compiles unchanged. `CascadingCombo::SetHorizontal(bool)` still works and now maps onto the new layout system.
+
+### New APIs at a glance
+
+```cpp
+// CascadingCombo: horizontal layout + widths
+cc->WithLayout(unigui::CascadingCombo::Layout::Horizontal)
+   .WithItemWidth(120.f)
+   .WithSpacing(8.f);
+cc->SetItemWidth(0, 150.f);              // widen the first level only
+
+// Table: sortable + embedded cell content
+table->SetSortable(true);
+table->SetCellRenderer([](int row, int col){ /* draw + return true */ return false; });
+
+// DataTable: inline checkbox column
+dt->SetCellCheckbox(0, [](int row){ return &rowChecked[row]; });
+
+// StatusLamp glow
+lamp->SetGlowEnabled(true);
+```
+
+---
+
+**Full Changelog:** [CHANGELOG.md](CHANGELOG.md) · **API Docs:** [docs/WIDGET_API.md](docs/WIDGET_API.md)
+
+---
+
 # TeamkillerUniGUI v3.3.1 Release Notes
 
 **Release Date:** 2026-06-01 | **Version:** 3.3.1 | **Widgets:** 83 | **Tests:** 579

@@ -110,3 +110,58 @@ TEST_F(CascadingComboTest, RenderEmptyLevels) {
     cc.Render();
     SUCCEED();
 }
+
+TEST_F(CascadingComboTest, LayoutDefaultsVertical) {
+    unigui::CascadingCombo cc("cc");
+    EXPECT_EQ(cc.GetLayout(), unigui::CascadingCombo::Layout::Vertical);
+}
+
+TEST_F(CascadingComboTest, SetLayoutHorizontal) {
+    unigui::CascadingCombo cc("cc");
+    cc.SetLayout(unigui::CascadingCombo::Layout::Horizontal);
+    EXPECT_EQ(cc.GetLayout(), unigui::CascadingCombo::Layout::Horizontal);
+}
+
+TEST_F(CascadingComboTest, SetItemWidthGlobal) {
+    unigui::CascadingCombo cc("cc");
+    cc.SetItemWidth(120.f);
+    EXPECT_FLOAT_EQ(cc.GetItemWidth(), 120.f);
+}
+
+TEST_F(CascadingComboTest, SetSpacing) {
+    unigui::CascadingCombo cc("cc");
+    cc.SetSpacing(16.f);
+    EXPECT_FLOAT_EQ(cc.GetSpacing(), 16.f);
+}
+
+TEST_F(CascadingComboTest, FluentConfiguration) {
+    unigui::CascadingCombo cc("cc");
+    cc.WithLayout(unigui::CascadingCombo::Layout::Horizontal)
+      .WithItemWidth(90.f)
+      .WithSpacing(8.f);
+    EXPECT_EQ(cc.GetLayout(), unigui::CascadingCombo::Layout::Horizontal);
+    EXPECT_FLOAT_EQ(cc.GetItemWidth(), 90.f);
+    EXPECT_FLOAT_EQ(cc.GetSpacing(), 8.f);
+}
+
+TEST_F(CascadingComboTest, RenderHorizontalWithWidths) {
+    std::vector<unigui::CascadingCombo::Level> levels = {
+        {"Region", {"US", "EU"}, 0, 100.f},
+        {"Country", {"DE", "FR"}}
+    };
+    unigui::CascadingCombo cc("cc", levels);
+    cc.SetLayout(unigui::CascadingCombo::Layout::Horizontal);
+    cc.SetItemWidth(120.f);
+    cc.SetSpacing(10.f);
+    cc.Render();
+    SUCCEED();
+}
+
+TEST_F(CascadingComboTest, PerLevelItemWidthOverride) {
+    unigui::CascadingCombo cc("cc", {{{"L1", {"A", "B"}}, {"L2", {"X", "Y"}}}});
+    cc.SetItemWidth(0, 150.f);
+    cc.SetItemWidth(0, -1.f); // clears override
+    cc.SetItemWidth(99, 50.f); // out of bounds, ignored
+    cc.Render();
+    SUCCEED();
+}

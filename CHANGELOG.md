@@ -1,3 +1,22 @@
+## v3.5.0 (2026-06-02) — TreeView/CascadingCombo UX, Table Sorting & Docs Overhaul
+
+### Added
+- **`CascadingCombo` layout & width control**: New `SetLayout(Layout::Horizontal|Vertical)` arranges the per-level combos side-by-side or stacked; `SetItemWidth(float)` sets a global combo width with per-level overrides via `SetItemWidth(int level, float)` / `Level::width`; `SetSpacing(float)` controls the gap in horizontal layout. Fluent `WithLayout/WithItemWidth/WithSpacing` wrappers included. `SetHorizontal(bool)` is kept as a convenience wrapper.
+- **`DataTable` checkbox columns**: `SetCellCheckbox(int col, fn)` renders an inline checkbox column; `SpanAllColumns` is disabled automatically when checkbox columns are present so clicks land correctly.
+- **`Table` cell embedding**: Cells can now host custom-rendered content via a cell renderer callback, allowing arbitrary widgets/markup inside table cells instead of plain text only.
+- **`Table` column sorting**: `SetSortable()` enables interactive column sorting backed by Dear ImGui sort specs, with a numeric-aware default comparator and support for per-column custom comparators (`SortComparator`).
+- **Documentation overhaul**: Rewrote `docs/WIDGET_API.md` as a verified, categorized reference covering all 82 widgets with constructors, methods, and examples. Added `docs/TREEVIEW.md` and `docs/CASCADINGCOMBO.md` in-depth guides. Synced `README.md` / `README_zh.md` (correct widget/test counts, version, new components, guide links).
+
+### Changed
+- **Chart theme background**: Charts now follow the active theme background.
+- **`StatusLamp` glow**: Added a glow effect, with vertical glow padding included in the widget bounds.
+- **Broader character set**: Expanded the font glyph coverage.
+
+### Fixed
+- **`Table` sort performance**: Default sort parses each cell into a sort key once and reorders an index permutation, avoiding repeated parsing on every comparison.
+
+---
+
 ## v3.4.1 (2026-06-02) — PanelBox Bounds Fix
 
 ### Fixed

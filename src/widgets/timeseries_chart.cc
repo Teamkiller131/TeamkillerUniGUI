@@ -72,6 +72,25 @@ void TimeSeriesChart::Render() {
     ImPlotAxisFlags axisFlags = (panEnabled_  ? 0 : ImPlotAxisFlags_NoMenus) |
                                 (zoomEnabled_ ? 0 : ImPlotAxisFlags_NoMenus);
     (void)axisFlags; // flags applied via ImPlot default — pan/zoom enabled by default
+
+    // ── Background / border / grid colors ────────────────────────────────
+    // When themeBackground_ is on, follow the active ImGui theme palette so the
+    // chart blends with the surrounding UI; otherwise use fixed dark colors.
+    ImVec4 bgCol, borderCol, gridCol;
+    if (themeBackground_) {
+        bgCol     = ImGui::GetStyleColorVec4(ImGuiCol_ChildBg);
+        borderCol = ImGui::GetStyleColorVec4(ImGuiCol_Border);
+        gridCol   = ImGui::GetStyleColorVec4(ImGuiCol_Separator);
+        gridCol.w *= 0.6f; // softer grid lines
+    } else {
+        bgCol     = ImGui::ColorConvertU32ToFloat4(IM_COL32(20, 20, 28, 255));
+        borderCol = ImGui::ColorConvertU32ToFloat4(IM_COL32(50, 50, 60, 255));
+        gridCol   = ImGui::ColorConvertU32ToFloat4(gridColor_);
+    }
+    ImPlot::PushStyleColor(ImPlotCol_PlotBg, bgCol);
+    ImPlot::PushStyleColor(ImPlotCol_PlotBorder, borderCol);
+    ImPlot::PushStyleColor(ImPlotCol_AxisGrid, gridCol);
+
     if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, 300), plotFlags)) {
 
         // ── Axis labels ───────────────────────────────────────────────
@@ -88,10 +107,6 @@ void TimeSeriesChart::Render() {
                 }, &xAxisFmt_);
         }
         ImPlot::SetupAxesLimits(0, 0, yMin_, yMax_, ImPlotCond_Once);
-
-        // ── Grid ──────────────────────────────────────────────────────
-        ImPlot::GetStyle().Colors[ImPlotCol_PlotBg] = ImGui::ColorConvertU32ToFloat4(IM_COL32(20, 20, 28, 255));
-        ImPlot::PushStyleColor(ImPlotCol_PlotBorder, IM_COL32(50, 50, 60, 255));
 
         // ── Plot each series ──────────────────────────────────────────
         for (auto& s : series_) {
@@ -117,9 +132,9 @@ void TimeSeriesChart::Render() {
             ImPlot::PlotInfLines(line.label.c_str(), &line.value, 1, spec);
         }
 
-        ImPlot::PopStyleColor();
         ImPlot::EndPlot();
     }
+    ImPlot::PopStyleColor(3);
 
     if (crosshairFmt_ && ImPlot::IsPlotHovered()) {
         ImPlotPoint mouse = ImPlot::GetPlotMousePos();
