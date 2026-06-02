@@ -403,6 +403,8 @@ Optional: sqlite3, cpptoml, nlohmann-json, cppzmq, cpp-httplib, ixwebsocket
 Windows: d3d11, d3d12, d3dcompiler, dxgi, dxguid
 ```
 
+Optional vcpkg features: `sqlite`, `config`, `ipc`
+
 ## Development Tools
 
 | Tool | Command |
