@@ -4,11 +4,21 @@
 #include <unigui/backend/renderer_backend.h>
 #include <unigui/core/log.h>
 #include <imgui.h>
-#include <imgui_impl_metal.h>
 #include <Metal/Metal.h>
 #include <QuartzCore/QuartzCore.h>
 #include <cstdio>
 #include <memory>
+
+#if defined(__has_include)
+#  if __has_include(<imgui_impl_metal.h>)
+#    include <imgui_impl_metal.h>
+#    define UNIGUI_HAS_IMGUI_IMPL_METAL 1
+#  else
+#    define UNIGUI_HAS_IMGUI_IMPL_METAL 0
+#  endif
+#else
+#  define UNIGUI_HAS_IMGUI_IMPL_METAL 0
+#endif
 
 namespace unigui {
 
@@ -19,6 +29,10 @@ public:
         if (!context && !ImGui::GetCurrentContext()) {
             IMGUI_CHECKVERSION(); ImGui::CreateContext();
         }
+#if !UNIGUI_HAS_IMGUI_IMPL_METAL
+        UNIGUI_LOG_ERROR("Metal backend unavailable: imgui_impl_metal.h not found. Install ImGui Metal backend headers or disable the Metal renderer.");
+        return false;
+#else
         device_ = MTLCreateSystemDefaultDevice();
         if (!device_) {
             UNIGUI_LOG_ERROR("Metal: no Metal-capable GPU found");
@@ -31,25 +45,38 @@ public:
         initialized_ = true;
         UNIGUI_LOG_INFO("Metal: device created, backend initialized");
         return true;
+#endif
     }
 
     void Shutdown() override {
+#if UNIGUI_HAS_IMGUI_IMPL_METAL
         if (!initialized_) return;
         ImGui_ImplMetal_Shutdown();
         if (commandQueue_) { [commandQueue_ release]; commandQueue_ = nullptr; }
         if (device_)       { [device_ release];       device_ = nullptr; }
         initialized_ = false;
+#endif
     }
 
     void RenderDrawData(ImDrawData* dd) override {
+#if UNIGUI_HAS_IMGUI_IMPL_METAL
         if (!initialized_ || !dd) return;
         // Metal frame: create command buffer, encode render commands, present
         @autoreleasepool {
             id<MTLCommandBuffer> cmdBuf = [commandQueue_ commandBuffer];
             ImGui_ImplMetal_RenderDrawData(dd, cmdBuf);
-            [cmdBuf presentDrawable:/* caller provides drawable */ nil];
+            id<CAMetalDrawable> drawable = nil;
+            if (!drawable) {
+                UNIGUI_LOG_WARN("Metal: no drawable available, skipping present");
+                [cmdBuf commit];
+                return;
+            }
+            [cmdBuf presentDrawable:drawable];
             [cmdBuf commit];
         }
+#else
+        (void)dd;
+#endif
     }
 
     void SetClearColor(float r, float g, float b, float a) override {

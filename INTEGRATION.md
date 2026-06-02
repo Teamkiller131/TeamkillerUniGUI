@@ -32,7 +32,9 @@ git submodule update --init --recursive
 }
 ```
 
-> 可选依赖（量化交易项目一般不需要）：`nlohmann-json`, `cpptoml`, `sqlite3`, `cppzmq`, `cpp-httplib`, `ixwebsocket`
+> 可选依赖（量化交易项目一般不需要）：`nlohmann-json`, `cpptoml`, `sqlite3`, `zeromq`, `cpp-httplib`, `ixwebsocket`
+
+> 对应 UniGUI 可选 feature：`sqlite`, `config`, `ipc`, `network`
 
 ## 3. 父项目 CMakeLists.txt
 

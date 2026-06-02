@@ -91,10 +91,14 @@
 #ifdef UNIGUI_HAS_CONFIG
 #include <unigui/config/config.h>
 #endif
+#ifdef UNIGUI_HAS_NETWORK
+#include <unigui/network/network.h>
+#endif
 #ifdef UNIGUI_HAS_SQLITE
 #include <unigui/sqlite/database.h>
 #endif
 #ifdef UNIGUI_HAS_IPC
+#include <unigui/ipc/ipc.h>
 #include <unigui/ipc/shmem.h>
 #endif
 #include <unigui/widgets/virtuallist.h>
