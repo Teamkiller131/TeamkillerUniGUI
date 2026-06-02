@@ -58,6 +58,9 @@ public:
 
     /// Grid and background colors.
     void SetGridColor(ImU32 c) { gridColor_ = c; }
+    /// When true (default), the plot background / border / grid follow the
+    /// active ImGui theme palette. Set false to use fixed dark colors.
+    void SetThemeBackground(bool on) { themeBackground_ = on; }
     void SetCrosshairFormatter(std::function<std::string(double,const std::vector<double>&)> fn) { crosshairFmt_=std::move(fn); }
     void SetXAxisFormatter(std::function<int(double,char*,int,void*)> fn) { xAxisFmt_ = std::move(fn); }
     void SetRubberBandZoom(bool on) { rubberBandZoom_ = on; }
@@ -85,6 +88,7 @@ private:
     bool panEnabled_ = true;
     bool zoomEnabled_ = true;
     bool rubberBandZoom_ = true;
+    bool themeBackground_ = true;
     ImU32 gridColor_ = IM_COL32(60, 60, 70, 70);
     double frameCounter_ = 0;
 };
