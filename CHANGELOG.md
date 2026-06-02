@@ -1,3 +1,10 @@
+## v3.4.1 (2026-06-02) — PanelBox Bounds Fix
+
+### Fixed
+- **`PanelBox` ImGui bounds growth**: `PanelBox::Render()` now submits a real `Dummy()` item covering the full panel bounds instead of only moving the cursor with `SetCursorScreenPos()`. This removes Dear ImGui boundary warnings when `PanelBox` is used inside nested splitter/child layouts and keeps parent windows sizing correctly.
+
+---
+
 ## v3.4.0 (2026-06-01) — API Ergonomics + Developer Tooling
 
 ### Added
