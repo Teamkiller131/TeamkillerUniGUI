@@ -723,6 +723,7 @@ int RowCount() const; int ColumnCount() const;
 const std::string& CellText(int row, int col) const;
 int GetSelectedRow() const; void SetOnSelect(std::function<void(int)> callback);
 void SetSortable(bool on); void SetResizable(bool on);
+void SortByColumn(int col, bool ascending = true);
 void SetColumnAlignment(int col, Alignment);
 void SetColumnUnit(int col, std::string unit);
 void SetColumnSortComparator(int col, SortComparator cmp);

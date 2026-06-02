@@ -1,6 +1,4 @@
-#define private public
 #include <unigui/widgets/table.h>
-#undef private
 #include <unigui/widgets/datatable.h>
 #include <imgui.h>
 #include <gtest/gtest.h>
@@ -66,11 +64,11 @@ TEST_F(TableTest, ApplySort_ParsesUnitSuffixedNumbers) {
     unigui::Table tbl("tbl", {"Volume"});
     tbl.AddRow({"8手"});
     tbl.AddRow({"702手"});
-    tbl.ApplySort(0, true);
+    tbl.SortByColumn(0, true);
     EXPECT_EQ(tbl.CellText(0, 0), "8手");
     EXPECT_EQ(tbl.CellText(1, 0), "702手");
 
-    tbl.ApplySort(0, false);
+    tbl.SortByColumn(0, false);
     EXPECT_EQ(tbl.CellText(0, 0), "702手");
     EXPECT_EQ(tbl.CellText(1, 0), "8手");
 }
@@ -80,7 +78,7 @@ TEST_F(TableTest, ApplySort_UsesConfiguredUnitForRawNumbers) {
     tbl.SetColumnUnit(0, "手");
     tbl.AddRow({"8"});
     tbl.AddRow({"702"});
-    tbl.ApplySort(0, false);
+    tbl.SortByColumn(0, false);
     EXPECT_EQ(tbl.CellText(0, 0), "702");
     EXPECT_EQ(tbl.CellText(1, 0), "8");
 }

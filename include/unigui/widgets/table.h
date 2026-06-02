@@ -23,6 +23,7 @@ public:
     void SetOnSelect(std::function<void(int)> callback);
     void SetSortable(bool on);
     void SetResizable(bool on);
+    void SortByColumn(int col, bool ascending = true);
     void SetColumnAlignment(int col, Alignment alignment);
     Alignment GetColumnAlignment(int col) const;
     void SetColumnUnit(int col, std::string unit);
