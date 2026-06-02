@@ -1,4 +1,21 @@
-## v3.4.1 (2026-06-02) — PanelBox Bounds Fix
+## v3.5.0 (2026-06-02) — TreeView Docs, Table Cell Embedding & Sorting
+
+### Added
+- **`Table` cell embedding**: Cells can now host custom-rendered content via a cell renderer callback, allowing arbitrary widgets/markup inside table cells instead of plain text only.
+- **`Table` column sorting**: `SetSortable()` enables interactive column sorting backed by Dear ImGui sort specs, with a numeric-aware default comparator and support for per-column custom comparators (`SortComparator`).
+- **`docs/TREEVIEW.md`**: Documentation for the `TreeView` component.
+
+### Changed
+- **Chart theme background**: Charts now follow the active theme background.
+- **`StatusLamp` glow**: Added a glow effect, with vertical glow padding included in the widget bounds.
+- **Broader character set**: Expanded the font glyph coverage.
+
+### Fixed
+- **`Table` sort performance**: Default sort parses each cell into a sort key once and reorders an index permutation, avoiding repeated parsing on every comparison.
+
+---
+
+
 
 ### Fixed
 - **`PanelBox` ImGui bounds growth**: `PanelBox::Render()` now submits a real `Dummy()` item covering the full panel bounds instead of only moving the cursor with `SetCursorScreenPos()`. This removes Dear ImGui boundary warnings when `PanelBox` is used inside nested splitter/child layouts and keeps parent windows sizing correctly.
