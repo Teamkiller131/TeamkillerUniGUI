@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui.h>
+#include <unigui/theme/style_tokens.h>
 namespace unigui::theme {
 inline void ApplyFluentDark(ImGuiStyle& s) {
     auto& c = s.Colors;
@@ -36,10 +37,7 @@ inline void ApplyFluentDark(ImGuiStyle& s) {
     c[ImGuiCol_ResizeGrip]     =ImVec4(0.00f,0.47f,0.84f,0.25f);
     c[ImGuiCol_NavHighlight]   =ImVec4(0.00f,0.47f,0.84f,1.00f);
     c[ImGuiCol_ModalWindowDimBg]=ImVec4(0.00f,0.00f,0.00f,0.45f);
-    s.WindowRounding=8.f;s.FrameRounding=4.f;s.GrabRounding=4.f;
-    s.TabRounding=4.f;s.ChildRounding=4.f;s.PopupRounding=4.f;
-    s.ScrollbarRounding=4.f;s.GrabMinSize=8.f;
-    s.WindowBorderSize=1.f;s.FrameBorderSize=1.f;
+    ApplyStyleTokens(s);
 }
 inline void ApplyFluentLight(ImGuiStyle& s) {
     auto& c = s.Colors;
@@ -76,9 +74,6 @@ inline void ApplyFluentLight(ImGuiStyle& s) {
     c[ImGuiCol_ResizeGrip]     =ImVec4(0.00f,0.47f,0.84f,0.25f);
     c[ImGuiCol_NavHighlight]   =ImVec4(0.00f,0.47f,0.84f,1.00f);
     c[ImGuiCol_ModalWindowDimBg]=ImVec4(0.00f,0.00f,0.00f,0.30f);
-    s.WindowRounding=8.f;s.FrameRounding=4.f;s.GrabRounding=4.f;
-    s.TabRounding=4.f;s.ChildRounding=4.f;s.PopupRounding=4.f;
-    s.ScrollbarRounding=4.f;s.GrabMinSize=8.f;
-    s.WindowBorderSize=1.f;s.FrameBorderSize=1.f;
+    ApplyStyleTokens(s);
 }
 }
