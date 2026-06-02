@@ -187,9 +187,31 @@ auto btn = unigui::Make<unigui::Button>("save", "Save");   // explicit name
 auto lbl = unigui::MakeNamed<unigui::Label>("Read-only");  // auto unique name
 ```
 
----
+### Declarative DSL (`unigui::dsl`)
 
-## 3. Containers & Layout
+`<unigui/dsl/dsl.h>` builds a UI as a tree of value-type builder calls and renders it through the
+themed `unigui::im` layer. Stateful controls bind to an external variable via pointer or keep their
+state in the retained node, so re-`Render()`-ing the same tree preserves user input:
+
+```cpp
+using namespace unigui::dsl;
+bool enabled = true; float gain = 0.5f;
+
+auto ui = Window("Demo", VBox({
+    Text("Welcome!"), Separator(),
+    HBox({ Button("Save", ButtonVariant::Primary, []{ save(); }),
+           Button("Exit", []{ std::exit(0); }) }),
+    CheckBox("Enabled", &enabled),
+    SliderFloat("Gain", &gain, 0.f, 1.f),
+    If([&]{ return enabled; }, Text("…running")),
+    For(3, [](int i){ return Label("Row " + std::to_string(i)); }),
+}));
+Render(ui);  // each frame
+```
+
+Builders: `Window`, `VBox`, `HBox`, `Label`, `Text`, `TextWrapped`, `TextDisabled`, `BulletText`,
+`Button` (optional `ButtonVariant`), `CheckBox`, `SliderFloat`, `InputText` (each bound or
+node-stated), `Separator`, `Spacing`, `If`, `IfElse`, `For`.
 
 ### Window
 

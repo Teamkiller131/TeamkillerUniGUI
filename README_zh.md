@@ -46,7 +46,7 @@ ctest --test-dir build
 unigui:: API
     ├── 主题引擎 (53 色明暗主题，StyleScope RAII)
     ├── 组件库 (82 个组件，100% PushID 安全，表单校验/撤销重做/序列化)
-    ├── 声明式 DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
+    ├── 声明式 DSL (unigui::dsl — Window, VBox/HBox, Button, CheckBox, SliderFloat, InputText, If/For)
     ├── 事件总线 (unigui::events::Bus — 发布/订阅，支持通配符)
     ├── CSS 样式引擎 (unigui::styling::Engine — 选择器引擎 + 变量)
     ├── 插件系统 (unigui::plugin::Manager — DLL 热加载/热卸载)
@@ -92,19 +92,29 @@ unigui::Shutdown();
 #include <unigui/dsl/dsl.h>
 using namespace unigui::dsl;
 
+bool enabled = true;
+float gain = 0.5f;
+
 auto ui = Window("DSL 示例", VBox({
     Text("欢迎!"),
     Separator(),
     HBox({
-        Button("点击我", []{ /* 动作 */ }),
-        Button("退出",   []{ std::exit(0); })
+        Button("保存", ButtonVariant::Primary, []{ /* 动作 */ }),
+        Button("退出",                          []{ std::exit(0); })
     }),
+    CheckBox("启用", &enabled),             // 绑定到外部 bool
+    SliderFloat("增益", &gain, 0.f, 1.f),   // 绑定到外部 float
+    If([&]{ return enabled; }, Text("…运行中")),
     For(5, [](int i){ return Label("第 " + std::to_string(i+1) + " 项"); })
 }));
 
 // 渲染循环中调用：
 Render(ui);
 ```
+
+DSL 通过主题化的 `unigui::im` 层渲染，输出与工具包其余部分保持一致；有状态控件
+（`CheckBox` / `SliderFloat` / `InputText`）既可通过指针绑定到外部变量，也可将状态
+保存在保留的节点中——因此重复 `Render()` 同一棵树即可保留用户输入。
 
 ### EventBus 事件总线
 
