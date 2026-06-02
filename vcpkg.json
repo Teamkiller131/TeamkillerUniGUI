@@ -62,7 +62,14 @@
     "ipc": {
       "description": "Shared memory IPC module",
       "dependencies": [
-        "cppzmq"
+        "zeromq"
+      ]
+    },
+    "network": {
+      "description": "HTTP/WebSocket module",
+      "dependencies": [
+        "cpp-httplib",
+        "ixwebsocket"
       ]
     }
   }

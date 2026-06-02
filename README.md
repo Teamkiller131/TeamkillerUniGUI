@@ -399,11 +399,11 @@ cfg.theme.font_size = 20.0f;                     // logical px at 96 DPI
 imgui (1.92.8, docking+freetype+all bindings)
 implot (1.0), imgui-node-editor (0.9.3)
 glfw3, sdl3, vulkan, glad, freetype, gtest, spdlog
-Optional: sqlite3, cpptoml, nlohmann-json, cppzmq, cpp-httplib, ixwebsocket
+Optional: sqlite3, cpptoml, nlohmann-json, zeromq, cpp-httplib, ixwebsocket
 Windows: d3d11, d3d12, d3dcompiler, dxgi, dxguid
 ```
 
-Optional vcpkg features: `sqlite`, `config`, `ipc`
+Optional vcpkg features: `sqlite`, `config`, `ipc`, `network`
 
 ## Development Tools
 

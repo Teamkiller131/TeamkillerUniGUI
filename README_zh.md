@@ -154,6 +154,8 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
       -DUNIGUI_MODULE_IPC=ON -DUNIGUI_BACKEND_DX12=ON ...
 ```
 
+可选 vcpkg feature：`sqlite`、`config`、`ipc`、`network`
+
 ## 组件列表（82 个）
 
 > 详尽的组件 API 与示例请参阅 **[docs/WIDGET_API.md](docs/WIDGET_API.md)**；
