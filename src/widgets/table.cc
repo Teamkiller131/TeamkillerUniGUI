@@ -101,6 +101,7 @@ int Table::GetSelectedRow() const { return selected_; }
 void Table::SetOnSelect(std::function<void(int)> callback) { on_select_ = std::move(callback); }
 void Table::SetSortable(bool on) { sortable_ = on; }
 void Table::SetResizable(bool on) { resizable_ = on; }
+void Table::SortByColumn(int col, bool ascending) { ApplySort(col, ascending); }
 void Table::SetColumnAlignment(int col, Alignment alignment) {
     if (col < 0 || col >= (int)alignments_.size()) return;
     alignments_[col] = alignment;
