@@ -42,6 +42,8 @@ public:
     using DoubleClickFn  = std::function<void(int row)>;
     using CellCommitFn   = std::function<void(int row, int col, const std::string& newValue)>;
     using FilterFn       = std::function<bool(int row, const T&)>;
+    /// Checkbox column: returns pointer to bool for the given row+item
+    using CellCheckboxFn = std::function<bool*(int row, const T&)>;
 
     DataTable(std::string name, std::vector<ColumnDef> columns)
         : Widget(std::move(name)), columns_(std::move(columns)) {}
@@ -91,6 +93,10 @@ public:
     /// Enable inline editing on a column. Double-click to edit.
     void SetCellEditable(int col, bool editable) { editableCols_.insert(col); }
     void SetOnCellCommit(CellCommitFn fn) { onCellCommit_ = std::move(fn); }
+
+    // ── Checkbox column ───────────────────────────────────────────────
+    /// Make a column render as Checkbox. fn returns pointer to bool for (row, item).
+    void SetCellCheckbox(int col, CellCheckboxFn fn) { checkboxCols_[col] = std::move(fn); }
 
     // ── Filtering (text search) ──────────────────────────────────────────
     /// Set text filter string — rows not matching are hidden.
@@ -218,6 +224,19 @@ public:
             bool isSelected = std::find(selectedRows_.begin(), selectedRows_.end(), idx) != selectedRows_.end();
             for (int col = 0; col < (int)columns_.size(); ++col) {
                 ImGui::TableSetColumnIndex(col);
+
+                // ── Checkbox column ──────────────────────────────
+                auto cbIt = checkboxCols_.find(col);
+                if (cbIt != checkboxCols_.end() && cbIt->second) {
+                    bool* pb = cbIt->second(idx, (*data_)[idx]);
+                    if (pb) {
+                        char cbLabel[32];
+                        snprintf(cbLabel, sizeof(cbLabel), "##cb_%d_%d", idx, col);
+                        ImGui::Checkbox(cbLabel, pb);
+                    }
+                    continue;
+                }
+
                 std::string text = cellFmt_ ? cellFmt_(idx, col, (*data_)[idx])
                                             : std::to_string(idx);
 
@@ -457,6 +476,7 @@ private:
     std::function<void(int)> rowClickCallback_;
     int selectedRow_ = -1;
     std::unordered_map<int, float> minWidths_;
+    std::unordered_map<int, CellCheckboxFn> checkboxCols_;
 };
 
 } // namespace unigui
