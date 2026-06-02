@@ -78,4 +78,36 @@ private:
     ImVec2 minSize_=ImVec2(0,0),maxSize_=ImVec2(0,0);
 };
 
+// ── FluentWidget<Derived> (CRTP) ─────────────────────────────────────────────
+// Intermediate base that makes the chainable With* helpers return the *derived*
+// type (Derived&) instead of Widget&, so type information is preserved through a
+// chain and derived-specific With* helpers can follow base ones:
+//
+//     btn->WithTooltip("Save").WithPrimary().WithOnClick(fn);   // stays Button&
+//
+// A widget opts in simply by deriving from FluentWidget<Self> instead of Widget
+// (FluentWidget IS-A Widget, so this is source-compatible with existing code,
+// including `unigui::Widget*` upcasts). Widgets that have not opted in keep the
+// Widget& returning helpers below.
+template <class Derived>
+class FluentWidget : public Widget {
+public:
+    using Widget::Widget;
+
+    Derived& WithTooltip(std::string t)        { SetTooltip(std::move(t)); return self(); }
+    Derived& WithEnabled(bool on)              { SetEnabled(on); return self(); }
+    Derived& WithVisible(bool v)               { if (v) Show(); else Hide(); return self(); }
+    Derived& WithUserData(void* data)          { SetUserData(data); return self(); }
+    Derived& WithAccessibleName(std::string n) { SetAccessibleName(std::move(n)); return self(); }
+    Derived& WithAccessibleDescription(std::string d) { SetAccessibleDescription(std::move(d)); return self(); }
+    Derived& WithMinSize(float w, float h)     { SetMinSize(w, h); return self(); }
+    Derived& WithMaxSize(float w, float h)     { SetMaxSize(w, h); return self(); }
+    Derived& WithShadow(bool enable = true, float radius = 4.f, float offX = 2.f, float offY = 2.f) {
+        SetShadow(enable, radius, offX, offY); return self();
+    }
+
+protected:
+    Derived& self() { return static_cast<Derived&>(*this); }
+};
+
 } // namespace unigui

@@ -74,28 +74,35 @@ static void BuildDemoWindow() {
         });
         window->AddPanel(localePanel);
 
-        // ── Fluent API demo panel (v3.4 new) ──────────────────────────────
-        auto fluentPanel = std::make_shared<unigui::Panel>("fluent", "Fluent Widget API (v3.4)");
+        // ── Fluent API + immediate-mode demo panel (v3.4 / usability) ─────
+        auto fluentPanel = std::make_shared<unigui::Panel>("fluent", "Fluent + Immediate API");
         fluentPanel->SetContentCallback([]() {
+            namespace im = unigui::im;
             static bool dirty = true;
-            ImGui::Checkbox("Dirty (enables Save button)", &dirty);
-            ImGui::Separator();
+            im::Checkbox("Dirty (enables Save button)", &dirty);
+            im::Separator();
 
-            // Configure a button in one expression using With* chaining.
+            // Retained-mode Button configured via the CRTP fluent chain — base
+            // helpers (WithTooltip/WithEnabled) and Button-specific helpers
+            // (WithPrimary) compose because the chain stays Button&.
             static auto saveBtn = std::make_shared<unigui::Button>("save", "Save");
             saveBtn->WithTooltip("Ctrl+S — Save the current file")
                     .WithEnabled(dirty)
+                    .WithPrimary()
                     .WithShadow(true, 6.f, 2.f, 2.f);
             saveBtn->Render();
 
-            ImGui::SameLine();
+            im::SameLine();
 
-            static auto discardBtn = std::make_shared<unigui::Button>("discard", "Discard");
-            discardBtn->WithTooltip("Discard unsaved changes")
-                       .WithEnabled(dirty);
-            discardBtn->Render();
+            // Immediate-mode button — no shared_ptr / name / Render() needed.
+            {
+                unigui::DisabledScope d{!dirty};
+                if (im::Button("Discard", im::ButtonVariant::Danger))
+                    dirty = false;
+            }
 
-            ImGui::TextDisabled("Button state follows the 'Dirty' checkbox via WithEnabled().");
+            im::TextDisabled("Save uses retained-mode fluent API; "
+                             "Discard uses unigui::im + DisabledScope.");
         });
         window->AddPanel(fluentPanel);
 

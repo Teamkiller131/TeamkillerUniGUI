@@ -273,6 +273,30 @@ target_link_libraries(test_effect_bench PRIVATE GTest::gtest GTest::gtest_main u
 target_compile_features(test_effect_bench PRIVATE cxx_std_23)
 gtest_discover_tests(test_effect_bench)
 
+# Usability layer: immediate-mode API (unigui::im)
+add_executable(test_im im/im_test.cc)
+target_link_libraries(test_im PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_im PRIVATE cxx_std_23)
+gtest_discover_tests(test_im)
+
+# Usability layer: RAII scope guards (unigui::WindowScope, ...)
+add_executable(test_scope core/scope_test.cc)
+target_link_libraries(test_scope PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_scope PRIVATE cxx_std_23)
+gtest_discover_tests(test_scope)
+
+# Usability layer: Make<T>/MakeNamed<T> factory helpers
+add_executable(test_make core/make_test.cc)
+target_link_libraries(test_make PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_make PRIVATE cxx_std_23)
+gtest_discover_tests(test_make)
+
+# Usability layer: CRTP fluent Button API
+add_executable(test_button_fluent widgets/button_fluent_test.cc)
+target_link_libraries(test_button_fluent PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_button_fluent PRIVATE cxx_std_23)
+gtest_discover_tests(test_button_fluent)
+
 # v3.2.7 sticky header tests (manual — needs render backend)
 # add_executable(test_datatable_sticky widgets/datatable_sticky_test.cc)
 

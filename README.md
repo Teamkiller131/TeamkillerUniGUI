@@ -99,7 +99,7 @@ User Code
 unigui:: API
     ├── Theme Engine (53-color dark + light theme, StyleScope RAII)
     ├── Widget Library (82 widgets (100% PushID-safe), form validation, undo/redo, serialization)
-    ├── Declarative DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
+    ├── Declarative DSL (unigui::dsl — Window, VBox/HBox, Button, CheckBox, SliderFloat, InputText, If/For)
     ├── EventBus (unigui::events::Bus — publish/subscribe with wildcards)
     ├── CSS Styling (unigui::styling::Engine — selector engine + variables)
     ├── Plugin System (unigui::plugin::Manager — DLL plugin hot-reload)
@@ -163,37 +163,112 @@ unigui::Shutdown();
 ### Widget Fluent API
 
 All widgets inherit chainable `With*` wrappers from the base class, enabling
-one-liner configuration:
+one-liner configuration. Widgets that opt into the CRTP `FluentWidget<Derived>`
+base (e.g. `Button`) keep the **derived type** through the whole chain, so
+base helpers and widget-specific helpers mix freely:
 
 ```cpp
 auto btn = std::make_shared<unigui::Button>("save", "Save");
-btn->WithTooltip("Ctrl+S — Save the file")
-   .WithEnabled(dirty)
-   .WithShadow();
+btn->WithTooltip("Ctrl+S — Save the file")  // base helper  → Button&
+   .WithEnabled(dirty)                      // base helper  → Button&
+   .WithPrimary()                           // Button-only  → Button&
+   .WithOnClick([]{ /* save */ });          // Button-only  → Button&
 
 auto lbl = std::make_shared<unigui::Label>("hint", "Read-only");
 lbl->WithVisible(false).WithAccessibleName("Hint label");
 ```
 
+### Immediate Mode (`unigui::im`)
+
+For the common "just draw a control" case you don't need a `shared_ptr`, a
+unique name, or a manual `Render()`. The `unigui::im` namespace provides
+themed, immediate-mode free functions that read like raw ImGui but stay inside
+the UniGUI namespace (and avoid clashing with the retained-mode widget
+*classes* of the same name):
+
+```cpp
+#include <unigui/im/im.h>
+namespace im = unigui::im;
+
+if (im::Button("Save", im::ButtonVariant::Primary)) save();
+im::Checkbox("Enabled", &enabled);
+im::SliderFloat("Gain", &gain, 0.f, 1.f);
+im::InputText("Name", &name);          // bound to a std::string
+im::Combo("Mode", &mode, {"Fast","Safe"});
+im::SameLine();
+im::Text("status: ok");
+```
+
+**Immediate vs retained mode** — use `unigui::im` free functions for simple,
+stateless controls; use the retained-mode widget classes (`unigui::Button`,
+`unigui::Form`, `unigui::DataTable`, …) when you need persistent state,
+validation, undo/redo or serialization. The two layers coexist.
+
+### RAII Scopes
+
+Move-only guards pair ImGui's `Begin*/Push*` calls with their matching
+`End*/Pop*` automatically — no more forgotten or mismatched `End()`/`PopID()`:
+
+```cpp
+#include <unigui/core/scope.h>
+
+if (unigui::WindowScope w{"Settings"}) {
+    unigui::IDScope id{"row"};
+    unigui::DisabledScope d{readOnly};
+    im::Button("Apply");
+}   // End() / PopID() / EndDisabled() run automatically, in reverse order
+```
+
+Available: `WindowScope`, `ChildScope`, `IDScope`, `DisabledScope`,
+`GroupScope`, `TabBarScope`, `TabItemScope` (alongside the existing
+`StyleScope`).
+
+### Widget Factory
+
+`unigui::Make<T>` / `MakeNamed<T>` cut the `std::make_shared` boilerplate and
+can auto-generate unique widget names:
+
+```cpp
+auto btn = unigui::Make<unigui::Button>("save", "Save"); // explicit name
+auto lbl = unigui::MakeNamed<unigui::Label>("Read-only"); // auto unique name
+```
+
 ### Declarative DSL
+
+Describe the UI as a tree of value-type builders, then `Render()` it each
+frame. The DSL renders through the themed `unigui::im` layer, so its output
+matches the rest of the toolkit. Stateful controls either **bind to a
+variable** through a pointer or keep their state inside the retained node, so
+re-`Render()`-ing the same tree preserves user input:
 
 ```cpp
 #include <unigui/dsl/dsl.h>
 using namespace unigui::dsl;
 
+bool enabled = true;
+float gain = 0.5f;
+
 auto ui = Window("DSL Demo", VBox({
     Text("Welcome!"),
     Separator(),
     HBox({
-        Button("Click Me", []{ /* action */ }),
-        Button("Exit",     []{ std::exit(0); })
+        Button("Save", ButtonVariant::Primary, []{ /* action */ }),
+        Button("Exit",                          []{ std::exit(0); })
     }),
+    CheckBox("Enabled", &enabled),          // bound to an external bool
+    SliderFloat("Gain", &gain, 0.f, 1.f),   // bound to an external float
+    If([&]{ return enabled; }, Text("…running")),
     For(5, [](int i){ return Label("Item #" + std::to_string(i+1)); })
 }));
 
 // In render loop:
 Render(ui);
 ```
+
+Builders: `Window`, `VBox`, `HBox`, `Label`, `Text`, `TextWrapped`,
+`TextDisabled`, `BulletText`, `Button` (with `ButtonVariant`), `CheckBox`,
+`SliderFloat`, `InputText` (each bound or node-stated), `Separator`, `Spacing`,
+`If`, `IfElse`, `For`.
 
 ### EventBus
 
