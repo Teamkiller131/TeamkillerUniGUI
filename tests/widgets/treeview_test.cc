@@ -35,3 +35,25 @@ TEST_F(TreeViewTest, EnhancedFields_Render) {
     tv.SetRoot(std::move(root));
     tv.Render();
 }
+
+TEST_F(TreeViewTest, RowRenderer_RendersClosedNodeRow) {
+    unigui::TreeView tv("tv");
+    tv.SetRoot({"Root", {{"A", {}}, {"B", {}}}});
+    int rendered = 0;
+    tv.SetRowRenderer([&](int, int, const unigui::TreeNode& node, bool) {
+        ++rendered;
+        ImGui::Text("%s", node.label.c_str());
+    });
+    tv.Render();
+    EXPECT_GT(rendered, 0);
+}
+
+TEST_F(TreeViewTest, DuplicateLabels_RenderWithCustomRows) {
+    unigui::TreeView tv("tv");
+    tv.SetRoot({"Root", {{"Node", {}}, {"Node", {}}}});
+    tv.SetRowRenderer([](int, int, const unigui::TreeNode& node, bool) {
+        ImGui::Text("%s", node.label.c_str());
+    });
+    tv.Render();
+    SUCCEED();
+}

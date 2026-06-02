@@ -7,3 +7,4 @@ protected:void SetUp()override{ImGui::CreateContext();ImGui::GetIO().DisplaySize
 void TearDown()override{ImGui::Render();ImGui::DestroyContext();}};
 TEST_F(MultiComboTest,Render_DoesNotCrash){unigui::MultiCombo mc("mc","Select",{"A","B","C"});mc.Render();}
 TEST_F(MultiComboTest,Selected_DefaultsEmpty){unigui::MultiCombo mc("mc","X",{"1","2","3"});EXPECT_TRUE(mc.GetSelectedIndices().empty());}
+TEST_F(MultiComboTest,Render_LongItemsDoesNotCrash){unigui::MultiCombo mc("mc","Select",{"超长下拉选项内容A","超长下拉选项内容B"});mc.Render();}
