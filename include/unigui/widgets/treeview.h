@@ -27,10 +27,12 @@ public:
     void SetMultiSelect(bool on);
     std::vector<int> GetSelectedNodes() const;
     void SetHideRoot(bool on) { hideRoot_ = on; }
+
+    /// Legacy: custom node renderer called INSIDE the TreeNode (after the
+    /// expand arrow + label). Prefer SetRowRenderer for full row control.
     void SetNodeRenderer(std::function<void(int id, int depth, const TreeNode& node)> fn);
 
-
-    /// Legacy: custom node renderer called INSIDE TreeNode (after expand arrow + label).\n    /// Prefer SetRowRenderer for full row control.\n    void SetNodeRenderer(std::function<void(int id, int depth, const TreeNode& node)> fn);\n\n    /// Custom row renderer: renders the ENTIRE row content (inside TreeNodeEx).
+    /// Custom row renderer: renders the ENTIRE row content (inside TreeNodeEx).
     /// TreeView manages expand/collapse/select. If NOT set, default rendering
     /// uses icon/suffix/progress/color fields on TreeNode.
     void SetRowRenderer(std::function<void(int id, int depth, const TreeNode& node, bool selected)> fn);

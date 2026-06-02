@@ -62,10 +62,36 @@ void LoadDefaultFont(float size_pixels, const char* ttf_path) {
         return;
     }
 
-    // Merge CJK glyphs from system font (optional, platform-specific paths)
+    // Merge glyphs from a system font (optional, platform-specific paths).
+    // Build a broad multi-script range so the UI can render Chinese, Japanese,
+    // Korean, Cyrillic, Greek, Thai and Vietnamese in addition to Latin.
     cfg.MergeMode = true;
     cfg.FontDataOwnedByAtlas = true; // ImGui frees the data, not us
-    const ImWchar* cjk = io.Fonts->GetGlyphRangesChineseFull();
+
+    static ImVector<ImWchar> s_glyphRanges;
+    if (s_glyphRanges.empty()) {
+        ImFontGlyphRangesBuilder builder;
+        builder.AddRanges(io.Fonts->GetGlyphRangesDefault());          // Basic Latin + Latin-1
+        builder.AddRanges(io.Fonts->GetGlyphRangesGreek());            // Greek
+        builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());         // Cyrillic
+        builder.AddRanges(io.Fonts->GetGlyphRangesThai());             // Thai
+        builder.AddRanges(io.Fonts->GetGlyphRangesVietnamese());       // Vietnamese
+        builder.AddRanges(io.Fonts->GetGlyphRangesJapanese());         // Hiragana/Katakana + Kanji
+        builder.AddRanges(io.Fonts->GetGlyphRangesKorean());           // Hangul
+        builder.AddRanges(io.Fonts->GetGlyphRangesChineseFull());      // CJK Unified Ideographs
+        // A few commonly-needed punctuation / symbol blocks.
+        static const ImWchar extra[] = {
+            0x2000, 0x206F, // General Punctuation (— “ ” … etc.)
+            0x20A0, 0x20CF, // Currency Symbols (€ ₿ ₩ …)
+            0x2100, 0x214F, // Letterlike Symbols (™ № …)
+            0x2190, 0x21FF, // Arrows
+            0x2200, 0x22FF, // Mathematical Operators
+            0,
+        };
+        builder.AddRanges(extra);
+        builder.BuildRanges(&s_glyphRanges);
+    }
+    const ImWchar* cjk = s_glyphRanges.Data;
 
 #ifdef _WIN32
     const char* cjk_paths[] = {
