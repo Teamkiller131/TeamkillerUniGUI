@@ -4,9 +4,9 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.3.1-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-579-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-83-blue)]()
+[![Version](https://img.shields.io/badge/version-3.5.0-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-637-brightgreen)]()
+[![Widgets](https://img.shields.io/badge/widgets-82-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20production%29-orange)]()
 
 C++23 Dear ImGui 封装库——提供统一的明暗主题引擎、高层组件、声明式 DSL、CSS 样式引擎、插件系统与 EventBus。支持 7 种渲染后端：GLFW+OpenGL3、SDL3+Vulkan、DX11、DX12、Metal、WebGPU 和 Emscripten。
@@ -45,7 +45,7 @@ ctest --test-dir build
     ↓
 unigui:: API
     ├── 主题引擎 (53 色明暗主题，StyleScope RAII)
-    ├── 组件库 (74 个组件，100% PushID 安全，表单校验/撤销重做/序列化)
+    ├── 组件库 (82 个组件，100% PushID 安全，表单校验/撤销重做/序列化)
     ├── 声明式 DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
     ├── 事件总线 (unigui::events::Bus — 发布/订阅，支持通配符)
     ├── CSS 样式引擎 (unigui::styling::Engine — 选择器引擎 + 变量)
@@ -154,7 +154,11 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
       -DUNIGUI_MODULE_IPC=ON -DUNIGUI_BACKEND_DX12=ON ...
 ```
 
-## 组件列表（74 个）
+## 组件列表（82 个）
+
+> 详尽的组件 API 与示例请参阅 **[docs/WIDGET_API.md](docs/WIDGET_API.md)**；
+> 专题指南：**[TreeView 树形控件](docs/TREEVIEW.md)**、**[CascadingCombo 级联下拉](docs/CASCADINGCOMBO.md)**。
+
 
 | 分类 | 组件 | 核心 API |
 |------|------|----------|
@@ -170,6 +174,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | PasswordInput | `GetStrengthScore()` (0-4)，显示/隐藏切换 |
 | | ComboBox | `SetItems()`, `SetOnChange()`, `SetSearchable()` |
 | | MultiCombo | `GetSelectedIndices()`, `SetSelected()` |
+| | CascadingCombo | N 级联动下拉，横/纵排布 + 宽度调整（[指南](docs/CASCADINGCOMBO.md)） |
 | | SearchBox | `SetItems(v)`, `GetQuery()`, `SetOnSelect(fn)` |
 | | Slider\<T\> | `SetMin()`, `SetMax()`, `SetValue()` |
 | | MultiHandleSlider | 多游标可拖拽滑块 (v3.2) |
@@ -192,14 +197,17 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | Markdown | `SetMarkdown()`，支持 # ** * - [链接] |
 | | Image | `SetTexture(texID)`，多种缩放模式 |
 | | ProgressBar | `SetFraction()`，状态颜色 + 动画填充 |
+| | StatusLamp | 多状态指示灯 + 辉光（`SetGlowEnabled`） |
+| | RiskBar | 阈值着色的动画风险条 |
+| | FuturesRiskBar | 实际/预估/隔夜多标记风险条 |
 | | LoadingIndicator | `SetActive(bool)`，旋转动画 |
 | | GradientText | `Render(text, leftColor, rightColor)` (v3.0) |
 | 列表 | VirtualList | `SetItemCount(n)`, `SetItemGetter(fn)` — 10 万+ |
-| | DataTable\<T\> | 虚拟滚动、排序、分组行、行着色、内联编辑、过滤 (v3.2) |
-| | MultiSplitter | N面板可拖拽横/纵向布局 (v3.2) |
+| | DataTable\<T\> | 虚拟滚动、排序、分组行、行着色、内联编辑、复选框列、过滤 |
+| | MultiSplitter | N面板可拖拽横/纵向布局 |
 | | ListView | `SetItems()`, `SetOnSelect()` |
-| | Table | `AddRow()`, `ExportCSV()`, `ImportCSV()` |
-| | TreeView | `SetRoot()`，多选支持 |
+| | Table | `AddRow()`，可排序、单元格嵌入、`ExportCSV()`/`ImportCSV()` |
+| | TreeView | `SetRoot()`，多选、复合行/自定义行（[指南](docs/TREEVIEW.md)） |
 | 布局 | Splitter | `SetOrientation()`，拖拽调整 |
 | | ScrollArea | `SetContentCallback(fn)` |
 | | Separator | 水平/垂直分割线 |
@@ -208,6 +216,8 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | Breadcrumb | `SetItems()`，路径导航 |
 | | Wizard | `AddStep()`, `Next()`, `Previous()` |
 | 弹窗 | Dialog | `Open()`, `Close()`，模态/非模态 |
+| | ConfirmDialog | 确认弹窗，危险样式 |
+| | AlertBar | 常驻动画横幅 |
 | | Tooltip | `Show(text)`，悬停提示 |
 | | ContextMenu | `Show()`，右键弹出菜单 |
 | | Toast | `Toast::Info()`, `Success()`, `Warn()`, `Error()` |
@@ -217,7 +227,8 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | RadioGroup | `SetSelected()`，单选项组 |
 | | ToggleSwitch | `SetOn(bool)`，带动画过渡 |
 | 其他 | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
-| | TimeSeriesChart | 实时时序图、滑动窗口 (v3.2) |
+| | TimeSeriesChart | 实时时序图、滑动窗口 |
+| | SliderBar | 期货/价格档位条，含确认/回滚 |
 | | ShortcutManager | `Register()`，全局快捷键 |
 | | Notification | `Show()`，待处理计数 |
 | | TrayIcon | `Show()`, `Hide()`, `SetMenu()`, `ShowNotification()` |
@@ -226,11 +237,9 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | SkeletonScreen | 骨架屏占位 (v3.0) |
 | | Shimmer | 骨架屏流光动画 (v3.0) |
 
-> 完整组件 API 文档请参阅 [docs/WIDGET_API.md](docs/WIDGET_API.md)
-
 ## ID 安全
 
-所有 74 个组件均通过 `PushID`/`PopID` 自动管理 ImGui ID 栈，无需手动处理 ID 冲突。
+所有 82 个组件均通过 `PushID`/`PopID` 自动管理 ImGui ID 栈，无需手动处理 ID 冲突。
 
 ```cpp
 auto btn1 = std::make_shared<unigui::Button>("ok", "确定");
@@ -280,8 +289,8 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5（桩）
 
 ## 平台说明
 
-- **Windows**：主力平台。Visual Studio 2022 + MSVC 19.40+。DX11 为默认后端。285/285 测试通过。
-- **Linux**：GCC 14+/Clang 18+，GLFW+OpenGL3。支持 X11/Wayland。236/244 测试通过（8 项 GL 上下文失败为无头环境预期）。x64-linux triplet 依赖见 [vcpkg.json](vcpkg.json)。
+- **Windows**：主力平台。Visual Studio 2022 + MSVC 19.40+。DX11 为默认后端。完整测试套件（637 项）全部通过。
+- **Linux**：GCC 14+/Clang 18+，GLFW+OpenGL3。支持 X11/Wayland。无头环境下会跳过少量依赖 GL 上下文的测试。x64-linux triplet 依赖见 [vcpkg.json](vcpkg.json)。
 - **macOS**：Apple 已弃用 OpenGL（上限 4.1），推荐通过 MoltenVK 使用 Vulkan。
 
 ## 开发工具
