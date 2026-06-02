@@ -62,8 +62,11 @@ void PanelBox::Render() {
         contentCb_();
     }
 
-    // Advance cursor past content area (add spacing)
-    ImGui::SetCursorScreenPos(ImVec2(cursor.x, contentBotRight.y + 4.f));
+    // Submit a real item covering the panel bounds so parent windows grow
+    // correctly. Merely moving the cursor to the bottom triggers ImGui
+    // boundary warnings when the panel is used inside splitter children.
+    ImGui::SetCursorScreenPos(cursor);
+    ImGui::Dummy(ImVec2(availW, titleBarH + contentH + 4.f));
 
     ImGui::PopID();
 }
