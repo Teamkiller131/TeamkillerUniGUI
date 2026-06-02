@@ -3,14 +3,120 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <string_view>
+
 namespace unigui {
-Table::Table(std::string name, std::vector<std::string> columns) : Widget(std::move(name)), columns_(std::move(columns)) {}
+
+namespace {
+
+std::string Trim(std::string_view value) {
+    size_t first = 0;
+    while (first < value.size() && std::isspace(static_cast<unsigned char>(value[first]))) ++first;
+    size_t last = value.size();
+    while (last > first && std::isspace(static_cast<unsigned char>(value[last - 1]))) --last;
+    return std::string(value.substr(first, last - first));
+}
+
+bool EndsWith(std::string_view value, std::string_view suffix) {
+    return value.size() >= suffix.size() &&
+           value.substr(value.size() - suffix.size()) == suffix;
+}
+
+std::string FormatCellText(std::string_view raw, std::string_view unit) {
+    if (raw.empty() || unit.empty()) return std::string(raw);
+    std::string trimmed = Trim(raw);
+    if (trimmed.empty() || EndsWith(trimmed, unit)) return std::string(raw);
+    return trimmed + std::string(unit);
+}
+
+bool ParseNumericCell(std::string_view text, std::string_view unit, double& out) {
+    std::string trimmed = Trim(text);
+    if (trimmed.empty()) return false;
+    try {
+        size_t pos = 0;
+        out = std::stod(trimmed, &pos);
+        std::string rest = Trim(std::string_view(trimmed).substr(pos));
+        if (!unit.empty()) {
+            return rest.empty() || rest == unit;
+        }
+        return std::none_of(rest.begin(), rest.end(), [](unsigned char ch) {
+            return std::isdigit(ch);
+        });
+    } catch (...) {
+        return false;
+    }
+}
+
+float AlignedOffset(float availableWidth, float contentWidth, Table::Alignment alignment) {
+    const float slack = std::max(0.0f, availableWidth - contentWidth);
+    switch (alignment) {
+    case Table::Alignment::Center:
+        return slack * 0.5f;
+    case Table::Alignment::Right:
+        return slack;
+    case Table::Alignment::Left:
+    default:
+        return 0.0f;
+    }
+}
+
+void DrawAlignedText(const std::string& text, float width, Table::Alignment alignment) {
+    const ImVec2 start = ImGui::GetCursorScreenPos();
+    const ImVec2 size = ImGui::CalcTextSize(text.c_str());
+    const float lineHeight = std::max(ImGui::GetTextLineHeight(), size.y);
+    ImGui::Dummy(ImVec2(width, lineHeight));
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    draw->PushClipRect(start, ImVec2(start.x + width, start.y + lineHeight), true);
+    const float x = start.x + AlignedOffset(width, size.x, alignment);
+    const float y = start.y + std::max(0.0f, (lineHeight - size.y) * 0.5f);
+    draw->AddText(ImVec2(x, y), ImGui::GetColorU32(ImGuiCol_Text), text.c_str());
+    draw->PopClipRect();
+}
+
+bool DrawSelectableAlignedText(const std::string& text, bool selected, float width, Table::Alignment alignment) {
+    const bool clicked = ImGui::Selectable("##cell", selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
+    ImGui::SetItemAllowOverlap();
+    const ImVec2 start = ImGui::GetItemRectMin();
+    const ImVec2 end = ImGui::GetItemRectMax();
+    const ImVec2 size = ImGui::CalcTextSize(text.c_str());
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    draw->PushClipRect(start, ImVec2(start.x + width, end.y), true);
+    const float x = start.x + AlignedOffset(width, size.x, alignment);
+    const float y = start.y + std::max(0.0f, ((end.y - start.y) - size.y) * 0.5f);
+    draw->AddText(ImVec2(x, y), ImGui::GetColorU32(ImGuiCol_Text), text.c_str());
+    draw->PopClipRect();
+    return clicked;
+}
+
+} // namespace
+
+Table::Table(std::string name, std::vector<std::string> columns)
+    : Widget(std::move(name)),
+      columns_(std::move(columns)),
+      alignments_(columns_.size(), Alignment::Left),
+      units_(columns_.size()) {}
 void Table::AddRow(std::vector<std::string> row) { rows_.push_back(std::move(row)); }
 void Table::ClearRows() { rows_.clear(); }
 int Table::GetSelectedRow() const { return selected_; }
 void Table::SetOnSelect(std::function<void(int)> callback) { on_select_ = std::move(callback); }
 void Table::SetSortable(bool on) { sortable_ = on; }
 void Table::SetResizable(bool on) { resizable_ = on; }
+void Table::SortByColumn(int col, bool ascending) { ApplySort(col, ascending); }
+void Table::SetColumnAlignment(int col, Alignment alignment) {
+    if (col < 0 || col >= (int)alignments_.size()) return;
+    alignments_[col] = alignment;
+}
+Table::Alignment Table::GetColumnAlignment(int col) const {
+    return (col >= 0 && col < (int)alignments_.size()) ? alignments_[col] : Alignment::Left;
+}
+void Table::SetColumnUnit(int col, std::string unit) {
+    if (col < 0 || col >= (int)units_.size()) return;
+    units_[col] = std::move(unit);
+}
+const std::string& Table::GetColumnUnit(int col) const {
+    static const std::string kEmpty;
+    return (col >= 0 && col < (int)units_.size()) ? units_[col] : kEmpty;
+}
 
 const std::string& Table::CellText(int row, int col) const {
     static const std::string kEmpty;
@@ -40,15 +146,7 @@ void Table::ApplySort(int col, bool ascending) {
     } else {
         // Numeric-aware default: parse each cell once into a sort key, then
         // sort an index permutation to avoid re-parsing on every comparison.
-        auto asNumber = [](const std::string& s, double& out) -> bool {
-            if (s.empty()) return false;
-            try {
-                size_t pos = 0;
-                out = std::stod(s, &pos);
-                while (pos < s.size() && std::isspace((unsigned char)s[pos])) ++pos;
-                return pos == s.size();
-            } catch (...) { return false; }
-        };
+        const std::string& unit = GetColumnUnit(col);
         struct Key { bool isNum; double num; };
         const int n = (int)rows_.size();
         std::vector<Key> keys(n);
@@ -56,7 +154,7 @@ void Table::ApplySort(int col, bool ascending) {
         for (int i = 0; i < n; ++i) {
             order[i] = i;
             double v = 0;
-            keys[i].isNum = asNumber(cell(rows_[i]), v);
+            keys[i].isNum = ParseNumericCell(cell(rows_[i]), unit, v);
             keys[i].num = v;
         }
         std::stable_sort(order.begin(), order.end(), [&](int ia, int ib) {
@@ -115,17 +213,21 @@ void Table::Render() {
 
         for (int r = 0; r < (int)rows_.size(); r++) {
             ImGui::TableNextRow();
-            for (int c = 0; c < (int)rows_[r].size() && c < (int)columns_.size(); c++) {
+            for (int c = 0; c < (int)columns_.size(); c++) {
                 ImGui::TableSetColumnIndex(c);
                 ImGui::PushID(r * 1000 + c);
                 bool handled = false;
                 if (cell_renderer_) handled = cell_renderer_(r, c);
                 if (!handled) {
+                    const std::string display = FormatCellText(CellText(r, c), GetColumnUnit(c));
+                    const float width = std::max(0.0f, ImGui::GetContentRegionAvail().x);
                     if (c == 0) {
-                        if (ImGui::Selectable(rows_[r][c].c_str(), r == selected_, ImGuiSelectableFlags_SpanAllColumns)) {
+                        if (DrawSelectableAlignedText(display, r == selected_, width, GetColumnAlignment(c))) {
                             selected_ = r; if (on_select_) on_select_(r);
                         }
-                    } else { ImGui::TextUnformatted(rows_[r][c].c_str()); }
+                    } else {
+                        DrawAlignedText(display, width, GetColumnAlignment(c));
+                    }
                 }
                 ImGui::PopID();
             }

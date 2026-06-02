@@ -1,6 +1,21 @@
 #include <unigui/widgets/combobox.h>
 #include <imgui.h>
+#include <algorithm>
+
 namespace unigui {
+
+namespace {
+
+float CalcComboWidth(const std::vector<std::string>& items, const char* preview) {
+    float maxTextWidth = ImGui::CalcTextSize(preview ? preview : "").x;
+    for (const auto& item : items)
+        maxTextWidth = std::max(maxTextWidth, ImGui::CalcTextSize(item.c_str()).x);
+    const ImGuiStyle& style = ImGui::GetStyle();
+    return maxTextWidth + style.FramePadding.x * 2.0f + ImGui::GetFrameHeight() + style.ItemInnerSpacing.x + 4.0f;
+}
+
+} // namespace
+
 ComboBox::ComboBox(std::string name, std::string label, std::vector<std::string> items, int selected)
     : Widget(std::move(name)), label_(std::move(label)), items_(std::move(items)), selected_(selected) {}
 void ComboBox::Render() {
@@ -11,6 +26,7 @@ void ComboBox::Render() {
         ImGui::InputText("##search", search_buf_, sizeof(search_buf_));
         ImGui::SameLine();
     }
+    ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
     if (ImGui::BeginCombo(label_.c_str(), preview)) {
         for (int i = 0; i < (int)items_.size(); i++) {
             if (searchable_ && search_buf_[0]) {

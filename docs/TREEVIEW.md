@@ -137,6 +137,7 @@ void SetRowRenderer(
 
 > `SetRowRenderer` 优先级高于内置字段渲染：一旦设置，内置的 icon/suffix/progress 不再自动绘制，
 > 全部由你的回调负责。
+> 该回调会直接绘制在节点所在行，不会再生成额外的空白占位行；同名节点也会自动使用独立 ID。
 
 ### 兼容接口：`SetNodeRenderer`
 

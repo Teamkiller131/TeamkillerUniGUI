@@ -33,3 +33,10 @@ TEST_F(ComboBoxTest, SetItemIcon_DoesNotCrash) {
     EXPECT_EQ(cb.GetItemIcon(1), (ImTextureID)0);
     cb.Render();
 }
+
+TEST_F(ComboBoxTest, Render_LongPreviewDoesNotClipArrowWidthCalculation) {
+    unigui::ComboBox cb("cb", "Choose", {"Very very long preview text", "B"});
+    cb.SetSelectedIndex(0);
+    cb.Render();
+    SUCCEED();
+}
