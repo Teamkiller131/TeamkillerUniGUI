@@ -85,10 +85,11 @@ void StatusLamp::Render() {
     const float pad = glow_ ? r * 0.8f : 0.0f; // room for halo
 
     ImVec2 origin = ImGui::GetCursorScreenPos();
-    ImVec2 center(origin.x + pad + r, origin.y + r);
+    ImVec2 center(origin.x + pad + r, origin.y + pad + r);
 
-    // Reserve layout box (include halo padding so neighbors don't overlap).
-    ImGui::Dummy(ImVec2(diameter + pad * 2.0f, diameter));
+    // Reserve layout box (include halo padding on both axes so neighbors
+    // don't overlap and the glow isn't clipped).
+    ImGui::Dummy(ImVec2(diameter + pad * 2.0f, diameter + pad * 2.0f));
 
     ImDrawList* dl = ImGui::GetWindowDrawList();
 
