@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui.h>
+#include <unigui/theme/style_tokens.h>
 namespace unigui::theme {
 inline void ApplySolarizedDark(ImGuiStyle& s){auto&c=s.Colors;
 c[ImGuiCol_WindowBg]=ImVec4(0.01f,0.17f,0.21f,1.0f);c[ImGuiCol_ChildBg]=ImVec4(0.01f,0.17f,0.21f,1.0f);
@@ -19,8 +20,7 @@ c[ImGuiCol_TabActive]=ImVec4(0.15f,0.55f,0.82f,1.0f);c[ImGuiCol_TabUnfocused]=Im
 c[ImGuiCol_DockingPreview]=ImVec4(0.15f,0.55f,0.82f,0.50f);c[ImGuiCol_Text]=ImVec4(0.51f,0.58f,0.59f,1.0f);
 c[ImGuiCol_TextDisabled]=ImVec4(0.51f,0.58f,0.59f,0.38f);c[ImGuiCol_ResizeGrip]=ImVec4(0.15f,0.55f,0.82f,0.25f);
 c[ImGuiCol_NavHighlight]=ImVec4(0.15f,0.55f,0.82f,1.0f);c[ImGuiCol_ModalWindowDimBg]=ImVec4(0.00f,0.00f,0.00f,0.45f);
-s.WindowRounding=4.f;s.FrameRounding=3.f;s.GrabRounding=3.f;s.TabRounding=3.f;s.ChildRounding=3.f;
-s.PopupRounding=3.f;s.ScrollbarRounding=6.f;s.GrabMinSize=8.f;s.WindowBorderSize=0.f;s.FrameBorderSize=0.f;
+ApplyStyleTokens(s);
 }
 inline void ApplySolarizedLight(ImGuiStyle& s){auto&c=s.Colors;
 c[ImGuiCol_WindowBg]=ImVec4(0.99f,0.96f,0.89f,1.0f);c[ImGuiCol_ChildBg]=ImVec4(0.99f,0.96f,0.89f,1.0f);
@@ -39,7 +39,6 @@ c[ImGuiCol_TabHovered]=ImVec4(0.15f,0.55f,0.82f,0.30f);c[ImGuiCol_TabActive]=ImV
 c[ImGuiCol_TabUnfocused]=ImVec4(0.93f,0.91f,0.84f,1.0f);c[ImGuiCol_DockingPreview]=ImVec4(0.15f,0.55f,0.82f,0.50f);
 c[ImGuiCol_Text]=ImVec4(0.40f,0.36f,0.31f,1.0f);c[ImGuiCol_TextDisabled]=ImVec4(0.40f,0.36f,0.31f,0.38f);
 c[ImGuiCol_NavHighlight]=ImVec4(0.15f,0.55f,0.82f,1.0f);c[ImGuiCol_ModalWindowDimBg]=ImVec4(0.00f,0.00f,0.00f,0.30f);
-s.WindowRounding=4.f;s.FrameRounding=3.f;s.GrabRounding=3.f;s.TabRounding=3.f;s.ChildRounding=3.f;
-s.PopupRounding=3.f;s.ScrollbarRounding=6.f;s.GrabMinSize=8.f;s.WindowBorderSize=0.f;s.FrameBorderSize=0.f;
+ApplyStyleTokens(s);
 }
 }

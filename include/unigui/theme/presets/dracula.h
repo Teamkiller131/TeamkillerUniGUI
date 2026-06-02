@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui.h>
+#include <unigui/theme/style_tokens.h>
 namespace unigui::theme {
 inline void ApplyDracula(ImGuiStyle& s){auto&c=s.Colors;
 c[ImGuiCol_WindowBg]=ImVec4(0.16f,0.16f,0.22f,1.0f);c[ImGuiCol_ChildBg]=ImVec4(0.16f,0.16f,0.22f,1.0f);
@@ -19,7 +20,6 @@ c[ImGuiCol_TabActive]=ImVec4(0.74f,0.60f,0.98f,1.0f);c[ImGuiCol_TabUnfocused]=Im
 c[ImGuiCol_DockingPreview]=ImVec4(0.74f,0.60f,0.98f,0.50f);c[ImGuiCol_Text]=ImVec4(0.97f,0.97f,0.99f,1.0f);
 c[ImGuiCol_TextDisabled]=ImVec4(0.97f,0.97f,0.99f,0.38f);c[ImGuiCol_ResizeGrip]=ImVec4(0.74f,0.60f,0.98f,0.25f);
 c[ImGuiCol_NavHighlight]=ImVec4(0.74f,0.60f,0.98f,1.0f);c[ImGuiCol_ModalWindowDimBg]=ImVec4(0.00f,0.00f,0.00f,0.45f);
-s.WindowRounding=6.f;s.FrameRounding=4.f;s.GrabRounding=4.f;s.TabRounding=4.f;s.ChildRounding=4.f;
-s.PopupRounding=4.f;s.ScrollbarRounding=9.f;s.GrabMinSize=10.f;s.WindowBorderSize=1.f;s.FrameBorderSize=1.f;
+ApplyStyleTokens(s);
 }
 }

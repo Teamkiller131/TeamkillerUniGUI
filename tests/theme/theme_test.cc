@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/theme/theme.h>
 #include <unigui/theme/style_scope.h>
+#include <unigui/theme/style_tokens.h>
+#include <unigui/theme/presets/registry.h>
 #include <unigui/core/context.h>
 #include <imgui.h>
 #include <gtest/gtest.h>
@@ -75,4 +77,60 @@ TEST_F(ThemeTest, DPI_Scaling_SetsFontGlobalScale) {
 TEST_F(ThemeTest, DPI_Scaling_DefaultIsOne) {
     unigui::ApplyTheme({unigui::ThemePreset::Dark, 1.0f, 18.0f});
     EXPECT_FLOAT_EQ(ImGui::GetStyle().ItemSpacing.x, 8.0f); // default, no scale
+}
+
+// ── Unified style-token tests (UI beautification Step 1) ─────────────────────
+
+TEST_F(ThemeTest, StyleTokens_ApplyMatchesDefaults) {
+    ImGuiStyle s;
+    unigui::theme::ApplyStyleTokens(s);
+    unigui::theme::StyleTokens t{};
+    EXPECT_FLOAT_EQ(s.WindowRounding, t.window_rounding);
+    EXPECT_FLOAT_EQ(s.FrameRounding, t.frame_rounding);
+    EXPECT_FLOAT_EQ(s.GrabRounding, t.grab_rounding);
+    EXPECT_FLOAT_EQ(s.TabRounding, t.tab_rounding);
+    EXPECT_FLOAT_EQ(s.ChildRounding, t.child_rounding);
+    EXPECT_FLOAT_EQ(s.PopupRounding, t.popup_rounding);
+    EXPECT_FLOAT_EQ(s.ScrollbarRounding, t.scrollbar_rounding);
+    EXPECT_FLOAT_EQ(s.GrabMinSize, t.grab_min_size);
+    EXPECT_FLOAT_EQ(s.FramePadding.x, t.frame_padding.x);
+    EXPECT_FLOAT_EQ(s.PopupBorderSize, t.popup_border);
+}
+
+TEST_F(ThemeTest, StyleTokens_AllPresetsShareGeometry) {
+    // Every registered preset must apply the unified geometry tokens, so that
+    // rounding/spacing is consistent regardless of which palette is active.
+    unigui::theme::RegisterAllThemes();
+    auto& reg = unigui::theme::ThemeRegistry::Instance();
+    unigui::theme::StyleTokens t{};
+    for (const auto& name : reg.List()) {
+        ImGui::GetStyle() = ImGuiStyle{}; // reset
+        ASSERT_TRUE(reg.Apply(name)) << name;
+        auto& s = ImGui::GetStyle();
+        EXPECT_FLOAT_EQ(s.WindowRounding, t.window_rounding) << name;
+        EXPECT_FLOAT_EQ(s.FrameRounding, t.frame_rounding) << name;
+        EXPECT_FLOAT_EQ(s.TabRounding, t.tab_rounding) << name;
+        EXPECT_FLOAT_EQ(s.GrabMinSize, t.grab_min_size) << name;
+        EXPECT_FLOAT_EQ(s.ScrollbarSize, t.scrollbar_size) << name;
+    }
+}
+
+TEST_F(ThemeTest, AccentHelpers_DeriveHoverAndActive) {
+    ImVec4 base(0.40f, 0.58f, 0.93f, 1.00f);
+    ImVec4 hover = unigui::theme::AccentHover(base);
+    ImVec4 active = unigui::theme::AccentActive(base);
+    // Hover is brighter, active is darker, alpha preserved.
+    EXPECT_GT(hover.x, base.x);
+    EXPECT_LT(active.x, base.x);
+    EXPECT_FLOAT_EQ(hover.w, 1.00f);
+    EXPECT_FLOAT_EQ(active.w, 1.00f);
+}
+
+TEST_F(ThemeTest, AccentHelpers_ClampAndAlpha) {
+    ImVec4 white(0.98f, 0.98f, 0.98f, 1.00f);
+    ImVec4 lighter = unigui::theme::Lighten(white, 0.5f);
+    EXPECT_FLOAT_EQ(lighter.x, 1.0f); // clamped
+    ImVec4 a = unigui::theme::WithAlpha(white, 0.35f);
+    EXPECT_FLOAT_EQ(a.w, 0.35f);
+    EXPECT_FLOAT_EQ(a.x, white.x);
 }
