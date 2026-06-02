@@ -135,6 +135,7 @@ target_sources(unigui PRIVATE
     theme/theme.cc
     theme/style_scope.cc
     app/app.cc
+    im/im.cc
     # Core widgets — fundamental UI primitives
     widgets/widget_base.cc
     widgets/label.cc

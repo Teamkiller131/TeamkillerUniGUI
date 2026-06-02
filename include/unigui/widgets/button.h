@@ -7,7 +7,7 @@
 
 namespace unigui {
 
-class Button : public Widget {
+class Button : public FluentWidget<Button> {
 public:
     enum ColorVariant { Default, Primary, Danger, Success };
     enum Size { Small, Medium, Large };
@@ -20,6 +20,15 @@ public:
     void SetColorVariant(ColorVariant variant);
     void SetSize(Size size);
     void SetOnClick(std::function<void()> fn);
+
+    // ── Fluent (chainable) helpers — return Button& via CRTP base ──────────
+    Button& WithLabel(std::string label)        { SetLabel(std::move(label)); return *this; }
+    Button& WithVariant(ColorVariant variant)   { SetColorVariant(variant); return *this; }
+    Button& WithPrimary()                       { SetColorVariant(Primary); return *this; }
+    Button& WithDanger()                        { SetColorVariant(Danger); return *this; }
+    Button& WithSuccess()                       { SetColorVariant(Success); return *this; }
+    Button& WithSize(Size size)                 { SetSize(size); return *this; }
+    Button& WithOnClick(std::function<void()> fn) { SetOnClick(std::move(fn)); return *this; }
 
 private:
     std::string label_;

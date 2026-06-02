@@ -125,9 +125,93 @@ Available on all widgets: `WithTooltip`, `WithEnabled`, `WithVisible`, `WithUser
 Base setters: `Show/Hide/IsVisible`, `SetTooltip`, `SetEnabled/IsEnabled`, `SetFocused/IsFocused`,
 `SetAccessibleName/Description`, `SetMinSize/SetMaxSize`, `SetShadow`, `SetUserData/GetUserData`.
 
----
+Widgets that derive from the CRTP base `FluentWidget<Derived>` (e.g. `Button`) keep the **derived
+type** through the chain, so base helpers and widget-specific helpers compose:
 
-## 3. Containers & Layout
+```cpp
+btn->WithTooltip("Ctrl+S — Save")  // Widget helper → Button&
+   .WithPrimary()                  // Button helper → Button&
+   .WithOnClick([]{ save(); });    // Button helper → Button&
+```
+
+`Button` adds: `WithLabel`, `WithVariant`, `WithPrimary`, `WithDanger`, `WithSuccess`, `WithSize`, `WithOnClick`.
+
+### Immediate mode (`unigui::im`) vs retained mode
+
+For simple, stateless controls, skip the `shared_ptr`/name/`Render()` ceremony and call a
+themed immediate-mode free function from `<unigui/im/im.h>`:
+
+```cpp
+namespace im = unigui::im;
+if (im::Button("Save", im::ButtonVariant::Primary)) save();
+im::Checkbox("Enabled", &enabled);
+im::SliderFloat("Gain", &gain, 0.f, 1.f);
+im::InputText("Name", &name);           // bound to a std::string
+im::Combo("Mode", &mode, {"Fast", "Safe"});
+im::SameLine(); im::Text("ok");
+```
+
+Functions: `Button`, `SmallButton`, `Text`, `TextWrapped`, `TextDisabled`, `TextColored`,
+`BulletText`, `LabelText`, `Checkbox`, `RadioButton`, `SliderFloat`, `SliderInt`, `DragFloat`,
+`DragInt`, `InputInt`, `InputFloat`, `InputText`, `InputTextMultiline`, `Combo`, and layout
+helpers `SameLine`, `NewLine`, `Spacing`, `Separator`, `SeparatorText`, `Dummy`, `Indent`,
+`Unindent`, `Bullet`.
+
+**Choosing a layer**: use `unigui::im` for one-off, stateless controls; use the retained-mode
+widget classes when you need persistent state, validation, undo/redo or serialization. The two
+layers coexist — immediate-mode functions live in `unigui::im` to avoid clashing with the
+retained-mode widget *classes* of the same name in `unigui`.
+
+### RAII scopes
+
+Move-only guards in `<unigui/core/scope.h>` balance ImGui's `Begin*/Push*` with their matching
+`End*/Pop*` automatically:
+
+```cpp
+if (unigui::WindowScope w{"Settings"}) {
+    unigui::IDScope id{"row"};
+    unigui::DisabledScope d{readOnly};
+    im::Button("Apply");
+}   // End() / PopID() / EndDisabled() run automatically, in reverse order
+```
+
+Available: `WindowScope`, `ChildScope`, `IDScope`, `DisabledScope`, `GroupScope`, `TabBarScope`,
+`TabItemScope` (plus the existing `StyleScope` in `<unigui/theme/style_scope.h>`).
+
+### Factory helpers
+
+`<unigui/core/make.h>` trims the `std::make_shared` boilerplate and can auto-name widgets:
+
+```cpp
+auto btn = unigui::Make<unigui::Button>("save", "Save");   // explicit name
+auto lbl = unigui::MakeNamed<unigui::Label>("Read-only");  // auto unique name
+```
+
+### Declarative DSL (`unigui::dsl`)
+
+`<unigui/dsl/dsl.h>` builds a UI as a tree of value-type builder calls and renders it through the
+themed `unigui::im` layer. Stateful controls bind to an external variable via pointer or keep their
+state in the retained node, so re-`Render()`-ing the same tree preserves user input:
+
+```cpp
+using namespace unigui::dsl;
+bool enabled = true; float gain = 0.5f;
+
+auto ui = Window("Demo", VBox({
+    Text("Welcome!"), Separator(),
+    HBox({ Button("Save", ButtonVariant::Primary, []{ save(); }),
+           Button("Exit", []{ std::exit(0); }) }),
+    CheckBox("Enabled", &enabled),
+    SliderFloat("Gain", &gain, 0.f, 1.f),
+    If([&]{ return enabled; }, Text("…running")),
+    For(3, [](int i){ return Label("Row " + std::to_string(i)); }),
+}));
+Render(ui);  // each frame
+```
+
+Builders: `Window`, `VBox`, `HBox`, `Label`, `Text`, `TextWrapped`, `TextDisabled`, `BulletText`,
+`Button` (optional `ButtonVariant`), `CheckBox`, `SliderFloat`, `InputText` (each bound or
+node-stated), `Separator`, `Spacing`, `If`, `IfElse`, `For`.
 
 ### Window
 
