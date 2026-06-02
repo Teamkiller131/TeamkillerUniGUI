@@ -11,11 +11,13 @@
 // child, popup and frame surfaces read, plus the subtle bright "rim" border that
 // sells a frosted-glass look.
 //
-// The frosted-glass (毛玻璃 / glassmorphism) material is the project default, but
-// every other material keeps a ready-made preset so a theme can opt into a flat,
-// heavier-frost, acrylic, or minimal look without hand-tuning alphas. The preset
-// is applied *after* a palette is set, multiplying the surface alphas and tweaking
-// borders, so it composes with the Dark/Light themes and any registry preset.
+// The frosted-glass / glassmorphism aesthetic (毛玻璃 — the general look, of which
+// both the `Glass` and `Frosted` enum values are variants) is the project default
+// (`SurfaceStyle::Glass`), but every other material keeps a ready-made preset so a
+// theme can opt into a flat, heavier-frost, acrylic, or minimal look without
+// hand-tuning alphas. The preset is applied *after* a palette is set, multiplying
+// the surface alphas and tweaking borders, so it composes with the Dark/Light
+// themes and any registry preset.
 //
 // NOTE: a translucent surface reveals whatever is painted behind the ImGui window
 // (the framebuffer clear colour or other windows). To get a true glass effect the
