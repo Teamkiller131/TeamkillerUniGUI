@@ -981,7 +981,8 @@ lb->Render();
 
 ### Table
 
-Simple string table with sorting, resizing, and CSV import/export.
+Simple string table with real column sorting, resizing, CSV import/export, and
+per-cell custom rendering (embed **any** widget — ProgressBar, Button, icon, …).
 
 ```cpp
 Table(std::string name, std::vector<std::string> columns);
@@ -989,19 +990,39 @@ Table(std::string name, std::vector<std::string> columns);
 void AddRow(std::vector<std::string> row);
 void ClearRows();
 int  GetSelectedRow() const;
-void SetSortable(bool on);
+void SetSortable(bool on);                 // click headers to sort (numeric-aware)
 void SetResizable(bool on);
+const std::string& CellText(int row, int col) const;
+
+// Embed arbitrary widgets in a cell. Return true if you drew the cell,
+// or false to fall back to the default text/selectable rendering.
+void SetCellRenderer(std::function<bool(int row, int col)> fn);
+// Override the sort order of a column (default is numeric-aware string compare).
+void SetColumnSortComparator(int col,
+        std::function<bool(const std::string& a, const std::string& b)> cmp);
+
 std::string ExportCSV() const;
 bool ImportCSV(const std::string& csv);
 
-// Example
+// Example: embed a ProgressBar in column 2 and sort numerically
 auto tbl = std::make_shared<unigui::Table>("data",
-    std::vector<std::string>{"Name", "Age", "City"});
+    std::vector<std::string>{"Name", "Age", "Load"});
 tbl->SetSortable(true);
-tbl->AddRow({"Alice", "30", "NYC"});
-tbl->AddRow({"Bob", "25", "SF"});
+tbl->AddRow({"Alice", "30", "0.75"});
+tbl->AddRow({"Bob",   "25", "0.40"});
+tbl->SetCellRenderer([&](int row, int col) -> bool {
+    if (col == 2) {
+        float v = std::stof(tbl->CellText(row, col));
+        ImGui::ProgressBar(v, ImVec2(-1, 0));
+        return true;                       // handled — skip default text
+    }
+    return false;                          // other cells: default rendering
+});
 tbl->Render();
 ```
+
+> Tip: for large, type-aware datasets backed by your own structs (virtual
+> scrolling, inline editing, grouping), prefer `DataTable<T>` below.
 
 ---
 
@@ -1072,24 +1093,37 @@ dt->Render();
 
 ### TreeView
 
-Hierarchical tree view with multi-select and custom node renderer.
+Hierarchical tree with multi-select, node icons, inline progress bars, and fully
+custom composite rows (e.g. *account name + position-weight ProgressBar*).
+
+📖 **Full guide:** [`docs/TREEVIEW.md`](TREEVIEW.md)
 
 ```cpp
 TreeView(std::string name);
 
 void SetRoot(TreeNode root);
+void SetHideRoot(bool on);
 void SetMultiSelect(bool on);
 std::vector<int> GetSelectedNodes() const;
-void SetNodeRenderer(std::function<void(int id, int depth, const TreeNode& node)> fn);
 
-// Example
-unigui::TreeNode root;
-root.label = "Root";
-root.children.push_back({"Child 1", {}, false});
-root.children.push_back({"Child 2", {}});
+// Composite rows — option A: built-in TreeNode fields (zero custom code)
+//   label / icon / suffix / labelColor / bgColor / progress / progressColor
+// Composite rows — option B: full custom row
+void SetRowRenderer(std::function<void(int id, int depth, const TreeNode&, bool selected)> fn);
+// Legacy: append content after the default label
+void SetNodeRenderer(std::function<void(int id, int depth, const TreeNode&)> fn);
 
-auto tv = std::make_shared<unigui::TreeView>("tree");
-tv->SetRoot(root);
+// Example: account group with position-weight progress bars
+unigui::TreeNode group;
+group.label = "Stock accounts";
+unigui::TreeNode acc;
+acc.label = "Account A";
+acc.progress = 0.92f;                          // position weight 0..1
+acc.progressColor = IM_COL32(0xE5,0x3E,0x3E,0xFF);
+group.children.push_back(acc);
+
+auto tv = std::make_shared<unigui::TreeView>("accounts");
+tv->SetRoot(std::move(group));
 tv->Render();
 ```
 
