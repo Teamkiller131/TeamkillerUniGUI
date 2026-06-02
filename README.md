@@ -99,7 +99,7 @@ User Code
 unigui:: API
     ├── Theme Engine (53-color dark + light theme, StyleScope RAII)
     ├── Widget Library (82 widgets (100% PushID-safe), form validation, undo/redo, serialization)
-    ├── Declarative DSL (unigui::dsl — Window, VBox, HBox, Button, For, If)
+    ├── Declarative DSL (unigui::dsl — Window, VBox/HBox, Button, CheckBox, SliderFloat, InputText, If/For)
     ├── EventBus (unigui::events::Bus — publish/subscribe with wildcards)
     ├── CSS Styling (unigui::styling::Engine — selector engine + variables)
     ├── Plugin System (unigui::plugin::Manager — DLL plugin hot-reload)
@@ -235,23 +235,40 @@ auto lbl = unigui::MakeNamed<unigui::Label>("Read-only"); // auto unique name
 
 ### Declarative DSL
 
+Describe the UI as a tree of value-type builders, then `Render()` it each
+frame. The DSL renders through the themed `unigui::im` layer, so its output
+matches the rest of the toolkit. Stateful controls either **bind to a
+variable** through a pointer or keep their state inside the retained node, so
+re-`Render()`-ing the same tree preserves user input:
+
 ```cpp
 #include <unigui/dsl/dsl.h>
 using namespace unigui::dsl;
+
+bool enabled = true;
+float gain = 0.5f;
 
 auto ui = Window("DSL Demo", VBox({
     Text("Welcome!"),
     Separator(),
     HBox({
-        Button("Click Me", []{ /* action */ }),
-        Button("Exit",     []{ std::exit(0); })
+        Button("Save", ButtonVariant::Primary, []{ /* action */ }),
+        Button("Exit",                          []{ std::exit(0); })
     }),
+    CheckBox("Enabled", &enabled),          // bound to an external bool
+    SliderFloat("Gain", &gain, 0.f, 1.f),   // bound to an external float
+    If([&]{ return enabled; }, Text("…running")),
     For(5, [](int i){ return Label("Item #" + std::to_string(i+1)); })
 }));
 
 // In render loop:
 Render(ui);
 ```
+
+Builders: `Window`, `VBox`, `HBox`, `Label`, `Text`, `TextWrapped`,
+`TextDisabled`, `BulletText`, `Button` (with `ButtonVariant`), `CheckBox`,
+`SliderFloat`, `InputText` (each bound or node-stated), `Separator`, `Spacing`,
+`If`, `IfElse`, `For`.
 
 ### EventBus
 
