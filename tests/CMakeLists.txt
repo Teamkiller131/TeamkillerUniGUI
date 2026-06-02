@@ -104,6 +104,17 @@ target_link_libraries(test_style_scope PRIVATE
 target_compile_features(test_style_scope PRIVATE cxx_std_23)
 gtest_discover_tests(test_style_scope)
 
+add_executable(test_surface_style
+    theme/surface_style_test.cc
+)
+target_link_libraries(test_surface_style PRIVATE
+    GTest::gtest
+    GTest::gtest_main
+    unigui
+)
+target_compile_features(test_surface_style PRIVATE cxx_std_23)
+gtest_discover_tests(test_surface_style)
+
 add_executable(test_widget_base
     widgets/widget_base_test.cc
 )

@@ -26,6 +26,7 @@
 #include <unigui/backend/backend_types.h>
 #include <unigui/backend/backend_factory.h>
 #include <unigui/theme/theme.h>
+#include <unigui/theme/surface_style.h>
 #include <unigui/theme/style_scope.h>
 #include <unigui/widgets/widget_base.h>
 #include <unigui/widgets/value_widget.h>
