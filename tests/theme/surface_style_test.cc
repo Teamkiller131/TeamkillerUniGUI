@@ -77,3 +77,21 @@ TEST_F(SurfaceStyleTest, AllStylesAreNamedAndDistinct) {
     // Glass is the documented default name.
     EXPECT_STREQ(SurfaceStyleName(SurfaceStyle::Glass), "Glass");
 }
+
+TEST_F(SurfaceStyleTest, BackdropIsOpaque) {
+    using unigui::theme::BackdropColor;
+    ImVec4 wb(0.10f, 0.10f, 0.12f, 0.5f); // translucent input alpha must be ignored
+    for (auto st : AllSurfaceStyles()) {
+        EXPECT_FLOAT_EQ(BackdropColor(wb, st).w, 1.0f);
+    }
+}
+
+TEST_F(SurfaceStyleTest, BackdropDarkensForGlassButNotSolid) {
+    using unigui::theme::BackdropColor;
+    ImVec4 wb(0.20f, 0.20f, 0.24f, 1.0f);
+    // Glass backdrop is darker than the window background for contrast.
+    EXPECT_LT(BackdropColor(wb, SurfaceStyle::Glass).x, wb.x);
+    // Solid/Minimal keep the same tone (opaque materials need no contrast gap).
+    EXPECT_FLOAT_EQ(BackdropColor(wb, SurfaceStyle::Solid).x, wb.x);
+    EXPECT_FLOAT_EQ(BackdropColor(wb, SurfaceStyle::Minimal).x, wb.x);
+}

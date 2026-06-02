@@ -18,6 +18,9 @@ namespace unigui {
 
 static bool  pendingFontRebuild_ = false;
 static float pendingFontSize_ = 16.f;
+// Opaque backdrop/clear colour for the active theme + surface material. Defaults
+// to the Dark window background until the first ApplyTheme() call updates it.
+static ImVec4 backdropColor_ = ImVec4(0.10f, 0.10f, 0.12f, 1.00f);
 
 float DetectDPIScale(void* native_window) {
 #ifdef _WIN32
@@ -298,6 +301,10 @@ void ApplyTheme(const ThemeConfig& config) {
     // so its border-size overrides get DPI-scaled with the rest of the geometry.
     theme::ApplySurfaceStyle(style, config.surface);
 
+    // Derive the opaque framebuffer backdrop from the (RGB-stable) window background
+    // so translucent glass surfaces read against a tinted background, not black.
+    backdropColor_ = theme::BackdropColor(colors[ImGuiCol_WindowBg], config.surface);
+
     // Scale all sizes by DPI (AFTER setting values so they get scaled)
     style.ScaleAllSizes(dpi);
 
@@ -322,6 +329,8 @@ void ApplyPendingFontRebuild() {
     io.Fonts->Build();
     pendingFontRebuild_ = false;
 }
+
+ImVec4 GetBackdropColor() { return backdropColor_; }
 
 static const char* kColorNames[] = {"Text","TextDisabled","WindowBg","ChildBg","PopupBg","Border","BorderShadow","FrameBg","FrameBgHovered","FrameBgActive","TitleBg","TitleBgActive","TitleBgCollapsed","MenuBarBg","ScrollbarBg","ScrollbarGrab","ScrollbarGrabHovered","ScrollbarGrabActive","CheckMark","SliderGrab","SliderGrabActive","Button","ButtonHovered","ButtonActive","Header","HeaderHovered","HeaderActive","Separator","SeparatorHovered","SeparatorActive","ResizeGrip","ResizeGripHovered","ResizeGripActive","Tab","TabHovered","TabActive","TabUnfocused","TabUnfocusedActive","DockingPreview","DockingEmptyBg","PlotLines","PlotLinesHovered","PlotHistogram","PlotHistogramHovered","TableHeaderBg","TableBorderStrong","TableBorderLight","TableRowBg","TableRowBgAlt","TextLink","TreeLines","TextSelectedBg","DragDropTarget","DragDropTargetBg","UnsavedMarker","NavCursor","NavWindowingHighlight","NavWindowingDimBg","ModalWindowDimBg"};
 

@@ -54,4 +54,11 @@ inline float GetFontScale() { return ImGui::GetIO().FontGlobalScale; }
 std::string ExportThemeJSON();
 bool ImportThemeJSON(const std::string& json);
 
+/// Opaque framebuffer clear colour for the active theme + surface material.
+/// Translucent surface materials (Glass/Frosted/Acrylic) reveal whatever is drawn
+/// behind ImGui windows, so backends should clear to this tinted backdrop instead
+/// of black for the glass effect to read correctly. Updated on every ApplyTheme();
+/// defaults to the Dark window background before the first ApplyTheme() call.
+ImVec4 GetBackdropColor();
+
 } // namespace unigui

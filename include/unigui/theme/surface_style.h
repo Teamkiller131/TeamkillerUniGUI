@@ -185,4 +185,29 @@ inline void ApplySurfaceStyle(ImGuiStyle& s, SurfaceStyle style) {
     ApplySurfaceStyle(s, SurfacePreset(style));
 }
 
+/// Derive an opaque "backdrop" colour for the framebuffer clear behind ImGui
+/// windows. Translucent (glass/frosted/acrylic) surfaces reveal whatever is
+/// painted behind them, so the backend should clear to a tinted backdrop rather
+/// than black for the material to read correctly. The backdrop is a slightly
+/// darkened, fully-opaque version of the window background so translucent windows
+/// stay visually distinct from the empty area behind them. For opaque materials
+/// (Solid/Minimal) it simply mirrors the window background.
+/// @param windowBg  the palette's WindowBg colour (alpha ignored).
+/// @param style     the active surface material.
+inline ImVec4 BackdropColor(const ImVec4& windowBg, SurfaceStyle style) {
+    // Translucent materials benefit from a darker backdrop for contrast; opaque
+    // ones keep the same tone so the central docking area matches windows.
+    float darken = 0.0f;
+    switch (style) {
+        case SurfaceStyle::Glass:   darken = 0.04f; break;
+        case SurfaceStyle::Frosted: darken = 0.06f; break;
+        case SurfaceStyle::Acrylic: darken = 0.05f; break;
+        case SurfaceStyle::Solid:
+        case SurfaceStyle::Minimal: darken = 0.0f;  break;
+    }
+    ImVec4 b = Darken(windowBg, darken);
+    b.w = 1.0f; // backdrop is always opaque
+    return b;
+}
+
 } // namespace unigui::theme
