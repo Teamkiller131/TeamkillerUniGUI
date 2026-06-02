@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <imgui.h>
+#include <unigui/theme/surface_style.h>
 
 namespace unigui {
 
@@ -17,6 +18,11 @@ struct ThemeConfig {
     float font_size = 16.0f; // logical px at 96 DPI (scaled by auto-DPI)
     const char* font_path = nullptr; // nullptr = auto-detect system CJK font
     bool emoji_fallback = true;  // auto-load system emoji font
+    // Surface material applied on top of the palette. Frosted glass (毛玻璃) is the
+    // default; switch to Solid for fully opaque classic surfaces, or pick another
+    // ready-made material (Frosted/Acrylic/Minimal). See theme/surface_style.h.
+    // Kept last so positional aggregate initialisation of the older fields stays valid.
+    theme::SurfaceStyle surface = theme::SurfaceStyle::Glass;
 };
 
 /// Detect system DPI scale factor. Returns 1.0 on failure.

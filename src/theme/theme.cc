@@ -1,5 +1,6 @@
 #include <unigui/theme/theme.h>
 #include <unigui/theme/style_tokens.h>
+#include <unigui/theme/surface_style.h>
 #include <unigui/core/log.h>
 #include <unigui/fonts/font_manager.h>
 #include <sstream>
@@ -160,8 +161,8 @@ void ApplyTheme(const ThemeConfig& config) {
     // ── DPI scaling ──────────────────────────────────────────────────────
     float dpi = config.dpi_scale;
     if (dpi <= 0) dpi = 1.0f; // caller should have set dpi before calling
-    UNIGUI_LOG_INFO("Theme: preset={} dpi={:.2f} font={}px",
-        (int)config.preset, dpi, (int)(config.font_size * dpi));
+    UNIGUI_LOG_INFO("Theme: preset={} surface={} dpi={:.2f} font={}px",
+        (int)config.preset, theme::SurfaceStyleName(config.surface), dpi, (int)(config.font_size * dpi));
     // ── Style base values (shared geometry tokens) ───────────────────────
     // Unified rounding/spacing/border language shared with every theme preset.
     ApplyStyleTokens(style);
@@ -291,6 +292,11 @@ void ApplyTheme(const ThemeConfig& config) {
     colors[ImGuiCol_TableBorderLight] = ImVec4(colors[ImGuiCol_Border].x * 0.7f, colors[ImGuiCol_Border].y * 0.7f, colors[ImGuiCol_Border].z * 0.75f, 1.00f);
     colors[ImGuiCol_TableRowBg]       = ImVec4(colors[ImGuiCol_WindowBg].x, colors[ImGuiCol_WindowBg].y, colors[ImGuiCol_WindowBg].z, 1.00f);
     colors[ImGuiCol_TableRowBgAlt]    = ImVec4(colors[ImGuiCol_WindowBg].x * 1.04f, colors[ImGuiCol_WindowBg].y * 1.04f, colors[ImGuiCol_WindowBg].z * 1.06f, 1.00f);
+
+    // ── Surface material (Step 2: glass / solid / frosted / acrylic / minimal) ──
+    // Applied after the palette so it composes with any preset; before ScaleAllSizes
+    // so its border-size overrides get DPI-scaled with the rest of the geometry.
+    theme::ApplySurfaceStyle(style, config.surface);
 
     // Scale all sizes by DPI (AFTER setting values so they get scaled)
     style.ScaleAllSizes(dpi);

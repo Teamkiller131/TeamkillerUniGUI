@@ -1,3 +1,10 @@
+## Unreleased — UI Beautification
+
+### Added
+- **Surface style presets (Step 2)**: New `unigui::theme::SurfaceStyle` (`Solid`, `Glass`, `Frosted`, `Acrylic`, `Minimal`) layers a translucency/“material” pass on top of any colour palette via `ApplySurfaceStyle()` in `theme/surface_style.h`. Frosted glass (毛玻璃 / glassmorphism) is the default — `ThemeConfig::surface` defaults to `SurfaceStyle::Glass` — while every other look keeps a ready-made preset. `SurfaceStyleName()` and `AllSurfaceStyles()` support theme pickers.
+
+---
+
 ## v3.5.0 (2026-06-02) — TreeView/CascadingCombo UX, Table Sorting & Docs Overhaul
 
 ### Added
