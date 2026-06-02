@@ -80,7 +80,7 @@ TEST_F(SurfaceStyleTest, AllStylesAreNamedAndDistinct) {
 
 TEST_F(SurfaceStyleTest, BackdropIsOpaque) {
     using unigui::theme::BackdropColor;
-    ImVec4 wb(0.10f, 0.10f, 0.12f, 0.5f); // translucent input alpha must be ignored
+    ImVec4 wb(0.10f, 0.10f, 0.12f, 0.5f); // translucent input alpha is ignored
     for (auto st : AllSurfaceStyles()) {
         EXPECT_FLOAT_EQ(BackdropColor(wb, st).w, 1.0f);
     }
