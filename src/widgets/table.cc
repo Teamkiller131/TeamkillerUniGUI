@@ -25,35 +25,56 @@ void Table::ApplySort(int col, bool ascending) {
     auto cell = [&](const std::vector<std::string>& r) -> const std::string& {
         return col < (int)r.size() ? r[col] : kEmpty;
     };
-    SortComparator cmp;
+
     auto it = sort_comparators_.find(col);
     if (it != sort_comparators_.end()) {
-        cmp = it->second;
+        // Custom comparator: sort rows directly.
+        const SortComparator& cmp = it->second;
+        std::stable_sort(rows_.begin(), rows_.end(),
+            [&](const std::vector<std::string>& a, const std::vector<std::string>& b) {
+                bool less = cmp(cell(a), cell(b));
+                bool greater = cmp(cell(b), cell(a));
+                if (!less && !greater) return false; // equal — keep stable order
+                return ascending ? less : greater;
+            });
     } else {
-        // Numeric-aware default: compare as numbers when both parse fully.
-        cmp = [](const std::string& a, const std::string& b) {
-            auto asNumber = [](const std::string& s, double& out) -> bool {
-                if (s.empty()) return false;
-                try {
-                    size_t pos = 0;
-                    out = std::stod(s, &pos);
-                    while (pos < s.size() && std::isspace((unsigned char)s[pos])) ++pos;
-                    return pos == s.size();
-                } catch (...) { return false; }
-            };
-            double na = 0, nb = 0;
-            bool an = asNumber(a, na), bn = asNumber(b, nb);
-            if (an && bn) return na < nb;
-            return a < b;
+        // Numeric-aware default: parse each cell once into a sort key, then
+        // sort an index permutation to avoid re-parsing on every comparison.
+        auto asNumber = [](const std::string& s, double& out) -> bool {
+            if (s.empty()) return false;
+            try {
+                size_t pos = 0;
+                out = std::stod(s, &pos);
+                while (pos < s.size() && std::isspace((unsigned char)s[pos])) ++pos;
+                return pos == s.size();
+            } catch (...) { return false; }
         };
-    }
-    std::stable_sort(rows_.begin(), rows_.end(),
-        [&](const std::vector<std::string>& a, const std::vector<std::string>& b) {
-            bool less = cmp(cell(a), cell(b));
-            bool greater = cmp(cell(b), cell(a));
-            if (!less && !greater) return false; // equal — keep stable order
+        struct Key { bool isNum; double num; };
+        const int n = (int)rows_.size();
+        std::vector<Key> keys(n);
+        std::vector<int> order(n);
+        for (int i = 0; i < n; ++i) {
+            order[i] = i;
+            double v = 0;
+            keys[i].isNum = asNumber(cell(rows_[i]), v);
+            keys[i].num = v;
+        }
+        std::stable_sort(order.begin(), order.end(), [&](int ia, int ib) {
+            const Key& ka = keys[ia]; const Key& kb = keys[ib];
+            bool less;
+            if (ka.isNum && kb.isNum) less = ka.num < kb.num;
+            else less = cell(rows_[ia]) < cell(rows_[ib]);
+            bool greater;
+            if (ka.isNum && kb.isNum) greater = kb.num < ka.num;
+            else greater = cell(rows_[ib]) < cell(rows_[ia]);
+            if (!less && !greater) return false;
             return ascending ? less : greater;
         });
+        std::vector<std::vector<std::string>> sorted;
+        sorted.reserve(n);
+        for (int idx : order) sorted.push_back(std::move(rows_[idx]));
+        rows_ = std::move(sorted);
+    }
     // Row order changed — drop the now-stale selection index.
     selected_ = -1;
 }
