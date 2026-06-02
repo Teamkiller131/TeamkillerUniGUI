@@ -23,10 +23,13 @@ public:
 
     using OnChanged = std::function<void(int level, int index)>;
     void SetOnChanged(OnChanged fn);
+    /// Render levels horizontally (SameLine between combos) instead of stacked
+    void SetHorizontal(bool on) { horizontal_ = on; }
 
 private:
     std::vector<Level> levels_;
     OnChanged onChanged_;
+    bool horizontal_ = false;
 };
 
 } // namespace unigui

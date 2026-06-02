@@ -11,6 +11,7 @@ void CascadingCombo::Render() {
     if (!IsVisible()) return;
     ImGui::PushID(GetName().c_str());
     for (int lvl = 0; lvl < (int)levels_.size(); ++lvl) {
+        if (horizontal_ && lvl > 0) ImGui::SameLine();
         auto& level = levels_[lvl];
         int prev = level.selectedIndex;
         char lbl[64];
