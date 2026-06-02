@@ -30,7 +30,7 @@ public:
             IMGUI_CHECKVERSION(); ImGui::CreateContext();
         }
 #if !UNIGUI_HAS_IMGUI_IMPL_METAL
-        UNIGUI_LOG_ERROR("Metal backend unavailable: imgui_impl_metal.h not found");
+        UNIGUI_LOG_ERROR("Metal backend unavailable: imgui_impl_metal.h not found. Install ImGui Metal backend headers or disable the Metal renderer.");
         return false;
 #else
         device_ = MTLCreateSystemDefaultDevice();
@@ -65,7 +65,13 @@ public:
         @autoreleasepool {
             id<MTLCommandBuffer> cmdBuf = [commandQueue_ commandBuffer];
             ImGui_ImplMetal_RenderDrawData(dd, cmdBuf);
-            [cmdBuf presentDrawable:/* caller provides drawable */ nil];
+            id<CAMetalDrawable> drawable = nil;
+            if (!drawable) {
+                UNIGUI_LOG_WARN("Metal: no drawable available, skipping present");
+                [cmdBuf commit];
+                return;
+            }
+            [cmdBuf presentDrawable:drawable];
             [cmdBuf commit];
         }
 #else
