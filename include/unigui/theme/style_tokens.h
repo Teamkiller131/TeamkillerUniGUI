@@ -8,7 +8,7 @@
 //
 // Historically each preset hard-coded its own rounding/spacing/border values,
 // which produced subtly inconsistent geometry across themes (e.g. one theme used
-// 12px window rounding, another 4px). Centralising the geometry here guarantees a
+// 12px window rounding, another 4px). Centralizing the geometry here guarantees a
 // single, consistent visual language while leaving each theme free to own its
 // *colour* palette.
 //
