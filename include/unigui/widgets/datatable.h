@@ -254,7 +254,9 @@ public:
                     if (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Escape))
                         editRow_ = editCol_ = -1;
                 } else if (col == 0) {
-                    ImGuiSelectableFlags sflags = ImGuiSelectableFlags_SpanAllColumns;
+                    ImGuiSelectableFlags sflags = checkboxCols_.empty()
+                        ? ImGuiSelectableFlags_SpanAllColumns
+                        : ImGuiSelectableFlags_None; // don't span over checkboxes
                     if (editableCols_.count(col)) sflags |= ImGuiSelectableFlags_AllowDoubleClick;
                     if (ImGui::Selectable(text.c_str(), isSelected, sflags)) {
                         if (multiSelect_ && ImGui::GetIO().KeyCtrl) {
