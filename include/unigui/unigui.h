@@ -27,6 +27,7 @@
 #include <unigui/backend/backend_factory.h>
 #include <unigui/theme/theme.h>
 #include <unigui/theme/surface_style.h>
+#include <unigui/theme/color_tokens.h>
 #include <unigui/theme/style_scope.h>
 #include <unigui/widgets/widget_base.h>
 #include <unigui/widgets/value_widget.h>
@@ -134,6 +135,7 @@
 #include <unigui/im/im.h>
 #include <unigui/fx/easing.h>
 #include <unigui/fx/effect_scope.h>
+#include <unigui/fx/elevation.h>
 #include <unigui/fx/animation.h>
 #include <unigui/fx/transition.h>
 #include <unigui/theme/presets/registry.h>

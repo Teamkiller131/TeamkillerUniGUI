@@ -4,6 +4,7 @@
 #include <string_view>
 #include <imgui.h>
 #include <unigui/theme/surface_style.h>
+#include <unigui/theme/color_tokens.h>
 
 namespace unigui {
 
@@ -61,5 +62,12 @@ bool ImportThemeJSON(const std::string& json);
 /// of black for the glass effect to read correctly. Updated on every ApplyTheme();
 /// defaults to the Dark window background before the first ApplyTheme() call.
 ImVec4 GetBackdropColor();
+
+/// Active accent & semantic colour tokens for the current theme (Step 3). Updated
+/// on every ApplyTheme() and ThemeRegistry::Apply(). Widgets that need semantic
+/// colours (success/warning/danger/info) should read them from here so they track
+/// the active theme's accent. Thin wrappers over theme::ActiveColorTokens().
+inline const theme::ColorTokens& GetColorTokens() { return theme::ActiveColorTokens(); }
+inline ImVec4 GetSemanticColor(theme::Semantic role) { return theme::GetSemanticColor(role); }
 
 } // namespace unigui

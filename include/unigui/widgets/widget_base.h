@@ -5,6 +5,8 @@
 
 namespace unigui {
 
+namespace fx { enum class Elevation; }  // fwd; defined in fx/elevation.h
+
 class ShadowConfig {
 public:
     bool enabled = false;
@@ -29,6 +31,12 @@ public:
     // ── v3.0 Shadow ────────────────────────────────────────────────────
     void SetShadow(bool enable, float radius = 4.f, float offX = 2.f, float offY = 2.f);
     const ShadowConfig& GetShadowConfig() const { return shadow_; }
+
+    // ── Step 4 Elevation ────────────────────────────────────────────────
+    // Fill the shadow config from a semantic elevation level, derived for the
+    // currently-active surface material (glass ⇒ soft shadow + rim, solid ⇒
+    // firmer shadow). Disables the shadow for Elevation::None.
+    void SetElevation(fx::Elevation level);
 
     // ── Enabled ─────────────────────────────────────────────────────────
     void SetEnabled(bool on) { enabled_ = on; }
@@ -60,6 +68,7 @@ public:
     Widget& WithShadow(bool enable = true, float radius = 4.f, float offX = 2.f, float offY = 2.f) {
         SetShadow(enable, radius, offX, offY); return *this;
     }
+    Widget& WithElevation(fx::Elevation level) { SetElevation(level); return *this; }
 
 protected:
     // ── Lifecycle Hooks ─────────────────────────────────────────────────
@@ -105,6 +114,7 @@ public:
     Derived& WithShadow(bool enable = true, float radius = 4.f, float offX = 2.f, float offY = 2.f) {
         SetShadow(enable, radius, offX, offY); return self();
     }
+    Derived& WithElevation(fx::Elevation level) { SetElevation(level); return self(); }
 
 protected:
     Derived& self() { return static_cast<Derived&>(*this); }

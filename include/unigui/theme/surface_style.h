@@ -151,6 +151,9 @@ inline const std::array<SurfaceStyle, 5>& AllSurfaceStyles() {
 
 namespace detail {
 inline void MulAlpha(ImVec4& c, float m) { c.w = Clamp01(c.w * m); }
+/// Last-applied surface material (single instance across TUs). Defaults to the
+/// project default so queries are valid before the first ApplySurfaceStyle().
+inline SurfaceStyle g_active_surface = SurfaceStyle::Glass;
 } // namespace detail
 
 /// Apply a surface material's tuning on top of an already-populated palette.
@@ -185,7 +188,13 @@ inline void ApplySurfaceStyle(ImGuiStyle& s, const SurfaceTokens& t) {
 /// Convenience overload: apply a named material's preset.
 inline void ApplySurfaceStyle(ImGuiStyle& s, SurfaceStyle style) {
     ApplySurfaceStyle(s, SurfacePreset(style));
+    detail::g_active_surface = style;
 }
+
+/// The surface material from the most recent `ApplySurfaceStyle(style)` call
+/// (defaults to the project default, Glass). Lets elevation/effects (Step 4) and
+/// theme pickers know which material is active without threading it everywhere.
+inline SurfaceStyle ActiveSurfaceStyle() { return detail::g_active_surface; }
 
 /// Derive an opaque "backdrop" colour for the framebuffer clear behind ImGui
 /// windows. Translucent (glass/frosted/acrylic) surfaces reveal whatever is

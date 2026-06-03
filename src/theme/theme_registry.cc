@@ -1,4 +1,5 @@
 #include <unigui/theme/presets/registry.h>
+#include <unigui/theme/color_tokens.h>
 #include <unigui/core/log.h>
 
 // All built-in theme headers
@@ -46,6 +47,11 @@ bool ThemeRegistry::Apply(const std::string& name) {
     c[ImGuiCol_TableBorderLight] = ImVec4(c[ImGuiCol_Border].x * 0.7f, c[ImGuiCol_Border].y * 0.7f, c[ImGuiCol_Border].z * 0.75f, 1.00f);
     c[ImGuiCol_TableRowBg]       = ImVec4(c[ImGuiCol_WindowBg].x, c[ImGuiCol_WindowBg].y, c[ImGuiCol_WindowBg].z, 1.00f);
     c[ImGuiCol_TableRowBgAlt]    = ImVec4(c[ImGuiCol_WindowBg].x * 1.04f, c[ImGuiCol_WindowBg].y * 1.04f, c[ImGuiCol_WindowBg].z * 1.06f, 1.00f);
+    // Accent & semantic colour tokens (Step 3) — give every preset the same
+    // accent→hover→active relationship (derived from its own accent) and update
+    // the active semantic palette for widgets.
+    auto& s = ImGui::GetStyle();
+    ApplyColorTokens(s, AccentFromStyle(s), StyleIsDark(s));
     current_ = name;
     if (onChange_) onChange_(name);
     UNIGUI_LOG_INFO("Theme applied: {}", name);
