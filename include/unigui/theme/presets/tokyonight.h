@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui.h>
+#include <unigui/theme/style_tokens.h>
 namespace unigui::theme {
 inline void ApplyTokyoNight(ImGuiStyle& s){auto&c=s.Colors;
 c[ImGuiCol_WindowBg]=ImVec4(0.10f,0.11f,0.15f,1.0f);c[ImGuiCol_ChildBg]=ImVec4(0.10f,0.11f,0.15f,1.0f);
@@ -19,7 +20,6 @@ c[ImGuiCol_TabActive]=ImVec4(0.48f,0.64f,0.97f,1.0f);c[ImGuiCol_TabUnfocused]=Im
 c[ImGuiCol_DockingPreview]=ImVec4(0.48f,0.64f,0.97f,0.50f);c[ImGuiCol_Text]=ImVec4(0.76f,0.79f,0.89f,1.0f);
 c[ImGuiCol_TextDisabled]=ImVec4(0.76f,0.79f,0.89f,0.38f);c[ImGuiCol_ResizeGrip]=ImVec4(0.48f,0.64f,0.97f,0.25f);
 c[ImGuiCol_NavHighlight]=ImVec4(0.48f,0.64f,0.97f,1.0f);c[ImGuiCol_ModalWindowDimBg]=ImVec4(0.00f,0.00f,0.00f,0.45f);
-s.WindowRounding=8.f;s.FrameRounding=5.f;s.GrabRounding=5.f;s.TabRounding=5.f;s.ChildRounding=5.f;
-s.PopupRounding=5.f;s.ScrollbarRounding=8.f;s.GrabMinSize=10.f;s.WindowBorderSize=1.f;s.FrameBorderSize=1.f;
+ApplyStyleTokens(s);
 }
 }

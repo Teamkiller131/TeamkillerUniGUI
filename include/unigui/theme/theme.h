@@ -3,6 +3,8 @@
 #include <string>
 #include <string_view>
 #include <imgui.h>
+#include <unigui/theme/surface_style.h>
+#include <unigui/theme/color_tokens.h>
 
 namespace unigui {
 
@@ -17,6 +19,12 @@ struct ThemeConfig {
     float font_size = 16.0f; // logical px at 96 DPI (scaled by auto-DPI)
     const char* font_path = nullptr; // nullptr = auto-detect system CJK font
     bool emoji_fallback = true;  // auto-load system emoji font
+    // Surface material applied on top of the palette. Frosted glass / glassmorphism
+    // (毛玻璃, the general aesthetic — not the specific `Frosted` enum value) is the
+    // default; switch to Solid for fully opaque classic surfaces, or pick another
+    // ready-made material (Frosted/Acrylic/Minimal). See theme/surface_style.h.
+    // Kept last so positional aggregate initialisation of the older fields stays valid.
+    theme::SurfaceStyle surface = theme::SurfaceStyle::Glass;
 };
 
 /// Detect system DPI scale factor. Returns 1.0 on failure.
@@ -47,5 +55,19 @@ inline float GetFontScale() { return ImGui::GetIO().FontGlobalScale; }
 /// Export/Import current ImGui theme colors to/from JSON.
 std::string ExportThemeJSON();
 bool ImportThemeJSON(const std::string& json);
+
+/// Opaque framebuffer clear colour for the active theme + surface material.
+/// Translucent surface materials (Glass/Frosted/Acrylic) reveal whatever is drawn
+/// behind ImGui windows, so backends should clear to this tinted backdrop instead
+/// of black for the glass effect to read correctly. Updated on every ApplyTheme();
+/// defaults to the Dark window background before the first ApplyTheme() call.
+ImVec4 GetBackdropColor();
+
+/// Active accent & semantic colour tokens for the current theme (Step 3). Updated
+/// on every ApplyTheme() and ThemeRegistry::Apply(). Widgets that need semantic
+/// colours (success/warning/danger/info) should read them from here so they track
+/// the active theme's accent. Thin wrappers over theme::ActiveColorTokens().
+inline const theme::ColorTokens& GetColorTokens() { return theme::ActiveColorTokens(); }
+inline ImVec4 GetSemanticColor(theme::Semantic role) { return theme::GetSemanticColor(role); }
 
 } // namespace unigui

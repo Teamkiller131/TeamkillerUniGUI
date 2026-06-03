@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui.h>
+#include <unigui/theme/style_tokens.h>
 namespace unigui::theme {
 inline void ApplyGruvbox(ImGuiStyle& s){auto&c=s.Colors;
 c[ImGuiCol_WindowBg]=ImVec4(0.16f,0.16f,0.16f,1.0f);c[ImGuiCol_ChildBg]=ImVec4(0.16f,0.16f,0.16f,1.0f);
@@ -19,7 +20,6 @@ c[ImGuiCol_TabActive]=ImVec4(0.84f,0.60f,0.13f,1.0f);c[ImGuiCol_TabUnfocused]=Im
 c[ImGuiCol_DockingPreview]=ImVec4(0.84f,0.60f,0.13f,0.50f);c[ImGuiCol_Text]=ImVec4(0.92f,0.90f,0.85f,1.0f);
 c[ImGuiCol_TextDisabled]=ImVec4(0.92f,0.90f,0.85f,0.38f);c[ImGuiCol_ResizeGrip]=ImVec4(0.84f,0.60f,0.13f,0.25f);
 c[ImGuiCol_NavHighlight]=ImVec4(0.84f,0.60f,0.13f,1.0f);c[ImGuiCol_ModalWindowDimBg]=ImVec4(0.00f,0.00f,0.00f,0.45f);
-s.WindowRounding=4.f;s.FrameRounding=3.f;s.GrabRounding=3.f;s.TabRounding=3.f;s.ChildRounding=3.f;
-s.PopupRounding=3.f;s.ScrollbarRounding=6.f;s.GrabMinSize=8.f;s.WindowBorderSize=0.f;s.FrameBorderSize=0.f;
+ApplyStyleTokens(s);
 }
 }

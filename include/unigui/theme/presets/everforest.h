@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui.h>
+#include <unigui/theme/style_tokens.h>
 namespace unigui::theme {
 inline void ApplyEverforest(ImGuiStyle& s){auto&c=s.Colors;
 c[ImGuiCol_WindowBg]=ImVec4(0.18f,0.21f,0.23f,1.0f);c[ImGuiCol_ChildBg]=ImVec4(0.18f,0.21f,0.23f,1.0f);
@@ -19,7 +20,6 @@ c[ImGuiCol_TabActive]=ImVec4(0.65f,0.75f,0.56f,1.0f);c[ImGuiCol_TabUnfocused]=Im
 c[ImGuiCol_DockingPreview]=ImVec4(0.65f,0.75f,0.56f,0.50f);c[ImGuiCol_Text]=ImVec4(0.83f,0.85f,0.80f,1.0f);
 c[ImGuiCol_TextDisabled]=ImVec4(0.83f,0.85f,0.80f,0.38f);c[ImGuiCol_ResizeGrip]=ImVec4(0.65f,0.75f,0.56f,0.25f);
 c[ImGuiCol_NavHighlight]=ImVec4(0.65f,0.75f,0.56f,1.0f);c[ImGuiCol_ModalWindowDimBg]=ImVec4(0.00f,0.00f,0.00f,0.45f);
-s.WindowRounding=5.f;s.FrameRounding=3.f;s.GrabRounding=3.f;s.TabRounding=4.f;s.ChildRounding=4.f;
-s.PopupRounding=4.f;s.ScrollbarRounding=6.f;s.GrabMinSize=8.f;s.WindowBorderSize=0.f;s.FrameBorderSize=0.f;
+ApplyStyleTokens(s);
 }
 }
