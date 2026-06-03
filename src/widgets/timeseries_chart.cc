@@ -78,7 +78,7 @@ void TimeSeriesChart::Render() {
     ImPlot::PushStyleColor(ImPlotCol_PlotBorder, borderCol);
     ImPlot::PushStyleColor(ImPlotCol_AxisGrid, gridCol);
 
-    if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, 300), plotFlags)) {
+    if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, -1), plotFlags)) {
 
         // ── Axis labels ───────────────────────────────────────────────
         if (!xLabel_.empty()) ImPlot::SetupAxis(ImAxis_X1, xLabel_.c_str());
