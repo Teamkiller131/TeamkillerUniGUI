@@ -117,6 +117,15 @@ const std::string& Table::GetColumnUnit(int col) const {
     static const std::string kEmpty;
     return (col >= 0 && col < (int)units_.size()) ? units_[col] : kEmpty;
 }
+void Table::SetColumnWidth(int col, float width) {
+    if (col < 0) return;
+    if (col >= (int)col_widths_.size()) col_widths_.resize(col + 1, 0.0f);
+    col_widths_[col] = width;
+}
+float Table::GetColumnWidth(int col) const {
+    if (col < 0 || col >= (int)col_widths_.size()) return 0.0f;
+    return col_widths_[col];
+}
 
 const std::string& Table::CellText(int row, int col) const {
     static const std::string kEmpty;
@@ -194,10 +203,17 @@ void Table::Render() {
     if (!IsVisible()) return;
     ImGui::PushID(GetName().c_str());
     ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
+    if (scrollX_) flags |= ImGuiTableFlags_ScrollX;
     if (sortable_) flags |= ImGuiTableFlags_Sortable;
     if (resizable_) flags |= ImGuiTableFlags_Resizable;
     if (ImGui::BeginTable(GetName().c_str(), (int)columns_.size(), flags)) {
-        for (auto& col : columns_) { ImGui::TableSetupColumn(col.c_str()); }
+        for (int ci = 0; ci < (int)columns_.size(); ++ci) {
+            float cw = (ci < (int)col_widths_.size()) ? col_widths_[ci] : 0.0f;
+            ImGuiTableColumnFlags colFlags = (cw > 0.0f)
+                ? ImGuiTableColumnFlags_WidthFixed
+                : ImGuiTableColumnFlags_WidthStretch;
+            ImGui::TableSetupColumn(columns_[ci].c_str(), colFlags, cw > 0.0f ? cw : 0.0f);
+        }
         ImGui::TableHeadersRow();
 
         // ── Apply user sorting requests ───────────────────────────────

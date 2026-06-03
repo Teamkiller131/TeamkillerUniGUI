@@ -26,7 +26,12 @@ void ComboBox::Render() {
         ImGui::InputText("##search", search_buf_, sizeof(search_buf_));
         ImGui::SameLine();
     }
-    ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
+    if (fillWidth_)
+        ImGui::SetNextItemWidth(-FLT_MIN);
+    else if (fixedWidth_ > 0.0f)
+        ImGui::SetNextItemWidth(fixedWidth_);
+    else
+        ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
     if (ImGui::BeginCombo(label_.c_str(), preview)) {
         for (int i = 0; i < (int)items_.size(); i++) {
             if (searchable_ && search_buf_[0]) {
