@@ -42,6 +42,8 @@ public:
     void SetYAxisAutoFit(bool on);
     /// Manual Y axis range.
     void SetYAxisRange(double min, double max);
+    /// Fixed X axis range. When set, the X axis always shows [min, max] even with no data.
+    void SetXAxisRange(double min, double max);
 
     /// X axis label.
     void SetXAxisLabel(const std::string& label);
@@ -80,6 +82,8 @@ private:
     int slidingWindow_ = 500;
     bool yAutoFit_ = true;
     double yMin_ = 0, yMax_ = 100;
+    bool   xRangeSet_ = false;
+    double xMin_ = 0, xMax_ = 1;
     std::string xLabel_, yLabel_;
     bool crosshair_ = false;
     std::function<std::string(double, const std::vector<double>&)> crosshairFmt_;

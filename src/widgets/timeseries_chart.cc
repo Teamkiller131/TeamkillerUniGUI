@@ -23,6 +23,7 @@ void TimeSeriesChart::ClearAll() { series_.clear(); }
 void TimeSeriesChart::SetSlidingWindow(int maxPoints) { slidingWindow_ = maxPoints; }
 void TimeSeriesChart::SetYAxisAutoFit(bool on)        { yAutoFit_ = on; }
 void TimeSeriesChart::SetYAxisRange(double min, double max) { yMin_ = min; yMax_ = max; }
+void TimeSeriesChart::SetXAxisRange(double min, double max) { xRangeSet_ = true; xMin_ = min; xMax_ = max; }
 void TimeSeriesChart::SetXAxisLabel(const std::string& l)   { xLabel_ = l; }
 void TimeSeriesChart::SetYAxisLabel(const std::string& l)   { yLabel_ = l; }
 int TimeSeriesChart::AddRefLine(std::string label, double value, ImU32 color) {
@@ -48,7 +49,7 @@ void TimeSeriesChart::AppendPoint(int seriesId, float value, double timestamp) {
 }
 
 void TimeSeriesChart::Render() {
-    if (!IsVisible() || series_.empty()) return;
+    if (!IsVisible()) return;
     ImGui::PushID(GetName().c_str());
 
     frameCounter_ += ImGui::GetIO().DeltaTime;
@@ -106,7 +107,10 @@ void TimeSeriesChart::Render() {
                     return (*fn)(value, buff, size, nullptr);
                 }, &xAxisFmt_);
         }
-        ImPlot::SetupAxesLimits(0, 0, yMin_, yMax_, ImPlotCond_Once);
+        if (xRangeSet_)
+            ImPlot::SetupAxesLimits(xMin_, xMax_, yMin_, yMax_, ImPlotCond_Once);
+        else
+            ImPlot::SetupAxesLimits(0, frameCounter_ > 0 ? frameCounter_ : 1, yMin_, yMax_, ImPlotCond_Once);
 
         // ── Plot each series ──────────────────────────────────────────
         for (auto& s : series_) {
