@@ -31,6 +31,9 @@ public:
     /// Set initial fixed pixel width for a column. 0 = default stretch.
     void SetColumnWidth(int col, float width);
     float GetColumnWidth(int col) const;
+    /// Set stretch weight for a column (WidthStretch). Overrides SetColumnWidth when > 0.
+    void SetColumnStretch(int col, float weight);
+    float GetColumnStretch(int col) const;
     /// Enable horizontal scrolling for the table.
     void SetScrollX(bool on) { scrollX_ = on; }
     bool GetScrollX() const { return scrollX_; }
@@ -75,6 +78,7 @@ private:
     CellRenderer cell_renderer_;
     std::unordered_map<int, SortComparator> sort_comparators_;
     std::vector<float> col_widths_;
+    std::vector<float> col_stretches_;
     bool scrollX_ = false;
 };
 }
