@@ -62,8 +62,9 @@ TEST(ElevationTest, AlphaStaysInByteRange) {
 }
 
 TEST(ElevationTest, ActiveSurfaceOverloadFollowsTheme) {
-    // The active surface defaults to Glass, so the level-only overload should
-    // match the explicit Glass preset.
+    // The level-only overload reads the active surface (set by ApplySurfaceStyle).
+    // After selecting Glass it must match the explicit Glass preset; after Solid it
+    // must drop the rim glow.
     ImGui::CreateContext();
     ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.12f, 1.0f);
     unigui::theme::ApplySurfaceStyle(ImGui::GetStyle(), SurfaceStyle::Glass);
