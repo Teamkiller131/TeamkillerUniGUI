@@ -44,7 +44,7 @@ ctest --test-dir build
 用户代码
     ↓
 unigui:: API
-    ├── 主题引擎 (53 色明暗主题，StyleScope RAII)
+    ├── 主题引擎 (明暗主题 + 13 套预设，统一样式/颜色令牌，毛玻璃材质，立体阴影，StyleScope RAII)
     ├── 组件库 (82 个组件，100% PushID 安全，表单校验/撤销重做/序列化)
     ├── 声明式 DSL (unigui::dsl — Window, VBox/HBox, Button, CheckBox, SliderFloat, InputText, If/For)
     ├── 事件总线 (unigui::events::Bus — 发布/订阅，支持通配符)
@@ -259,6 +259,49 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "确定"); // 相同文�
 ```
 
 每个组件自动为其内部所有 ImGui 控件建立唯一 ID 作用域，即使创建多个相同标签的组件也能正常工作。
+
+## 主题与表面材质
+
+主题引擎在调色板之上叠加四层令牌（token）处理，使全部 13 套预设（以及明暗主题）
+共享统一外观。默认采用毛玻璃 / glassmorphism 风格。
+
+```cpp
+unigui::AppConfig cfg;
+cfg.theme.theme   = "dark";                              // 或任意注册表预设
+cfg.theme.surface = unigui::theme::SurfaceStyle::Glass;  // 默认值，见下表
+unigui::Init(cfg);
+```
+
+**表面材质**（`<unigui/theme/surface_style.h>`）——在调色板之上叠加一层
+半透明「材质」。由 `ThemeConfig::surface` 选择：
+
+| `SurfaceStyle` | 外观 |
+|----------------|------|
+| `Solid` | 平面、完全不透明——经典风格。 |
+| `Glass` *(默认)* | 毛玻璃——半透明表面 + 亮边。 |
+| `Frosted` | 更强半透明，更明显的亮边。 |
+| `Acrylic` | Fluent 亚克力风格——更实的染色 + 边框。 |
+| `Minimal` | 近乎不透明、无边框、低调。 |
+
+`SurfaceStyleName()` / `AllSurfaceStyles()` 可用于主题选择器。半透明材质需要
+衬在带色背景上：应用主循环会将各后端清屏为 `unigui::GetBackdropColor()`，
+避免毛玻璃表面衬在纯黑上。
+
+**强调色与语义色**（`<unigui/theme/color_tokens.h>`）——每套主题都从单一基础
+强调色推导出完整交互调色板（accent → hover → active，以及
+`Success`/`Warning`/`Danger`/`Info`）。查询当前调色板：
+
+```cpp
+ImVec4 ok = unigui::GetSemanticColor(unigui::theme::Semantic::Success);
+const auto& tokens = unigui::GetColorTokens();   // accent/hover/active/success/...
+```
+
+**立体阴影 Elevation**（`<unigui/fx/elevation.h>`）——与当前表面材质联动的语义
+阴影分级。毛玻璃得到柔和扩散的阴影 + 亮边；Solid 得到更硬朗的阴影。
+
+```cpp
+unigui::Button("save", "Save").WithElevation(unigui::fx::Elevation::Medium); // None/Low/Medium/High
+```
 
 ## 后端选择
 
