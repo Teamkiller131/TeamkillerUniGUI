@@ -97,7 +97,7 @@ A: clang-cl still needs the MSVC environment. Run clang presets through
 User Code
     ↓
 unigui:: API
-    ├── Theme Engine (53-color dark + light theme, StyleScope RAII)
+    ├── Theme Engine (dark + light + 13 presets, unified style/color tokens, glass surfaces, elevation, StyleScope RAII)
     ├── Widget Library (82 widgets (100% PushID-safe), form validation, undo/redo, serialization)
     ├── Declarative DSL (unigui::dsl — Window, VBox/HBox, Button, CheckBox, SliderFloat, InputText, If/For)
     ├── EventBus (unigui::events::Bus — publish/subscribe with wildcards)
@@ -408,6 +408,50 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | TrayIcon | `Show()`, `Hide()`, `SetMenu()`, `ShowNotification()` |
 | | Tag | colored tag badges |
 | | ContextMenu | right-click popup menus |
+
+## Theming & Surface Materials
+
+The theme engine layers four token passes on top of any palette, so all 13 presets
+(plus Dark/Light) share one consistent look. The frosted-glass / glassmorphism
+(毛玻璃) aesthetic is the default.
+
+```cpp
+unigui::AppConfig cfg;
+cfg.theme.theme   = "dark";                              // or any registry preset
+cfg.theme.surface = unigui::theme::SurfaceStyle::Glass;  // default; see options below
+unigui::Init(cfg);
+```
+
+**Surface materials** (`<unigui/theme/surface_style.h>`) — a translucency/"material"
+pass applied over the colour palette. `ThemeConfig::surface` selects one:
+
+| `SurfaceStyle` | Look |
+|----------------|------|
+| `Solid` | Flat, fully opaque — classic. |
+| `Glass` *(default)* | Frosted glass — translucent surfaces + bright rim. |
+| `Frosted` | Heavier translucency, stronger rim. |
+| `Acrylic` | Fluent-style acrylic — firmer tint + border. |
+| `Minimal` | Near-opaque, borderless, quiet. |
+
+`SurfaceStyleName()` / `AllSurfaceStyles()` drive theme pickers. Translucent
+materials read against a tinted backdrop: the app loop clears every backend to
+`unigui::GetBackdropColor()` so glass surfaces don't render against black.
+
+**Accent & semantic colours** (`<unigui/theme/color_tokens.h>`) — each theme derives
+its full interactive palette (accent → hover → active, plus `Success`/`Warning`/
+`Danger`/`Info`) from one base accent. Query the active palette:
+
+```cpp
+ImVec4 ok = unigui::GetSemanticColor(unigui::theme::Semantic::Success);
+const auto& tokens = unigui::GetColorTokens();   // accent/hover/active/success/...
+```
+
+**Elevation** (`<unigui/fx/elevation.h>`) — a semantic shadow scale tied to the active
+surface material. Glass gets a soft, diffuse shadow plus a rim; solid gets a firmer one.
+
+```cpp
+unigui::Button("save", "Save").WithElevation(unigui::fx::Elevation::Medium); // None/Low/Medium/High
+```
 
 ## Backend Selection
 
