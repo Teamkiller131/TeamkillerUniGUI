@@ -1,5 +1,6 @@
 #include <unigui/theme/theme.h>
 #include <unigui/theme/style_tokens.h>
+#include <unigui/theme/color_tokens.h>
 #include <unigui/theme/surface_style.h>
 #include <unigui/core/log.h>
 #include <unigui/fonts/font_manager.h>
@@ -295,6 +296,14 @@ void ApplyTheme(const ThemeConfig& config) {
     colors[ImGuiCol_TableBorderLight] = ImVec4(colors[ImGuiCol_Border].x * 0.7f, colors[ImGuiCol_Border].y * 0.7f, colors[ImGuiCol_Border].z * 0.75f, 1.00f);
     colors[ImGuiCol_TableRowBg]       = ImVec4(colors[ImGuiCol_WindowBg].x, colors[ImGuiCol_WindowBg].y, colors[ImGuiCol_WindowBg].z, 1.00f);
     colors[ImGuiCol_TableRowBgAlt]    = ImVec4(colors[ImGuiCol_WindowBg].x * 1.04f, colors[ImGuiCol_WindowBg].y * 1.04f, colors[ImGuiCol_WindowBg].z * 1.06f, 1.00f);
+
+    // ── Accent & semantic colour tokens (Step 3) ────────────────────────
+    // Re-derive the accent-driven interaction slots (CheckMark/Slider/Separator/
+    // ResizeGrip/DragDropTarget/Nav/DockingPreview/TextSelectedBg) from a single
+    // base accent so Dark/Light share the exact accent→hover→active relationship,
+    // and record the semantic palette (success/warning/danger/info) for widgets.
+    theme::ApplyColorTokens(style, theme::AccentFromStyle(style),
+                            config.preset == ThemePreset::Dark);
 
     // ── Surface material (Step 2: glass / solid / frosted / acrylic / minimal) ──
     // Applied after the palette so it composes with any preset; before ScaleAllSizes

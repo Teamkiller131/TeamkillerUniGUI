@@ -1,4 +1,5 @@
 #include <unigui/widgets/widget_base.h>
+#include <unigui/fx/elevation.h>
 #include <imgui_internal.h>
 
 namespace unigui {
@@ -29,6 +30,17 @@ void Widget::SetShadow(bool enable, float radius, float offX, float offY) {
     shadow_.enabled = enable;
     if (radius > 0) shadow_.radius = radius;
     shadow_.offX = offX; shadow_.offY = offY;
+}
+
+void Widget::SetElevation(fx::Elevation level) {
+    const fx::ElevationTokens t = fx::ElevationPreset(level);
+    if (level == fx::Elevation::None) { shadow_.enabled = false; return; }
+    shadow_.enabled = true;
+    shadow_.radius  = t.shadow_radius;
+    shadow_.offX    = t.shadow_offset_x;
+    shadow_.offY    = t.shadow_offset_y;
+    shadow_.samples = t.shadow_samples;
+    shadow_.color   = IM_COL32(0, 0, 0, t.shadow_alpha);
 }
 
 } // namespace unigui

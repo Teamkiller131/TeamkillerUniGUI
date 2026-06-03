@@ -115,6 +115,17 @@ target_link_libraries(test_surface_style PRIVATE
 target_compile_features(test_surface_style PRIVATE cxx_std_23)
 gtest_discover_tests(test_surface_style)
 
+add_executable(test_color_tokens
+    theme/color_tokens_test.cc
+)
+target_link_libraries(test_color_tokens PRIVATE
+    GTest::gtest
+    GTest::gtest_main
+    unigui
+)
+target_compile_features(test_color_tokens PRIVATE cxx_std_23)
+gtest_discover_tests(test_color_tokens)
+
 add_executable(test_widget_base
     widgets/widget_base_test.cc
 )
@@ -283,6 +294,12 @@ add_executable(test_effect_bench fx/bench_test.cc)
 target_link_libraries(test_effect_bench PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_effect_bench PRIVATE cxx_std_23)
 gtest_discover_tests(test_effect_bench)
+
+# Step 4: theme-driven elevation tokens (pure — no GL context needed)
+add_executable(test_elevation fx/elevation_test.cc)
+target_link_libraries(test_elevation PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_elevation PRIVATE cxx_std_23)
+gtest_discover_tests(test_elevation)
 
 # Usability layer: immediate-mode API (unigui::im)
 add_executable(test_im im/im_test.cc)

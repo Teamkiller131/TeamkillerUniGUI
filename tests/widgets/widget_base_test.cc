@@ -66,3 +66,38 @@ TEST(Widget, SetMinSize_StoresValues) {
     EXPECT_FLOAT_EQ(w.GetMinSize().x, 100);
     EXPECT_FLOAT_EQ(w.GetMinSize().y, 200);
 }
+
+// ── Step 4: elevation wires into a widget's ShadowConfig ─────────────────────
+
+namespace {
+class ElevWidget : public unigui::Widget {
+public:
+    explicit ElevWidget(std::string name) : Widget(std::move(name)) {}
+    void Render() override {}
+};
+} // namespace
+
+TEST(Widget, SetElevation_EnablesAndFillsShadow) {
+    ElevWidget w("panel");
+    w.SetElevation(unigui::fx::Elevation::Medium);
+    const auto& sc = w.GetShadowConfig();
+    EXPECT_TRUE(sc.enabled);
+    EXPECT_GT(sc.radius, 0.f);
+}
+
+TEST(Widget, SetElevation_NoneDisablesShadow) {
+    ElevWidget w("panel");
+    w.SetElevation(unigui::fx::Elevation::High);
+    EXPECT_TRUE(w.GetShadowConfig().enabled);
+    w.SetElevation(unigui::fx::Elevation::None);
+    EXPECT_FALSE(w.GetShadowConfig().enabled);
+}
+
+TEST(Widget, WithElevation_HigherMeansLargerRadius) {
+    ElevWidget low("a");
+    low.WithElevation(unigui::fx::Elevation::Low);
+    float lowR = low.GetShadowConfig().radius;
+    ElevWidget high("b");
+    high.WithElevation(unigui::fx::Elevation::High);
+    EXPECT_GT(high.GetShadowConfig().radius, lowR);
+}
