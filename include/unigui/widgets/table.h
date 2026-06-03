@@ -28,6 +28,12 @@ public:
     Alignment GetColumnAlignment(int col) const;
     void SetColumnUnit(int col, std::string unit);
     const std::string& GetColumnUnit(int col) const;
+    /// Set initial fixed pixel width for a column. 0 = default stretch.
+    void SetColumnWidth(int col, float width);
+    float GetColumnWidth(int col) const;
+    /// Enable horizontal scrolling for the table.
+    void SetScrollX(bool on) { scrollX_ = on; }
+    bool GetScrollX() const { return scrollX_; }
     void SaveColumnWidths();
     void RestoreColumnWidths();
 
@@ -68,5 +74,7 @@ private:
     std::vector<float> saved_widths_;
     CellRenderer cell_renderer_;
     std::unordered_map<int, SortComparator> sort_comparators_;
+    std::vector<float> col_widths_;
+    bool scrollX_ = false;
 };
 }

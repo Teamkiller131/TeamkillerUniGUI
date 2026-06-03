@@ -24,6 +24,9 @@ public:
     void SetColor(ImU32 rgba) { customColor_ = rgba; }
     /// Toggle the soft outer glow halo (on by default).
     void SetGlowEnabled(bool on) { glow_ = on; }
+    /// When true, the lamp is horizontally centered within the available column width.
+    void SetCenterInCell(bool on) { centerInCell_ = on; }
+    bool GetCenterInCell() const { return centerInCell_; }
 
     State GetState() const { return state_; }
     float GetRadius() const { return radius_; }
@@ -36,6 +39,7 @@ private:
     float blinkTimer_ = 0.0f;
     ImU32 customColor_ = 0;
     bool glow_ = true;
+    bool centerInCell_ = false;
 };
 
 } // namespace unigui

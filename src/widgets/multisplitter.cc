@@ -39,6 +39,11 @@ void MultiSplitter::SetRatios(const std::vector<float>& ratios) {
     for (auto& panel : panels_) panel.ratio = std::max(0.0f, panel.ratio) / total;
 }
 
+void MultiSplitter::ResetToDesign() {
+    if (!designRatios_.empty())
+        SetRatios(designRatios_);
+}
+
 void MultiSplitter::Render() {
     if (!IsVisible() || panels_.empty()) return;
 

@@ -54,20 +54,6 @@ void TimeSeriesChart::Render() {
 
     frameCounter_ += ImGui::GetIO().DeltaTime;
 
-    // ── Auto-fit Y axis ──────────────────────────────────────────────────
-    if (yAutoFit_) {
-        double yLo = 1e18, yHi = -1e18;
-        for (auto& s : series_)
-            for (auto& [ts, v] : s.points) {
-                yLo = std::min(yLo, (double)v);
-                yHi = std::max(yHi, (double)v);
-            }
-        if (yLo < yHi) {
-            double margin = (yHi - yLo) * 0.1;
-            yMin_ = yLo - margin;
-            yMax_ = yHi + margin;
-        }
-    }
 
     ImPlotFlags plotFlags = crosshair_ ? ImPlotFlags_Crosshairs : 0;
     ImPlotAxisFlags axisFlags = (panEnabled_  ? 0 : ImPlotAxisFlags_NoMenus) |
@@ -96,7 +82,7 @@ void TimeSeriesChart::Render() {
 
         // ── Axis labels ───────────────────────────────────────────────
         if (!xLabel_.empty()) ImPlot::SetupAxis(ImAxis_X1, xLabel_.c_str());
-        if (!yLabel_.empty()) ImPlot::SetupAxis(ImAxis_Y1, yLabel_.c_str());
+        // (Y axis label handled in the AutoFit+RangeFit SetupAxis call below)
         if (std::any_of(series_.begin(), series_.end(), [](const auto& s) { return s.def.yAxisId == 3; })) {
             ImPlot::SetupAxis(ImAxis_Y3, yLabel_.empty() ? nullptr : yLabel_.c_str());
         }
@@ -107,10 +93,15 @@ void TimeSeriesChart::Render() {
                     return (*fn)(value, buff, size, nullptr);
                 }, &xAxisFmt_);
         }
+        // X axis: lock once (preserves user zoom/pan)
         if (xRangeSet_)
-            ImPlot::SetupAxesLimits(xMin_, xMax_, yMin_, yMax_, ImPlotCond_Once);
+            ImPlot::SetupAxisLimits(ImAxis_X1, xMin_, xMax_, ImPlotCond_Once);
         else
-            ImPlot::SetupAxesLimits(0, frameCounter_ > 0 ? frameCounter_ : 1, yMin_, yMax_, ImPlotCond_Once);
+            ImPlot::SetupAxisLimits(ImAxis_X1, 0, frameCounter_ > 0 ? frameCounter_ : 1, ImPlotCond_Once);
+
+        // Y axis: auto-fit to data visible within the current X viewport only
+        ImPlot::SetupAxis(ImAxis_Y1, yLabel_.empty() ? nullptr : yLabel_.c_str(),
+                          ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
 
         // ── Plot each series ──────────────────────────────────────────
         for (auto& s : series_) {

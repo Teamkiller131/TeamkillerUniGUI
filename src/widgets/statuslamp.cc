@@ -33,6 +33,17 @@ void StatusLamp::Render() {
 
     ImGui::PushID(GetName().c_str());
 
+    // Horizontal centering within the available cell width
+    if (centerInCell_) {
+        const float diameter = radius_ * 2.0f;
+        const float pad = glow_ ? radius_ * 0.8f : 0.0f;
+        const float totalW = diameter + pad * 2.0f;
+        const float avail = ImGui::GetContentRegionAvail().x;
+        if (avail > totalW) {
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (avail - totalW) * 0.5f);
+        }
+    }
+
     // -- Base color + animation per state --------------------------------
     ImU32 baseColor;
     float coreAlpha = 1.0f;   // opacity of the lit core
