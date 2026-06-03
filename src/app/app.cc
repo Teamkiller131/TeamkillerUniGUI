@@ -165,7 +165,11 @@ void Render(){
     unigui::Toast::Instance().Render();
 #endif
     ImGui::Render();ImDrawData* dd=ImGui::GetDrawData();
-    if(g_backend==BackendType::GLFW_GL3){g_renderer->SetClearColor(0.10f,0.10f,0.12f,1.0f);glClear(GL_COLOR_BUFFER_BIT);}
+    // Clear to the theme-derived backdrop so translucent (glass) surfaces read
+    // against a tinted background. Applies to every backend; GLFW additionally
+    // issues the GL clear here (other backends clear inside RenderDrawData).
+    {ImVec4 bg=GetBackdropColor();g_renderer->SetClearColor(bg.x,bg.y,bg.z,bg.w);}
+    if(g_backend==BackendType::GLFW_GL3){glClear(GL_COLOR_BUFFER_BIT);}
     g_renderer->RenderDrawData(dd);
     if(g_backend==BackendType::GLFW_GL3)g_platform->SwapBuffers();
 }

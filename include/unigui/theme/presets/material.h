@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui.h>
+#include <unigui/theme/style_tokens.h>
 
 namespace unigui::theme {
 
@@ -38,11 +39,8 @@ inline void ApplyMaterialDark(ImGuiStyle& s) {
     c[ImGuiCol_ResizeGrip]        = ImVec4(0.40f, 0.31f, 0.64f, 0.25f);
     c[ImGuiCol_NavHighlight]      = ImVec4(0.40f, 0.31f, 0.64f, 1.00f);
     c[ImGuiCol_ModalWindowDimBg]  = ImVec4(0.00f, 0.00f, 0.00f, 0.45f);
-    // Rounded corners
-    s.WindowRounding = 12.f; s.FrameRounding = 6.f; s.GrabRounding = 12.f;
-    s.TabRounding = 8.f; s.ChildRounding = 8.f; s.PopupRounding = 8.f;
-    s.ScrollbarRounding = 9.f; s.GrabMinSize = 10.f;
-    s.WindowBorderSize = 1.f; s.FrameBorderSize = 1.f;
+    // Unified geometry (rounding/spacing/borders) shared by all presets
+    ApplyStyleTokens(s);
 }
 
 inline void ApplyMaterialLight(ImGuiStyle& s) {
@@ -80,10 +78,7 @@ inline void ApplyMaterialLight(ImGuiStyle& s) {
     c[ImGuiCol_ResizeGrip]        = ImVec4(0.40f, 0.31f, 0.64f, 0.25f);
     c[ImGuiCol_NavHighlight]      = ImVec4(0.40f, 0.31f, 0.64f, 1.00f);
     c[ImGuiCol_ModalWindowDimBg]  = ImVec4(0.00f, 0.00f, 0.00f, 0.30f);
-    s.WindowRounding = 12.f; s.FrameRounding = 6.f; s.GrabRounding = 12.f;
-    s.TabRounding = 8.f; s.ChildRounding = 8.f; s.PopupRounding = 8.f;
-    s.ScrollbarRounding = 9.f; s.GrabMinSize = 10.f;
-    s.WindowBorderSize = 1.f; s.FrameBorderSize = 1.f;
+    ApplyStyleTokens(s);
 }
 
 } // namespace unigui::theme
