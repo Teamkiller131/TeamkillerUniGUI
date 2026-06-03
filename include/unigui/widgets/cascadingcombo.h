@@ -42,10 +42,19 @@ public:
     void SetSpacing(float spacing);
     float GetSpacing() const { return spacing_; }
 
+    // Visible caption control. By default each level's `label` is NOT drawn as a
+    // trailing text caption next to the combo (that is visually noisy and the
+    // current selection already conveys the control's purpose). When hidden, the
+    // label is instead surfaced as a hover tooltip. Call SetShowLabels(true) to
+    // restore the classic trailing-caption behaviour.
+    void SetShowLabels(bool on) { showLabels_ = on; }
+    bool GetShowLabels() const { return showLabels_; }
+
     // ── Fluent configuration (chainable) ───────────────────────────────
     CascadingCombo& WithLayout(Layout layout)   { SetLayout(layout); return *this; }
     CascadingCombo& WithItemWidth(float width)  { SetItemWidth(width); return *this; }
     CascadingCombo& WithSpacing(float spacing)  { SetSpacing(spacing); return *this; }
+    CascadingCombo& WithShowLabels(bool on)     { SetShowLabels(on); return *this; }
 
     using OnChanged = std::function<void(int level, int index)>;
     void SetOnChanged(OnChanged fn);
@@ -59,6 +68,7 @@ private:
     Layout layout_ = Layout::Vertical;
     float itemWidth_ = 0.f;
     float spacing_ = -1.f;
+    bool showLabels_ = false;
 };
 
 } // namespace unigui

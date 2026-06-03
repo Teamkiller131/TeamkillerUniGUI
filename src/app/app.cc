@@ -47,21 +47,27 @@ bool Init(const AppConfig& config){
     IMGUI_CHECKVERSION(); ImGui::CreateContext();
     unigui::theme::RegisterAllThemes();
 
-    // Load font BEFORE any backend init (DX11 locks atlas)
-    float dpi=config.theme.dpi_scale;
-    if(dpi<=0){
-        dpi=DetectDPIScale(nullptr);
-        if(dpi<0.5f)dpi=1.0f;
-    }
-    UNIGUI_LOG_INFO("DPI scale: {:.2f}",dpi);
-    float fontSize=config.theme.font_size*dpi;
-    LoadDefaultFont(fontSize,config.theme.font_path);
+    // DPI is only reliable after the platform layer creates the window and sets the
+    // process DPI awareness (GLFW does this during Init). So defer the SINGLE font
+    // atlas load until the window exists — loading the atlas more than once corrupts
+    // the heap on the GL/DX backends, ruling out a later rebuild.
+    float dpi=config.theme.dpi_scale; // 0 = auto-detect once the window is up
 
     auto be=CreateBackend(config.backend);
     g_backend=config.backend; g_platform=std::move(be.platform); g_renderer=std::move(be.renderer);
 
     if(!g_platform||!g_platform->Init(nullptr)){UNIGUI_LOG_ERROR("Platform init failed");CleanupAppResources(true);return false;}
     g_platform->SetTitle(config.title); g_platform->SetSize(config.width,config.height);
+
+    // Now that the window exists and DPI awareness is active, resolve the true
+    // per-monitor DPI and load the glyph atlas exactly once at that pixel size for
+    // crisp HiDPI text. This runs before the renderer uploads the atlas (below).
+    if(dpi<=0){
+        dpi=DetectDPIScale(g_platform->GetWindowHandle());
+        if(dpi<0.5f)dpi=1.0f;
+    }
+    UNIGUI_LOG_INFO("DPI scale: {:.2f}",dpi);
+    LoadDefaultFont(config.theme.font_size*dpi,config.theme.font_path);
 
 #ifdef UNIGUI_HAS_DX11
     if(config.backend==BackendType::DX11){
@@ -94,20 +100,11 @@ bool Init(const AppConfig& config){
 
     if(!g_renderer||!g_renderer->Init(ImGui::GetCurrentContext())){CleanupAppResources(true);return false;}
 
-    // Build font atlas AFTER renderer Init (RendererHasTextures flag is set)
+    // Build font atlas AFTER renderer Init (RendererHasTextures flag is set).
+    // The atlas was already sized for the true per-monitor DPI above, so the
+    // upload here is final — no post-upload rebuild (which is unsafe on these
+    // backends) is needed for HiDPI.
     ImGui::GetIO().Fonts->Build();
-
-    // Re-detect DPI with actual window handle for per-monitor accuracy
-    float actualDpi=DetectDPIScale(g_platform->GetWindowHandle());
-    if(actualDpi>0.5f && actualDpi>dpi*1.1f){
-        UNIGUI_LOG_INFO("DPI updated: {:.2f} -> {:.2f}", dpi, actualDpi);
-        dpi=actualDpi;
-        // For embedded font: scale via FontGlobalScale instead of reloading
-        ImGui::GetIO().FontGlobalScale = dpi;
-        // Re-apply theme sizing for new DPI
-        ThemeConfig tc2=config.theme; tc2.dpi_scale=dpi;
-        ApplyTheme(tc2);
-    }
 
     auto& io=ImGui::GetIO();
     ThemeConfig tc=config.theme; tc.dpi_scale=dpi;
