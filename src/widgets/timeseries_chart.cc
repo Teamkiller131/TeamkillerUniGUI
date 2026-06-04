@@ -56,7 +56,8 @@ void TimeSeriesChart::Render() {
     frameCounter_ += ImGui::GetIO().DeltaTime;
 
 
-    ImPlotFlags plotFlags = crosshair_ ? ImPlotFlags_Crosshairs : 0;
+    ImPlotFlags plotFlags = (crosshair_ ? ImPlotFlags_Crosshairs : 0)
+                          | (legend_ ? 0 : ImPlotFlags_NoLegend);
     ImPlotAxisFlags axisFlags = (panEnabled_  ? 0 : ImPlotAxisFlags_NoMenus) |
                                 (zoomEnabled_ ? 0 : ImPlotAxisFlags_NoMenus);
     (void)axisFlags; // flags applied via ImPlot default — pan/zoom enabled by default
@@ -115,6 +116,13 @@ void TimeSeriesChart::Render() {
             ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_, ImPlotCond_Once);
         }
 
+        // ── Legend ────────────────────────────────────────────────────
+        // Use ImPlot's built-in in-plot legend. ImPlot legends are draggable
+        // out of the box: the user can click-drag the legend box to reposition
+        // it anywhere inside the plot (it snaps to the nearest edge/corner).
+        if (legend_)
+            ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_None);
+
         // ── Plot each series ──────────────────────────────────────────
         for (auto& s : series_) {
             if (s.points.empty()) continue;
@@ -160,16 +168,8 @@ void TimeSeriesChart::Render() {
         ImGui::SetTooltip("%s", tip.c_str());
     }
 
-    // Legend
-    if (legend_ && series_.size() > 1) {
-        for (auto& s : series_) {
-            ImGui::SameLine();
-            ImGui::ColorButton(s.def.label.c_str(),
-                ImGui::ColorConvertU32ToFloat4(s.def.color));
-            ImGui::SameLine();
-            ImGui::TextUnformatted(s.def.label.c_str());
-        }
-    }
+    // NOTE: the legend is now rendered by ImPlot inside the plot (draggable);
+    // the old static bottom legend strip was removed in favor of it.
     ImGui::PopID();
 }
 

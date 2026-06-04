@@ -61,9 +61,10 @@ ctest --test-dir build
 |-----|-------------|
 | **[docs/README.md](docs/README.md)** | **Documentation hub** (index) |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Build & first app |
-| [docs/EXAMPLES.md](docs/EXAMPLES.md) | Cookbook & code samples |
-| [docs/WIDGET_API.md](docs/WIDGET_API.md) | Full widget API (82 components) |
-| [docs/API_INDEX.md](docs/API_INDEX.md) | Alphabetical API index |
+| [docs/EXAMPLES.md](docs/EXAMPLES.md) | Cookbook (composition, theme, DSL, threading) |
+| [docs/WIDGET_EXAMPLES.md](docs/WIDGET_EXAMPLES.md) | One minimal example per widget (82 entries) |
+| [docs/WIDGET_API.md](docs/WIDGET_API.md) | Full API (widgets + inline TreeView / CascadingCombo) |
+| [docs/API_INDEX.md](docs/API_INDEX.md) | Master index (widgets + `im` + DSL + core) |
 | [INTEGRATION.md](INTEGRATION.md) | Submodule + vcpkg embedding |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Build / CRT / CI FAQ |
 
@@ -305,7 +306,7 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 
 ## Widgets (82 total)
 
-> **Docs hub**: [docs/README.md](docs/README.md) · API: [WIDGET_API.md](docs/WIDGET_API.md) · Index: [API_INDEX.md](docs/API_INDEX.md) · Guides: [TreeView](docs/TREEVIEW.md), [CascadingCombo](docs/CASCADINGCOMBO.md)
+> **Docs hub**: [docs/README.md](docs/README.md) · API: [WIDGET_API.md](docs/WIDGET_API.md) · Per-widget: [WIDGET_EXAMPLES.md](docs/WIDGET_EXAMPLES.md) · Index: [API_INDEX.md](docs/API_INDEX.md) (TreeView & CascadingCombo merged in WIDGET_API)
 
 
 | Category | Widget | Key API |
@@ -322,7 +323,7 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | PasswordInput | `GetStrengthScore()` (0-4), show/hide toggle |
 | | ComboBox | `SetItems()`, `SetOnChange()`, `SetSearchable()` |
 | | MultiCombo | `GetSelectedIndices()`, `SetSelected()` |
-| | CascadingCombo | N-level linked dropdowns, H/V layout + width control ([guide](docs/CASCADINGCOMBO.md)) |
+| | CascadingCombo | N-level linked dropdowns, H/V layout + width ([API](docs/WIDGET_API.md#cascadingcombo)) |
 | | SearchBox | `SetItems(v)`, `GetQuery()`, `SetOnSelect(fn)` |
 | | Slider\<T\> | `SetMin()`, `SetMax()`, `SetValue()` |
 | | MultiHandleSlider | multi-draggable tick handles (v3.2) |
@@ -354,7 +355,7 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | MultiSplitter | N-panel H/V resizable layout (v3.2) |
 | | ListView | `SetItems()`, `SetOnSelect()` |
 | | Table | `AddRow()`, sortable, cell embedding, `ExportCSV()`/`ImportCSV()` |
-| | TreeView | `SetRoot()`, multi-select, composite/custom rows ([guide](docs/TREEVIEW.md)) |
+| | TreeView | `SetRoot()`, `TextSpan`/`spans`, `SetRowRenderer()` ([API](docs/WIDGET_API.md#treeview)) |
 | Selection | Selectable | `SetLabel()`, `SetSelected()`, `SetOnClick()` (v3.3) |
 | | ListBox | `SetItems()`, `GetSelectedIndex()`, `SetOnChange()` (v3.3) |
 | Layout | Splitter | `SetOrientation()`, drag to resize |

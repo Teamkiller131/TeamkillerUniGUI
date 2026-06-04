@@ -9,14 +9,26 @@ English | [中文索引](README_zh.md)
 | Document | Description |
 |----------|-------------|
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Install, build, first app (`RunApp`), backends |
-| [EXAMPLES.md](EXAMPLES.md) | Copy-paste recipes (widgets, theme, tables, charts, threading) |
-| [WIDGET_API.md](WIDGET_API.md) | **Full API reference** — every widget, methods, snippets |
-| [API_INDEX.md](API_INDEX.md) | Alphabetical widget & module index → links into WIDGET_API |
-| [TREEVIEW.md](TREEVIEW.md) | TreeView deep dive (composite rows, `spans`, renderers) |
-| [CASCADINGCOMBO.md](CASCADINGCOMBO.md) | CascadingCombo layout & width |
+| [EXAMPLES.md](EXAMPLES.md) | Cookbook: composition, theme, tables, charts, threading, DSL |
+| [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) | **One minimal example per widget** (82 entries) |
+| [WIDGET_API.md](WIDGET_API.md) | **Full API reference** — signatures, fluent API, TreeView & CascadingCombo inline |
+| [API_INDEX.md](API_INDEX.md) | Master index: widgets + `im` + DSL + core |
 | [MODULES.md](MODULES.md) | Optional CMake modules (DSL, SQLite, IPC, …) |
 | [../INTEGRATION.md](../INTEGRATION.md) | Embed as **Git submodule** + vcpkg (recommended) |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Build/CRT/CI FAQ (not in README) |
+
+Redirects (content merged into WIDGET_API): [TREEVIEW.md](TREEVIEW.md), [CASCADINGCOMBO.md](CASCADINGCOMBO.md).
+
+## API surface (what “82 widgets” means)
+
+| Layer | Location | Count |
+|-------|----------|------:|
+| Retained widgets + layout | `include/unigui/widgets/` | **82** catalog entries |
+| Immediate mode | `unigui::im` in `im/im.h` | **22** functions |
+| Declarative DSL (optional) | `unigui::dsl` in `dsl/dsl.h` | **18** builders |
+| App / theme / scopes | `app/`, `theme/`, `core/` | **15+** |
+
+The README badge counts **retained** components only. Use [API_INDEX.md](API_INDEX.md) for the full picture.
 
 ## Header entry points
 
@@ -35,7 +47,7 @@ English | [中文索引](README_zh.md)
 |-------|-------------|-------------|
 | **`unigui::im`** | One-off controls, layout helpers | [WIDGET_API §2](WIDGET_API.md#2-core-concepts) |
 | **Retained widgets** | Stateful UI, validation, tables | [WIDGET_API §3–15](WIDGET_API.md#3-containers--layout) |
-| **`unigui::dsl`** | Declarative UI trees (optional module) | [WIDGET_API §2](WIDGET_API.md#declarative-dsl-uniguidsl), [MODULES.md](MODULES.md) |
+| **`unigui::dsl`** | Declarative UI trees (optional module) | [WIDGET_API — DSL](WIDGET_API.md#declarative-dsl-uniguidsl), [MODULES.md](MODULES.md) |
 
 ## Example program
 

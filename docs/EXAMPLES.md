@@ -4,6 +4,10 @@ Runnable demo: [`examples/hello_unigui/main.cc`](../examples/hello_unigui/main.c
 
 All retained widgets: construct **once**, call **`Render()` every frame**.
 
+**Per-widget minimal snippets (all 82 entries):** [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)  
+**Full API + merged TreeView / CascadingCombo:** [WIDGET_API.md](WIDGET_API.md)  
+**Alphabetical index:** [API_INDEX.md](API_INDEX.md)
+
 ---
 
 ## 1. Minimal window (`RunApp`)
@@ -226,7 +230,63 @@ Details: [MODULES.md](MODULES.md), [WIDGET_API — DSL](WIDGET_API.md#declarativ
 
 ---
 
-## 13. Custom + raw ImGui
+## 13. `TreeView` — `TextSpan` + custom row
+
+```cpp
+#include <unigui/widgets/treeview.h>
+
+unigui::TreeNode root;
+root.label = "Portfolio";
+unigui::TreeNode leaf;
+leaf.label = "IF2506";
+leaf.spans = {
+    {"IF2506 ", 0},
+    {"多", IM_COL32(220, 60, 60, 255)},
+    {" 12手", 0},
+};
+root.children.push_back(std::move(leaf));
+
+auto tv = std::make_shared<unigui::TreeView>("pos");
+tv->SetRoot(std::move(root));
+tv->SetHideRoot(true);
+tv->SetRowRenderer([](int, int, const unigui::TreeNode& n, bool) {
+    if (!n.spans.empty()) {
+        for (const auto& s : n.spans)
+            ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(s.color), "%s", s.text.c_str());
+    } else {
+        ImGui::TextUnformatted(n.label.c_str());
+    }
+});
+tv->Render();
+```
+
+Full API: [WIDGET_API — TreeView](WIDGET_API.md#treeview).
+
+---
+
+## 14. `CascadingCombo` — horizontal + linkage
+
+```cpp
+auto cc = std::make_shared<unigui::CascadingCombo>("region");
+cc->SetLevels({
+    {"省", {"江苏", "浙江"}},
+    {"市", {"南京", "苏州"}},
+    {"区", {"玄武区", "鼓楼区"}},
+});
+cc->WithLayout(unigui::CascadingCombo::Layout::Horizontal)
+   .WithItemWidth(120.f)
+   .WithShowLabels(true);
+cc->SetOnChanged([&](int level, int index) {
+    if (level == 0) cc->SetOptions(1, CitiesForProvince(index));
+});
+cc->Render();
+```
+
+Full API: [WIDGET_API — CascadingCombo](WIDGET_API.md#cascadingcombo).
+
+---
+
+## 15. Custom + raw ImGui
 
 UniGUI does not block raw ImGui. Mix freely inside callbacks:
 

@@ -8,21 +8,27 @@ MultiSplitter::MultiSplitter(std::string name, Orientation ori)
     : Widget(std::move(name)), ori_(ori) {}
 
 void MultiSplitter::AddPanel(float ratio, std::function<void()> content) {
-    panels_.push_back({ratio, std::move(content)});
-    float total = 0.0f;
-    for (auto& panel : panels_) total += std::max(0.0f, panel.ratio);
-    if (total <= 0.0f) {
-        const float even = panels_.empty() ? 0.0f : 1.0f / static_cast<float>(panels_.size());
-        for (auto& panel : panels_) panel.ratio = even;
-        return;
-    }
-    for (auto& panel : panels_) panel.ratio = std::max(0.0f, panel.ratio) / total;
+    // Store the raw weight only. Normalizing in place here would overwrite each
+    // panel's original weight (the first panel becomes 1.0), so every later
+    // AddPanel would compare against rescaled values and the intended
+    // proportions would drift. Normalization is done lazily in GetRatios() and
+    // at the top of Render().
+    panels_.push_back({std::max(0.0f, ratio), std::move(content)});
 }
 
 std::vector<float> MultiSplitter::GetRatios() const {
     std::vector<float> ratios;
     ratios.reserve(panels_.size());
-    for (auto& p : panels_) ratios.push_back(p.ratio);
+    for (auto& p : panels_) ratios.push_back(std::max(0.0f, p.ratio));
+
+    float total = 0.0f;
+    for (float r : ratios) total += r;
+    if (total <= 0.0f) {
+        const float even = ratios.empty() ? 0.0f : 1.0f / static_cast<float>(ratios.size());
+        for (float& r : ratios) r = even;
+    } else {
+        for (float& r : ratios) r /= total;
+    }
     return ratios;
 }
 
@@ -59,9 +65,17 @@ void MultiSplitter::Render() {
     auto normalizeRatios = [&]() {
         float total = 0.0f;
         for (auto& panel : panels_) total += std::max(0.0f, panel.ratio);
-        if (total <= 0.0f) return;
+        if (total <= 0.0f) {
+            const float even = panels_.empty() ? 0.0f : 1.0f / static_cast<float>(panels_.size());
+            for (auto& panel : panels_) panel.ratio = even;
+            return;
+        }
         for (auto& panel : panels_) panel.ratio = std::max(0.0f, panel.ratio) / total;
     };
+
+    // Panels store raw weights; normalize once before computing sizes. This is
+    // idempotent after the first frame and keeps drag adjustments consistent.
+    normalizeRatios();
 
     for (int i = 0; i < (int)panels_.size(); ++i) {
         float panelLen = (i == (int)panels_.size() - 1) ? remainingLen : panelSpace * panels_[i].ratio;

@@ -2,7 +2,7 @@
 
 > **Version**: 3.5.0 (C++23) · **Widgets**: 82 · **Backend**: Dear ImGui (docking + multi-viewport)
 >
-> **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Examples**: [EXAMPLES.md](EXAMPLES.md)
+> **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Cookbook**: [EXAMPLES.md](EXAMPLES.md) · **Per-widget examples**: [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)
 >
 > UniGUI is a modern C++23 wrapper around Dear ImGui. Every widget lives in `namespace unigui`.
 > Each constructor takes a `std::string name` as its first argument — this becomes the ImGui ID and the
@@ -691,22 +691,68 @@ std::string GetPreview() const; void SetOnChange(std::function<void()> fn);
 
 ### CascadingCombo
 
-Multi-level linked dropdowns with horizontal/vertical layout and width control.
-Full guide: [docs/CASCADINGCOMBO.md](CASCADINGCOMBO.md).
+Multi-level linked dropdowns (e.g. province → city → district). Header: `#include <unigui/widgets/cascadingcombo.h>`.
+
+#### `Level` model
+
+```cpp
+struct Level {
+    std::string              label;           // level caption (tooltip by default)
+    std::vector<std::string> options;
+    int                      selectedIndex = 0;
+    float                    width = 0.f;   // per-level width (px); 0 = global width
+};
+```
+
+#### API
 
 ```cpp
 CascadingCombo(std::string name, std::vector<Level> levels = {});
-struct Level { std::string label; std::vector<std::string> options; int selectedIndex = 0; float width = 0.f; };
 enum class Layout { Vertical, Horizontal };
-void SetLayout(Layout); Layout GetLayout() const;
-void SetItemWidth(float); void SetItemWidth(int level, float); float GetItemWidth() const;
-void SetSpacing(float); float GetSpacing() const;
-void SetHorizontal(bool on);          // convenience wrapper over SetLayout
-CascadingCombo& WithLayout(Layout); CascadingCombo& WithItemWidth(float); CascadingCombo& WithSpacing(float);
-void SetLevels(std::vector<Level>); void SetOptions(int level, std::vector<std::string>);
-int GetSelectedIndex(int level) const; std::string GetSelectedText(int level) const;
+
+void SetLevels(std::vector<Level>);
+void SetOptions(int level, std::vector<std::string> options);  // clamps index if shorter
+int         GetSelectedIndex(int level) const;
+std::string GetSelectedText(int level) const;
+
+void SetLayout(Layout);
+void SetHorizontal(bool on);              // Layout::Horizontal if true
+void SetItemWidth(float width);             // global combo width (<=0 = auto)
+void SetItemWidth(int level, float width);  // per-level override
+void SetSpacing(float px);                  // horizontal gap (<0 = theme default)
+void SetShowLabels(bool on);                // default false (label → tooltip)
+
+CascadingCombo& WithLayout(Layout);
+CascadingCombo& WithItemWidth(float);
+CascadingCombo& WithSpacing(float);
+CascadingCombo& WithShowLabels(bool);
+
 void SetOnChanged(std::function<void(int level, int index)> fn);
 ```
+
+Width priority: `Level::width` → `SetItemWidth(global)` → ImGui auto (+ arrow padding).
+
+#### Example: horizontal three-level cascade
+
+```cpp
+auto cc = std::make_shared<unigui::CascadingCombo>("region");
+cc->SetLevels({
+    {"省", {"江苏", "浙江"}},
+    {"市", {"南京", "苏州"}},
+    {"区", {"玄武区", "鼓楼区"}},
+});
+cc->WithLayout(unigui::CascadingCombo::Layout::Horizontal)
+   .WithItemWidth(120.f)
+   .WithSpacing(8.f);
+cc->SetItemWidth(0, 150.f);
+cc->SetOnChanged([&](int level, int index) {
+    if (level == 0) cc->SetOptions(1, CitiesOf(index));
+    if (level == 1) cc->SetOptions(2, DistrictsOf(index));
+});
+cc->Render();
+```
+
+**Notes:** linkage logic is yours in `OnChanged`; `SetOptions` resets out-of-range indices to 0.
 
 ### Selectable
 
@@ -858,17 +904,88 @@ void SetVirtualScroll(bool); void SetStickyHeader(bool); void ScrollToRow(int ro
 
 ### TreeView
 
-Hierarchical tree with multi-select, built-in composite rows, and full custom row rendering.
-Full guide: [docs/TREEVIEW.md](TREEVIEW.md).
+Hierarchical tree with multi-select, built-in composite rows, segmented label colors, and full custom row rendering. Header: `#include <unigui/widgets/treeview.h>`.
+
+#### `TreeNode` / `TextSpan`
+
+```cpp
+struct TextSpan {
+    std::string text;
+    ImU32 color = 0;   // 0 = theme text color
+};
+
+struct TreeNode {
+    std::string label;
+    std::vector<TreeNode> children;
+    bool expanded = false;
+
+    std::string icon;
+    std::string suffix;
+    ImU32 labelColor = 0;
+    ImU32 bgColor = 0;
+    float progress = -1.f;      // 0..1 bar; <0 = hidden
+    ImU32 progressColor = 0;
+
+    // Non-empty → draw colored runs instead of single `label` tint
+    std::vector<TextSpan> spans;
+};
+```
+
+#### API
 
 ```cpp
 TreeView(std::string name);
-void SetRoot(TreeNode root); const TreeNode& GetRoot() const;
-void SetHideRoot(bool on); void SetMultiSelect(bool on);
-std::vector<int> GetSelectedNodes() const;
-void SetNodeRenderer(std::function<void(int id, int depth, const TreeNode& node)> fn);
+void SetRoot(TreeNode root);
+const TreeNode& GetRoot() const;
+void SetHideRoot(bool on);
+void SetMultiSelect(bool on);
+std::vector<int> GetSelectedNodes() const;  // depth-first ids; unstable if tree mutates
+
+// Legacy: draw after default arrow+label inside the node
+void SetNodeRenderer(std::function<void(int id, int depth, const TreeNode&)> fn);
+
+// Preferred: render the entire row (expand/select still managed by TreeView)
 void SetRowRenderer(std::function<void(int id, int depth, const TreeNode& node, bool selected)> fn);
 ```
+
+When `SetRowRenderer` is set, built-in `icon` / `suffix` / `progress` are **not** drawn (you own the row). Without it, those fields compose a composite row automatically.
+
+#### Example A — built-in progress rows
+
+```cpp
+unigui::TreeNode group;
+group.label = "期货账户";
+group.children.push_back({"账户 A", {}, false, "", "92%", 0, 0, 0.92f, IM_COL32(46,209,94,255)});
+auto tv = std::make_shared<unigui::TreeView>("accounts");
+tv->SetRoot(std::move(group));
+tv->SetHideRoot(true);
+tv->Render();
+```
+
+#### Example B — `TextSpan` coloring (e.g. long/short)
+
+```cpp
+unigui::TreeNode leaf;
+leaf.label = "IF2506";
+leaf.spans = {
+    {"IF2506 ", 0},
+    {"多", IM_COL32(220, 60, 60, 255)},
+    {" 12手", 0},
+};
+```
+
+#### Example C — `SetRowRenderer`
+
+```cpp
+tv->SetRowRenderer([](int, int, const unigui::TreeNode& n, bool sel) {
+    ImGui::TextUnformatted(n.label.c_str());
+    ImGui::SameLine();
+    ImGui::ProgressBar(n.progress < 0 ? 0.f : n.progress, ImVec2(120, 0));
+    if (ImGui::SmallButton("平仓")) { /* ... */ }
+});
+```
+
+**Notes:** built-in progress uses ~30% of remaining row width; use `SetRowRenderer` for fixed widths. Selection ids are per-frame — map to stable keys in your model.
 
 ---
 
@@ -1195,14 +1312,15 @@ void SetOnChange(std::function<void(T)> fn);
 
 ---
 
-## 16. Dedicated Component Guides
+## 16. Deep-dive components (in this file)
 
-Some components have their own in-depth guide:
+| Component | Section |
+|-----------|---------|
+| TreeView (`TextSpan`, `spans`, `SetRowRenderer`) | [§ TreeView](#treeview) |
+| CascadingCombo (`Layout`, `SetShowLabels`, widths) | [§ CascadingCombo](#cascadingcombo) |
 
-| Component | Guide |
-|-----------|-------|
-| TreeView (composite rows, custom renderers) | [docs/TREEVIEW.md](TREEVIEW.md) |
-| CascadingCombo (layout & width) | [docs/CASCADINGCOMBO.md](CASCADINGCOMBO.md) |
+Legacy standalone files [TREEVIEW.md](TREEVIEW.md) / [CASCADINGCOMBO.md](CASCADINGCOMBO.md) redirect here.
+Per-widget copy-paste: [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md).
 
 ### StatusLamp glow
 
