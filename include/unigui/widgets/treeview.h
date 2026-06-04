@@ -5,6 +5,13 @@
 #include <functional>
 
 namespace unigui {
+/// A single colored run of text inside a node label. Lets callers color
+/// individual segments (e.g. only the direction "多"/"空") instead of tinting
+/// the whole label via labelColor.
+struct TextSpan {
+    std::string text;
+    ImU32 color = 0;              // 0 = default theme text color
+};
 struct TreeNode {
     std::string label;
     std::vector<TreeNode> children;
@@ -17,6 +24,12 @@ struct TreeNode {
     ImU32 bgColor = 0;            // row background (0 = none)
     float progress = -1.0f;       // progress bar (0~1, <0 = no bar)
     ImU32 progressColor = 0;      // progress bar color
+
+    // When non-empty (and no rowRenderer is set), the node label is drawn as a
+    // sequence of individually-colored spans instead of the single `label`.
+    // The expand/select target stays the full row; `label` may be left as a
+    // plain fallback. Spans are rendered inline, left to right.
+    std::vector<TextSpan> spans;
 };
 class TreeView : public Widget {
 public:
