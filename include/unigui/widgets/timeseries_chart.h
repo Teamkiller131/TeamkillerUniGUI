@@ -40,8 +40,15 @@ public:
 
     /// Auto-fit Y axis range.
     void SetYAxisAutoFit(bool on);
-    /// Manual Y axis range.
+    /// When true (default) and auto-fit is on, the Y axis fits ONLY to data that
+    /// falls inside the currently visible X range (ImPlotAxisFlags_RangeFit), so
+    /// zooming/panning the X axis rescales Y to the visible window instead of the
+    /// full dataset. When false, Y auto-fits to the entire dataset.
+    void SetYRangeFit(bool on);
+    /// Manual Y axis range (takes effect only when auto-fit is off).
     void SetYAxisRange(double min, double max);
+    /// Fixed X axis range. When set, the X axis always shows [min, max] even with no data.
+    void SetXAxisRange(double min, double max);
 
     /// X axis label.
     void SetXAxisLabel(const std::string& label);
@@ -79,7 +86,10 @@ private:
     int nextRefId_ = 1;
     int slidingWindow_ = 500;
     bool yAutoFit_ = true;
+    bool yRangeFit_ = true;
     double yMin_ = 0, yMax_ = 100;
+    bool   xRangeSet_ = false;
+    double xMin_ = 0, xMax_ = 1;
     std::string xLabel_, yLabel_;
     bool crosshair_ = false;
     std::function<std::string(double, const std::vector<double>&)> crosshairFmt_;

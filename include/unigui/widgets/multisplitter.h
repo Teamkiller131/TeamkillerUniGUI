@@ -18,11 +18,19 @@ public:
     std::vector<float> GetRatios() const;
     void SetRatios(const std::vector<float>& ratios);
 
+    /// Store the "design" (intended) ratios for this splitter.
+    /// These are NOT applied immediately — call ResetToDesign() for that.
+    void SetDesignRatios(const std::vector<float>& ratios) { designRatios_ = ratios; }
+    const std::vector<float>& GetDesignRatios() const { return designRatios_; }
+    /// Reset current runtime ratios back to the stored design ratios.
+    void ResetToDesign();
+
 private:
     Orientation ori_;
     struct Panel { float ratio; std::function<void()> content; };
     std::vector<Panel> panels_;
     int dragIndex_ = -1;
+    std::vector<float> designRatios_;
 };
 
 } // namespace unigui

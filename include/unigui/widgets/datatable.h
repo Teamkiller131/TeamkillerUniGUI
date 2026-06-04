@@ -81,6 +81,12 @@ public:
     // ── Column min width ──────────────────────────────────────────────
     void SetColumnMinWidth(int col, float minWidth) { minWidths_[col] = minWidth; }
 
+    // ── Column stretch ────────────────────────────────────────────────
+    // Mark a column as stretch (proportional) with the given weight, so the
+    // table fills the available panel width instead of a fixed total. Columns
+    // without a stretch weight keep their fixed `width`. Mirrors Table::SetColumnStretch.
+    void SetColumnStretch(int col, float weight = 1.0f) { stretches_[col] = weight; }
+
     // ── Column auto-width ─────────────────────────────────────────────────
     void SetColumnAutoWidth(int col, bool on) {
         if (on) autoWidthCols_.insert(col); else autoWidthCols_.erase(col); }
@@ -136,10 +142,18 @@ public:
                 colFlags |= sortAscending_ ? ImGuiTableColumnFlags_DefaultSort
                                            : ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_PreferSortDescending;
             }
+            auto sit = stretches_.find((int)ci);
+            if (sit != stretches_.end()) {
+                // Proportional column: fills available width by weight.
+                colFlags |= ImGuiTableColumnFlags_WidthStretch;
+                ImGui::TableSetupColumn(col.name.c_str(), colFlags, sit->second, (ImGuiID)ci);
+                continue;
+            }
             float colWidth = autoWidthCols_.count((int)ci) ? 0.f : col.width;
             auto it = minWidths_.find((int)ci);
             if (it != minWidths_.end() && colWidth < it->second)
                 colWidth = it->second;
+            colFlags |= ImGuiTableColumnFlags_WidthFixed;
             ImGui::TableSetupColumn(col.name.c_str(), colFlags, colWidth, (ImGuiID)ci);
         }
 
@@ -478,6 +492,7 @@ private:
     std::function<void(int)> rowClickCallback_;
     int selectedRow_ = -1;
     std::unordered_map<int, float> minWidths_;
+    std::unordered_map<int, float> stretches_;
     std::unordered_map<int, CellCheckboxFn> checkboxCols_;
 };
 

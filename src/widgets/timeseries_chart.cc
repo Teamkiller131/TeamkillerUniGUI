@@ -22,7 +22,9 @@ void TimeSeriesChart::ClearAll() { series_.clear(); }
 
 void TimeSeriesChart::SetSlidingWindow(int maxPoints) { slidingWindow_ = maxPoints; }
 void TimeSeriesChart::SetYAxisAutoFit(bool on)        { yAutoFit_ = on; }
-void TimeSeriesChart::SetYAxisRange(double min, double max) { yMin_ = min; yMax_ = max; }
+void TimeSeriesChart::SetYRangeFit(bool on)           { yRangeFit_ = on; }
+void TimeSeriesChart::SetYAxisRange(double min, double max) { yAutoFit_ = false; yMin_ = min; yMax_ = max; }
+void TimeSeriesChart::SetXAxisRange(double min, double max) { xRangeSet_ = true; xMin_ = min; xMax_ = max; }
 void TimeSeriesChart::SetXAxisLabel(const std::string& l)   { xLabel_ = l; }
 void TimeSeriesChart::SetYAxisLabel(const std::string& l)   { yLabel_ = l; }
 int TimeSeriesChart::AddRefLine(std::string label, double value, ImU32 color) {
@@ -48,25 +50,11 @@ void TimeSeriesChart::AppendPoint(int seriesId, float value, double timestamp) {
 }
 
 void TimeSeriesChart::Render() {
-    if (!IsVisible() || series_.empty()) return;
+    if (!IsVisible()) return;
     ImGui::PushID(GetName().c_str());
 
     frameCounter_ += ImGui::GetIO().DeltaTime;
 
-    // ── Auto-fit Y axis ──────────────────────────────────────────────────
-    if (yAutoFit_) {
-        double yLo = 1e18, yHi = -1e18;
-        for (auto& s : series_)
-            for (auto& [ts, v] : s.points) {
-                yLo = std::min(yLo, (double)v);
-                yHi = std::max(yHi, (double)v);
-            }
-        if (yLo < yHi) {
-            double margin = (yHi - yLo) * 0.1;
-            yMin_ = yLo - margin;
-            yMax_ = yHi + margin;
-        }
-    }
 
     ImPlotFlags plotFlags = crosshair_ ? ImPlotFlags_Crosshairs : 0;
     ImPlotAxisFlags axisFlags = (panEnabled_  ? 0 : ImPlotAxisFlags_NoMenus) |
@@ -91,11 +79,11 @@ void TimeSeriesChart::Render() {
     ImPlot::PushStyleColor(ImPlotCol_PlotBorder, borderCol);
     ImPlot::PushStyleColor(ImPlotCol_AxisGrid, gridCol);
 
-    if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, 300), plotFlags)) {
+    if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, -1), plotFlags)) {
 
         // ── Axis labels ───────────────────────────────────────────────
         if (!xLabel_.empty()) ImPlot::SetupAxis(ImAxis_X1, xLabel_.c_str());
-        if (!yLabel_.empty()) ImPlot::SetupAxis(ImAxis_Y1, yLabel_.c_str());
+        // (Y axis label handled in the AutoFit+RangeFit SetupAxis call below)
         if (std::any_of(series_.begin(), series_.end(), [](const auto& s) { return s.def.yAxisId == 3; })) {
             ImPlot::SetupAxis(ImAxis_Y3, yLabel_.empty() ? nullptr : yLabel_.c_str());
         }
@@ -106,7 +94,26 @@ void TimeSeriesChart::Render() {
                     return (*fn)(value, buff, size, nullptr);
                 }, &xAxisFmt_);
         }
-        ImPlot::SetupAxesLimits(0, 0, yMin_, yMax_, ImPlotCond_Once);
+        // X axis: lock once (preserves user zoom/pan)
+        if (xRangeSet_)
+            ImPlot::SetupAxisLimits(ImAxis_X1, xMin_, xMax_, ImPlotCond_Once);
+        else
+            ImPlot::SetupAxisLimits(ImAxis_X1, 0, frameCounter_ > 0 ? frameCounter_ : 1, ImPlotCond_Once);
+
+        // Y axis behavior:
+        //  • auto-fit + range-fit (default): Y rescales to data inside the visible
+        //    X viewport only — zooming/panning X reshapes Y to the visible window.
+        //  • auto-fit only: Y fits the entire dataset regardless of X zoom.
+        //  • manual: honor the user-supplied [yMin_, yMax_] (set once, still zoomable).
+        const char* yLabel = yLabel_.empty() ? nullptr : yLabel_.c_str();
+        if (yAutoFit_) {
+            ImPlotAxisFlags yFlags = ImPlotAxisFlags_AutoFit;
+            if (yRangeFit_) yFlags |= ImPlotAxisFlags_RangeFit;
+            ImPlot::SetupAxis(ImAxis_Y1, yLabel, yFlags);
+        } else {
+            ImPlot::SetupAxis(ImAxis_Y1, yLabel);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_, ImPlotCond_Once);
+        }
 
         // ── Plot each series ──────────────────────────────────────────
         for (auto& s : series_) {

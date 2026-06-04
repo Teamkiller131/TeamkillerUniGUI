@@ -65,8 +65,11 @@ void PanelBox::Render() {
     // Submit a real item covering the panel bounds so parent windows grow
     // correctly. Merely moving the cursor to the bottom triggers ImGui
     // boundary warnings when the panel is used inside splitter children.
+    // NOTE: size the dummy to EXACTLY the available region (no overshoot) so
+    // the enclosing child only shows a scrollbar when the content callback's
+    // own items overflow — not on every panel.
     ImGui::SetCursorScreenPos(cursor);
-    ImGui::Dummy(ImVec2(availW, titleBarH + contentH + 4.f));
+    ImGui::Dummy(ImVec2(availW, titleBarH + contentH));
 
     ImGui::PopID();
 }
