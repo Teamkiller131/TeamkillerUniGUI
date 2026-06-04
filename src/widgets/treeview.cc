@@ -52,6 +52,22 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
         ImGui::SameLine(0.0f, 0.0f);
         rowRenderer_(id, depth, node, isSelected);
         treeItemClicked = treeItemClicked || ImGui::IsItemClicked();
+    } else if (!node.spans.empty()) {
+        // Per-segment colored label: empty tree-node label keeps the arrow +
+        // full-row click target, then each span is drawn inline with its color.
+        open = ImGui::TreeNodeEx("##spans", flags);
+        treeItemClicked = ImGui::IsItemClicked();
+        treeItemToggled = ImGui::IsItemToggledOpen();
+        if (!node.icon.empty()) {
+            ImGui::SameLine(0.0f, 0.0f);
+            ImGui::TextUnformatted((node.icon + " ").c_str());
+        }
+        for (const auto& sp : node.spans) {
+            ImGui::SameLine(0.0f, 0.0f);
+            if (sp.color != 0) ImGui::PushStyleColor(ImGuiCol_Text, sp.color);
+            ImGui::TextUnformatted(sp.text.c_str());
+            if (sp.color != 0) ImGui::PopStyleColor();
+        }
     } else {
         // Default rendering with icon/suffix/progress
         std::string displayLabel;

@@ -22,7 +22,8 @@ void TimeSeriesChart::ClearAll() { series_.clear(); }
 
 void TimeSeriesChart::SetSlidingWindow(int maxPoints) { slidingWindow_ = maxPoints; }
 void TimeSeriesChart::SetYAxisAutoFit(bool on)        { yAutoFit_ = on; }
-void TimeSeriesChart::SetYAxisRange(double min, double max) { yMin_ = min; yMax_ = max; }
+void TimeSeriesChart::SetYRangeFit(bool on)           { yRangeFit_ = on; }
+void TimeSeriesChart::SetYAxisRange(double min, double max) { yAutoFit_ = false; yMin_ = min; yMax_ = max; }
 void TimeSeriesChart::SetXAxisRange(double min, double max) { xRangeSet_ = true; xMin_ = min; xMax_ = max; }
 void TimeSeriesChart::SetXAxisLabel(const std::string& l)   { xLabel_ = l; }
 void TimeSeriesChart::SetYAxisLabel(const std::string& l)   { yLabel_ = l; }
@@ -99,9 +100,20 @@ void TimeSeriesChart::Render() {
         else
             ImPlot::SetupAxisLimits(ImAxis_X1, 0, frameCounter_ > 0 ? frameCounter_ : 1, ImPlotCond_Once);
 
-        // Y axis: auto-fit to data visible within the current X viewport only
-        ImPlot::SetupAxis(ImAxis_Y1, yLabel_.empty() ? nullptr : yLabel_.c_str(),
-                          ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
+        // Y axis behavior:
+        //  • auto-fit + range-fit (default): Y rescales to data inside the visible
+        //    X viewport only — zooming/panning X reshapes Y to the visible window.
+        //  • auto-fit only: Y fits the entire dataset regardless of X zoom.
+        //  • manual: honor the user-supplied [yMin_, yMax_] (set once, still zoomable).
+        const char* yLabel = yLabel_.empty() ? nullptr : yLabel_.c_str();
+        if (yAutoFit_) {
+            ImPlotAxisFlags yFlags = ImPlotAxisFlags_AutoFit;
+            if (yRangeFit_) yFlags |= ImPlotAxisFlags_RangeFit;
+            ImPlot::SetupAxis(ImAxis_Y1, yLabel, yFlags);
+        } else {
+            ImPlot::SetupAxis(ImAxis_Y1, yLabel);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_, ImPlotCond_Once);
+        }
 
         // ── Plot each series ──────────────────────────────────────────
         for (auto& s : series_) {
