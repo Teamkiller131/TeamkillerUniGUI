@@ -55,41 +55,17 @@ cmake --build build
 ctest --test-dir build
 ```
 
-## Troubleshooting / FAQ
+## Documentation
 
-First line of defense: run `pwsh -File scripts/check_env.ps1`. It detects a
-missing C++ workload, an out-of-date CMake, a missing Ninja, an unset
-`VCPKG_ROOT`, and — importantly — multiple MSVC toolsets on `PATH`.
-
-**Q: `cl.exe`/`link.exe` "CreateProcess failed" or "系统找不到指定的路径" after a Visual Studio update.**
-A: CMake cached the path of an MSVC toolset that no longer exists. Always build
-through `cmake-msvc.cmd` (it re-runs `vcvars64.bat` to pin the current toolset).
-If a build directory was already configured against the stale toolset, delete it
-and reconfigure: `Remove-Item -Recurse -Force build/windows-msvc-release` then
-re-run the preset (or use `scripts/build.ps1 -Clean`).
-
-**Q: "Could not find toolchain file .../vcpkg.cmake" or vcpkg packages don't resolve.**
-A: `VCPKG_ROOT` isn't set. Either set it to your standalone vcpkg checkout, or
-rely on the copy bundled with Visual Studio (the wrapper picks it up). The
-self-check script reports which vcpkg it found.
-
-**Q: "ninja: command not found" / generator errors.**
-A: Every preset uses the Ninja generator. Install it with
-`winget install Ninja-build.Ninja`, or build through `cmake-msvc.cmd`, which
-inherits the Ninja that ships with Visual Studio.
-
-**Q: I'm on a non-default Visual Studio edition (Professional/Enterprise/BuildTools) and the wrapper can't find it.**
-A: `cmake-msvc.cmd` locates VS via `vswhere` and works across editions. If your
-install is in an unusual location, set `VS_INSTALL_DIR` to its root before
-running the wrapper.
-
-**Q: One test (`AppTest.Init_WithoutDisplay_ReturnsFalse`) hangs in CI / headless.**
-A: It needs a window/graphics device. Exclude it in headless runs:
-`ctest --preset windows-msvc-release -E "AppTest\.Init_WithoutDisplay_ReturnsFalse"`.
-
-**Q: clang presets fail to link (`oldnames.lib`/`msvcrtd.lib` not found).**
-A: clang-cl still needs the MSVC environment. Run clang presets through
-`cmake-msvc.cmd` so `vcvars64.bat` sets the library paths.
+| Doc | Description |
+|-----|-------------|
+| **[docs/README.md](docs/README.md)** | **Documentation hub** (index) |
+| [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Build & first app |
+| [docs/EXAMPLES.md](docs/EXAMPLES.md) | Cookbook & code samples |
+| [docs/WIDGET_API.md](docs/WIDGET_API.md) | Full widget API (82 components) |
+| [docs/API_INDEX.md](docs/API_INDEX.md) | Alphabetical API index |
+| [INTEGRATION.md](INTEGRATION.md) | Submodule + vcpkg embedding |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Build / CRT / CI FAQ |
 
 ## Architecture
 
@@ -329,8 +305,7 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 
 ## Widgets (82 total)
 
-> Full, detailed API reference with examples: **[docs/WIDGET_API.md](docs/WIDGET_API.md)**.
-> In-depth component guides: **[TreeView](docs/TREEVIEW.md)**, **[CascadingCombo](docs/CASCADINGCOMBO.md)**.
+> **Docs hub**: [docs/README.md](docs/README.md) · API: [WIDGET_API.md](docs/WIDGET_API.md) · Index: [API_INDEX.md](docs/API_INDEX.md) · Guides: [TreeView](docs/TREEVIEW.md), [CascadingCombo](docs/CASCADINGCOMBO.md)
 
 
 | Category | Widget | Key API |
@@ -535,8 +510,7 @@ Optional vcpkg features: `sqlite`, `config`, `ipc`, `network`
 | Lint | `cmake --preset windows-clang-tidy` |
 | Format | `clang-format -i src/widgets/*.cc` |
 
-Full API documentation: [docs/WIDGET_API.md](docs/WIDGET_API.md)
-Build workflow guide: [cpp-build-workflow skill](/.hermes/skills/cpp-build-workflow/SKILL.md)
+See **[docs/README.md](docs/README.md)** for the full documentation index.
 
 ## License
 

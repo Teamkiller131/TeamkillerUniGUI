@@ -38,6 +38,18 @@ cmake --build build
 ctest --test-dir build
 ```
 
+## 文档
+
+| 文档 | 说明 |
+|------|------|
+| **[docs/README_zh.md](docs/README_zh.md)** | **文档索引（中文）** |
+| [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | 编译与首个程序 |
+| [docs/EXAMPLES.md](docs/EXAMPLES.md) | 示例与常用模式 |
+| [docs/WIDGET_API.md](docs/WIDGET_API.md) | 完整 Widget API |
+| [docs/API_INDEX.md](docs/API_INDEX.md) | API 字母索引 |
+| [INTEGRATION.md](INTEGRATION.md) | 子模块集成 |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | 构建排障 FAQ |
+
 ## 架构
 
 ```

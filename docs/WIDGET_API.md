@@ -2,6 +2,8 @@
 
 > **Version**: 3.5.0 (C++23) · **Widgets**: 82 · **Backend**: Dear ImGui (docking + multi-viewport)
 >
+> **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Examples**: [EXAMPLES.md](EXAMPLES.md)
+>
 > UniGUI is a modern C++23 wrapper around Dear ImGui. Every widget lives in `namespace unigui`.
 > Each constructor takes a `std::string name` as its first argument — this becomes the ImGui ID and the
 > library calls `PushID`/`PopID` for you automatically, so identical labels never collide.
