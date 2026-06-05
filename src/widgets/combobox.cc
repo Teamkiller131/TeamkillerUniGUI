@@ -21,6 +21,8 @@ ComboBox::ComboBox(std::string name, std::string label, std::vector<std::string>
 void ComboBox::Render() {
     if (!IsVisible()) return;
     ImGui::PushID(GetName().c_str());
+    const bool disabled = !IsEnabled();
+    if (disabled) ImGui::BeginDisabled();
     const char* preview = selected_ < (int)items_.size() ? items_[selected_].c_str() : "";
     if (searchable_) {
         ImGui::InputText("##search", search_buf_, sizeof(search_buf_));
@@ -59,6 +61,7 @@ void ComboBox::Render() {
         }
         ImGui::EndCombo();
     }
+    if (disabled) ImGui::EndDisabled();
     ImGui::PopID();
 }
 int ComboBox::GetSelectedIndex() const { return selected_; }

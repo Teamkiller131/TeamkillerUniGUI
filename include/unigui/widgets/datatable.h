@@ -236,6 +236,11 @@ public:
             }
 
             bool isSelected = std::find(selectedRows_.begin(), selectedRows_.end(), idx) != selectedRows_.end();
+            // The selectable (row-click) is rendered on the first non-checkbox
+            // column so rows stay selectable even when column 0 is a checkbox.
+            int firstSelCol = 0;
+            while (firstSelCol < (int)columns_.size() && checkboxCols_.count(firstSelCol)) ++firstSelCol;
+            if (firstSelCol >= (int)columns_.size()) firstSelCol = 0;
             for (int col = 0; col < (int)columns_.size(); ++col) {
                 ImGui::TableSetColumnIndex(col);
 
@@ -267,7 +272,7 @@ public:
                     }
                     if (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Escape))
                         editRow_ = editCol_ = -1;
-                } else if (col == 0) {
+                } else if (col == firstSelCol) {
                     ImGuiSelectableFlags sflags = checkboxCols_.empty()
                         ? ImGuiSelectableFlags_SpanAllColumns
                         : ImGuiSelectableFlags_None; // don't span over checkboxes
@@ -301,16 +306,22 @@ public:
                         }
                     }
                 } else {
-                    // Cell-level styling
+                    // Cell-level styling. A returned color with alpha==0 means
+                    // "no override" — keep the default text color instead of
+                    // pushing a fully-transparent (invisible) text colour.
+                    bool hasCellColor = false;
                     if (cellColorFn_) {
                         ImU32 c = cellColorFn_(idx, col, (*data_)[idx]);
-                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(c&0xFF, (c>>8)&0xFF, (c>>16)&0xFF, (c>>24)&0xFF));
+                        if ((c >> 24) != 0) {
+                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(c&0xFF, (c>>8)&0xFF, (c>>16)&0xFF, (c>>24)&0xFF));
+                            hasCellColor = true;
+                        }
                     }
-                    if (cellBoldFn_ && cellBoldFn_(idx, col, (*data_)[idx]))
+                    bool isBold = cellBoldFn_ && cellBoldFn_(idx, col, (*data_)[idx]);
+                    if (isBold)
                         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
                     ImGui::TextUnformatted(text.c_str());
-                    int pops = (cellColorFn_ ? 1 : 0) + (cellBoldFn_ && cellBoldFn_(idx,col,(*data_)[idx]) ? 1 : 0);
-                    ImGui::PopStyleColor(pops);
+                    ImGui::PopStyleColor((hasCellColor ? 1 : 0) + (isBold ? 1 : 0));
                 }
             }
 

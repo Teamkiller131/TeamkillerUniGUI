@@ -294,8 +294,18 @@ void ApplyTheme(const ThemeConfig& config) {
     colors[ImGuiCol_TableHeaderBg]    = ImVec4(colors[ImGuiCol_FrameBg].x * 0.7f, colors[ImGuiCol_FrameBg].y * 0.7f, colors[ImGuiCol_FrameBg].z * 0.75f, 1.00f);
     colors[ImGuiCol_TableBorderStrong]= ImVec4(colors[ImGuiCol_Border].x * 0.9f, colors[ImGuiCol_Border].y * 0.9f, colors[ImGuiCol_Border].z * 0.95f, 1.00f);
     colors[ImGuiCol_TableBorderLight] = ImVec4(colors[ImGuiCol_Border].x * 0.7f, colors[ImGuiCol_Border].y * 0.7f, colors[ImGuiCol_Border].z * 0.75f, 1.00f);
-    colors[ImGuiCol_TableRowBg]       = ImVec4(colors[ImGuiCol_WindowBg].x, colors[ImGuiCol_WindowBg].y, colors[ImGuiCol_WindowBg].z, 1.00f);
-    colors[ImGuiCol_TableRowBgAlt]    = ImVec4(colors[ImGuiCol_WindowBg].x * 1.04f, colors[ImGuiCol_WindowBg].y * 1.04f, colors[ImGuiCol_WindowBg].z * 1.06f, 1.00f);
+    // 斑马纹：偶数行 = 窗口底色；奇数行向「文字色」方向混合一定比例，
+    // 使深浅行对比更明显（防止在多列可编辑表格里把参数设到错误的行）。
+    // 该公式对深色/浅色主题都成立（深色→变亮，浅色→变暗）。
+    {
+        const ImVec4 wbg = colors[ImGuiCol_WindowBg];
+        const ImVec4 txt = colors[ImGuiCol_Text];
+        const float kZebra = 0.13f;  // 混合比例：越大对比越强
+        colors[ImGuiCol_TableRowBg]    = ImVec4(wbg.x, wbg.y, wbg.z, 1.00f);
+        colors[ImGuiCol_TableRowBgAlt] = ImVec4(wbg.x + (txt.x - wbg.x) * kZebra,
+                                                wbg.y + (txt.y - wbg.y) * kZebra,
+                                                wbg.z + (txt.z - wbg.z) * kZebra, 1.00f);
+    }
 
     // ── Accent & semantic colour tokens (Step 3) ────────────────────────
     // Re-derive the accent-driven interaction slots (CheckMark/Slider/Separator/

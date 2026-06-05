@@ -37,6 +37,18 @@ public:
     void SetOnSubmit(std::function<void()> fn);
     bool HasUnsavedChanges() const { return unsaved_; }
 
+    // ── Layout / markers ──────────────────────────────────────────────────
+    /// Width of the built-in left label/button panel. Set 0 to hide it so the
+    /// bar spans the full available width (caller renders its own header row).
+    void SetLeftPanelWidth(float w) { leftPanelWidth_ = w; }
+    /// Warning ("警戒持仓") threshold as a fraction 0..1 of max — a red band is
+    /// drawn from this point to full. Default 0.9 (90% of max).
+    void SetWarnRatio(float r) { warnRatio_ = r; }
+    /// Window-local geometry of the bar after the last Render (for callers that
+    /// want to position widgets under handles).
+    float GetBarLocalX() const { return barLocalX_; }
+    float GetBarWidth() const { return barWidth_; }
+
 private:
     std::vector<Tick> ticks_;
     std::vector<ImU32> tickColors_;
@@ -46,6 +58,9 @@ private:
     ImU32 fillColor_ = 0;
     int draggingIndex_ = -1;
     float barWidth_ = 0;
+    float barLocalX_ = 0;
+    float leftPanelWidth_ = 120.0f;
+    float warnRatio_ = 0.9f;
     bool unsaved_ = false;
     // left panel
     std::string leftLabel_, leftSubLabel_;

@@ -1,4 +1,5 @@
 #include <unigui/widgets/riskbar.h>
+#include <unigui/theme/color_tokens.h>
 #include <imgui.h>
 #include <algorithm>
 #include <cmath>
@@ -25,28 +26,32 @@ void RiskBar::Render() {
 
     auto* dl = ImGui::GetWindowDrawList();
 
-    // ── Dark background bar ──────────────────────────────────────────────
-    ImU32 bgColor = IM_COL32(0x2a, 0x2a, 0x2e, 0xff);
+    // ── Theme-aware background bar ───────────────────────────────────────
+    ImU32 bgColor = ImGui::GetColorU32(ImGuiCol_FrameBg);
     float rounding = ImGui::GetStyle().FrameRounding;
     dl->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), bgColor, rounding);
 
-    // ── Colored fill ─────────────────────────────────────────────────────
+    // ── Colored fill (theme semantic colours) ────────────────────────────
     double clampedRatio = std::max(0.0, std::min(ratio_, maxRatio_));
     double fraction = (maxRatio_ > 0.0) ? (clampedRatio / maxRatio_) : 0.0;
+
+    using unigui::theme::GetSemanticColor;
+    using unigui::theme::Semantic;
+    const ImU32 green = ImGui::GetColorU32(GetSemanticColor(Semantic::Success));
+    const ImU32 amber = ImGui::GetColorU32(GetSemanticColor(Semantic::Warning));
+    const ImU32 red = ImGui::GetColorU32(GetSemanticColor(Semantic::Danger));
 
     // Determine color based on ratio vs thresholds
     ImU32 fillColor;
     if (ratio_ >= dangerThresh_) {
         // Danger zone: red normally, green when inverted
-        fillColor = inverted_ ? IM_COL32(0x28, 0xa7, 0x45, 0xff)   // green
-                              : IM_COL32(0xe9, 0x45, 0x60, 0xff);  // red
+        fillColor = inverted_ ? green : red;
     } else if (ratio_ >= warnThresh_) {
-        // Warning zone: yellow (unchanged by inversion)
-        fillColor = IM_COL32(0xf0, 0xc0, 0x40, 0xff);
+        // Warning zone: amber (unchanged by inversion)
+        fillColor = amber;
     } else {
         // Safe zone: green normally, red when inverted
-        fillColor = inverted_ ? IM_COL32(0xe9, 0x45, 0x60, 0xff)   // red
-                              : IM_COL32(0x28, 0xa7, 0x45, 0xff);  // green
+        fillColor = inverted_ ? red : green;
     }
 
     float targetWidth = static_cast<float>(fraction) * barWidth;
@@ -70,12 +75,25 @@ void RiskBar::Render() {
     }
 
     // ── Centered display text ────────────────────────────────────────────
+    // The text spans both the coloured fill and the (theme-coloured) empty
+    // track, so a single colour is always low-contrast over one of them. Pick a
+    // theme-appropriate foreground (dark text on light themes, light on dark)
+    // and draw a 1px opposite-colour outline so it stays legible on any backdrop.
     if (!displayText_.empty()) {
         ImVec2 textSize = ImGui::CalcTextSize(displayText_.c_str());
         ImVec2 textPos(pos.x + (size.x - textSize.x) * 0.5f,
                        pos.y + (size.y - textSize.y) * 0.5f);
-        // White text with bold appearance (use a brighter text color)
-        dl->AddText(textPos, IM_COL32(0xff, 0xff, 0xff, 0xff), displayText_.c_str());
+        const bool darkTheme = unigui::theme::ActiveColorTokens().dark;
+        const ImU32 fg = darkTheme ? IM_COL32(0xff, 0xff, 0xff, 0xff)
+                                   : IM_COL32(0x1a, 0x1d, 0x21, 0xff);
+        const ImU32 outline = darkTheme ? IM_COL32(0x00, 0x00, 0x00, 0xb0)
+                                        : IM_COL32(0xff, 0xff, 0xff, 0xc0);
+        const char* s = displayText_.c_str();
+        dl->AddText(ImVec2(textPos.x - 1.0f, textPos.y), outline, s);
+        dl->AddText(ImVec2(textPos.x + 1.0f, textPos.y), outline, s);
+        dl->AddText(ImVec2(textPos.x, textPos.y - 1.0f), outline, s);
+        dl->AddText(ImVec2(textPos.x, textPos.y + 1.0f), outline, s);
+        dl->AddText(textPos, fg, s);
     }
 
     ImGui::PopID();

@@ -21,6 +21,8 @@ void InputText::Render() {
 
     std::string oldVal = value_;
     bool changed = false;
+    const bool disabled = !IsEnabled();
+    if (disabled) ImGui::BeginDisabled();
     if (multiline_) {
         changed = ImGui::InputTextMultiline(label_.c_str(), buffer_.data(), buffer_.size(), ImVec2(-1, 80), flags_);
     } else if (!hint_.empty()) {
@@ -29,6 +31,7 @@ void InputText::Render() {
         changed = ImGui::InputText(label_.c_str(), buffer_.data(), buffer_.size(), flags_);
     }
 
+    if (disabled) ImGui::EndDisabled();
     if (changed) {
         value_ = buffer_.data();
         NotifyChange(oldVal);

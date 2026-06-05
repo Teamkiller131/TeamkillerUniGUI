@@ -1,4 +1,5 @@
 #include <unigui/widgets/sliderbar.h>
+#include <unigui/theme/color_tokens.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <algorithm>
@@ -44,62 +45,65 @@ void SliderBar::Render() {
 
     const float barHeight = 20.0f;
     const float handleRadius = 8.0f;
-    const float leftPanelWidth = 120.0f;
+    const float leftPanelWidth = leftPanelWidth_;
     const float spacing = 6.0f;
+    const bool hasLeftPanel = leftPanelWidth > 0.0f;
 
-    // ── Layout: left panel | gap | bar area ────────────────────────────────
+    // ── Layout: [left panel | gap |] bar area ──────────────────────────────
     float availWidth = ImGui::GetContentRegionAvail().x;
-    float barAreaWidth = availWidth - leftPanelWidth - spacing;
+    float barAreaWidth = hasLeftPanel ? (availWidth - leftPanelWidth - spacing) : availWidth;
     if (barAreaWidth < 40.0f) barAreaWidth = 40.0f;
 
-    // ── Left panel ─────────────────────────────────────────────────────────
-    ImGui::BeginGroup();
-    {
-        // Account name / left label
-        if (!leftLabel_.empty()) {
-            ImGui::TextUnformatted(leftLabel_.c_str());
-        }
-        // Sub label
-        if (!leftSubLabel_.empty()) {
-            ImGui::TextDisabled("%s", leftSubLabel_.c_str());
-        }
-        ImGui::Spacing();
+    // ── Left panel (optional) ──────────────────────────────────────────────
+    if (hasLeftPanel) {
+        ImGui::BeginGroup();
+        {
+            // Account name / left label
+            if (!leftLabel_.empty()) {
+                ImGui::TextUnformatted(leftLabel_.c_str());
+            }
+            // Sub label
+            if (!leftSubLabel_.empty()) {
+                ImGui::TextDisabled("%s", leftSubLabel_.c_str());
+            }
+            ImGui::Spacing();
 
-        // Buttons row
-        float btnWidth = (leftPanelWidth - 3.0f * spacing) / 4.0f;
-        if (btnWidth < 20.0f) btnWidth = 20.0f;
+            // Buttons row
+            float btnWidth = (leftPanelWidth - 3.0f * spacing) / 4.0f;
+            if (btnWidth < 20.0f) btnWidth = 20.0f;
 
-        if (onAdd_) {
-            if (ImGui::Button("Add", ImVec2(btnWidth, 0))) {
-                onAdd_();
+            if (onAdd_) {
+                if (ImGui::Button("Add", ImVec2(btnWidth, 0))) {
+                    onAdd_();
+                }
+                ImGui::SameLine(0, spacing);
             }
-            ImGui::SameLine(0, spacing);
-        }
-        if (onConfirm_) {
-            if (ImGui::Button("OK", ImVec2(btnWidth, 0))) {
-                onConfirm_();
+            if (onConfirm_) {
+                if (ImGui::Button("OK", ImVec2(btnWidth, 0))) {
+                    onConfirm_();
+                }
+                ImGui::SameLine(0, spacing);
             }
-            ImGui::SameLine(0, spacing);
-        }
-        if (onRollback_) {
-            if (ImGui::Button("Rbk", ImVec2(btnWidth, 0))) {
-                onRollback_();
+            if (onRollback_) {
+                if (ImGui::Button("Rbk", ImVec2(btnWidth, 0))) {
+                    onRollback_();
+                }
+                ImGui::SameLine(0, spacing);
             }
-            ImGui::SameLine(0, spacing);
-        }
-        if (onSubmit_) {
-            if (ImGui::Button("Sub", ImVec2(btnWidth, 0))) {
-                onSubmit_();
+            if (onSubmit_) {
+                if (ImGui::Button("Sub", ImVec2(btnWidth, 0))) {
+                    onSubmit_();
+                }
             }
         }
+        ImGui::EndGroup();
+        ImGui::SameLine(0, spacing);
     }
-    ImGui::EndGroup();
-
-    ImGui::SameLine(0, spacing);
 
     // ── Main bar area ──────────────────────────────────────────────────────
     ImGui::BeginGroup();
     {
+        barLocalX_ = ImGui::GetCursorPos().x;
         ImVec2 barPos = ImGui::GetCursorScreenPos();
         // We need a minimal item height for the bar + handle area
         float totalHeight = barHeight + handleRadius * 2.0f + 8.0f;
@@ -119,7 +123,8 @@ void SliderBar::Render() {
         barWidth_ = barAreaWidth;
 
         // ── 1. Background bar ──────────────────────────────────────────────
-        ImU32 bgColor = IM_COL32(0x25, 0x25, 0x28, 0xFF); // #252528
+        // Theme-aware track colour (light themes get a light track, dark a dark one)
+        ImU32 bgColor = ImGui::GetColorU32(ImGuiCol_FrameBg);
         dl->AddRectFilled(
             ImVec2(barX, barTop),
             ImVec2(barX + barAreaWidth, barBottom),
@@ -127,23 +132,26 @@ void SliderBar::Render() {
             3.0f  // rounding
         );
 
-        // ── 2. Reference tick marks at 20/40/60/80/100 ─────────────────────
-        const int refPositions[] = {20, 40, 60, 80, 100};
-        for (int ref : refPositions) {
-            float frac = static_cast<float>(ref) / 100.0f;
-            float x = barX + frac * barAreaWidth;
-            bool isMax = (ref == 100);
-            ImU32 refColor = isMax ? IM_COL32(0xE9, 0x45, 0x60, 0xFF)   // red for 100
-                                   : IM_COL32(0x88, 0x88, 0x88, 0xFF);  // grey for others
-            float tickTop = barTop - 4.0f;
-            float tickBottom = barBottom + 4.0f;
-            float thickness = isMax ? 2.0f : 1.0f;
-            dl->AddLine(
-                ImVec2(x, tickTop),
-                ImVec2(x, tickBottom),
-                refColor,
-                thickness
-            );
+        // ── 2. Warning ("警戒持仓") band + endpoint markers ────────────────
+        // Red band from warnRatio_ → full marks the danger zone (default 90%).
+        float warn = std::clamp(warnRatio_, 0.0f, 1.0f);
+        ImU32 dangerCol = ImGui::GetColorU32(
+            unigui::theme::GetSemanticColor(unigui::theme::Semantic::Danger));
+        {
+            float wx = barX + warn * barAreaWidth;
+            // translucent fill across the warning zone
+            ImU32 bandFill = (dangerCol & 0x00FFFFFF) | 0x40000000;
+            dl->AddRectFilled(ImVec2(wx, barTop), ImVec2(barX + barAreaWidth, barBottom),
+                              bandFill, 3.0f);
+            // solid red bar at the warning threshold
+            dl->AddLine(ImVec2(wx, barTop - 4.0f), ImVec2(wx, barBottom + 4.0f), dangerCol, 3.0f);
+        }
+        // Endpoint markers at 0 (空仓) and 100 (满仓)
+        {
+            ImU32 endCol = ImGui::GetColorU32(ImGuiCol_Text);
+            float top = barTop - 4.0f, bot = barBottom + 4.0f;
+            dl->AddLine(ImVec2(barX, top), ImVec2(barX, bot), endCol, 2.0f);
+            dl->AddLine(ImVec2(barX + barAreaWidth, top), ImVec2(barX + barAreaWidth, bot), endCol, 2.0f);
         }
 
         // ── 3. Active fill region ──────────────────────────────────────────
@@ -167,7 +175,7 @@ void SliderBar::Render() {
             float curFrac = static_cast<float>(currentLots_) / static_cast<float>(maxValue_);
             curFrac = std::clamp(curFrac, 0.0f, 1.0f);
             float curX = barX + curFrac * barAreaWidth;
-            ImU32 markerColor = IM_COL32(0xFF, 0xFF, 0xFF, 0xFF); // white
+            ImU32 markerColor = ImGui::GetColorU32(ImGuiCol_Text); // theme text (visible on light + dark)
             dl->AddLine(
                 ImVec2(curX, barTop - 6.0f),
                 ImVec2(curX, barBottom + 6.0f),
@@ -231,7 +239,7 @@ void SliderBar::Render() {
             if (i < static_cast<int>(tickColors_.size())) {
                 circleColor = tickColors_[i];
             } else {
-                circleColor = IM_COL32(0x3A, 0x8E, 0xE6, 0xFF); // default blue
+                circleColor = ImGui::GetColorU32(unigui::theme::ActiveColorTokens().accent); // theme accent
             }
 
             dl->AddCircleFilled(hPos, radius, circleColor);
