@@ -54,6 +54,11 @@ void LoadDefaultFont(float size_pixels, const char* ttf_path) {
     ImFontConfig cfg;
     cfg.OversampleH = 2;
     cfg.OversampleV = 2;
+    // The embedded blob is a compiled-in static array, NOT heap memory. ImGui must
+    // never call free() on it at atlas teardown, or it corrupts the heap and the
+    // process dies on shutdown (ImFontAtlas::ClearInputData -> _free_base). Only the
+    // file-loaded merge fonts below (IM_ALLOC'd) may be owned by the atlas.
+    cfg.FontDataOwnedByAtlas = false;
 
     // Primary font: embedded JetBrains Mono Nerd Font (always available)
     ImFont* font = io.Fonts->AddFontFromMemoryTTF(

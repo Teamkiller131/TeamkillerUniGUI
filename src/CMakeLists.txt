@@ -78,15 +78,31 @@ if(UNIGUI_MODULE_NETWORK)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_NETWORK)
 endif()
 
-# ── SDL3 + Vulkan (conditional) ───────────────────────────────────────────────
-if(UNIGUI_BACKEND STREQUAL "SDL3_VULKAN")
-    find_package(SDL3 CONFIG REQUIRED)
+# ── Vulkan renderer (cross-platform) ──────────────────────────────────────────
+# A single, platform-agnostic Vulkan renderer is shared by the GLFW Vulkan backend
+# (UNIGUI_BACKEND_VULKAN, any OS) and the opt-in SDL3 backend (UNIGUI_BACKEND_SDL3).
+# The only OS-specific step — surface creation — is delegated to the active
+# PlatformBackend, so the renderer itself links nothing beyond Vulkan.
+set(_UNIGUI_NEED_VULKAN OFF)
+if(UNIGUI_BACKEND_VULKAN OR UNIGUI_BACKEND_SDL3)
+    set(_UNIGUI_NEED_VULKAN ON)
+endif()
+if(_UNIGUI_NEED_VULKAN)
     find_package(Vulkan REQUIRED)
-    list(APPEND UNIGUI_LIBS SDL3::SDL3 Vulkan::Vulkan)
-    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_SDL3_VULKAN)
-    message(STATUS "Building with SDL3 + Vulkan backend")
-else()
-    message(STATUS "Building with GLFW + OpenGL3 backend")
+    list(APPEND UNIGUI_LIBS Vulkan::Vulkan)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_VULKAN)
+    message(STATUS "Vulkan renderer enabled (cross-platform; surface via platform backend)")
+endif()
+
+# ── SDL3 platform backend (opt-in: needs sdl3 + imgui[sdl3-binding] + vulkan) ──
+# Off by default. UniGUI is a backend-abstraction layer, so the SDL3 code is kept
+# in-tree but only compiled/used when explicitly requested AND its dependencies are
+# present. Pairs with the shared Vulkan renderer (SDL3_Vulkan backend).
+if(UNIGUI_BACKEND_SDL3)
+    find_package(SDL3 CONFIG REQUIRED)
+    list(APPEND UNIGUI_LIBS SDL3::SDL3)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_SDL3)
+    message(STATUS "SDL3 platform backend enabled (opt-in)")
 endif()
 
 # ── DX11 + DX12 (Windows, optional) ───────────────────────────────────────────
@@ -97,7 +113,7 @@ if(WIN32)
         message(STATUS "DX11 backend enabled")
     endif()
     if(UNIGUI_BACKEND_DX12)
-        list(APPEND UNIGUI_LIBS d3d12)
+        list(APPEND UNIGUI_LIBS d3d12 dxgi dxguid)
         target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DX12)
         message(STATUS "DX12 backend enabled")
     endif()
@@ -270,16 +286,13 @@ target_sources(unigui PRIVATE     fx/effect_scope.cc fx/animation.cc
     theme/theme_registry.cc)
 
 # ── Backend sources ───────────────────────────────────────────────────────────
-if(UNIGUI_BACKEND STREQUAL "SDL3_VULKAN")
-    target_sources(unigui PRIVATE
-        backend/sdl3_platform.cc
-        backend/vulkan_device.cc
-        backend/vulkan_swapchain.cc
-        backend/vulkan_pipeline.cc
-        backend/vulkan_frame.cc
-        backend/vulkan_renderer.cc
-        backend/vulkan_context.cc
-    )
+# Shared cross-platform Vulkan renderer (used by both GLFW-Vulkan and SDL3-Vulkan).
+if(_UNIGUI_NEED_VULKAN)
+    target_sources(unigui PRIVATE backend/vulkan_renderer.cc)
+endif()
+# Opt-in SDL3 platform backend.
+if(UNIGUI_BACKEND_SDL3)
+    target_sources(unigui PRIVATE backend/sdl3_platform.cc)
 endif()
 
 if(WIN32)

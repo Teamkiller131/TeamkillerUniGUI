@@ -432,11 +432,12 @@ unigui::Button("save", "Save").WithElevation(unigui::fx::Elevation::Medium); // 
 ## Backend Selection
 
 ```cpp
-// Runtime (select from 7 backends)
+// Runtime (select from 8 backends)
 cfg.backend = BackendType::GLFW_GL3;      // GLFW + OpenGL 3.3 ★
-cfg.backend = BackendType::SDL3_Vulkan;   // SDL3 + Vulkan 1.3 ★
+cfg.backend = BackendType::Vulkan;        // GLFW + Vulkan 1.3 (cross-platform) ★
+cfg.backend = BackendType::SDL3_Vulkan;   // SDL3 + Vulkan 1.3 (opt-in, see below)
 cfg.backend = BackendType::DX11;          // GLFW + DirectX 11 ★
-cfg.backend = BackendType::DX12;          // GLFW + DirectX 12
+cfg.backend = BackendType::DX12;          // GLFW + DirectX 12 ★
 cfg.backend = BackendType::Metal;         // macOS Metal (stub on Win)
 cfg.backend = BackendType::WebGPU;        // Dawn/WGPU (stub)
 cfg.backend = BackendType::Emscripten;    // Web/HTML5 (stub)
@@ -445,12 +446,28 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5 (stub)
 | Backend | Platform | Graphics API | Status | MSAA |
 |---------|----------|-------------|--------|------|
 | GLFW+GL3 | Win/Lin/Mac | OpenGL 3.3 | ★ Production | 4x |
-| SDL3+Vulkan | Win/Lin/Mac | Vulkan 1.3 | ★ Production | Config |
+| GLFW+Vulkan | Win/Lin/Mac | Vulkan 1.3 | ★ Production | Config |
+| SDL3+Vulkan | Win/Lin/Mac | Vulkan 1.3 | Opt-in (needs SDL3) | Config |
 | GLFW+DX11 | Windows | DirectX 11 | ★ Production | 4x |
 | GLFW+DX12 | Windows | DirectX 12 | ★ Production | Config |
 | Metal | macOS | Metal 2 | Stub | Native |
 | WebGPU | Cross | Dawn/WGPU | Stub | Native |
 | Emscripten | Web | WebGL/WebGPU | Stub | Browser |
+
+**Vulkan is backend-agnostic.** There is a single, platform-independent `VulkanRenderer`
+(built on Dear ImGui's `imgui_impl_vulkan`). The one OS-specific step — creating the
+`VkSurfaceKHR` and reporting the instance extensions it needs — is delegated to the active
+`PlatformBackend`. GLFW backs it with `glfwCreateWindowSurface` (all OSes); SDL3 backs it with
+`SDL_Vulkan_CreateSurface`. So `BackendType::Vulkan` works on Windows/Linux/macOS out of the box.
+
+**Enabling SDL3** (`BackendType::SDL3_Vulkan`) is opt-in by design — UniGUI exists to abstract
+backends, so the SDL3 code stays in-tree but is only compiled when you ask for it *and* its
+dependencies are present:
+
+1. Add the deps to your vcpkg manifest: `"sdl3"` and `imgui` feature `"sdl3-binding"`.
+2. Configure with `-DUNIGUI_BACKEND_SDL3=ON` (it also pulls in the shared Vulkan renderer).
+
+With the option off (the default), no SDL3 / `imgui_impl_sdl3` symbols are compiled or linked.
 
 ## Sub-Modules
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 struct ImDrawData;
 struct ImGuiContext;
 
@@ -39,6 +41,19 @@ public:
     virtual void SetSize(int, int) {}
     /// Swap front/back buffers (OpenGL/Vulkan present).
     virtual void SwapBuffers() {}
+
+    /// (Vulkan) Append the VkInstance extension names this platform needs to create
+    /// a window surface (e.g. VK_KHR_surface + the OS-specific surface extension).
+    /// Default: none — the platform has no Vulkan surface support.
+    virtual void GetVulkanInstanceExtensions(std::vector<const char*>& /*out*/) const {}
+
+    /// (Vulkan) Create a window surface for this platform's window.
+    /// @p instance is a VkInstance and @p out_surface points to a VkSurfaceKHR; both
+    /// are passed as void* so the generic interface stays free of Vulkan headers.
+    /// This is the single platform-specific seam of the Vulkan renderer — GLFW backs
+    /// it with glfwCreateWindowSurface (all OSes), SDL3 with SDL_Vulkan_CreateSurface.
+    /// @return false if unsupported or creation failed.
+    virtual bool CreateVulkanSurface(void* /*instance*/, void* /*out_surface*/) { return false; }
 };
 
 } // namespace unigui

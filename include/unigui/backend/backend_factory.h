@@ -8,8 +8,10 @@
 
 namespace unigui {
 
-/// Creates a GLFW platform backend.
-std::unique_ptr<PlatformBackend> CreateGLFWPlatform();
+/// Creates a GLFW platform backend. @p type selects whether an OpenGL context is
+/// created (GLFW_GL3) or the window is API-agnostic (GLFW_NO_API) so a DX/Metal/
+/// WebGPU renderer can own the swapchain on the native handle.
+std::unique_ptr<PlatformBackend> CreateGLFWPlatform(BackendType type = BackendType::GLFW_GL3);
 
 /// Creates an SDL3 platform backend.
 std::unique_ptr<PlatformBackend> CreateSDL3Platform();
@@ -48,33 +50,40 @@ inline DefaultBackend CreateBackend(BackendType type) {
     UNIGUI_LOG_DEBUG("CreateBackend: type={}", (int)type);
     switch (type) {
     case BackendType::GLFW_GL3:
-        return { CreateGLFWPlatform(), CreateOpenGL3Renderer() };
+        return { CreateGLFWPlatform(BackendType::GLFW_GL3), CreateOpenGL3Renderer() };
     case BackendType::SDL3_Vulkan:
-#ifdef UNIGUI_HAS_SDL3_VULKAN
+#if defined(UNIGUI_HAS_SDL3) && defined(UNIGUI_HAS_VULKAN)
+        // SDL3 platform + the shared (platform-agnostic) Vulkan renderer.
         return { CreateSDL3Platform(), CreateVulkanRenderer() };
 #else
         return { nullptr, nullptr };
 #endif
     case BackendType::DX11:
 #ifdef UNIGUI_HAS_DX11
-        return { CreateGLFWPlatform(), CreateDX11Renderer() };
+        return { CreateGLFWPlatform(BackendType::DX11), CreateDX11Renderer() };
 #else
         return { nullptr, nullptr };
 #endif
     case BackendType::Metal:
 #ifdef __APPLE__
-        return { CreateGLFWPlatform(), CreateMetalRenderer() };
+        return { CreateGLFWPlatform(BackendType::Metal), CreateMetalRenderer() };
 #else
         return { nullptr, nullptr };
 #endif
     case BackendType::DX12:
 #ifdef UNIGUI_HAS_DX12
-        return { CreateGLFWPlatform(), CreateDX12Renderer() };
+        return { CreateGLFWPlatform(BackendType::DX12), CreateDX12Renderer() };
+#else
+        return { nullptr, nullptr };
+#endif
+    case BackendType::Vulkan:
+#ifdef UNIGUI_HAS_VULKAN
+        return { CreateGLFWPlatform(BackendType::Vulkan), CreateVulkanRenderer() };
 #else
         return { nullptr, nullptr };
 #endif
     case BackendType::WebGPU:
-        return { CreateGLFWPlatform(), CreateWebGPURenderer() };
+        return { CreateGLFWPlatform(BackendType::WebGPU), CreateWebGPURenderer() };
     case BackendType::Emscripten:
         return { CreateEmscriptenPlatform(), CreateWebGPURenderer() };
     }
