@@ -8,9 +8,47 @@
 #include <unordered_set>
 #include <map>
 #include <cstring>
+#include <cctype>
 #include <imgui.h>
 
 namespace unigui {
+
+namespace detail {
+
+/// Parse a display cell like "100手", "1.2万", "1194" into a numeric sort key.
+inline bool ParseNumericSortKey(const std::string& text, double& out)
+{
+    if (text.empty() || text == "-") return false;
+    size_t i = 0;
+    while (i < text.size() && std::isspace(static_cast<unsigned char>(text[i]))) ++i;
+    if (i >= text.size()) return false;
+    try {
+        size_t pos = 0;
+        out = std::stod(text.substr(i), &pos);
+        if (pos == 0) return false;
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+inline int CompareSortCells(const std::string& a, const std::string& b, bool ascending)
+{
+    double na = 0, nb = 0;
+    const bool aNum = ParseNumericSortKey(a, na);
+    const bool bNum = ParseNumericSortKey(b, nb);
+    if (aNum && bNum) {
+        if (na < nb) return ascending ? -1 : 1;
+        if (na > nb) return ascending ? 1 : -1;
+        return 0;
+    }
+    const int cmp = a.compare(b);
+    if (cmp < 0) return ascending ? -1 : 1;
+    if (cmp > 0) return ascending ? 1 : -1;
+    return 0;
+}
+
+} // namespace detail
 
 /// DataTable<T> — high-performance data table with virtual scrolling, sorting,
 /// row coloring, cell formatting, inline editing, and text filtering.
@@ -175,14 +213,14 @@ public:
                         });
                     sortIndices_ = std::move(indices);
                 } else if (cellFmt_) {
-                    // Default sort: compare string values of the sorted column
+                    // Default sort: numeric-aware when cells look like "100手"/"1.2万".
                     std::vector<int> indices(data_->size());
                     for (size_t i = 0; i < data_->size(); ++i) indices[i] = (int)i;
                     std::sort(indices.begin(), indices.end(),
                         [&](int a, int b) {
-                            int cmp = cellFmt_(a, sortColumn_, (*data_)[a])
-                                      .compare(cellFmt_(b, sortColumn_, (*data_)[b]));
-                            return sortAscending_ ? (cmp < 0) : (cmp > 0);
+                            const std::string sa = cellFmt_(a, sortColumn_, (*data_)[a]);
+                            const std::string sb = cellFmt_(b, sortColumn_, (*data_)[b]);
+                            return detail::CompareSortCells(sa, sb, sortAscending_) < 0;
                         });
                     sortIndices_ = std::move(indices);
                 }
@@ -408,9 +446,13 @@ public:
                                     for (int r = gStart; r < gEnd; ++r)
                                         sv.push_back({cellFmt_(r, g.sortCol, (*data_)[r]), r});
                                     if (g.sortAsc)
-                                        std::sort(sv.begin(), sv.end(), [](auto&a,auto&b){return a.first<b.first;});
+                                        std::sort(sv.begin(), sv.end(), [](auto& a, auto& b) {
+                                            return detail::CompareSortCells(a.first, b.first, true) < 0;
+                                        });
                                     else
-                                        std::sort(sv.begin(), sv.end(), [](auto&a,auto&b){return a.first>b.first;});
+                                        std::sort(sv.begin(), sv.end(), [](auto& a, auto& b) {
+                                            return detail::CompareSortCells(a.first, b.first, false) < 0;
+                                        });
                                     groupSortMap_.clear();
                                     int pos = gStart;
                                     for (auto& [s, row] : sv) groupSortMap_[row] = pos++;

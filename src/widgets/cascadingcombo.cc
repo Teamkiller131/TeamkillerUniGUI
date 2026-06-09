@@ -39,7 +39,7 @@ void CascadingCombo::Render() {
             snprintf(lbl, sizeof(lbl), "##lvl%d", lvl);
         const char* preview = level.options.empty() ? "" : level.options[level.selectedIndex].c_str();
         ImGui::SetNextItemWidth(width > 0.f ? width : CalcComboWidth(level.options, preview));
-        if (ImGui::BeginCombo(lbl, preview)) {
+        if (ImGui::BeginCombo(lbl, preview, ImGuiComboFlags_NoArrowButton)) {
             for (int i = 0; i < (int)level.options.size(); ++i) {
                 bool isSel = (i == level.selectedIndex);
                 if (ImGui::Selectable(level.options[i].c_str(), isSel))

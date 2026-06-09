@@ -34,7 +34,8 @@ void ComboBox::Render() {
         ImGui::SetNextItemWidth(fixedWidth_);
     else
         ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
-    if (ImGui::BeginCombo(label_.c_str(), preview)) {
+    // NoArrowButton：去掉右侧那个突兀的下拉三角，整个预览框仍可点击展开
+    if (ImGui::BeginCombo(label_.c_str(), preview, ImGuiComboFlags_NoArrowButton)) {
         for (int i = 0; i < (int)items_.size(); i++) {
             if (searchable_ && search_buf_[0]) {
                 if (items_[i].find(search_buf_) == std::string::npos) continue;

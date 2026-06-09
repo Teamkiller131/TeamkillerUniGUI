@@ -9,7 +9,7 @@ namespace unigui {
 
 class Button : public FluentWidget<Button> {
 public:
-    enum ColorVariant { Default, Primary, Danger, Success };
+    enum ColorVariant { Default, Primary, Danger, Success, Muted };
     enum Size { Small, Medium, Large };
 
     Button(std::string name, std::string label);
@@ -27,6 +27,7 @@ public:
     Button& WithPrimary()                       { SetColorVariant(Primary); return *this; }
     Button& WithDanger()                        { SetColorVariant(Danger); return *this; }
     Button& WithSuccess()                       { SetColorVariant(Success); return *this; }
+    Button& WithMuted()                         { SetColorVariant(Muted); return *this; }
     Button& WithSize(Size size)                 { SetSize(size); return *this; }
     Button& WithOnClick(std::function<void()> fn) { SetOnClick(std::move(fn)); return *this; }
 

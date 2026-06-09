@@ -80,20 +80,30 @@ void RiskBar::Render() {
     // theme-appropriate foreground (dark text on light themes, light on dark)
     // and draw a 1px opposite-colour outline so it stays legible on any backdrop.
     if (!displayText_.empty()) {
+        const float kTextPad = 4.0f;
         ImVec2 textSize = ImGui::CalcTextSize(displayText_.c_str());
-        ImVec2 textPos(pos.x + (size.x - textSize.x) * 0.5f,
-                       pos.y + (size.y - textSize.y) * 0.5f);
+        // Center when the label fits; otherwise left-align with padding so the
+        // text never spills past the left edge of the bar. A clip rect keeps any
+        // overflow contained inside the bar bounds instead of crossing the panel
+        // border (long account names + margin amounts can exceed the bar width,
+        // especially inside indented tree rows).
+        const bool fits = textSize.x <= (size.x - 2.0f * kTextPad);
+        const float textX = fits ? pos.x + (size.x - textSize.x) * 0.5f
+                                  : pos.x + kTextPad;
+        ImVec2 textPos(textX, pos.y + (size.y - textSize.y) * 0.5f);
         const bool darkTheme = unigui::theme::ActiveColorTokens().dark;
         const ImU32 fg = darkTheme ? IM_COL32(0xff, 0xff, 0xff, 0xff)
                                    : IM_COL32(0x1a, 0x1d, 0x21, 0xff);
         const ImU32 outline = darkTheme ? IM_COL32(0x00, 0x00, 0x00, 0xb0)
                                         : IM_COL32(0xff, 0xff, 0xff, 0xc0);
         const char* s = displayText_.c_str();
+        dl->PushClipRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), true);
         dl->AddText(ImVec2(textPos.x - 1.0f, textPos.y), outline, s);
         dl->AddText(ImVec2(textPos.x + 1.0f, textPos.y), outline, s);
         dl->AddText(ImVec2(textPos.x, textPos.y - 1.0f), outline, s);
         dl->AddText(ImVec2(textPos.x, textPos.y + 1.0f), outline, s);
         dl->AddText(textPos, fg, s);
+        dl->PopClipRect();
     }
 
     ImGui::PopID();

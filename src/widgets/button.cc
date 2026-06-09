@@ -18,6 +18,8 @@ void Button::Render() {
     case Primary: color = ImVec4(0.16f, 0.47f, 0.80f, 1.0f); break;
     case Danger:  color = ImVec4(0.80f, 0.16f, 0.20f, 1.0f); break;
     case Success: color = ImVec4(0.18f, 0.60f, 0.28f, 1.0f); break;
+    // Muted：柔和的去饱和红，用于「删除」等破坏性但非紧急的操作，不刺眼
+    case Muted:   color = ImVec4(0.46f, 0.36f, 0.38f, 1.0f); break;
     default: break;
     }
 

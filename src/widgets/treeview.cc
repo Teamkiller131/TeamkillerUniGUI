@@ -85,23 +85,22 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
         if (node.labelColor != 0)
             ImGui::PopStyleColor();
 
+        // Suffix/progress belong on the header row (visible even when collapsed).
+        if (!node.suffix.empty()) {
+            ImGui::SameLine();
+            ImGui::TextUnformatted(node.suffix.c_str());
+        }
+        if (node.progress >= 0.0f) {
+            ImGui::SameLine();
+            float barW = ImGui::GetContentRegionAvail().x * 0.3f;
+            if (node.progressColor != 0)
+                ImGui::PushStyleColor(ImGuiCol_PlotHistogram, node.progressColor);
+            ImGui::ProgressBar(node.progress, ImVec2(barW, 0.0f), "");
+            if (node.progressColor != 0)
+                ImGui::PopStyleColor();
+        }
+
         if (open) {
-            // suffix
-            if (!node.suffix.empty()) {
-                ImGui::SameLine();
-                ImGui::TextUnformatted(node.suffix.c_str());
-            }
-            // progress bar
-            if (node.progress >= 0.0f) {
-                ImGui::SameLine();
-                float barW = ImGui::GetContentRegionAvail().x * 0.3f;
-                if (node.progressColor != 0)
-                    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, node.progressColor);
-                ImGui::ProgressBar(node.progress, ImVec2(barW, 0.0f), "");
-                if (node.progressColor != 0)
-                    ImGui::PopStyleColor();
-            }
-            // legacy node renderer
             if (nodeRenderer_) nodeRenderer_(id, depth, node);
         }
     }

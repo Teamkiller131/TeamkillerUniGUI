@@ -25,7 +25,7 @@ void MultiCombo::Render() {
     ImGui::PushID(GetName().c_str());
     std::string preview = GetPreview();
     ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
-    if (ImGui::BeginCombo(label_.c_str(), preview.c_str())) {
+    if (ImGui::BeginCombo(label_.c_str(), preview.c_str(), ImGuiComboFlags_NoArrowButton)) {
         for (int i = 0; i < (int)items_.size(); i++) {
             bool sel = selected_.count(i) > 0;
             if (ImGui::Checkbox(items_[i].c_str(), &sel)) {

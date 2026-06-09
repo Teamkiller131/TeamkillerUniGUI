@@ -14,6 +14,9 @@ public:
 
     void SetTintColor(ImU32 color) { tintColor_ = color; }
     void SetContentCallback(std::function<void()> cb) { contentCb_ = std::move(cb); }
+    /// When true, the bordered content area shrink-wraps to its children (capped
+    /// by the parent splitter height) instead of always filling the slot.
+    void SetShrinkWrapContent(bool on) { shrinkWrapContent_ = on; }
 
     const std::string& GetTitle() const { return title_; }
     void SetTitle(std::string title) { title_ = std::move(title); }
@@ -21,6 +24,7 @@ public:
 private:
     std::string title_;
     ImU32 tintColor_ = 0;
+    bool shrinkWrapContent_ = false;
     std::function<void()> contentCb_;
 };
 

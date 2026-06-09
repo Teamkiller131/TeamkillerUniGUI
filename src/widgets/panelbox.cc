@@ -1,5 +1,6 @@
 #include <unigui/widgets/panelbox.h>
 #include <imgui.h>
+#include <algorithm>
 
 namespace unigui {
 
@@ -31,7 +32,6 @@ void PanelBox::Render() {
 
     // Title text (bold white, centered vertically in title bar)
     float fontSize = ImGui::GetFontSize();
-    ImVec2 textSize = ImGui::CalcTextSize(title_.c_str());
     float textX = cursor.x + 10.f; // left padding
     float textY = cursor.y + (titleBarH - fontSize) * 0.5f;
     dl->AddText(ImVec2(textX, textY), IM_COL32_WHITE, title_.c_str());
@@ -42,34 +42,31 @@ void PanelBox::Render() {
 
     if (contentH < 0.f) contentH = 0.f;
 
-    ImVec2 contentTopLeft = ImVec2(cursor.x, contentTop);
-    ImVec2 contentBotRight = ImVec2(cursor.x + availW, contentTop + contentH);
+    ImGui::SetCursorScreenPos(ImVec2(cursor.x, contentTop));
 
-    // Rounded rect border for content area
-    dl->AddRect(contentTopLeft, contentBotRight,
-                IM_COL32(80, 80, 90, 255), 4.f, 0, 1.5f);
-
-    // Optional tint overlay
-    if (tintColor_ != 0) {
-        dl->AddRectFilled(contentTopLeft, contentBotRight, tintColor_);
+    const std::string bodyId = GetName() + "_body";
+    ImGuiChildFlags childFlags = ImGuiChildFlags_Borders;
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoScrollWithMouse;
+    if (shrinkWrapContent_) {
+        childFlags |= ImGuiChildFlags_AutoResizeY;
+        windowFlags |= ImGuiWindowFlags_AlwaysVerticalScrollbar;
+        ImGui::SetNextWindowSizeConstraints(ImVec2(availW, 0.f), ImVec2(availW, contentH));
     }
 
-    // Position ImGui cursor for content callback
-    ImGui::SetCursorScreenPos(ImVec2(contentTopLeft.x + 8.f, contentTopLeft.y + 8.f));
-
-    // Call content callback if set
+    ImGui::BeginChild(bodyId.c_str(), ImVec2(availW, shrinkWrapContent_ ? 0.f : contentH),
+                      childFlags, windowFlags);
     if (contentCb_) {
         contentCb_();
     }
+    ImGui::EndChild();
 
-    // Submit a real item covering the panel bounds so parent windows grow
-    // correctly. Merely moving the cursor to the bottom triggers ImGui
-    // boundary warnings when the panel is used inside splitter children.
-    // NOTE: size the dummy to EXACTLY the available region (no overshoot) so
-    // the enclosing child only shows a scrollbar when the content callback's
-    // own items overflow — not on every panel.
+    const float bodyH = shrinkWrapContent_
+                            ? std::min(contentH, ImGui::GetItemRectSize().y)
+                            : contentH;
+
+    // Claim the splitter slot without painting a second manual border.
     ImGui::SetCursorScreenPos(cursor);
-    ImGui::Dummy(ImVec2(availW, titleBarH + contentH));
+    ImGui::Dummy(ImVec2(availW, titleBarH + bodyH));
 
     ImGui::PopID();
 }
