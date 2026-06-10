@@ -10,6 +10,9 @@ public:
     enum Mode { Open, Save };
     FilePath(std::string name, std::string label, Mode mode = Open);
     void Render() override;
+    // 直接弹出系统文件选择框（不渲染内嵌输入框）；选中后触发 OnPathChanged。
+    // 返回 true 表示用户确认了选择。
+    bool OpenDialog();
     std::string GetPath() const;
     void SetPath(std::string path);
     void SetFilter(std::string filter);

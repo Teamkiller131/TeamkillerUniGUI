@@ -42,6 +42,8 @@ bool FilePath::OpenNativeDialog() {
     return false;
 }
 
+bool FilePath::OpenDialog() { return OpenNativeDialog(); }
+
 void FilePath::Render() {
     if (!IsVisible()) return;
     ImGui::PushID(GetName().c_str());

@@ -32,6 +32,14 @@ public:
     /// If timestamp < 0, uses internal frame counter.
     void AppendPoint(int seriesId, float value, double timestamp = -1.0);
 
+    /// Replace a series' entire point set in one shot (x = timestamps, y = values).
+    /// Use this when the caller owns a complete, possibly out-of-order history buffer
+    /// (e.g. live ticks + late multi-packet backfill): the points are sorted by X and
+    /// trimmed to the sliding window, giving a single source of truth with no
+    /// double-counting and no dropped late arrivals.
+    void SetSeriesData(int seriesId, const std::vector<double>& xs,
+                       const std::vector<double>& ys);
+
     /// Clear all series data.
     void ClearAll();
 

@@ -49,6 +49,27 @@ void TimeSeriesChart::AppendPoint(int seriesId, float value, double timestamp) {
     }
 }
 
+void TimeSeriesChart::SetSeriesData(int seriesId, const std::vector<double>& xs,
+                                    const std::vector<double>& ys) {
+    const size_t n = std::min(xs.size(), ys.size());
+    for (auto& s : series_) {
+        if (s.id != seriesId) continue;
+        std::vector<std::pair<double, double>> pts;
+        pts.reserve(n);
+        for (size_t i = 0; i < n; ++i) pts.push_back({xs[i], ys[i]});
+        // Time-order, then keep only the most recent sliding-window points.
+        std::sort(pts.begin(), pts.end(),
+                  [](const auto& a, const auto& b) { return a.first < b.first; });
+        size_t start = 0;
+        if (slidingWindow_ > 0 && pts.size() > (size_t)slidingWindow_)
+            start = pts.size() - (size_t)slidingWindow_;
+        s.points.clear();
+        for (size_t i = start; i < pts.size(); ++i)
+            s.points.push_back({pts[i].first, (float)pts[i].second});
+        return;
+    }
+}
+
 void TimeSeriesChart::Render() {
     if (!IsVisible()) return;
     ImGui::PushID(GetName().c_str());
@@ -128,12 +149,20 @@ void TimeSeriesChart::Render() {
         for (auto& s : series_) {
             if (s.points.empty()) continue;
 
-            // Extract x/y vectors
+            // Extract x/y vectors. PlotLine connects points in array order, so for a
+            // time series the points MUST be X-monotonic — otherwise out-of-order
+            // inserts (e.g. live ticks recorded before a multi-packet history backfill
+            // arrives) draw a spurious straight segment jumping back across the plot.
+            // Sort by X (timestamp) defensively; for already-ordered live data this is
+            // a near-noop on a small, mostly-sorted buffer.
+            std::vector<std::pair<double, double>> pts(s.points.begin(), s.points.end());
+            std::sort(pts.begin(), pts.end(),
+                      [](const auto& a, const auto& b) { return a.first < b.first; });
             std::vector<double> xs, ys;
-            xs.reserve(s.points.size());
-            ys.reserve(s.points.size());
-            for (auto& [ts, v] : s.points) {
-                xs.push_back(ts); ys.push_back((double)v);
+            xs.reserve(pts.size());
+            ys.reserve(pts.size());
+            for (auto& [ts, v] : pts) {
+                xs.push_back(ts); ys.push_back(v);
             }
 
             ImPlot::SetAxis(s.def.yAxisId == 3 ? ImAxis_Y3 : ImAxis_Y1);
