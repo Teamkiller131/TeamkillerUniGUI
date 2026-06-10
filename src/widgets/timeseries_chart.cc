@@ -80,6 +80,7 @@ void TimeSeriesChart::Render() {
     ImPlot::PushStyleColor(ImPlotCol_PlotBorder, borderCol);
     ImPlot::PushStyleColor(ImPlotCol_AxisGrid, gridCol);
 
+    bool plotHovered = false;
     if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, -1), plotFlags)) {
 
         // ── Axis labels ───────────────────────────────────────────────
@@ -147,9 +148,17 @@ void TimeSeriesChart::Render() {
             ImPlot::PlotInfLines(line.label.c_str(), &line.value, 1, spec);
         }
 
+        plotHovered = ImPlot::IsPlotHovered();
         ImPlot::EndPlot();
     }
     ImPlot::PopStyleColor(3);
+
+    // ImPlotFlags_Crosshairs draws the guide lines but also sets the OS cursor to
+    // None (hiding it). Restore the arrow while hovering so the user keeps both the
+    // crosshair lines AND a visible cursor. SetMouseCursor here wins because it runs
+    // after ImPlot's EndPlot for this frame.
+    if (crosshair_ && plotHovered)
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
 
     if (crosshairFmt_ && ImPlot::IsPlotHovered()) {
         ImPlotPoint mouse = ImPlot::GetPlotMousePos();
