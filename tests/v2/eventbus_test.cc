@@ -88,3 +88,62 @@ TEST(BusTest, HandlerException_IsContained_OthersStillRun) {
     Bus::Instance().Unsubscribe(id1);
     Bus::Instance().Unsubscribe(id2);
 }
+
+// ── RAII Subscription tests ─────────────────────────────────────────────────
+
+TEST(BusTest, Scoped_DestructorUnsubscribes) {
+    int count = 0;
+    {
+        auto sub = Bus::Instance().SubscribeScoped("scoped.a", [&](auto&) { count++; });
+        Bus::Instance().Publish("scoped.a", int{1});
+        EXPECT_EQ(count, 1);
+    }
+    // sub destroyed — handler should no longer fire
+    Bus::Instance().Publish("scoped.a", int{2});
+    EXPECT_EQ(count, 1);
+}
+
+TEST(BusTest, Scoped_MoveTransfersOwnership) {
+    int count = 0;
+    Subscription sub;
+    {
+        Subscription tmp;
+        tmp = Bus::Instance().SubscribeScoped("scoped.b", [&](auto&) { count++; });
+        sub = std::move(tmp);
+        EXPECT_TRUE(sub.Valid());
+        EXPECT_FALSE(tmp.Valid());
+    }
+    Bus::Instance().Publish("scoped.b", int{1});
+    EXPECT_EQ(count, 1);
+    sub.Unsubscribe();
+}
+
+TEST(BusTest, Scoped_UnsubscribeManual) {
+    int count = 0;
+    auto sub = Bus::Instance().SubscribeScoped("scoped.c", [&](auto&) { count++; });
+    sub.Unsubscribe();
+    EXPECT_FALSE(sub.Valid());
+    Bus::Instance().Publish("scoped.c", int{1});
+    EXPECT_EQ(count, 0);
+}
+
+TEST(BusTest, Scoped_DoubleUnsubscribe_NoCrash) {
+    auto sub = Bus::Instance().SubscribeScoped("scoped.d", [](auto&) {});
+    sub.Unsubscribe();
+    EXPECT_NO_THROW(sub.Unsubscribe()); // no-op
+}
+
+TEST(BusTest, Scoped_HandlerUnsubscribesItself_NoDeadlock) {
+    Subscription selfRef;
+    int count = 0;
+    // Handler captures selfRef by reference and unsubscribes itself
+    selfRef = Bus::Instance().SubscribeScoped("scoped.e", [&](auto&) {
+        count++;
+        selfRef.Unsubscribe(); // unsubscribe from within handler
+    });
+    Bus::Instance().Publish("scoped.e", int{1});
+    EXPECT_EQ(count, 1);
+    // Second publish should not trigger the handler
+    Bus::Instance().Publish("scoped.e", int{2});
+    EXPECT_EQ(count, 1);
+}

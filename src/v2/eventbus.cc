@@ -5,6 +5,50 @@
 
 namespace unigui::events {
 
+// ── Subscription RAII handle ────────────────────────────────────────────────
+
+Subscription::Subscription(Bus& bus, Bus::SubID id) noexcept
+    : bus_(&bus), id_(id) {}
+
+Subscription::~Subscription() {
+    Unsubscribe();
+}
+
+Subscription::Subscription(Subscription&& other) noexcept
+    : bus_(other.bus_), id_(other.id_) {
+    other.bus_ = nullptr;
+    other.id_ = 0;
+}
+
+Subscription& Subscription::operator=(Subscription&& other) noexcept {
+    if (this != &other) {
+        Unsubscribe();
+        bus_ = other.bus_;
+        id_ = other.id_;
+        other.bus_ = nullptr;
+        other.id_ = 0;
+    }
+    return *this;
+}
+
+bool Subscription::Valid() const noexcept {
+    return bus_ != nullptr && id_ != 0;
+}
+
+void Subscription::Unsubscribe() {
+    if (bus_ && id_) {
+        bus_->Unsubscribe(id_);
+        bus_ = nullptr;
+        id_ = 0;
+    }
+}
+
+Bus::SubID Subscription::GetID() const noexcept {
+    return id_;
+}
+
+// ── Bus ─────────────────────────────────────────────────────────────────────
+
 Bus::Bus() {
     worker_ = std::thread(&Bus::WorkerThread, this);
 }
@@ -17,14 +61,19 @@ Bus& Bus::Instance() {
 Bus::SubID Bus::Subscribe(const std::string& topic, Handler handler) {
     std::lock_guard lock(mutex_);
     SubID id = nextId_++;
-    subs_.push_back({id, topic, std::move(handler)});
+    entries_.push_back({id, topic, std::move(handler)});
     return id;
+}
+
+Subscription Bus::SubscribeScoped(const std::string& topic, Handler handler) {
+    SubID id = Subscribe(topic, std::move(handler));
+    return Subscription(*this, id);
 }
 
 void Bus::Unsubscribe(SubID id) {
     std::lock_guard lock(mutex_);
-    subs_.erase(std::remove_if(subs_.begin(), subs_.end(), [id](auto& s) { return s.id == id; }),
-                subs_.end());
+    entries_.erase(std::remove_if(entries_.begin(), entries_.end(), [id](auto& s) { return s.id == id; }),
+                entries_.end());
 }
 
 Bus::SubID Bus::SubscribeAll(Handler handler) {
@@ -63,17 +112,22 @@ bool Bus::MatchTopic(const std::string& pattern, const std::string& topic) {
 }
 
 void Bus::Publish(const std::string& topic, const std::any& event) {
-    std::lock_guard lock(mutex_);
-    for (auto& s : subs_) {
-        if (MatchTopic(s.topic, topic)) {
-            try {
-                s.handler(event);
-            } catch (const std::exception& e) {
-                UNIGUI_LOG_ERROR("EventBus: handler for topic '{}' threw: {}", topic, e.what());
-            } catch (...) {
-                UNIGUI_LOG_ERROR("EventBus: handler for topic '{}' threw a non-std exception",
-                                 topic);
-            }
+    std::vector<Handler> matching;
+    {
+        std::lock_guard lock(mutex_);
+        for (auto& e : entries_) {
+            if (MatchTopic(e.topic, topic))
+                matching.push_back(e.handler);
+        }
+    }
+    for (auto& h : matching) {
+        try {
+            h(event);
+        } catch (const std::exception& e) {
+            UNIGUI_LOG_ERROR("EventBus: handler for topic '{}' threw: {}", topic, e.what());
+        } catch (...) {
+            UNIGUI_LOG_ERROR("EventBus: handler for topic '{}' threw a non-std exception",
+                             topic);
         }
     }
 }
