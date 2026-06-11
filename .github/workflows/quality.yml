@@ -1,0 +1,72 @@
+name: Quality (clang-tidy & coverage)
+
+on: [push, pull_request]
+
+jobs:
+  clang-tidy:
+    runs-on: ubuntu-latest
+    # Advisory for now: clang-tidy findings are reported but don't block the
+    # pipeline. Flip to a hard gate (remove continue-on-error) once the
+    # baseline is clean.
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install deps
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ninja-build clang-tidy \
+          libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+        ~/vcpkg/bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+    - name: Configure (export compile_commands.json)
+      run: |
+        cmake -B build -S . -G Ninja \
+          -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=x64-linux -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+    - name: Run clang-tidy
+      run: |
+        # Lint only first-party sources; skip generated/vcpkg paths.
+        find src -name '*.cc' | xargs clang-tidy -p build --config-file=.clang-tidy
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install deps
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ninja-build lcov \
+          libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+        ~/vcpkg/bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+    - name: Configure (gcov instrumentation)
+      run: |
+        cmake -B build -S . -G Ninja \
+          -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=x64-linux -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_CXX_FLAGS="--coverage -fno-inline" -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+    - name: Build
+      run: cmake --build build
+    - name: Test
+      run: ctest --test-dir build --output-on-failure || true  # headless GL failures expected
+    - name: Collect coverage
+      run: |
+        lcov --capture --directory build --output-file coverage.info --ignore-errors mismatch,gcov || true
+        lcov --remove coverage.info '/usr/*' '*/vcpkg_installed/*' '*/tests/*' \
+          --output-file coverage.info --ignore-errors unused || true
+        lcov --list coverage.info || true
+    - name: Upload coverage artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-info
+        path: coverage.info
+        if-no-files-found: ignore
