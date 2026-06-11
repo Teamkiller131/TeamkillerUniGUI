@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 
 namespace unigui {
 
@@ -24,6 +25,47 @@ float SafeToFloat(const std::string& s, float def) {
     return end == s.c_str() ? def : v;
 }
 } // namespace
+
+std::string EscapeSetting(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    for (char ch : s) {
+        switch (ch) {
+        case '\\': out += "\\\\"; break;
+        case '\n': out += "\\n"; break;
+        case '\r': out += "\\r"; break;
+        case '=':  out += "\\="; break;
+        default:   out += ch; break;
+        }
+    }
+    return out;
+}
+
+std::string UnescapeSetting(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '\\' && i + 1 < s.size()) {
+            switch (s[i + 1]) {
+            case '\\': out += '\\'; ++i; break;
+            case 'n':  out += '\n'; ++i; break;
+            case 'r':  out += '\r'; ++i; break;
+            case '=':  out += '=';  ++i; break;
+            default:   out += s[i]; break;
+            }
+        } else {
+            out += s[i];
+        }
+    }
+    return out;
+}
+
+void TrimInPlace(std::string& s) {
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t'))
+        s.erase(0, 1);
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t'))
+        s.pop_back();
+}
 
 bool Settings::autoSaveEnabled_ = false;
 std::string Settings::autoSavePathStatic_;
@@ -68,28 +110,36 @@ void Settings::Clear() {
 }
 
 bool Settings::Save(const std::string& path) {
-    FILE* f = fopen(path.c_str(), "w");
+    std::string tmpPath = path + ".tmp";
+    FILE* f = fopen(tmpPath.c_str(), "w");
     if (!f)
         return false;
     for (auto& [k, v] : data_)
-        std::fprintf(f, "%s=%s\n", k.c_str(), v.c_str());
+        std::fprintf(f, "%s=%s\n", EscapeSetting(k).c_str(), EscapeSetting(v).c_str());
     fclose(f);
-    return true;
+    std::remove(path.c_str());
+    return std::rename(tmpPath.c_str(), path.c_str()) == 0;
 }
 bool Settings::Load(const std::string& path) {
-    FILE* f = fopen(path.c_str(), "r");
+    std::ifstream f(path);
     if (!f)
         return false;
-    char buf[4096];
-    while (fgets(buf, sizeof(buf), f)) {
-        std::string line(buf);
-        while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
+    data_.clear();
+    std::string line;
+    while (std::getline(f, line)) {
+        while (!line.empty() && (line.back() == '\r' || line.back() == '\n'))
             line.pop_back();
+        if (line.empty() || line[0] == '#' || line[0] == ';')
+            continue;
         auto eq = line.find('=');
-        if (eq != std::string::npos)
-            data_[line.substr(0, eq)] = line.substr(eq + 1);
+        if (eq == std::string::npos)
+            continue;
+        std::string key = line.substr(0, eq);
+        TrimInPlace(key);
+        if (key.empty())
+            continue;
+        data_[key] = UnescapeSetting(line.substr(eq + 1));
     }
-    fclose(f);
     return true;
 }
 void Settings::EnableAutoSave(const std::string& path) {
@@ -121,7 +171,8 @@ std::vector<std::string> Settings::GetRecentFiles() const {
     return files;
 }
 void Settings::ClearRecentFiles() {
-    for (int i = 99; i >= 0; i--)
+    auto count = static_cast<int>(GetRecentFiles().size());
+    for (int i = count - 1; i >= 0; i--)
         data_.erase("recent." + std::to_string(i));
 }
 

@@ -36,7 +36,6 @@ public:
 private:
     Settings() = default;
     std::unordered_map<std::string, std::string> data_;
-    std::string autoSavePath_;
     static bool autoSaveEnabled_;
     static std::string autoSavePathStatic_;
 };
