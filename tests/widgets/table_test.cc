@@ -33,6 +33,32 @@ TEST_F(TableTest, ImportCSV_AddsRows) {
     tbl.Render();
 }
 
+// ── CSV escaping round-trip: quoted commas and embedded quotes survive. ──
+TEST_F(TableTest, CSV_RoundTrip_QuotedCommaAndQuotes) {
+    unigui::Table tbl("tbl", {"A","B"});
+    tbl.AddRow({"hello, world", "say \"hi\""});
+    auto csv = tbl.ExportCSV();
+
+    unigui::Table tbl2("tbl2", {"A","B"});
+    tbl2.ImportCSV(csv);
+    ASSERT_EQ(tbl2.RowCount(), 1);
+    EXPECT_EQ(tbl2.CellText(0, 0), "hello, world");
+    EXPECT_EQ(tbl2.CellText(0, 1), "say \"hi\"");
+}
+
+TEST_F(TableTest, ImportCSV_MalformedShortAndLongRows_DoNotCrash) {
+    unigui::Table tbl("tbl", {"A","B","C"});
+    EXPECT_NO_THROW(tbl.ImportCSV("A,B,C\n1\n2,3\n4,5,6,7\n\n"));
+    tbl.Render();
+}
+
+TEST_F(TableTest, ImportCSV_Empty_ClearsRows) {
+    unigui::Table tbl("tbl", {"A"});
+    tbl.AddRow({"x"});
+    tbl.ImportCSV("");
+    EXPECT_EQ(tbl.RowCount(), 0);
+}
+
 TEST_F(TableTest, DataTableVirtualScroll_DoesNotCrash) {
     struct Row { std::string name; int value; };
     std::vector<Row> rows;
