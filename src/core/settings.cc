@@ -124,6 +124,17 @@ bool Settings::GetBool(const std::string& key, bool defaultVal) const {
 bool Settings::Has(const std::string& key) const {
     return data_.count(key) > 0;
 }
+void Settings::Erase(const std::string& key) {
+    data_.erase(key);
+}
+std::vector<std::string> Settings::Keys(const std::string& prefix) const {
+    std::vector<std::string> result;
+    for (auto& [k, _] : data_) {
+        if (prefix.empty() || k.compare(0, prefix.size(), prefix) == 0)
+            result.push_back(k);
+    }
+    return result;
+}
 void Settings::Clear() {
     data_.clear();
 }
@@ -205,9 +216,8 @@ std::vector<std::string> Settings::GetRecentFiles() const {
     return files;
 }
 void Settings::ClearRecentFiles() {
-    auto count = static_cast<int>(GetRecentFiles().size());
-    for (int i = count - 1; i >= 0; i--)
-        data_.erase("recent." + std::to_string(i));
+    for (auto& k : Keys("recent."))
+        data_.erase(k);
 }
 
 } // namespace unigui
