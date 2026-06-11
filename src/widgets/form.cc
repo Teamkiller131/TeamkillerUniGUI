@@ -1,32 +1,17 @@
 #include <unigui/core/log.h>
+#include <unigui/core/strutil.h>
 #include <unigui/widgets/form.h>
 
 #include <imgui.h>
 
 #include <algorithm>
 #include <cctype>
-#include <cstdlib>
 #include <regex>
 #include <sstream>
 
 namespace unigui {
 
 namespace {
-int SafeToInt(const std::string& s, int def = 0) {
-    if (s.empty())
-        return def;
-    char* end = nullptr;
-    long v = std::strtol(s.c_str(), &end, 10);
-    return end == s.c_str() ? def : static_cast<int>(v);
-}
-float SafeToFloat(const std::string& s, float def = 0.f) {
-    if (s.empty())
-        return def;
-    char* end = nullptr;
-    float v = std::strtof(s.c_str(), &end);
-    return end == s.c_str() ? def : v;
-}
-
 std::string EscapeJsonString(const std::string& value) {
     std::string out;
     out.reserve(value.size() + 8);
@@ -251,7 +236,7 @@ void Form::Render() {
             if (!f.value.empty() &&
                 std::all_of(f.value.begin(), f.value.end(),
                             [](unsigned char ch) { return std::isdigit(ch) != 0; })) {
-                int parsed = SafeToInt(f.value);
+                int parsed = ToIntOr(f.value);
                 if (parsed >= 0 && parsed < (int) f.options.size())
                     idx = parsed;
             }
@@ -269,13 +254,13 @@ void Form::Render() {
             break;
         }
         case FormField::Type::Slider: {
-            float val = SafeToFloat(f.value);
+            float val = ToFloatOr(f.value);
             if (ImGui::SliderFloat(f.label.c_str(), &val, (float) f.min, (float) f.max, "%.1f"))
                 f.value = std::to_string(val);
             break;
         }
         case FormField::Type::Number: {
-            int val = SafeToInt(f.value, static_cast<int>(f.min));
+            int val = ToIntOr(f.value, static_cast<int>(f.min));
             if (ImGui::InputInt(f.label.c_str(), &val))
                 f.value = std::to_string(val);
             break;

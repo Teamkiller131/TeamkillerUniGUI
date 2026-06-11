@@ -198,7 +198,7 @@ if(UNIGUI_MODULE_WIDGETS)
 endif()
 
 # v2.9 core tests
-foreach(_core locale settings undo_stack)
+foreach(_core locale settings strutil undo_stack)
     add_executable(test_${_core} core/${_core}_test.cc)
     target_link_libraries(test_${_core} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_core} PRIVATE cxx_std_23)

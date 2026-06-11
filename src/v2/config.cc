@@ -1,5 +1,6 @@
 #include <unigui/config/config.h>
 #include <unigui/core/log.h>
+#include <unigui/core/strutil.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -7,23 +8,6 @@
 #include <sstream>
 
 namespace unigui::config {
-
-namespace {
-int SafeToInt(const std::string& s, int def = 0) {
-    if (s.empty())
-        return def;
-    char* end = nullptr;
-    long v = std::strtol(s.c_str(), &end, 10);
-    return end == s.c_str() ? def : static_cast<int>(v);
-}
-double SafeToDouble(const std::string& s, double def = 0.0) {
-    if (s.empty())
-        return def;
-    char* end = nullptr;
-    double v = std::strtod(s.c_str(), &end);
-    return end == s.c_str() ? def : v;
-}
-} // namespace
 
 Store& Store::Instance() {
     static Store c;
@@ -63,13 +47,13 @@ void Store::SetString(const std::string& k, const std::string& v) {
     SetValue(k, v);
 }
 int Store::GetInt(const std::string& k, int d) const {
-    return SafeToInt(GetValue(k), d);
+    return ToIntOr(GetValue(k), d);
 }
 void Store::SetInt(const std::string& k, int v) {
     SetValue(k, std::to_string(v));
 }
 double Store::GetDouble(const std::string& k, double d) const {
-    return SafeToDouble(GetValue(k), d);
+    return ToDoubleOr(GetValue(k), d);
 }
 void Store::SetDouble(const std::string& k, double v) {
     SetValue(k, std::to_string(v));

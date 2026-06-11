@@ -1,4 +1,5 @@
 #include <unigui/core/settings.h>
+#include <unigui/core/strutil.h>
 
 #include <algorithm>
 #include <cstdio>
@@ -12,22 +13,6 @@
 namespace unigui {
 
 namespace {
-// strtol/strtof never throw, unlike std::stoi/std::stof — fall back to the
-// caller's default on empty/garbage input instead of crashing.
-int SafeToInt(const std::string& s, int def) {
-    if (s.empty())
-        return def;
-    char* end = nullptr;
-    long v = std::strtol(s.c_str(), &end, 10);
-    return end == s.c_str() ? def : static_cast<int>(v);
-}
-float SafeToFloat(const std::string& s, float def) {
-    if (s.empty())
-        return def;
-    char* end = nullptr;
-    float v = std::strtof(s.c_str(), &end);
-    return end == s.c_str() ? def : v;
-}
 
 std::string EscapeSetting(const std::string& s) {
     std::string out;
@@ -61,13 +46,6 @@ std::string UnescapeSetting(const std::string& s) {
         }
     }
     return out;
-}
-
-void TrimInPlace(std::string& s) {
-    while (!s.empty() && (s.front() == ' ' || s.front() == '\t'))
-        s.erase(0, 1);
-    while (!s.empty() && (s.back() == ' ' || s.back() == '\t'))
-        s.pop_back();
 }
 
 // Find the first '=' that is NOT escaped as "\=" — i.e. the real key/value
@@ -105,14 +83,14 @@ void Settings::SetInt(const std::string& key, int value) {
 }
 int Settings::GetInt(const std::string& key, int defaultVal) const {
     auto it = data_.find(key);
-    return it != data_.end() ? SafeToInt(it->second, defaultVal) : defaultVal;
+    return it != data_.end() ? ToIntOr(it->second, defaultVal) : defaultVal;
 }
 void Settings::SetFloat(const std::string& key, float value) {
     Set(key, std::to_string(value));
 }
 float Settings::GetFloat(const std::string& key, float defaultVal) const {
     auto it = data_.find(key);
-    return it != data_.end() ? SafeToFloat(it->second, defaultVal) : defaultVal;
+    return it != data_.end() ? ToFloatOr(it->second, defaultVal) : defaultVal;
 }
 void Settings::SetBool(const std::string& key, bool value) {
     Set(key, value ? "1" : "0");
