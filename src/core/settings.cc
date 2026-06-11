@@ -7,7 +7,14 @@
 #include <fstream>
 
 #ifdef _WIN32
-#include <windows.h> // MoveFileExA for atomic replace
+#include <filesystem>
+#include <windows.h>
+namespace {
+std::wstring PathToWide(const std::string& s) {
+    // std::filesystem::path handles the native encoding correctly on Windows
+    return std::filesystem::path(s).wstring();
+}
+} // namespace
 #endif
 
 namespace unigui {
@@ -119,37 +126,44 @@ void Settings::Clear() {
 
 bool Settings::Save(const std::string& path) {
     std::string tmpPath = path + ".tmp";
+#ifdef _WIN32
+    auto wtmp = PathToWide(tmpPath);
+    auto wpath = PathToWide(path);
+    FILE* f = _wfopen(wtmp.c_str(), L"w");
+#else
     FILE* f = fopen(tmpPath.c_str(), "w");
+#endif
     if (!f)
         return false;
     for (auto& [k, v] : data_)
         std::fprintf(f, "%s=%s\n", EscapeSetting(k).c_str(), EscapeSetting(v).c_str());
     fclose(f);
-    // Atomically replace the destination so a crash mid-write never leaves a
-    // truncated config. Both MoveFileExA and POSIX rename() replace an existing
-    // target in a single step — do NOT remove() first (that opens a window
-    // where the original is already gone).
 #ifdef _WIN32
-    if (!MoveFileExA(tmpPath.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING)) {
-        std::remove(tmpPath.c_str());
+    if (!MoveFileExW(wtmp.c_str(), wpath.c_str(), MOVEFILE_REPLACE_EXISTING)) {
+        _wremove(wtmp.c_str());
         return false;
     }
-    return true;
 #else
     if (std::rename(tmpPath.c_str(), path.c_str()) != 0) {
         std::remove(tmpPath.c_str());
         return false;
     }
-    return true;
 #endif
+    return true;
 }
 bool Settings::Load(const std::string& path) {
-    std::ifstream f(path);
+    data_.clear();
+#ifdef _WIN32
+    auto wpath = PathToWide(path);
+    FILE* f = _wfopen(wpath.c_str(), L"r");
+#else
+    FILE* f = fopen(path.c_str(), "r");
+#endif
     if (!f)
         return false;
-    data_.clear();
-    std::string line;
-    while (std::getline(f, line)) {
+    char buf[4096];
+    while (fgets(buf, sizeof(buf), f)) {
+        std::string line(buf);
         while (!line.empty() && (line.back() == '\r' || line.back() == '\n'))
             line.pop_back();
         if (line.empty() || line[0] == '#' || line[0] == ';')
@@ -163,6 +177,7 @@ bool Settings::Load(const std::string& path) {
             continue;
         data_[key] = UnescapeSetting(line.substr(eq + 1));
     }
+    fclose(f);
     return true;
 }
 void Settings::EnableAutoSave(const std::string& path) {

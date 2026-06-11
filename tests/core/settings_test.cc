@@ -200,3 +200,17 @@ TEST_F(SettingsTest, ClearRecentFiles_NoRecent_IsNoOp) {
     EXPECT_NO_THROW(s.ClearRecentFiles());
     EXPECT_TRUE(s.Has("other"));
 }
+
+// ── Non-ASCII path round-trip (Windows UTF-8) ──────────────────────────────
+TEST_F(SettingsTest, SaveLoad_NonAsciiPath_RoundTrip) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("key", "中文值");
+    auto base = std::filesystem::temp_directory_path() / "unigui_配置_test";
+    std::filesystem::create_directories(base);
+    auto path = (base / "app.ini").string();
+    ASSERT_TRUE(s.Save(path));
+    s.Clear();
+    ASSERT_TRUE(s.Load(path));
+    EXPECT_EQ(s.Get("key"), "中文值");
+    std::filesystem::remove_all(base);
+}
