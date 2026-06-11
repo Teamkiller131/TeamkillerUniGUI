@@ -6,8 +6,21 @@
 #include <fstream>
 #include <cstdio>
 #include <cstdlib>
+#include <unordered_map>
+#include <string_view>
 
 namespace unigui::styling {
+
+namespace {
+// strtof never throws — malformed CSS values fall back to `def` instead of
+// throwing std::invalid_argument/out_of_range like std::stof would.
+float CssFloat(const std::string& s, float def = 0.f) {
+    if (s.empty()) return def;
+    char* end = nullptr;
+    float v = std::strtof(s.c_str(), &end);
+    return end == s.c_str() ? def : v;
+}
+} // namespace
 
 Engine& Engine::Instance() { static Engine se; return se; }
 
@@ -145,19 +158,19 @@ void Engine::EvaluateMedia(float viewWidth, float viewHeight, bool darkMode) {
         if (mr.condition.find("min-width") != std::string::npos) {
             auto colon = mr.condition.find(':');
             if (colon != std::string::npos) {
-                float val = std::stof(mr.condition.substr(colon + 1));
+                float val = CssFloat(mr.condition.substr(colon + 1));
                 match = (viewWidth >= val);
             }
         } else if (mr.condition.find("max-width") != std::string::npos) {
             auto colon = mr.condition.find(':');
             if (colon != std::string::npos) {
-                float val = std::stof(mr.condition.substr(colon + 1));
+                float val = CssFloat(mr.condition.substr(colon + 1));
                 match = (viewWidth <= val);
             }
         } else if (mr.condition.find("min-height") != std::string::npos) {
             auto colon = mr.condition.find(':');
             if (colon != std::string::npos) {
-                float val = std::stof(mr.condition.substr(colon + 1));
+                float val = CssFloat(mr.condition.substr(colon + 1));
                 match = (viewHeight >= val);
             }
         } else if (mr.condition.find("prefers-color-scheme") != std::string::npos) {
@@ -183,73 +196,88 @@ int Engine::LoadFile(const std::string& path) {
 static void ApplyProp(const std::string& key, const std::string& val) {
     auto& style = ImGui::GetStyle();
     auto& colors = style.Colors;
-    unsigned int r=0,g=0,b=0, a=255;
-    auto parseHex = [&]{
-        sscanf(val.c_str(),"#%02x%02x%02x%02x",&r,&g,&b,&a);
-        if (a > 255) { a = (r == 0 && g == 0 && b == 0) ? 255 : a; } // 3-char hex safeguard
-    };
-    auto parseHexRGB = [&]{ sscanf(val.c_str(),"#%02x%02x%02x",&r,&g,&b); };
-    auto setCol = [&](ImGuiCol_ c){ colors[c]=ImVec4(r/255.f,g/255.f,b/255.f, a/255.f); };
 
-    // ── Basic colors (16+) ──────────────────────────────────────────────
-    if (key=="bg")                     { parseHexRGB(); setCol(ImGuiCol_WindowBg); return; }
-    if (key=="frame-bg")               { parseHexRGB(); setCol(ImGuiCol_FrameBg); return; }
-    if (key=="text")                   { parseHexRGB(); setCol(ImGuiCol_Text); return; }
-    if (key=="text-disabled")          { parseHexRGB(); setCol(ImGuiCol_TextDisabled); return; }
-    if (key=="text-secondary")         { parseHexRGB(); setCol(ImGuiCol_TextDisabled); return; }
-    if (key=="border")                 { parseHexRGB(); setCol(ImGuiCol_Border); return; }
-    if (key=="border-color")           { parseHexRGB(); setCol(ImGuiCol_Border); return; }
-    if (key=="border-hover")           { parseHexRGB(); setCol(ImGuiCol_BorderShadow); return; }
-    if (key=="button")                 { parseHexRGB(); setCol(ImGuiCol_Button); return; }
-    if (key=="button-hover")           { parseHexRGB(); setCol(ImGuiCol_ButtonHovered); return; }
-    if (key=="button-active")          { parseHexRGB(); setCol(ImGuiCol_ButtonActive); return; }
-    if (key=="bg-hover")               { parseHexRGB(); setCol(ImGuiCol_ButtonHovered); return; }
-    if (key=="bg-active")              { parseHexRGB(); setCol(ImGuiCol_ButtonActive); return; }
-    if (key=="bg-secondary")           { parseHexRGB(); setCol(ImGuiCol_FrameBgHovered); return; }
-    if (key=="bg-tertiary")            { parseHexRGB(); setCol(ImGuiCol_FrameBgActive); return; }
-    if (key=="header")                 { parseHexRGB(); setCol(ImGuiCol_Header); return; }
-    if (key=="header-hover")           { parseHexRGB(); setCol(ImGuiCol_HeaderHovered); return; }
-    if (key=="header-active")          { parseHexRGB(); setCol(ImGuiCol_HeaderActive); return; }
-    if (key=="header-bg")              { parseHexRGB(); setCol(ImGuiCol_Header); return; }
-    if (key=="header-text")            { parseHexRGB(); setCol(ImGuiCol_Text); return; }
-    if (key=="title-bg")               { parseHexRGB(); setCol(ImGuiCol_TitleBgActive); return; }
-    if (key=="title-bg-collapsed")     { parseHexRGB(); setCol(ImGuiCol_TitleBgCollapsed); return; }
-    if (key=="title-text")             { parseHexRGB(); setCol(ImGuiCol_Text); return; }
-    if (key=="accent")                 { parseHexRGB(); auto c=ImVec4(r/255.f,g/255.f,b/255.f,1.f); colors[ImGuiCol_CheckMark]=c; colors[ImGuiCol_SliderGrab]=c; colors[ImGuiCol_ResizeGrip]=c; colors[ImGuiCol_PlotHistogram]=c; colors[ImGuiCol_TabActive]=c; return; }
-    if (key=="accent-hover")           { parseHexRGB(); setCol(ImGuiCol_ButtonHovered); return; }
-    if (key=="separator")              { parseHexRGB(); setCol(ImGuiCol_Separator); return; }
-    if (key=="separator-hover")        { parseHexRGB(); setCol(ImGuiCol_SeparatorHovered); return; }
-    if (key=="scrollbar-bg")           { parseHexRGB(); setCol(ImGuiCol_ScrollbarBg); return; }
-    if (key=="scrollbar-grab")         { parseHexRGB(); setCol(ImGuiCol_ScrollbarGrab); return; }
-    if (key=="scrollbar-grab-hover")   { parseHexRGB(); setCol(ImGuiCol_ScrollbarGrabHovered); return; }
-    if (key=="tab")                    { parseHexRGB(); setCol(ImGuiCol_Tab); return; }
-    if (key=="tab-hover")              { parseHexRGB(); setCol(ImGuiCol_TabHovered); return; }
-    if (key=="tab-active")             { parseHexRGB(); setCol(ImGuiCol_TabActive); return; }
-    if (key=="tab-unfocused")          { parseHexRGB(); setCol(ImGuiCol_TabUnfocused); return; }
-    if (key=="popup-bg")               { parseHexRGB(); setCol(ImGuiCol_PopupBg); return; }
-    if (key=="dock-bg")                { parseHexRGB(); setCol(ImGuiCol_DockingPreview); return; }
-    if (key=="modal-dim")              { parseHexRGB(); setCol(ImGuiCol_ModalWindowDimBg); return; }
-    if (key=="nav-highlight")          { parseHexRGB(); setCol(ImGuiCol_NavHighlight); return; }
-    if (key=="drag-drop-target")       { parseHexRGB(); setCol(ImGuiCol_DragDropTarget); return; }
+    // ── Basic colors ────────────────────────────────────────────────────
+    // The vast majority of color properties are "parse #RRGGBB, assign one
+    // ImGui color slot". A dispatch table keeps that O(1) and avoids the long
+    // if-else chain flagged in review; genuinely special properties
+    // (multi-slot accent, sizing, effects, gradient) stay below as handlers.
+    static const std::unordered_map<std::string_view, ImGuiCol> kColorSlots = {
+        {"bg", ImGuiCol_WindowBg},
+        {"frame-bg", ImGuiCol_FrameBg},
+        {"text", ImGuiCol_Text},
+        {"text-disabled", ImGuiCol_TextDisabled},
+        {"text-secondary", ImGuiCol_TextDisabled},
+        {"border", ImGuiCol_Border},
+        {"border-color", ImGuiCol_Border},
+        {"border-hover", ImGuiCol_BorderShadow},
+        {"button", ImGuiCol_Button},
+        {"button-hover", ImGuiCol_ButtonHovered},
+        {"button-active", ImGuiCol_ButtonActive},
+        {"bg-hover", ImGuiCol_ButtonHovered},
+        {"bg-active", ImGuiCol_ButtonActive},
+        {"bg-secondary", ImGuiCol_FrameBgHovered},
+        {"bg-tertiary", ImGuiCol_FrameBgActive},
+        {"header", ImGuiCol_Header},
+        {"header-hover", ImGuiCol_HeaderHovered},
+        {"header-active", ImGuiCol_HeaderActive},
+        {"header-bg", ImGuiCol_Header},
+        {"header-text", ImGuiCol_Text},
+        {"title-bg", ImGuiCol_TitleBgActive},
+        {"title-bg-collapsed", ImGuiCol_TitleBgCollapsed},
+        {"title-text", ImGuiCol_Text},
+        {"accent-hover", ImGuiCol_ButtonHovered},
+        {"separator", ImGuiCol_Separator},
+        {"separator-hover", ImGuiCol_SeparatorHovered},
+        {"scrollbar-bg", ImGuiCol_ScrollbarBg},
+        {"scrollbar-grab", ImGuiCol_ScrollbarGrab},
+        {"scrollbar-grab-hover", ImGuiCol_ScrollbarGrabHovered},
+        {"tab", ImGuiCol_Tab},
+        {"tab-hover", ImGuiCol_TabHovered},
+        {"tab-active", ImGuiCol_TabActive},
+        {"tab-unfocused", ImGuiCol_TabUnfocused},
+        {"popup-bg", ImGuiCol_PopupBg},
+        {"dock-bg", ImGuiCol_DockingPreview},
+        {"modal-dim", ImGuiCol_ModalWindowDimBg},
+        {"nav-highlight", ImGuiCol_NavHighlight},
+        {"drag-drop-target", ImGuiCol_DragDropTarget},
+    };
+    if (auto it = kColorSlots.find(key); it != kColorSlots.end()) {
+        unsigned int r = 0, g = 0, b = 0;
+        sscanf(val.c_str(), "#%02x%02x%02x", &r, &g, &b);
+        colors[it->second] = ImVec4(r/255.f, g/255.f, b/255.f, 1.f);
+        return;
+    }
+
+    // accent drives several accent-tinted slots from one color.
+    if (key == "accent") {
+        unsigned int r = 0, g = 0, b = 0;
+        sscanf(val.c_str(), "#%02x%02x%02x", &r, &g, &b);
+        auto c = ImVec4(r/255.f, g/255.f, b/255.f, 1.f);
+        colors[ImGuiCol_CheckMark] = c; colors[ImGuiCol_SliderGrab] = c;
+        colors[ImGuiCol_ResizeGrip] = c; colors[ImGuiCol_PlotHistogram] = c;
+        colors[ImGuiCol_TabActive] = c;
+        return;
+    }
 
     // ── Sizing & spacing (10+) ──────────────────────────────────────────
-    if (key=="rounding" || key=="border-radius") { float v=std::stof(val); style.WindowRounding=v; style.FrameRounding=v; style.GrabRounding=v; style.TabRounding=v; style.ChildRounding=v; style.PopupRounding=v; style.ScrollbarRounding=v; return; }
-    if (key=="border-radius-top-left")          { style.WindowRounding = std::stof(val); return; }
-    if (key=="border-radius-top-right")         { style.FrameRounding = std::stof(val); return; }
-    if (key=="border-radius-bottom-left")       { style.GrabRounding = std::stof(val); return; }
-    if (key=="border-radius-bottom-right")      { style.TabRounding = std::stof(val); return; }
-    if (key=="border-width")     { style.WindowBorderSize = std::stof(val); return; }
-    if (key=="padding")          { float v=std::stof(val); style.WindowPadding=ImVec2(v,v); style.FramePadding=ImVec2(v,v*0.75f); return; }
-    if (key=="padding-x")        { style.FramePadding.x = std::stof(val); return; }
-    if (key=="padding-y")        { style.FramePadding.y = std::stof(val); return; }
-    if (key=="spacing")          { float v=std::stof(val); style.ItemSpacing=ImVec2(v,v*0.75f); style.ItemInnerSpacing=ImVec2(v,v*0.5f); return; }
-    if (key=="spacing-x")        { style.ItemSpacing.x = std::stof(val); return; }
-    if (key=="spacing-y")        { style.ItemSpacing.y = std::stof(val); return; }
-    if (key=="indent")           { style.IndentSpacing = std::stof(val); return; }
-    if (key=="scrollbar-size")   { style.ScrollbarSize = std::stof(val); return; }
-    if (key=="alpha" || key=="opacity") { style.Alpha = std::stof(val); return; }
-    if (key=="min-width")        { style.WindowMinSize.x = std::stof(val); return; }
-    if (key=="min-height")       { style.WindowMinSize.y = std::stof(val); return; }
+    if (key=="rounding" || key=="border-radius") { float v=CssFloat(val); style.WindowRounding=v; style.FrameRounding=v; style.GrabRounding=v; style.TabRounding=v; style.ChildRounding=v; style.PopupRounding=v; style.ScrollbarRounding=v; return; }
+    if (key=="border-radius-top-left")          { style.WindowRounding = CssFloat(val); return; }
+    if (key=="border-radius-top-right")         { style.FrameRounding = CssFloat(val); return; }
+    if (key=="border-radius-bottom-left")       { style.GrabRounding = CssFloat(val); return; }
+    if (key=="border-radius-bottom-right")      { style.TabRounding = CssFloat(val); return; }
+    if (key=="border-width")     { style.WindowBorderSize = CssFloat(val); return; }
+    if (key=="padding")          { float v=CssFloat(val); style.WindowPadding=ImVec2(v,v); style.FramePadding=ImVec2(v,v*0.75f); return; }
+    if (key=="padding-x")        { style.FramePadding.x = CssFloat(val); return; }
+    if (key=="padding-y")        { style.FramePadding.y = CssFloat(val); return; }
+    if (key=="spacing")          { float v=CssFloat(val); style.ItemSpacing=ImVec2(v,v*0.75f); style.ItemInnerSpacing=ImVec2(v,v*0.5f); return; }
+    if (key=="spacing-x")        { style.ItemSpacing.x = CssFloat(val); return; }
+    if (key=="spacing-y")        { style.ItemSpacing.y = CssFloat(val); return; }
+    if (key=="indent")           { style.IndentSpacing = CssFloat(val); return; }
+    if (key=="scrollbar-size")   { style.ScrollbarSize = CssFloat(val); return; }
+    if (key=="alpha" || key=="opacity") { style.Alpha = CssFloat(val); return; }
+    if (key=="min-width")        { style.WindowMinSize.x = CssFloat(val); return; }
+    if (key=="min-height")       { style.WindowMinSize.y = CssFloat(val); return; }
     if (key=="max-width")        { style.WindowMinSize.x = 0; return; }  // ImGui doesn't have max — stub
     if (key=="max-height")       { style.WindowMinSize.y = 0; return; }
 
@@ -266,7 +294,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
         return;
     }
     if (key=="blur") {
-        float v = std::stof(val);
+        float v = CssFloat(val);
         style.WindowRounding = std::max(style.WindowRounding, v);
         style.Alpha = std::max(style.Alpha, 0.85f);
         return;
@@ -280,7 +308,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
     if (key=="line-height") { return; }
 
     // ── Layout hints ──────────────────────────────────────────────────
-    if (key=="columns")       { style.ColumnsMinSpacing = std::stof(val); return; }
+    if (key=="columns")       { style.ColumnsMinSpacing = CssFloat(val); return; }
     if (key=="display-scale") { /* responsive hint */ return; }
 
     // ── Transition / animation hints (theme-driven) ────────────────────
@@ -292,7 +320,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
             auto sp = val.find(' ');
             if (sp != std::string::npos) {
                 std::string durStr = val.substr(sp + 1, val.find('s', sp) - sp);
-                dur = std::stof(durStr);
+                dur = CssFloat(durStr);
                 auto cp = val.rfind(' ');
                 if (cp != std::string::npos && cp > sp) curve = val.substr(cp + 1);
             }
@@ -321,7 +349,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
         float angle = 0.f;
         bool horiz = true;
         if (v.find("deg") != std::string::npos) {
-            angle = std::stof(v.substr(0, v.find("deg")));
+            angle = CssFloat(v.substr(0, v.find("deg")));
             horiz = (angle < 45.f || angle > 315.f || (angle > 135.f && angle < 225.f));
         } else if (v.find("to right") != std::string::npos ||
                    v.find("to left") != std::string::npos) {
