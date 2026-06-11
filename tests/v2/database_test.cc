@@ -31,3 +31,11 @@ TEST_F(DBTest, Migrate_AppliesSchema) {
     db.Execute("INSERT INTO users VALUES(1,?)", {std::string("Bob")});
     EXPECT_EQ(db.QueryValue("SELECT name FROM users WHERE id=1"), "Bob");
 }
+
+// ── Error-path: Migrate with empty QueryValue must not crash ────────────────
+TEST_F(DBTest, Migrate_EmptyQueryValue_DoesNotCrash) {
+    // Fresh DB: MAX(version) returns 0 via COALESCE, so stoi would get "0".
+    // Verify this works without exception.
+    EXPECT_NO_THROW(db.Migrate(1, "CREATE TABLE t1 (id INT)"));
+    EXPECT_TRUE(db.Migrate(1, "CREATE TABLE t1 (id INT)")); // idempotent
+}

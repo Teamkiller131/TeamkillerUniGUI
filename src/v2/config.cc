@@ -2,10 +2,28 @@
 #include <unigui/core/log.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <sstream>
 
 namespace unigui::config {
+
+namespace {
+int SafeToInt(const std::string& s, int def = 0) {
+    if (s.empty())
+        return def;
+    char* end = nullptr;
+    long v = std::strtol(s.c_str(), &end, 10);
+    return end == s.c_str() ? def : static_cast<int>(v);
+}
+double SafeToDouble(const std::string& s, double def = 0.0) {
+    if (s.empty())
+        return def;
+    char* end = nullptr;
+    double v = std::strtod(s.c_str(), &end);
+    return end == s.c_str() ? def : v;
+}
+} // namespace
 
 Store& Store::Instance() {
     static Store c;
@@ -45,15 +63,13 @@ void Store::SetString(const std::string& k, const std::string& v) {
     SetValue(k, v);
 }
 int Store::GetInt(const std::string& k, int d) const {
-    auto v = GetValue(k);
-    return v.empty() ? d : std::stoi(v);
+    return SafeToInt(GetValue(k), d);
 }
 void Store::SetInt(const std::string& k, int v) {
     SetValue(k, std::to_string(v));
 }
 double Store::GetDouble(const std::string& k, double d) const {
-    auto v = GetValue(k);
-    return v.empty() ? d : std::stod(v);
+    return SafeToDouble(GetValue(k), d);
 }
 void Store::SetDouble(const std::string& k, double v) {
     SetValue(k, std::to_string(v));
@@ -143,12 +159,16 @@ bool Store::SaveJSON(const std::string& path) const {
         else if (v == "false")
             j[k] = false;
         else {
-            try {
-                j[k] = std::stoi(v);
-            } catch (...) {
-                try {
-                    j[k] = std::stod(v);
-                } catch (...) { j[k] = v; }
+            char* end = nullptr;
+            long ival = std::strtol(v.c_str(), &end, 10);
+            if (end != v.c_str() && *end == 0) {
+                j[k] = static_cast<int>(ival);
+            } else {
+                double dval = std::strtod(v.c_str(), &end);
+                if (end != v.c_str() && *end == 0)
+                    j[k] = dval;
+                else
+                    j[k] = v;
             }
         }
     }

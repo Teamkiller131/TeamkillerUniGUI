@@ -7,6 +7,7 @@
 
 #include <cerrno>
 #include <cstdio>
+#include <cstdlib>
 #include <regex>
 #include <sstream>
 
@@ -452,10 +453,12 @@ bool ImportThemeJSON(const std::string& json) {
             std::string arr = m[1].str();
             while (pos < arr.size() && vi < 4) {
                 size_t comma = arr.find(',', pos);
-                try {
-                    vals[vi++] = std::stof(comma != std::string::npos ? arr.substr(pos, comma - pos)
-                                                                      : arr.substr(pos));
-                } catch (...) { break; }
+                std::string token =
+                    comma != std::string::npos ? arr.substr(pos, comma - pos) : arr.substr(pos);
+                char* end = nullptr;
+                float v = std::strtof(token.c_str(), &end);
+                if (end != token.c_str())
+                    vals[vi++] = v;
                 pos = comma != std::string::npos ? comma + 1 : arr.size();
             }
             colors[i] = ImVec4(vals[0], vals[1], vals[2], vals[3]);
