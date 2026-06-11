@@ -1,7 +1,17 @@
 #include <unigui/core/settings.h>
 #include <unigui/unigui.h>
 
+#include <filesystem>
+#include <fstream>
 #include <gtest/gtest.h>
+
+namespace {
+std::string TempCfgPath(const char* tag) {
+    auto p = std::filesystem::temp_directory_path() / (std::string("unigui_settings_") + tag + ".ini");
+    return p.string();
+}
+} // namespace
+
 class SettingsTest : public ::testing::Test {
 protected:
     void TearDown() override { unigui::Settings::Instance().Clear(); }
@@ -46,4 +56,94 @@ TEST_F(SettingsTest, IntWithTrailingText_ParsesLeadingNumber) {
     auto& s = unigui::Settings::Instance();
     s.Set("n", "42abc");
     EXPECT_EQ(s.GetInt("n", 0), 42);
+}
+
+// ── Save/Load round-trip and escaping ────────────────────────────────────────
+
+TEST_F(SettingsTest, SaveLoad_RoundTrip_BasicValues) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("name", "Alice");
+    s.SetInt("count", 7);
+    auto path = TempCfgPath("basic");
+    ASSERT_TRUE(s.Save(path));
+    s.Clear();
+    ASSERT_TRUE(s.Load(path));
+    EXPECT_EQ(s.Get("name"), "Alice");
+    EXPECT_EQ(s.GetInt("count"), 7);
+    std::filesystem::remove(path);
+}
+
+// Values containing '=', backslashes, and newlines must survive a round-trip.
+TEST_F(SettingsTest, SaveLoad_PreservesSpecialCharsInValue) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("expr", "a=b+c");
+    s.Set("winpath", "C:\\x\\y");
+    s.Set("multi", "line1\nline2");
+    auto path = TempCfgPath("special");
+    ASSERT_TRUE(s.Save(path));
+    s.Clear();
+    ASSERT_TRUE(s.Load(path));
+    EXPECT_EQ(s.Get("expr"), "a=b+c");
+    EXPECT_EQ(s.Get("winpath"), "C:\\x\\y");
+    EXPECT_EQ(s.Get("multi"), "line1\nline2");
+    std::filesystem::remove(path);
+}
+
+// Regression: a key containing '=' used to corrupt on load (the separator was
+// the first raw '=' rather than the first UNescaped one).
+TEST_F(SettingsTest, SaveLoad_KeyContainingEquals) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("a=b", "v");
+    auto path = TempCfgPath("keyeq");
+    ASSERT_TRUE(s.Save(path));
+    s.Clear();
+    ASSERT_TRUE(s.Load(path));
+    EXPECT_TRUE(s.Has("a=b"));
+    EXPECT_EQ(s.Get("a=b"), "v");
+    EXPECT_FALSE(s.Has("a\\")); // must not leave a stray-backslash key
+    std::filesystem::remove(path);
+}
+
+TEST_F(SettingsTest, Load_SkipsCommentsAndBlankLines) {
+    auto path = TempCfgPath("comments");
+    {
+        std::ofstream o(path);
+        o << "# a comment\n; another comment\n\nreal=42\n";
+    }
+    auto& s = unigui::Settings::Instance();
+    ASSERT_TRUE(s.Load(path));
+    EXPECT_EQ(s.GetInt("real"), 42);
+    EXPECT_FALSE(s.Has("# a comment"));
+    std::filesystem::remove(path);
+}
+
+TEST_F(SettingsTest, Load_ReplacesExistingData) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("fresh", "1");
+    auto path = TempCfgPath("replace");
+    ASSERT_TRUE(s.Save(path));
+    s.Set("stale", "x"); // present in memory before load
+    ASSERT_TRUE(s.Load(path));
+    EXPECT_TRUE(s.Has("fresh"));
+    EXPECT_FALSE(s.Has("stale")); // Load() replaces rather than merges
+    std::filesystem::remove(path);
+}
+
+// A second Save must fully replace the file (no stale keys) and leave no .tmp.
+TEST_F(SettingsTest, Save_OverwritesExistingFile_NoTempLeftover) {
+    auto& s = unigui::Settings::Instance();
+    auto path = TempCfgPath("overwrite");
+    s.Set("a", "1");
+    s.Set("b", "2");
+    ASSERT_TRUE(s.Save(path));
+    s.Clear();
+    s.Set("c", "3");
+    ASSERT_TRUE(s.Save(path));
+    s.Clear();
+    ASSERT_TRUE(s.Load(path));
+    EXPECT_EQ(s.Get("c"), "3");
+    EXPECT_FALSE(s.Has("a"));
+    EXPECT_FALSE(s.Has("b"));
+    EXPECT_FALSE(std::filesystem::exists(path + ".tmp"));
+    std::filesystem::remove(path);
 }

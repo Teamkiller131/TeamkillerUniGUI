@@ -5,6 +5,10 @@
 #include <cstdlib>
 #include <fstream>
 
+#ifdef _WIN32
+#include <windows.h> // MoveFileExA for atomic replace
+#endif
+
 namespace unigui {
 
 namespace {
@@ -24,7 +28,6 @@ float SafeToFloat(const std::string& s, float def) {
     float v = std::strtof(s.c_str(), &end);
     return end == s.c_str() ? def : v;
 }
-} // namespace
 
 std::string EscapeSetting(const std::string& s) {
     std::string out;
@@ -66,6 +69,22 @@ void TrimInPlace(std::string& s) {
     while (!s.empty() && (s.back() == ' ' || s.back() == '\t'))
         s.pop_back();
 }
+
+// Find the first '=' that is NOT escaped as "\=" — i.e. the real key/value
+// separator. Scanning while honoring escapes is required because EscapeSetting
+// turns any '=' inside a key or value into "\=".
+size_t FindSeparator(const std::string& line) {
+    for (size_t i = 0; i < line.size(); ++i) {
+        if (line[i] == '\\') {
+            ++i; // skip the escaped character
+            continue;
+        }
+        if (line[i] == '=')
+            return i;
+    }
+    return std::string::npos;
+}
+} // namespace
 
 bool Settings::autoSaveEnabled_ = false;
 std::string Settings::autoSavePathStatic_;
@@ -117,8 +136,23 @@ bool Settings::Save(const std::string& path) {
     for (auto& [k, v] : data_)
         std::fprintf(f, "%s=%s\n", EscapeSetting(k).c_str(), EscapeSetting(v).c_str());
     fclose(f);
-    std::remove(path.c_str());
-    return std::rename(tmpPath.c_str(), path.c_str()) == 0;
+    // Atomically replace the destination so a crash mid-write never leaves a
+    // truncated config. Both MoveFileExA and POSIX rename() replace an existing
+    // target in a single step — do NOT remove() first (that opens a window
+    // where the original is already gone).
+#ifdef _WIN32
+    if (!MoveFileExA(tmpPath.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING)) {
+        std::remove(tmpPath.c_str());
+        return false;
+    }
+    return true;
+#else
+    if (std::rename(tmpPath.c_str(), path.c_str()) != 0) {
+        std::remove(tmpPath.c_str());
+        return false;
+    }
+    return true;
+#endif
 }
 bool Settings::Load(const std::string& path) {
     std::ifstream f(path);
@@ -131,10 +165,10 @@ bool Settings::Load(const std::string& path) {
             line.pop_back();
         if (line.empty() || line[0] == '#' || line[0] == ';')
             continue;
-        auto eq = line.find('=');
+        auto eq = FindSeparator(line);
         if (eq == std::string::npos)
             continue;
-        std::string key = line.substr(0, eq);
+        std::string key = UnescapeSetting(line.substr(0, eq));
         TrimInPlace(key);
         if (key.empty())
             continue;
