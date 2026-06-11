@@ -27,25 +27,42 @@ Bus::SubID Bus::SubscribeAll(Handler handler) {
 
 bool Bus::MatchTopic(const std::string& pattern, const std::string& topic) {
     if (pattern == "*") return true;
-    // Convert glob pattern to regex: "window.*" -> "window\..*"
-    if (pattern.find('*') != std::string::npos) {
-        std::string re = "^";
-        for (char c : pattern) {
-            if (c == '*') re += ".*";
-            else if (c == '.') re += "\\.";
-            else re += c;
+    if (pattern.find('*') == std::string::npos) return pattern == topic;
+
+    // Linear-time glob match: '*' matches any (possibly empty) run of characters,
+    // every other character (including '.') is matched literally. This replaces
+    // the previous std::regex(re) that recompiled a regex on every Publish() ×
+    // subscriber, which was the hot-path cost flagged in review.
+    size_t p = 0, s = 0;
+    size_t star = std::string::npos, mark = 0;
+    while (s < topic.size()) {
+        if (p < pattern.size() && pattern[p] == topic[s]) {
+            ++p; ++s;
+        } else if (p < pattern.size() && pattern[p] == '*') {
+            star = p++;       // remember star position, consume zero chars for now
+            mark = s;
+        } else if (star != std::string::npos) {
+            p = star + 1;     // backtrack: let the last '*' absorb one more char
+            s = ++mark;
+        } else {
+            return false;
         }
-        re += "$";
-        return std::regex_match(topic, std::regex(re));
     }
-    return pattern == topic;
+    while (p < pattern.size() && pattern[p] == '*') ++p;
+    return p == pattern.size();
 }
 
 void Bus::Publish(const std::string& topic, const std::any& event) {
     std::lock_guard lock(mutex_);
     for (auto& s : subs_) {
         if (MatchTopic(s.topic, topic)) {
-            try { s.handler(event); } catch (...) {}
+            try {
+                s.handler(event);
+            } catch (const std::exception& e) {
+                UNIGUI_LOG_ERROR("EventBus: handler for topic '{}' threw: {}", topic, e.what());
+            } catch (...) {
+                UNIGUI_LOG_ERROR("EventBus: handler for topic '{}' threw a non-std exception", topic);
+            }
         }
     }
 }

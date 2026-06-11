@@ -5,7 +5,6 @@
 #include <vector>
 #include <mutex>
 #include <any>
-#include <regex>
 #include <atomic>
 #include <thread>
 #include <queue>
