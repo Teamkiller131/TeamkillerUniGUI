@@ -1,11 +1,21 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/collapsingheader.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 class CollapsingHeaderTest : public ::testing::Test {
 protected:
-    void SetUp() override { ImGui::CreateContext(); ImGui::GetIO().DisplaySize = ImVec2(800, 600); ImGui::GetIO().Fonts->Build(); ImGui::NewFrame(); }
-    void TearDown() override { ImGui::Render(); ImGui::DestroyContext(); }
+    void SetUp() override {
+        ImGui::CreateContext();
+        ImGui::GetIO().DisplaySize = ImVec2(800, 600);
+        ImGui::GetIO().Fonts->Build();
+        ImGui::NewFrame();
+    }
+    void TearDown() override {
+        ImGui::Render();
+        ImGui::DestroyContext();
+    }
 };
 TEST_F(CollapsingHeaderTest, DefaultsToClosed) {
     unigui::CollapsingHeader ch("ch", "Header");
@@ -26,7 +36,10 @@ TEST_F(CollapsingHeaderTest, GetLabel_ReturnsLabel) {
     unigui::CollapsingHeader ch("ch", "MyHeader");
     EXPECT_EQ(ch.GetLabel(), "MyHeader");
 }
-TEST_F(CollapsingHeaderTest, Render_DoesNotCrash) { unigui::CollapsingHeader ch("ch", "Header"); ch.Render(); }
+TEST_F(CollapsingHeaderTest, Render_DoesNotCrash) {
+    unigui::CollapsingHeader ch("ch", "Header");
+    ch.Render();
+}
 TEST_F(CollapsingHeaderTest, Render_WithCallback_DoesNotCrash) {
     unigui::CollapsingHeader ch("ch", "Header", true);
     ch.SetContentCallback([]() { ImGui::Text("content"); });

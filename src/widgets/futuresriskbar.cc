@@ -1,21 +1,25 @@
 #include <unigui/widgets/futuresriskbar.h>
+
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 
 namespace unigui {
 
 FuturesRiskBar::FuturesRiskBar(std::string name)
-    : Widget(std::move(name)) {}
+        : Widget(std::move(name)) {}
 
 void FuturesRiskBar::Render() {
-    if (!IsVisible()) return;
+    if (!IsVisible())
+        return;
 
     ImGui::PushID(GetName().c_str());
 
     const float barHeight = 30.0f;
     float barWidth = ImGui::GetContentRegionAvail().x;
-    if (barWidth < 1.0f) barWidth = 1.0f;
+    if (barWidth < 1.0f)
+        barWidth = 1.0f;
 
     // ── Top row: account name (left, bold white) + margin text (right, gray) ──
     {
@@ -50,9 +54,12 @@ void FuturesRiskBar::Render() {
         dl->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), bgColor, rounding);
 
         // ── Animation lerp ─────────────────────────────────────────────
-        const float targetActual = static_cast<float>(std::max(0.0, std::min(actualRatio_, 1.0))) * barWidth;
-        const float targetEst = static_cast<float>(std::max(0.0, std::min(estimatedRatio_, 1.0))) * barWidth;
-        const float targetOvernight = static_cast<float>(std::max(0.0, std::min(overnightRatio_, 1.0))) * barWidth;
+        const float targetActual =
+            static_cast<float>(std::max(0.0, std::min(actualRatio_, 1.0))) * barWidth;
+        const float targetEst =
+            static_cast<float>(std::max(0.0, std::min(estimatedRatio_, 1.0))) * barWidth;
+        const float targetOvernight =
+            static_cast<float>(std::max(0.0, std::min(overnightRatio_, 1.0))) * barWidth;
 
         if (animated_) {
             const float lerpSpeed = 0.1f;
@@ -60,9 +67,12 @@ void FuturesRiskBar::Render() {
             animEst_ = animEst_ + (targetEst - animEst_) * lerpSpeed;
             animOvernight_ = animOvernight_ + (targetOvernight - animOvernight_) * lerpSpeed;
 
-            if (std::abs(animActual_ - targetActual) < 0.5f) animActual_ = targetActual;
-            if (std::abs(animEst_ - targetEst) < 0.5f) animEst_ = targetEst;
-            if (std::abs(animOvernight_ - targetOvernight) < 0.5f) animOvernight_ = targetOvernight;
+            if (std::abs(animActual_ - targetActual) < 0.5f)
+                animActual_ = targetActual;
+            if (std::abs(animEst_ - targetEst) < 0.5f)
+                animEst_ = targetEst;
+            if (std::abs(animOvernight_ - targetOvernight) < 0.5f)
+                animOvernight_ = targetOvernight;
         } else {
             animActual_ = targetActual;
             animEst_ = targetEst;
@@ -83,10 +93,8 @@ void FuturesRiskBar::Render() {
         if (animEst_ >= 0.0f && animEst_ <= barWidth) {
             const ImU32 yellowColor = IM_COL32(0xf0, 0xc0, 0x40, 0xff);
             const float halfThickness = 1.5f;
-            dl->AddRectFilled(
-                ImVec2(estX - halfThickness, pos.y),
-                ImVec2(estX + halfThickness, pos.y + size.y),
-                yellowColor);
+            dl->AddRectFilled(ImVec2(estX - halfThickness, pos.y),
+                              ImVec2(estX + halfThickness, pos.y + size.y), yellowColor);
         }
 
         // ── Red dashed line at overnightRatio (7px dash, 4px gap) ──────
@@ -98,10 +106,7 @@ void FuturesRiskBar::Render() {
             float y = pos.y;
             while (y < pos.y + size.y) {
                 float yEnd = std::min(y + dashLen, pos.y + size.y);
-                dl->AddLine(
-                    ImVec2(overnightX, y),
-                    ImVec2(overnightX, yEnd),
-                    redColor, 1.0f);
+                dl->AddLine(ImVec2(overnightX, y), ImVec2(overnightX, yEnd), redColor, 1.0f);
                 y += totalPattern;
             }
         }
@@ -127,8 +132,8 @@ void FuturesRiskBar::Render() {
             const float textY = cursor.y + (legendHeight - textSize.y) * 0.5f;
 
             dl->AddCircleFilled(ImVec2(dotX, dotY), dotRadius, IM_COL32(0x28, 0xa7, 0x45, 0xff));
-            dl->AddText(ImVec2(dotX + dotRadius + 4.0f, textY),
-                        IM_COL32(0xaa, 0xaa, 0xaa, 0xff), text);
+            dl->AddText(ImVec2(dotX + dotRadius + 4.0f, textY), IM_COL32(0xaa, 0xaa, 0xaa, 0xff),
+                        text);
         }
 
         // "│ estimated" — yellow line marker + text
@@ -142,8 +147,7 @@ void FuturesRiskBar::Render() {
             dl->AddLine(ImVec2(lineX, cursor.y + 2.0f),
                         ImVec2(lineX, cursor.y + legendHeight - 2.0f),
                         IM_COL32(0xf0, 0xc0, 0x40, 0xff), 2.0f);
-            dl->AddText(ImVec2(lineX + 6.0f, textY),
-                        IM_COL32(0xaa, 0xaa, 0xaa, 0xff), text);
+            dl->AddText(ImVec2(lineX + 6.0f, textY), IM_COL32(0xaa, 0xaa, 0xaa, 0xff), text);
         }
 
         // "- - overnight" — red dashed line + text
@@ -160,8 +164,7 @@ void FuturesRiskBar::Render() {
             dl->AddLine(ImVec2(dashX, dashY), ImVec2(dashX + 6.0f, dashY), redColor, 1.0f);
             dl->AddLine(ImVec2(dashX + 9.0f, dashY), ImVec2(dashX + 15.0f, dashY), redColor, 1.0f);
 
-            dl->AddText(ImVec2(dashX + 19.0f, textY),
-                        IM_COL32(0xaa, 0xaa, 0xaa, 0xff), text);
+            dl->AddText(ImVec2(dashX + 19.0f, textY), IM_COL32(0xaa, 0xaa, 0xaa, 0xff), text);
         }
 
         ImGui::Dummy(ImVec2(barWidth, legendHeight));
@@ -170,11 +173,23 @@ void FuturesRiskBar::Render() {
     ImGui::PopID();
 }
 
-void FuturesRiskBar::SetAccountName(std::string name) { accountName_ = std::move(name); }
-void FuturesRiskBar::SetMarginText(std::string text) { marginText_ = std::move(text); }
-void FuturesRiskBar::SetActualRatio(double r) { actualRatio_ = r; }
-void FuturesRiskBar::SetEstimatedRatio(double r) { estimatedRatio_ = r; }
-void FuturesRiskBar::SetOvernightRatio(double r) { overnightRatio_ = r; }
-void FuturesRiskBar::SetAnimated(bool on) { animated_ = on; }
+void FuturesRiskBar::SetAccountName(std::string name) {
+    accountName_ = std::move(name);
+}
+void FuturesRiskBar::SetMarginText(std::string text) {
+    marginText_ = std::move(text);
+}
+void FuturesRiskBar::SetActualRatio(double r) {
+    actualRatio_ = r;
+}
+void FuturesRiskBar::SetEstimatedRatio(double r) {
+    estimatedRatio_ = r;
+}
+void FuturesRiskBar::SetOvernightRatio(double r) {
+    overnightRatio_ = r;
+}
+void FuturesRiskBar::SetAnimated(bool on) {
+    animated_ = on;
+}
 
 } // namespace unigui

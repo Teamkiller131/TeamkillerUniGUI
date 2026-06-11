@@ -34,7 +34,12 @@ public:
     virtual void* GetWindowHandle() const { return nullptr; }
     virtual void* GetNativeWindowHandle() const { return GetWindowHandle(); }
     /// Get the current client area size.
-    virtual void GetClientSize(int* w, int* h) { if(w)*w=0; if(h)*h=0; }
+    virtual void GetClientSize(int* w, int* h) {
+        if (w)
+            *w = 0;
+        if (h)
+            *h = 0;
+    }
     /// Set the window title.
     virtual void SetTitle(const char*) {}
     /// Set the window client area size.

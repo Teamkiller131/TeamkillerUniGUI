@@ -1,7 +1,9 @@
+#include <unigui/core/context.h>
 #include <unigui/unigui.h>
 #include <unigui/widgets/statuslamp.h>
-#include <unigui/core/context.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class StatusLampTest : public ::testing::Test {

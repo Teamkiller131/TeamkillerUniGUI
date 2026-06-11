@@ -1,4 +1,5 @@
 #include <unigui/widgets/multisplitter.h>
+
 #include <gtest/gtest.h>
 
 TEST(MultiSplitterTest, AddPanel_NormalizesRatios) {

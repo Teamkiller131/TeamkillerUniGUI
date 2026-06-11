@@ -3,7 +3,8 @@
 namespace unigui {
 
 StyleScope::~StyleScope() {
-    if (moved_from_) return;
+    if (moved_from_)
+        return;
     for (int i = 0; i < var_push_count_; i++) {
         ImGui::PopStyleVar();
     }
@@ -13,9 +14,9 @@ StyleScope::~StyleScope() {
 }
 
 StyleScope::StyleScope(StyleScope&& other) noexcept
-    : color_push_count_(other.color_push_count_)
-    , var_push_count_(other.var_push_count_)
-    , moved_from_(false) {
+        : color_push_count_(other.color_push_count_)
+        , var_push_count_(other.var_push_count_)
+        , moved_from_(false) {
     other.color_push_count_ = 0;
     other.var_push_count_ = 0;
     other.push_count_ = 0;
@@ -24,8 +25,12 @@ StyleScope::StyleScope(StyleScope&& other) noexcept
 
 StyleScope& StyleScope::operator=(StyleScope&& other) noexcept {
     if (this != &other) {
-        for (int i = 0; i < var_push_count_; i++) { ImGui::PopStyleVar(); }
-        for (int i = 0; i < color_push_count_; i++) { ImGui::PopStyleColor(); }
+        for (int i = 0; i < var_push_count_; i++) {
+            ImGui::PopStyleVar();
+        }
+        for (int i = 0; i < color_push_count_; i++) {
+            ImGui::PopStyleColor();
+        }
         color_push_count_ = other.color_push_count_;
         var_push_count_ = other.var_push_count_;
         push_count_ = other.push_count_;

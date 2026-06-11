@@ -1,15 +1,18 @@
 #include <unigui/widgets/panelbox.h>
+
 #include <imgui.h>
+
 #include <algorithm>
 
 namespace unigui {
 
 PanelBox::PanelBox(std::string name, std::string title)
-    : Widget(std::move(name)), title_(std::move(title)) {
-}
+        : Widget(std::move(name))
+        , title_(std::move(title)) {}
 
 void PanelBox::Render() {
-    if (!IsVisible()) return;
+    if (!IsVisible())
+        return;
 
     ImGui::PushID(GetName().c_str());
 
@@ -22,13 +25,11 @@ void PanelBox::Render() {
     ImVec2 titleBarTopLeft = cursor;
     ImVec2 titleBarBotRight = ImVec2(cursor.x + availW, cursor.y + titleBarH);
 
-    dl->AddRectFilled(titleBarTopLeft, titleBarBotRight,
-                      IM_COL32(0x1e, 0x1e, 0x24, 255));
+    dl->AddRectFilled(titleBarTopLeft, titleBarBotRight, IM_COL32(0x1e, 0x1e, 0x24, 255));
 
     // Bottom border line on title bar
     dl->AddLine(ImVec2(titleBarTopLeft.x, titleBarBotRight.y),
-                ImVec2(titleBarBotRight.x, titleBarBotRight.y),
-                IM_COL32(60, 60, 70, 255), 1.f);
+                ImVec2(titleBarBotRight.x, titleBarBotRight.y), IM_COL32(60, 60, 70, 255), 1.f);
 
     // Title text (bold white, centered vertically in title bar)
     float fontSize = ImGui::GetFontSize();
@@ -40,7 +41,8 @@ void PanelBox::Render() {
     float contentTop = cursor.y + titleBarH;
     float contentH = ImGui::GetContentRegionAvail().y - titleBarH;
 
-    if (contentH < 0.f) contentH = 0.f;
+    if (contentH < 0.f)
+        contentH = 0.f;
 
     ImGui::SetCursorScreenPos(ImVec2(cursor.x, contentTop));
 
@@ -60,9 +62,8 @@ void PanelBox::Render() {
     }
     ImGui::EndChild();
 
-    const float bodyH = shrinkWrapContent_
-                            ? std::min(contentH, ImGui::GetItemRectSize().y)
-                            : contentH;
+    const float bodyH =
+        shrinkWrapContent_ ? std::min(contentH, ImGui::GetItemRectSize().y) : contentH;
 
     // Claim the splitter slot without painting a second manual border.
     ImGui::SetCursorScreenPos(cursor);

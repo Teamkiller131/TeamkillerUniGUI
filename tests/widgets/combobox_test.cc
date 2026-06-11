@@ -1,11 +1,21 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/combobox.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 class ComboBoxTest : public ::testing::Test {
 protected:
-    void SetUp() override { ImGui::CreateContext(); ImGui::GetIO().DisplaySize = ImVec2(800, 600); ImGui::GetIO().Fonts->Build(); ImGui::NewFrame(); }
-    void TearDown() override { ImGui::Render(); ImGui::DestroyContext(); }
+    void SetUp() override {
+        ImGui::CreateContext();
+        ImGui::GetIO().DisplaySize = ImVec2(800, 600);
+        ImGui::GetIO().Fonts->Build();
+        ImGui::NewFrame();
+    }
+    void TearDown() override {
+        ImGui::Render();
+        ImGui::DestroyContext();
+    }
 };
 TEST_F(ComboBoxTest, DefaultsToFirstItem) {
     unigui::ComboBox cb("cb", "Select", {"A", "B", "C"});
@@ -28,9 +38,9 @@ TEST_F(ComboBoxTest, Render_DoesNotCrash) {
 }
 TEST_F(ComboBoxTest, SetItemIcon_DoesNotCrash) {
     unigui::ComboBox cb("cb", "Icons", {"A", "B"});
-    cb.SetItemIcon(0, (ImTextureID)(uintptr_t)1);
-    EXPECT_NE(cb.GetItemIcon(0), (ImTextureID)0);
-    EXPECT_EQ(cb.GetItemIcon(1), (ImTextureID)0);
+    cb.SetItemIcon(0, (ImTextureID) (uintptr_t) 1);
+    EXPECT_NE(cb.GetItemIcon(0), (ImTextureID) 0);
+    EXPECT_EQ(cb.GetItemIcon(1), (ImTextureID) 0);
     cb.Render();
 }
 

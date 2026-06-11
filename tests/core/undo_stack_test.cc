@@ -1,5 +1,6 @@
-#include <unigui/unigui.h>
 #include <unigui/core/undo_stack.h>
+#include <unigui/unigui.h>
+
 #include <gtest/gtest.h>
 TEST(UndoStackTest, Execute_Undo_Redo) {
     int value = 0;
@@ -16,7 +17,7 @@ TEST(UndoStackTest, Execute_Undo_Redo) {
 }
 TEST(UndoStackTest, Clear) {
     unigui::UndoStack<std::function<void()>> stack;
-    stack.Execute([](){});
+    stack.Execute([]() {});
     stack.Clear();
     EXPECT_FALSE(stack.CanUndo());
 }

@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/listview.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class ListViewTest : public ::testing::Test {
@@ -89,7 +91,7 @@ TEST_F(ListViewTest, SetOnSelect_Registered) {
     unigui::ListView lv("lv", {"A", "B"});
     bool called = false;
     lv.SetOnSelect([&called](int idx) {
-        (void)idx;
+        (void) idx;
         called = true;
     });
     lv.Render();

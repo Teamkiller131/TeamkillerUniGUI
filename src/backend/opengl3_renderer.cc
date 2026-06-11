@@ -1,9 +1,13 @@
-#include <glad/glad.h>
 #include <unigui/backend/backend_factory.h>
 #include <unigui/core/log.h>
+
+// clang-format off
+#include <glad/glad.h> // glad must precede GLFW / any GL header
+#include <GLFW/glfw3.h>
+// clang-format on
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
-#include <GLFW/glfw3.h>
+
 #include <memory>
 
 namespace unigui {
@@ -13,11 +17,14 @@ class OpenGL3Renderer : public RendererBackend {
 public:
     bool Init(ImGuiContext* context = nullptr) override {
         if (!context) {
-            if (!ImGui::GetCurrentContext()) { IMGUI_CHECKVERSION(); ImGui::CreateContext(); }
+            if (!ImGui::GetCurrentContext()) {
+                IMGUI_CHECKVERSION();
+                ImGui::CreateContext();
+            }
             context = ImGui::GetCurrentContext();
         }
 
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
             UNIGUI_LOG_ERROR("gladLoadGLLoader() failed");
             return false;
         }
@@ -34,14 +41,16 @@ public:
     }
 
     void Shutdown() override {
-        if (!initialized_) return;
+        if (!initialized_)
+            return;
         UNIGUI_LOG_DEBUG("OpenGL3 renderer shutdown");
         ImGui_ImplOpenGL3_Shutdown();
         initialized_ = false;
     }
 
     void RenderDrawData(ImDrawData* draw_data) override {
-        if (draw_data) ImGui_ImplOpenGL3_RenderDrawData(draw_data);
+        if (draw_data)
+            ImGui_ImplOpenGL3_RenderDrawData(draw_data);
     }
 
     void SetClearColor(float r, float g, float b, float a) override { glClearColor(r, g, b, a); }
@@ -52,5 +61,7 @@ private:
 
 } // anonymous namespace
 
-std::unique_ptr<RendererBackend> CreateOpenGL3Renderer() { return std::make_unique<OpenGL3Renderer>(); }
+std::unique_ptr<RendererBackend> CreateOpenGL3Renderer() {
+    return std::make_unique<OpenGL3Renderer>();
+}
 } // namespace unigui

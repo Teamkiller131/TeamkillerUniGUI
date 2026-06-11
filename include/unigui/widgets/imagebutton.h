@@ -1,7 +1,9 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <imgui.h>
+
+#include <string>
 
 namespace unigui {
 
@@ -30,7 +32,7 @@ private:
     std::string label_;
     bool enabled_ = true;
     bool clicked_ = false;
-    ImTextureID texture_ = (ImTextureID)0;
+    ImTextureID texture_ = (ImTextureID) 0;
     float imgW_ = 32.0f;
     float imgH_ = 32.0f;
     ImVec2 framePadding_ = ImVec2(4, 4);

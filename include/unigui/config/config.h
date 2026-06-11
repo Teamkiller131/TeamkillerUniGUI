@@ -1,11 +1,11 @@
 #pragma once
+#include <any>
+#include <cpptoml.h>
+#include <functional>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <any>
-#include <functional>
-#include <nlohmann/json.hpp>
-#include <cpptoml.h>
 
 namespace unigui::config {
 
@@ -24,8 +24,8 @@ public:
     bool SaveJSON(const std::string& path) const;
 
     // ── Typed access ────────────────────────────────────────────────────────
-    template<typename T> T Get(const std::string& key, T defaultVal = T{}) const;
-    template<typename T> void Set(const std::string& key, const T& value);
+    template <typename T> T Get(const std::string& key, T defaultVal = T{}) const;
+    template <typename T> void Set(const std::string& key, const T& value);
 
     // String specialization
     std::string GetString(const std::string& key, const std::string& defaultVal = "") const;

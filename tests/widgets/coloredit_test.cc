@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/coloredit.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class ColorEditTest : public ::testing::Test {

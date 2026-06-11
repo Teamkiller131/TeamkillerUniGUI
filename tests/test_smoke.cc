@@ -1,4 +1,5 @@
 #include <unigui/unigui.h>
+
 #include <gtest/gtest.h>
 
 TEST(BuildSystemWorks, VersionMajorIsThree) {

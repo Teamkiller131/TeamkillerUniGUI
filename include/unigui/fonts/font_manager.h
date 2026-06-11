@@ -1,17 +1,18 @@
 #pragma once
 #include <imgui.h>
+
+#include <functional>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <functional>
-#include <memory>
 
 namespace unigui::fonts {
 
 struct FontEntry {
     std::string name;
     ImFont* font = nullptr;
-    void* data = nullptr;    // owned memory (AddFontFromMemoryTTF)
+    void* data = nullptr; // owned memory (AddFontFromMemoryTTF)
     int dataSize = 0;
     std::vector<std::string> fallbacks; // fallback font names
 };

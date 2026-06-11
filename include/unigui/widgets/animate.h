@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui.h>
+
 #include <chrono>
 
 namespace unigui {
@@ -12,9 +13,13 @@ namespace Animate {
 inline float FadeIn(float duration = 0.3f) {
     static auto start = std::chrono::steady_clock::now();
     static bool first = true;
-    if (first) { start = std::chrono::steady_clock::now(); first = false; }
+    if (first) {
+        start = std::chrono::steady_clock::now();
+        first = false;
+    }
     auto elapsed = std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count();
-    if (elapsed > duration) return 1.0f;
+    if (elapsed > duration)
+        return 1.0f;
     return elapsed / duration;
 }
 
@@ -35,7 +40,8 @@ inline float Lerp(float current, float target, float speed = 0.1f) {
 /// Push an alpha multiplier for fade effect.
 struct FadeScope {
     float targetAlpha;
-    FadeScope(float target = 1.0f, float duration = 0.3f) : targetAlpha(target) {
+    FadeScope(float target = 1.0f, float duration = 0.3f)
+            : targetAlpha(target) {
         float a = FadeIn(duration) * targetAlpha;
         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, a);
     }

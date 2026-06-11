@@ -1,8 +1,9 @@
 #pragma once
 
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <functional>
+#include <string>
 
 namespace unigui {
 

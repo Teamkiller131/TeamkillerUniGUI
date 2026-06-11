@@ -1,8 +1,10 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/lineedit.h>
+
 #include <imgui.h>
-#include <gtest/gtest.h>
+
 #include <cstring>
+#include <gtest/gtest.h>
 
 class LineEditTest : public ::testing::Test {
 protected:

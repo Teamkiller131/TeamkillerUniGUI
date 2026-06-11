@@ -1,14 +1,14 @@
 #pragma once
-#include <string>
-#include <functional>
-#include <unordered_map>
-#include <vector>
-#include <mutex>
 #include <any>
 #include <atomic>
-#include <thread>
-#include <queue>
 #include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <queue>
+#include <string>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 
 namespace unigui::events {
 
@@ -46,7 +46,11 @@ private:
     bool MatchTopic(const std::string& pattern, const std::string& topic);
     void WorkerThread();
 
-    struct Subscription { SubID id; std::string topic; Handler handler; };
+    struct Subscription {
+        SubID id;
+        std::string topic;
+        Handler handler;
+    };
     std::vector<Subscription> subs_;
     std::mutex mutex_;
     std::atomic<SubID> nextId_{1};

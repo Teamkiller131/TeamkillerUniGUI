@@ -1,5 +1,7 @@
 #include <unigui/fonts/font_manager.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 using namespace unigui::fonts;
 

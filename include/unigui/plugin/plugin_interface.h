@@ -1,8 +1,8 @@
 #pragma once
+#include <functional>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include <functional>
 
 namespace unigui::plugin {
 
@@ -20,12 +20,12 @@ public:
     virtual PluginInfo GetInfo() const = 0;
     virtual bool Init() = 0;
     virtual void Shutdown() = 0;
-    virtual void Update(float dt) {}  // optional per-frame update
-    virtual void Render()  {}         // optional per-frame render
+    virtual void Update(float dt) {} // optional per-frame update
+    virtual void Render() {}         // optional per-frame render
 };
 
 /// Factory function type. Each plugin DLL exports CreatePlugin/ DestroyPlugin.
-using CreatePluginFn = IPlugin*(*)();
-using DestroyPluginFn = void(*)(IPlugin*);
+using CreatePluginFn = IPlugin* (*) ();
+using DestroyPluginFn = void (*)(IPlugin*);
 
 } // namespace unigui::plugin

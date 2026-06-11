@@ -1,11 +1,12 @@
 #pragma once
 
 #include <unigui/widgets/widget_base.h>
-#include <string>
-#include <vector>
+
 #include <functional>
-#include <unordered_map>
 #include <regex>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace unigui {
 

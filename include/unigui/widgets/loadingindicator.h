@@ -1,5 +1,6 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
+
 #include <string>
 namespace unigui {
 class LoadingIndicator : public Widget {
@@ -8,7 +9,10 @@ public:
     void Render() override;
     void SetActive(bool active);
     bool IsActive() const;
+
 private:
-    float radius_; bool active_=true; float angle_=0;
+    float radius_;
+    bool active_ = true;
+    float angle_ = 0;
 };
-}
+} // namespace unigui

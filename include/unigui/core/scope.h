@@ -28,16 +28,17 @@ namespace unigui {
 /// `operator bool` / visible() reports whether window contents should be drawn.
 class WindowScope {
 public:
-    explicit WindowScope(const char* name, bool* open = nullptr,
-                         ImGuiWindowFlags flags = 0) {
+    explicit WindowScope(const char* name, bool* open = nullptr, ImGuiWindowFlags flags = 0) {
         visible_ = ImGui::Begin(name, open, flags);
     }
     ~WindowScope() {
-        if (active_) ImGui::End();
+        if (active_)
+            ImGui::End();
     }
 
     WindowScope(WindowScope&& o) noexcept
-        : visible_(o.visible_), active_(o.active_) {
+            : visible_(o.visible_)
+            , active_(o.active_) {
         o.active_ = false;
     }
     WindowScope& operator=(WindowScope&&) = delete;
@@ -49,7 +50,7 @@ public:
 
 private:
     bool visible_ = false;
-    bool active_ = true;  // Begin/End must always be balanced
+    bool active_ = true; // Begin/End must always be balanced
 };
 
 // ── ChildScope ───────────────────────────────────────────────────────────────
@@ -57,21 +58,21 @@ private:
 class ChildScope {
 public:
     explicit ChildScope(const char* id, const ImVec2& size = ImVec2(0, 0),
-                        ImGuiChildFlags childFlags = 0,
-                        ImGuiWindowFlags windowFlags = 0) {
+                        ImGuiChildFlags childFlags = 0, ImGuiWindowFlags windowFlags = 0) {
         visible_ = ImGui::BeginChild(id, size, childFlags, windowFlags);
     }
     explicit ChildScope(ImGuiID id, const ImVec2& size = ImVec2(0, 0),
-                        ImGuiChildFlags childFlags = 0,
-                        ImGuiWindowFlags windowFlags = 0) {
+                        ImGuiChildFlags childFlags = 0, ImGuiWindowFlags windowFlags = 0) {
         visible_ = ImGui::BeginChild(id, size, childFlags, windowFlags);
     }
     ~ChildScope() {
-        if (active_) ImGui::EndChild();
+        if (active_)
+            ImGui::EndChild();
     }
 
     ChildScope(ChildScope&& o) noexcept
-        : visible_(o.visible_), active_(o.active_) {
+            : visible_(o.visible_)
+            , active_(o.active_) {
         o.active_ = false;
     }
     ChildScope& operator=(ChildScope&&) = delete;
@@ -94,10 +95,14 @@ public:
     explicit IDScope(int id) { ImGui::PushID(id); }
     explicit IDScope(const void* id) { ImGui::PushID(id); }
     ~IDScope() {
-        if (active_) ImGui::PopID();
+        if (active_)
+            ImGui::PopID();
     }
 
-    IDScope(IDScope&& o) noexcept : active_(o.active_) { o.active_ = false; }
+    IDScope(IDScope&& o) noexcept
+            : active_(o.active_) {
+        o.active_ = false;
+    }
     IDScope& operator=(IDScope&&) = delete;
     IDScope(const IDScope&) = delete;
     IDScope& operator=(const IDScope&) = delete;
@@ -110,15 +115,18 @@ private:
 /// RAII for ImGui::BeginDisabled / ImGui::EndDisabled.
 class DisabledScope {
 public:
-    explicit DisabledScope(bool disabled = true) : disabled_(disabled) {
+    explicit DisabledScope(bool disabled = true)
+            : disabled_(disabled) {
         ImGui::BeginDisabled(disabled_);
     }
     ~DisabledScope() {
-        if (active_) ImGui::EndDisabled();
+        if (active_)
+            ImGui::EndDisabled();
     }
 
     DisabledScope(DisabledScope&& o) noexcept
-        : disabled_(o.disabled_), active_(o.active_) {
+            : disabled_(o.disabled_)
+            , active_(o.active_) {
         o.active_ = false;
     }
     DisabledScope& operator=(DisabledScope&&) = delete;
@@ -136,10 +144,14 @@ class GroupScope {
 public:
     GroupScope() { ImGui::BeginGroup(); }
     ~GroupScope() {
-        if (active_) ImGui::EndGroup();
+        if (active_)
+            ImGui::EndGroup();
     }
 
-    GroupScope(GroupScope&& o) noexcept : active_(o.active_) { o.active_ = false; }
+    GroupScope(GroupScope&& o) noexcept
+            : active_(o.active_) {
+        o.active_ = false;
+    }
     GroupScope& operator=(GroupScope&&) = delete;
     GroupScope(const GroupScope&) = delete;
     GroupScope& operator=(const GroupScope&) = delete;
@@ -157,10 +169,14 @@ public:
         open_ = ImGui::BeginTabBar(id, flags);
     }
     ~TabBarScope() {
-        if (open_) ImGui::EndTabBar();
+        if (open_)
+            ImGui::EndTabBar();
     }
 
-    TabBarScope(TabBarScope&& o) noexcept : open_(o.open_) { o.open_ = false; }
+    TabBarScope(TabBarScope&& o) noexcept
+            : open_(o.open_) {
+        o.open_ = false;
+    }
     TabBarScope& operator=(TabBarScope&&) = delete;
     TabBarScope(const TabBarScope&) = delete;
     TabBarScope& operator=(const TabBarScope&) = delete;
@@ -177,15 +193,18 @@ private:
 /// only when BeginTabItem() returned true.
 class TabItemScope {
 public:
-    explicit TabItemScope(const char* label, bool* open = nullptr,
-                          ImGuiTabItemFlags flags = 0) {
+    explicit TabItemScope(const char* label, bool* open = nullptr, ImGuiTabItemFlags flags = 0) {
         open_ = ImGui::BeginTabItem(label, open, flags);
     }
     ~TabItemScope() {
-        if (open_) ImGui::EndTabItem();
+        if (open_)
+            ImGui::EndTabItem();
     }
 
-    TabItemScope(TabItemScope&& o) noexcept : open_(o.open_) { o.open_ = false; }
+    TabItemScope(TabItemScope&& o) noexcept
+            : open_(o.open_) {
+        o.open_ = false;
+    }
     TabItemScope& operator=(TabItemScope&&) = delete;
     TabItemScope(const TabItemScope&) = delete;
     TabItemScope& operator=(const TabItemScope&) = delete;
@@ -197,4 +216,4 @@ private:
     bool open_ = false;
 };
 
-}  // namespace unigui
+} // namespace unigui

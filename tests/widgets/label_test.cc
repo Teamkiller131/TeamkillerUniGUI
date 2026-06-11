@@ -1,7 +1,9 @@
+#include <unigui/core/context.h>
 #include <unigui/unigui.h>
 #include <unigui/widgets/label.h>
-#include <unigui/core/context.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class LabelTest : public ::testing::Test {

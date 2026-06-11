@@ -1,13 +1,15 @@
 #include <unigui/theme/surface_style.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
-using unigui::theme::SurfaceStyle;
-using unigui::theme::SurfaceTokens;
-using unigui::theme::SurfacePreset;
-using unigui::theme::SurfaceStyleName;
 using unigui::theme::AllSurfaceStyles;
 using unigui::theme::ApplySurfaceStyle;
+using unigui::theme::SurfacePreset;
+using unigui::theme::SurfaceStyle;
+using unigui::theme::SurfaceStyleName;
+using unigui::theme::SurfaceTokens;
 
 class SurfaceStyleTest : public ::testing::Test {
 protected:
@@ -17,10 +19,10 @@ protected:
         auto& c = ImGui::GetStyle().Colors;
         // Opaque baseline palette so alpha multipliers are easy to verify.
         c[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.10f, 0.12f, 1.0f);
-        c[ImGuiCol_ChildBg]  = ImVec4(0.12f, 0.12f, 0.14f, 1.0f);
-        c[ImGuiCol_PopupBg]  = ImVec4(0.14f, 0.14f, 0.16f, 1.0f);
-        c[ImGuiCol_FrameBg]  = ImVec4(0.16f, 0.16f, 0.18f, 1.0f);
-        c[ImGuiCol_Border]   = ImVec4(0.20f, 0.20f, 0.24f, 1.0f);
+        c[ImGuiCol_ChildBg] = ImVec4(0.12f, 0.12f, 0.14f, 1.0f);
+        c[ImGuiCol_PopupBg] = ImVec4(0.14f, 0.14f, 0.16f, 1.0f);
+        c[ImGuiCol_FrameBg] = ImVec4(0.16f, 0.16f, 0.18f, 1.0f);
+        c[ImGuiCol_Border] = ImVec4(0.20f, 0.20f, 0.24f, 1.0f);
     }
     void TearDown() override { ImGui::DestroyContext(); }
 };

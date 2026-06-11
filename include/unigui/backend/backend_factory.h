@@ -1,9 +1,10 @@
 #pragma once
 
+#include <unigui/backend/backend_types.h>
 #include <unigui/backend/platform_backend.h>
 #include <unigui/backend/renderer_backend.h>
-#include <unigui/backend/backend_types.h>
 #include <unigui/core/log.h>
+
 #include <memory>
 
 namespace unigui {
@@ -47,47 +48,47 @@ struct DefaultBackend {
 
 /// Creates backends based on the specified type.
 inline DefaultBackend CreateBackend(BackendType type) {
-    UNIGUI_LOG_DEBUG("CreateBackend: type={}", (int)type);
+    UNIGUI_LOG_DEBUG("CreateBackend: type={}", (int) type);
     switch (type) {
     case BackendType::GLFW_GL3:
-        return { CreateGLFWPlatform(BackendType::GLFW_GL3), CreateOpenGL3Renderer() };
+        return {CreateGLFWPlatform(BackendType::GLFW_GL3), CreateOpenGL3Renderer()};
     case BackendType::SDL3_Vulkan:
 #if defined(UNIGUI_HAS_SDL3) && defined(UNIGUI_HAS_VULKAN)
         // SDL3 platform + the shared (platform-agnostic) Vulkan renderer.
-        return { CreateSDL3Platform(), CreateVulkanRenderer() };
+        return {CreateSDL3Platform(), CreateVulkanRenderer()};
 #else
-        return { nullptr, nullptr };
+        return {nullptr, nullptr};
 #endif
     case BackendType::DX11:
 #ifdef UNIGUI_HAS_DX11
-        return { CreateGLFWPlatform(BackendType::DX11), CreateDX11Renderer() };
+        return {CreateGLFWPlatform(BackendType::DX11), CreateDX11Renderer()};
 #else
-        return { nullptr, nullptr };
+        return {nullptr, nullptr};
 #endif
     case BackendType::Metal:
 #ifdef __APPLE__
-        return { CreateGLFWPlatform(BackendType::Metal), CreateMetalRenderer() };
+        return {CreateGLFWPlatform(BackendType::Metal), CreateMetalRenderer()};
 #else
-        return { nullptr, nullptr };
+        return {nullptr, nullptr};
 #endif
     case BackendType::DX12:
 #ifdef UNIGUI_HAS_DX12
-        return { CreateGLFWPlatform(BackendType::DX12), CreateDX12Renderer() };
+        return {CreateGLFWPlatform(BackendType::DX12), CreateDX12Renderer()};
 #else
-        return { nullptr, nullptr };
+        return {nullptr, nullptr};
 #endif
     case BackendType::Vulkan:
 #ifdef UNIGUI_HAS_VULKAN
-        return { CreateGLFWPlatform(BackendType::Vulkan), CreateVulkanRenderer() };
+        return {CreateGLFWPlatform(BackendType::Vulkan), CreateVulkanRenderer()};
 #else
-        return { nullptr, nullptr };
+        return {nullptr, nullptr};
 #endif
     case BackendType::WebGPU:
-        return { CreateGLFWPlatform(BackendType::WebGPU), CreateWebGPURenderer() };
+        return {CreateGLFWPlatform(BackendType::WebGPU), CreateWebGPURenderer()};
     case BackendType::Emscripten:
-        return { CreateEmscriptenPlatform(), CreateWebGPURenderer() };
+        return {CreateEmscriptenPlatform(), CreateWebGPURenderer()};
     }
-    return { nullptr, nullptr };
+    return {nullptr, nullptr};
 }
 
 /// Creates the default backend pair (GLFW + OpenGL3).

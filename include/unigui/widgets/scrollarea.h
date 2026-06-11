@@ -1,7 +1,8 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <functional>
+#include <string>
 namespace unigui {
 class ScrollArea : public Widget {
 public:
@@ -9,6 +10,9 @@ public:
     void Render() override;
     void SetContentCallback(std::function<void()> cb);
     void SetSize(float w, float h);
-private: float w_,h_; std::function<void()> cb_;
+
+private:
+    float w_, h_;
+    std::function<void()> cb_;
 };
-}
+} // namespace unigui

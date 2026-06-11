@@ -1,10 +1,12 @@
-#include <unigui/unigui.h>
-#include <unigui/theme/theme.h>
+#include <unigui/core/context.h>
+#include <unigui/theme/presets/registry.h>
 #include <unigui/theme/style_scope.h>
 #include <unigui/theme/style_tokens.h>
-#include <unigui/theme/presets/registry.h>
-#include <unigui/core/context.h>
+#include <unigui/theme/theme.h>
+#include <unigui/unigui.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class ThemeTest : public ::testing::Test {
@@ -13,9 +15,7 @@ protected:
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
     }
-    void TearDown() override {
-        ImGui::DestroyContext();
-    }
+    void TearDown() override { ImGui::DestroyContext(); }
 };
 
 TEST_F(ThemeTest, DarkTheme_SetsExpectedWindowBg) {

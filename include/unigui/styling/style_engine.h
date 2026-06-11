@@ -1,24 +1,25 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <functional>
 #include <imgui.h>
+
+#include <functional>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace unigui::styling {
 
 struct StyleRule {
-    std::string selector;     // "Window", "Button.primary", Button:hover", "#submit"
-    std::string type;         // Widget type name
-    std::string className;    // ".primary"
-    std::string idName;       // "#submit"
-    std::string pseudoClass;  // ":hover" or empty
+    std::string selector;    // "Window", "Button.primary", Button:hover", "#submit"
+    std::string type;        // Widget type name
+    std::string className;   // ".primary"
+    std::string idName;      // "#submit"
+    std::string pseudoClass; // ":hover" or empty
     std::unordered_map<std::string, std::string> props;
-    int priority() const;     // 0=type, 1=class, 2=id
+    int priority() const; // 0=type, 1=class, 2=id
 };
 
 struct MediaRule {
-    std::string condition;     // "min-width: 800px" or "prefers-color-scheme: dark"
+    std::string condition; // "min-width: 800px" or "prefers-color-scheme: dark"
     std::vector<StyleRule> rules;
 };
 
@@ -33,9 +34,8 @@ public:
 
     /// Apply matching rules to the ImGui style system.
     void Apply(const std::string& widgetType, const std::string& className = "",
-               const std::string& idName = "", bool hovered = false,
-               bool active = false, bool focused = false, bool disabled = false,
-               int childIndex = -1);
+               const std::string& idName = "", bool hovered = false, bool active = false,
+               bool focused = false, bool disabled = false, int childIndex = -1);
 
     /// Apply all loaded rules globally.
     void ApplyAll();

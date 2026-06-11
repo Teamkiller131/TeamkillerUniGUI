@@ -1,7 +1,8 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <functional>
+#include <string>
 
 namespace unigui {
 
@@ -13,6 +14,7 @@ public:
     void SetPath(std::string path);
     void SetTitle(std::string title);
     void SetOnPathChanged(std::function<void(std::string)> cb);
+
 private:
     std::string label_, path_, title_;
     char buffer_[512] = {};
@@ -20,4 +22,4 @@ private:
     bool OpenNativeDialog();
 };
 
-}
+} // namespace unigui

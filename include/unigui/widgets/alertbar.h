@@ -1,7 +1,9 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <imgui.h>
+
+#include <string>
 
 namespace unigui {
 
@@ -16,8 +18,8 @@ public:
 private:
     bool shown_ = false;
     std::string message_;
-    float animHeight_ = 0.0f;  // animate 0→48
-    float animTimer_ = 0.0f;   // 0..1 eased progress
+    float animHeight_ = 0.0f; // animate 0→48
+    float animTimer_ = 0.0f;  // 0..1 eased progress
 };
 
 } // namespace unigui

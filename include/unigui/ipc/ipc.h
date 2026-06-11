@@ -1,8 +1,8 @@
 #pragma once
-#include <string>
 #include <functional>
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace unigui::ipc {
 
@@ -24,6 +24,7 @@ public:
     void OnReceive(std::function<void(const std::string&)> cb) override;
     void Close() override;
     bool Start();
+
 private:
     void* ctx_ = nullptr;
     void* socket_ = nullptr;
@@ -42,6 +43,7 @@ public:
     void OnReceive(std::function<void(const std::string&)> cb) override;
     void Close() override;
     bool Poll(int timeoutMs = 0);
+
 private:
     void* ctx_ = nullptr;
     void* socket_ = nullptr;

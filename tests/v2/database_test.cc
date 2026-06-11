@@ -1,4 +1,5 @@
 #include <unigui/sqlite/database.h>
+
 #include <gtest/gtest.h>
 using namespace unigui::sqlite;
 
@@ -17,8 +18,11 @@ TEST_F(DBTest, CreateTable_Execute) {
 }
 TEST_F(DBTest, Transaction_Rollback) {
     db.Execute("CREATE TABLE t (x INT)");
-    { Transaction txn(db); db.Execute("INSERT INTO t VALUES(1)"); }
-    int count = db.Query("SELECT * FROM t", {}, [](auto&){});
+    {
+        Transaction txn(db);
+        db.Execute("INSERT INTO t VALUES(1)");
+    }
+    int count = db.Query("SELECT * FROM t", {}, [](auto&) {});
     EXPECT_EQ(count, 0); // rolled back
 }
 TEST_F(DBTest, Migrate_AppliesSchema) {

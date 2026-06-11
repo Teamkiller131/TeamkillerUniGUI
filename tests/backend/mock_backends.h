@@ -42,8 +42,10 @@ public:
     }
     void SetClearColor(float r, float g, float b, float a) override {
         set_clear_color_called = true;
-        last_clear_r = r; last_clear_g = g;
-        last_clear_b = b; last_clear_a = a;
+        last_clear_r = r;
+        last_clear_g = g;
+        last_clear_b = b;
+        last_clear_a = a;
     }
 
     bool init_called = false;

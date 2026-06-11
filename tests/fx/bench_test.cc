@@ -1,15 +1,17 @@
-#include <unigui/fx/easing.h>
 #include <unigui/fx/animation.h>
+#include <unigui/fx/easing.h>
+
 #include <imgui.h>
-#include <gtest/gtest.h>
+
 #include <chrono>
+#include <gtest/gtest.h>
 
 using namespace unigui::fx;
 
 TEST(EffectBench, Easing_All10Curves_Under1ms) {
     auto t0 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 10000; i++) {
-        float x = (float)i / 10000.f;
+        float x = (float) i / 10000.f;
         Ease(x, EasingCurve::Linear);
         Ease(x, EasingCurve::QuadIn);
         Ease(x, EasingCurve::QuadOut);
@@ -31,7 +33,7 @@ TEST(EffectBench, AnimationState_100Updates_Fast) {
     s.Play(1.f, EasingCurve::ExpoOut);
     auto t0 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 10000; i++)
-        s.Update(0.016f);  // simulate 60fps
+        s.Update(0.016f); // simulate 60fps
     auto t1 = std::chrono::high_resolution_clock::now();
     auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
     EXPECT_LT(us, 2000) << "10k animation updates took " << us << " us";

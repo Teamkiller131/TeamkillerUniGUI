@@ -1,7 +1,8 @@
 #pragma once
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
+
 #include <memory>
 #include <string>
 
@@ -17,9 +18,9 @@ std::shared_ptr<spdlog::logger> GetLogger();
 } // namespace unigui
 
 // ── Convenience macros ──────────────────────────────────────────────────────
-#define UNIGUI_LOG_TRACE(...)    ::unigui::GetLogger()->trace(__VA_ARGS__)
-#define UNIGUI_LOG_DEBUG(...)    ::unigui::GetLogger()->debug(__VA_ARGS__)
-#define UNIGUI_LOG_INFO(...)     ::unigui::GetLogger()->info(__VA_ARGS__)
-#define UNIGUI_LOG_WARN(...)     ::unigui::GetLogger()->warn(__VA_ARGS__)
-#define UNIGUI_LOG_ERROR(...)    ::unigui::GetLogger()->error(__VA_ARGS__)
+#define UNIGUI_LOG_TRACE(...) ::unigui::GetLogger()->trace(__VA_ARGS__)
+#define UNIGUI_LOG_DEBUG(...) ::unigui::GetLogger()->debug(__VA_ARGS__)
+#define UNIGUI_LOG_INFO(...) ::unigui::GetLogger()->info(__VA_ARGS__)
+#define UNIGUI_LOG_WARN(...) ::unigui::GetLogger()->warn(__VA_ARGS__)
+#define UNIGUI_LOG_ERROR(...) ::unigui::GetLogger()->error(__VA_ARGS__)
 #define UNIGUI_LOG_CRITICAL(...) ::unigui::GetLogger()->critical(__VA_ARGS__)

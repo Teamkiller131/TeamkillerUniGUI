@@ -30,16 +30,14 @@ inline std::string NextAutoName(const char* prefix = "w") {
 
 /// Construct a widget of type T with an explicit name (forwarded as the first
 /// constructor argument, matching every UniGUI widget's signature).
-template <class T, class... Args>
-std::shared_ptr<T> Make(std::string name, Args&&... args) {
+template <class T, class... Args> std::shared_ptr<T> Make(std::string name, Args&&... args) {
     return std::make_shared<T>(std::move(name), std::forward<Args>(args)...);
 }
 
 /// Construct a widget of type T with an auto-generated unique name. Use when the
 /// instance does not need a stable, human-chosen id.
-template <class T, class... Args>
-std::shared_ptr<T> MakeNamed(Args&&... args) {
+template <class T, class... Args> std::shared_ptr<T> MakeNamed(Args&&... args) {
     return std::make_shared<T>(NextAutoName(), std::forward<Args>(args)...);
 }
 
-}  // namespace unigui
+} // namespace unigui

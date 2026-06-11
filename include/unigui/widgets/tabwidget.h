@@ -1,10 +1,11 @@
 #pragma once
-#include <unigui/widgets/widget_base.h>
 #include <unigui/fx/animation.h>
-#include <string>
-#include <vector>
+#include <unigui/widgets/widget_base.h>
+
 #include <functional>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace unigui {
 struct TabPage {
@@ -23,6 +24,7 @@ public:
     void SetActiveTab(int index);
     void SetTabShortcut(int index, ImGuiKey key);
     const std::vector<TabPage>& GetTabs() const;
+
 private:
     std::vector<TabPage> tabs_;
     int active_ = 0;
@@ -30,4 +32,4 @@ private:
     fx::AnimationState transAnim_;
     std::unordered_map<int, ImGuiKey> tabShortcuts_;
 };
-}
+} // namespace unigui

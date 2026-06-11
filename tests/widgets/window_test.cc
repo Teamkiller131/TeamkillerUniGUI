@@ -1,7 +1,9 @@
+#include <unigui/core/context.h>
 #include <unigui/unigui.h>
 #include <unigui/widgets/window.h>
-#include <unigui/core/context.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class WindowTest : public ::testing::Test {
@@ -53,7 +55,7 @@ TEST_F(WindowTest, Close_CallsOnClose) {
     win.Hide(); // Simulate close
     // OnClose fires when window is explicitly closed via X button
     // Hide() only sets visibility
-    (void)closed;
+    (void) closed;
 }
 
 TEST_F(WindowTest, Hidden_DoesNotRender) {

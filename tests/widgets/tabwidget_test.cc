@@ -1,11 +1,21 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/tabwidget.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 class TabWidgetTest : public ::testing::Test {
 protected:
-    void SetUp() override { ImGui::CreateContext(); ImGui::GetIO().DisplaySize = ImVec2(800, 600); ImGui::GetIO().Fonts->Build(); ImGui::NewFrame(); }
-    void TearDown() override { ImGui::Render(); ImGui::DestroyContext(); }
+    void SetUp() override {
+        ImGui::CreateContext();
+        ImGui::GetIO().DisplaySize = ImVec2(800, 600);
+        ImGui::GetIO().Fonts->Build();
+        ImGui::NewFrame();
+    }
+    void TearDown() override {
+        ImGui::Render();
+        ImGui::DestroyContext();
+    }
 };
 TEST_F(TabWidgetTest, Render_DoesNotCrash) {
     unigui::TabWidget tw("tw");

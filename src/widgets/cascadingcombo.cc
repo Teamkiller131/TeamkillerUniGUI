@@ -1,7 +1,9 @@
 #include <unigui/widgets/cascadingcombo.h>
+
 #include <imgui.h>
-#include <cstdio>
+
 #include <algorithm>
+#include <cstdio>
 
 namespace unigui {
 
@@ -12,18 +14,21 @@ float CalcComboWidth(const std::vector<std::string>& options, const char* previe
     for (const auto& option : options)
         maxTextWidth = std::max(maxTextWidth, ImGui::CalcTextSize(option.c_str()).x);
     const ImGuiStyle& style = ImGui::GetStyle();
-    return maxTextWidth + style.FramePadding.x * 2.0f + ImGui::GetFrameHeight() + style.ItemInnerSpacing.x + 4.0f;
+    return maxTextWidth + style.FramePadding.x * 2.0f + ImGui::GetFrameHeight() +
+           style.ItemInnerSpacing.x + 4.0f;
 }
 
 } // namespace
 
 CascadingCombo::CascadingCombo(std::string name, std::vector<Level> levels)
-    : Widget(std::move(name)), levels_(std::move(levels)) {}
+        : Widget(std::move(name))
+        , levels_(std::move(levels)) {}
 
 void CascadingCombo::Render() {
-    if (!IsVisible()) return;
+    if (!IsVisible())
+        return;
     ImGui::PushID(GetName().c_str());
-    for (int lvl = 0; lvl < (int)levels_.size(); ++lvl) {
+    for (int lvl = 0; lvl < (int) levels_.size(); ++lvl) {
         auto& level = levels_[lvl];
         if (layout_ == Layout::Horizontal && lvl > 0)
             ImGui::SameLine(0.0f, spacing_);
@@ -37,14 +42,16 @@ void CascadingCombo::Render() {
             snprintf(lbl, sizeof(lbl), "%s##lvl%d", level.label.c_str(), lvl);
         else
             snprintf(lbl, sizeof(lbl), "##lvl%d", lvl);
-        const char* preview = level.options.empty() ? "" : level.options[level.selectedIndex].c_str();
+        const char* preview =
+            level.options.empty() ? "" : level.options[level.selectedIndex].c_str();
         ImGui::SetNextItemWidth(width > 0.f ? width : CalcComboWidth(level.options, preview));
         if (ImGui::BeginCombo(lbl, preview, ImGuiComboFlags_NoArrowButton)) {
-            for (int i = 0; i < (int)level.options.size(); ++i) {
+            for (int i = 0; i < (int) level.options.size(); ++i) {
                 bool isSel = (i == level.selectedIndex);
                 if (ImGui::Selectable(level.options[i].c_str(), isSel))
                     level.selectedIndex = i;
-                if (isSel) ImGui::SetItemDefaultFocus();
+                if (isSel)
+                    ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
@@ -56,30 +63,42 @@ void CascadingCombo::Render() {
     ImGui::PopID();
 }
 
-void CascadingCombo::SetLevels(std::vector<Level> levels) { levels_ = std::move(levels); }
+void CascadingCombo::SetLevels(std::vector<Level> levels) {
+    levels_ = std::move(levels);
+}
 void CascadingCombo::SetOptions(int level, std::vector<std::string> options) {
-    if (level >= 0 && level < (int)levels_.size()) {
+    if (level >= 0 && level < (int) levels_.size()) {
         levels_[level].options = std::move(options);
-        if (levels_[level].selectedIndex >= (int)levels_[level].options.size())
+        if (levels_[level].selectedIndex >= (int) levels_[level].options.size())
             levels_[level].selectedIndex = 0;
     }
 }
 int CascadingCombo::GetSelectedIndex(int level) const {
-    return (level >= 0 && level < (int)levels_.size()) ? levels_[level].selectedIndex : -1;
+    return (level >= 0 && level < (int) levels_.size()) ? levels_[level].selectedIndex : -1;
 }
 std::string CascadingCombo::GetSelectedText(int level) const {
-    if (level < 0 || level >= (int)levels_.size()) return {};
+    if (level < 0 || level >= (int) levels_.size())
+        return {};
     auto& l = levels_[level];
-    return (l.selectedIndex >= 0 && l.selectedIndex < (int)l.options.size())
-        ? l.options[l.selectedIndex] : std::string{};
+    return (l.selectedIndex >= 0 && l.selectedIndex < (int) l.options.size())
+               ? l.options[l.selectedIndex]
+               : std::string{};
 }
-void CascadingCombo::SetLayout(Layout layout) { layout_ = layout; }
-void CascadingCombo::SetItemWidth(float width) { itemWidth_ = width; }
+void CascadingCombo::SetLayout(Layout layout) {
+    layout_ = layout;
+}
+void CascadingCombo::SetItemWidth(float width) {
+    itemWidth_ = width;
+}
 void CascadingCombo::SetItemWidth(int level, float width) {
-    if (level >= 0 && level < (int)levels_.size())
+    if (level >= 0 && level < (int) levels_.size())
         levels_[level].width = width > 0.f ? width : 0.f;
 }
-void CascadingCombo::SetSpacing(float spacing) { spacing_ = spacing; }
-void CascadingCombo::SetOnChanged(OnChanged fn) { onChanged_ = std::move(fn); }
+void CascadingCombo::SetSpacing(float spacing) {
+    spacing_ = spacing;
+}
+void CascadingCombo::SetOnChanged(OnChanged fn) {
+    onChanged_ = std::move(fn);
+}
 
 } // namespace unigui

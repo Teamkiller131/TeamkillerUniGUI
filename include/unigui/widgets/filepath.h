@@ -1,7 +1,8 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <functional>
+#include <string>
 
 namespace unigui {
 
@@ -19,6 +20,7 @@ public:
     void SetTitle(std::string title);
     void SetMode(Mode mode);
     void SetOnPathChanged(std::function<void(std::string)> cb);
+
 private:
     std::string label_, path_, filter_, title_;
     Mode mode_;
@@ -27,4 +29,4 @@ private:
     bool OpenNativeDialog();
 };
 
-}
+} // namespace unigui

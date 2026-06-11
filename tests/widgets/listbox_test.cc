@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/listbox.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class ListBoxTest : public ::testing::Test {
@@ -65,7 +67,7 @@ TEST_F(ListBoxTest, SetOnChange_CallbackFiredOnRender) {
     unigui::ListBox lb("lb", "Pick", {"A", "B", "C"}, 0);
     int captured = -1;
     lb.SetOnChange([&](int idx) { captured = idx; });
-    lb.SetSelectedIndex(2);  // This updates prev_selected_ too
+    lb.SetSelectedIndex(2); // This updates prev_selected_ too
     // Render won't fire callback since selected == prev_selected
     lb.Render();
     EXPECT_EQ(captured, -1);

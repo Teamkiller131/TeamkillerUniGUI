@@ -1,5 +1,6 @@
-#include <unigui/unigui.h>
 #include <unigui/core/error.h>
+#include <unigui/unigui.h>
+
 #include <gtest/gtest.h>
 
 TEST(ErrorCode, ToMessageReturnsNonEmpty) {

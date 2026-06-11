@@ -1,9 +1,10 @@
 #pragma once
 #include <imgui.h>
 #include <imgui_internal.h>
+
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace unigui::fx {
 
@@ -24,7 +25,10 @@ public:
     virtual void Pop() = 0;
 
     /// Convenience: call Push now, returns this for RAII via helper.
-    EffectScope& Begin(ImDrawList* dl) { Push(dl); return *this; }
+    EffectScope& Begin(ImDrawList* dl) {
+        Push(dl);
+        return *this;
+    }
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -53,17 +57,20 @@ public:
     void Draw(ImDrawList* dl);
 
     void SetRadius(float r) { radius_ = r; }
-    void SetOffset(float x, float y) { offX_ = x; offY_ = y; }
+    void SetOffset(float x, float y) {
+        offX_ = x;
+        offY_ = y;
+    }
     void SetColor(ImU32 c) { color_ = c; }
     void SetSamples(int n) { samples_ = n; }
 
 private:
     float radius_ = 4.f;
     float offX_ = 2.f, offY_ = 2.f;
-    ImU32  color_ = IM_COL32(0, 0, 0, 80);
-    int    samples_ = 3;
-    ImRect rect_;        // set by SetRect
-    bool   hasRect_ = false;
+    ImU32 color_ = IM_COL32(0, 0, 0, 80);
+    int samples_ = 3;
+    ImRect rect_; // set by SetRect
+    bool hasRect_ = false;
     ImDrawList* dl_ = nullptr;
 };
 
@@ -91,10 +98,10 @@ public:
 
 private:
     float radius_ = 8.f;
-    ImU32  color_ = IM_COL32(100, 149, 237, 120);
-    int    layers_ = 4;
+    ImU32 color_ = IM_COL32(100, 149, 237, 120);
+    int layers_ = 4;
     ImRect rect_;
-    bool   hasRect_ = false;
+    bool hasRect_ = false;
     ImDrawList* dl_ = nullptr;
 };
 
@@ -120,9 +127,9 @@ public:
 private:
     float blurRadius_ = 8.f;
     float bgAlpha_ = 0.2f;
-    ImU32  borderColor_ = IM_COL32(255, 255, 255, 40);
+    ImU32 borderColor_ = IM_COL32(255, 255, 255, 40);
     ImRect rect_;
-    bool   hasRect_ = false;
+    bool hasRect_ = false;
     ImDrawList* dl_ = nullptr;
 };
 
@@ -130,17 +137,20 @@ private:
 // GradientBrush — fill helper (horizontal / vertical / multi-stop)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-struct GradientStop { float pos; ImU32 color; };  // pos in [0,1]
+struct GradientStop {
+    float pos;
+    ImU32 color;
+}; // pos in [0,1]
 
 class GradientBrush {
 public:
     /// Horizontal gradient (left→right)
-    static void Horizontal(ImDrawList* dl, const ImVec2& min, const ImVec2& max,
-                           ImU32 left, ImU32 right);
+    static void Horizontal(ImDrawList* dl, const ImVec2& min, const ImVec2& max, ImU32 left,
+                           ImU32 right);
 
     /// Vertical gradient (top→bottom)
-    static void Vertical(ImDrawList* dl, const ImVec2& min, const ImVec2& max,
-                         ImU32 top, ImU32 bottom);
+    static void Vertical(ImDrawList* dl, const ImVec2& min, const ImVec2& max, ImU32 top,
+                         ImU32 bottom);
 
     /// Multi-stop gradient (2+ stops). Stops must be sorted by pos.
     static void MultiStop(ImDrawList* dl, const ImVec2& min, const ImVec2& max,
@@ -157,8 +167,7 @@ struct Effects {
                                ImU32 color = IM_COL32(0, 0, 0, 80));
 
     /// Colored glow for hover/selection
-    static GlowEffect Glow(float radius = 8.f,
-                           ImU32 color = IM_COL32(100, 149, 237, 120));
+    static GlowEffect Glow(float radius = 8.f, ImU32 color = IM_COL32(100, 149, 237, 120));
 
     /// Glass-morphism panel preset
     static BlurEffect GlassPanel(float blurRadius = 12.f, float bgAlpha = 0.15f);

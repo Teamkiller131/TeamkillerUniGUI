@@ -17,7 +17,9 @@
 #ifdef __APPLE__
 #include <unigui/backend/renderer_backend.h>
 #include <unigui/core/log.h>
+
 #include <imgui.h>
+
 #include <memory>
 
 namespace unigui {
@@ -49,6 +51,7 @@ std::unique_ptr<RendererBackend> CreateMetalRenderer() {
 #else // !__APPLE__
 // Non-macOS stub — compilation guard
 #include <unigui/backend/backend_factory.h>
+
 #include <cstdio>
 namespace unigui {
 std::unique_ptr<RendererBackend> CreateMetalRenderer() {

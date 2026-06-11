@@ -1,12 +1,12 @@
 #pragma once
-#include <string>
 #include <cstring>
+#include <string>
 #ifdef _WIN32
 #include <windows.h>
 #else
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
 #endif
 
@@ -20,6 +20,7 @@ public:
     void Read(void* data, size_t size, size_t offset = 0);
     size_t Size() const { return size_; }
     void* Data() { return data_; }
+
 private:
 #ifdef _WIN32
     void* handle_ = nullptr;

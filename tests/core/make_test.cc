@@ -3,7 +3,6 @@
 #include <unigui/widgets/label.h>
 
 #include <gtest/gtest.h>
-
 #include <memory>
 #include <set>
 #include <string>
@@ -23,7 +22,7 @@ TEST(MakeTest, MakeNamed_GeneratesUniqueNames) {
         auto b = unigui::MakeNamed<unigui::Button>("Btn");
         names.insert(b->GetName());
     }
-    EXPECT_EQ(names.size(), 100u);  // all distinct
+    EXPECT_EQ(names.size(), 100u); // all distinct
 }
 
 TEST(MakeTest, NextAutoName_IsMonotonicAndPrefixed) {

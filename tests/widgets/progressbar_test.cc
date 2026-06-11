@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/progressbar.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class ProgressBarTest : public ::testing::Test {
@@ -143,9 +145,8 @@ TEST_F(ProgressBarTest, OverlayText_WithFractions) {
 
 TEST_F(ProgressBarTest, SetGradient_DoesNotCrash) {
     unigui::ProgressBar pb("pb", 0.5f);
-    pb.SetGradient(0.0f, IM_COL32(0, 255, 0, 255),
-                    1.0f, IM_COL32(255, 255, 0, 255),
-                    IM_COL32(255, 0, 0, 255));
+    pb.SetGradient(0.0f, IM_COL32(0, 255, 0, 255), 1.0f, IM_COL32(255, 255, 0, 255),
+                   IM_COL32(255, 0, 0, 255));
     pb.Render();
 }
 

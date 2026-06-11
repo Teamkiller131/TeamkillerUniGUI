@@ -1,12 +1,13 @@
 #pragma once
 #include <unigui/widgets/value_widget.h>
+
 #include <string>
 
 namespace unigui {
 class CheckBox : public ValueWidget<bool> {
 public:
-    using ValueWidget::SetValue;
     using ValueWidget::GetValue;
+    using ValueWidget::SetValue;
 
     CheckBox(std::string name, std::string label, bool checked = false);
     void Render() override;
@@ -19,4 +20,4 @@ public:
 private:
     std::string label_;
 };
-}
+} // namespace unigui

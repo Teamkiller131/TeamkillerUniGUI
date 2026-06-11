@@ -1,8 +1,10 @@
 #pragma once
+#include <unigui/fx/animation.h>
+
 #include <imgui.h>
+
 #include <functional>
 #include <vector>
-#include <unigui/fx/animation.h>
 
 namespace unigui {
 
@@ -31,7 +33,7 @@ public:
 private:
     struct Element {
         enum { Block, Circle } kind = Block;
-        float x, y, w, h;  // w=radius for circle
+        float x, y, w, h; // w=radius for circle
     };
 
     std::vector<Element> elements_;

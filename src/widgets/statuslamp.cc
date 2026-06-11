@@ -1,12 +1,14 @@
 #include <unigui/widgets/statuslamp.h>
+
 #include <imgui.h>
+
 #include <cmath>
 
 namespace unigui {
 
 StatusLamp::StatusLamp(std::string name, State state)
-    : Widget(std::move(name)), state_(state) {
-}
+        : Widget(std::move(name))
+        , state_(state) {}
 
 namespace {
 
@@ -29,7 +31,8 @@ ImU32 WithAlpha(ImU32 c, float a) {
 } // namespace
 
 void StatusLamp::Render() {
-    if (!IsVisible()) return;
+    if (!IsVisible())
+        return;
 
     ImGui::PushID(GetName().c_str());
 
@@ -46,9 +49,9 @@ void StatusLamp::Render() {
 
     // -- Base color + animation per state --------------------------------
     ImU32 baseColor;
-    float coreAlpha = 1.0f;   // opacity of the lit core
-    float glowAlpha = 0.0f;   // opacity of the outer halo
-    bool  lit = true;         // whether the lamp emits light (drives glow)
+    float coreAlpha = 1.0f; // opacity of the lit core
+    float glowAlpha = 0.0f; // opacity of the outer halo
+    bool lit = true;        // whether the lamp emits light (drives glow)
 
     switch (state_) {
     case Running:
@@ -81,7 +84,8 @@ void StatusLamp::Render() {
         break;
     }
 
-    if (customColor_ != 0) baseColor = customColor_;
+    if (customColor_ != 0)
+        baseColor = customColor_;
 
     // Gentle "breathing" glow for steady lit states.
     if (lit) {
@@ -112,18 +116,18 @@ void StatusLamp::Render() {
     }
 
     // -- Lamp body: dark rim -> lit core -> top gradient -> highlight -----
-    ImU32 rim    = ScaleBrightness(baseColor, lit ? 0.45f : 0.7f);
-    ImU32 core   = WithAlpha(baseColor, lit ? coreAlpha : 1.0f);
+    ImU32 rim = ScaleBrightness(baseColor, lit ? 0.45f : 0.7f);
+    ImU32 core = WithAlpha(baseColor, lit ? coreAlpha : 1.0f);
     ImU32 topLit = ScaleBrightness(baseColor, 1.35f);
 
-    dl->AddCircleFilled(center, r, rim, 32);                    // rim/base
-    dl->AddCircleFilled(center, r * 0.86f, core, 32);           // body
+    dl->AddCircleFilled(center, r, rim, 32);          // rim/base
+    dl->AddCircleFilled(center, r * 0.86f, core, 32); // body
     // Upper gradient cap (fake radial light from the top).
-    dl->AddCircleFilled(ImVec2(center.x, center.y - r * 0.18f),
-                        r * 0.55f, WithAlpha(topLit, (lit ? coreAlpha : 1.0f) * 0.55f), 24);
+    dl->AddCircleFilled(ImVec2(center.x, center.y - r * 0.18f), r * 0.55f,
+                        WithAlpha(topLit, (lit ? coreAlpha : 1.0f) * 0.55f), 24);
     // Specular highlight dot near top-left.
-    dl->AddCircleFilled(ImVec2(center.x - r * 0.28f, center.y - r * 0.32f),
-                        r * 0.22f, WithAlpha(IM_COL32_WHITE, lit ? 0.75f : 0.35f), 16);
+    dl->AddCircleFilled(ImVec2(center.x - r * 0.28f, center.y - r * 0.32f), r * 0.22f,
+                        WithAlpha(IM_COL32_WHITE, lit ? 0.75f : 0.35f), 16);
     // Crisp outline.
     dl->AddCircle(center, r, ScaleBrightness(baseColor, lit ? 0.6f : 0.85f), 32, 1.0f);
 

@@ -1,9 +1,10 @@
 #pragma once
 
-#include <unigui/widgets/widget_base.h>
 #include <unigui/fx/animation.h>
-#include <string>
+#include <unigui/widgets/widget_base.h>
+
 #include <functional>
+#include <string>
 
 namespace unigui {
 
@@ -22,14 +23,38 @@ public:
     void SetOnClick(std::function<void()> fn);
 
     // ── Fluent (chainable) helpers — return Button& via CRTP base ──────────
-    Button& WithLabel(std::string label)        { SetLabel(std::move(label)); return *this; }
-    Button& WithVariant(ColorVariant variant)   { SetColorVariant(variant); return *this; }
-    Button& WithPrimary()                       { SetColorVariant(Primary); return *this; }
-    Button& WithDanger()                        { SetColorVariant(Danger); return *this; }
-    Button& WithSuccess()                       { SetColorVariant(Success); return *this; }
-    Button& WithMuted()                         { SetColorVariant(Muted); return *this; }
-    Button& WithSize(Size size)                 { SetSize(size); return *this; }
-    Button& WithOnClick(std::function<void()> fn) { SetOnClick(std::move(fn)); return *this; }
+    Button& WithLabel(std::string label) {
+        SetLabel(std::move(label));
+        return *this;
+    }
+    Button& WithVariant(ColorVariant variant) {
+        SetColorVariant(variant);
+        return *this;
+    }
+    Button& WithPrimary() {
+        SetColorVariant(Primary);
+        return *this;
+    }
+    Button& WithDanger() {
+        SetColorVariant(Danger);
+        return *this;
+    }
+    Button& WithSuccess() {
+        SetColorVariant(Success);
+        return *this;
+    }
+    Button& WithMuted() {
+        SetColorVariant(Muted);
+        return *this;
+    }
+    Button& WithSize(Size size) {
+        SetSize(size);
+        return *this;
+    }
+    Button& WithOnClick(std::function<void()> fn) {
+        SetOnClick(std::move(fn));
+        return *this;
+    }
 
 private:
     std::string label_;

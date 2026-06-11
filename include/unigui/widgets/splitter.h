@@ -1,7 +1,8 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <functional>
+#include <string>
 namespace unigui {
 class Splitter : public Widget {
 public:
@@ -11,6 +12,10 @@ public:
     float GetSplit() const;
     void SetContentA(std::function<void()> cb);
     void SetContentB(std::function<void()> cb);
-private: Orientation ori_; float split_; std::function<void()> cbA_, cbB_;
+
+private:
+    Orientation ori_;
+    float split_;
+    std::function<void()> cbA_, cbB_;
 };
-}
+} // namespace unigui

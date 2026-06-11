@@ -1,7 +1,8 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <vector>
+
 #include <functional>
+#include <vector>
 
 namespace unigui {
 
@@ -27,7 +28,10 @@ public:
 
 private:
     Orientation ori_;
-    struct Panel { float ratio; std::function<void()> content; };
+    struct Panel {
+        float ratio;
+        std::function<void()> content;
+    };
     std::vector<Panel> panels_;
     int dragIndex_ = -1;
     std::vector<float> designRatios_;

@@ -1,14 +1,17 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
+
+#include <imgui.h>
+
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
-#include <imgui.h>
 
 namespace unigui {
 class ComboBox : public Widget {
 public:
-    ComboBox(std::string name, std::string label, std::vector<std::string> items = {}, int selected = 0);
+    ComboBox(std::string name, std::string label, std::vector<std::string> items = {},
+             int selected = 0);
     void Render() override;
     int GetSelectedIndex() const;
     void SetSelectedIndex(int idx);
@@ -24,6 +27,7 @@ public:
     void SetFillWidth(bool on) { fillWidth_ = on; }
     /// Set a fixed pixel width. Ignored when fillWidth_ is true. 0 = auto.
     void SetWidth(float px) { fixedWidth_ = px; }
+
 private:
     std::string label_;
     std::vector<std::string> items_;
@@ -36,4 +40,4 @@ private:
     bool fillWidth_ = false;
     float fixedWidth_ = 0.0f;
 };
-}
+} // namespace unigui

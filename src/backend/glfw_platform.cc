@@ -1,6 +1,7 @@
 #include <unigui/backend/backend_factory.h>
 #include <unigui/backend/backend_types.h>
 #include <unigui/core/log.h>
+
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #ifdef UNIGUI_HAS_VULKAN
@@ -18,7 +19,8 @@ namespace {
 
 class GLFWPlatform : public PlatformBackend {
 public:
-    explicit GLFWPlatform(bool needGL) : needGL_(needGL) {}
+    explicit GLFWPlatform(bool needGL)
+            : needGL_(needGL) {}
 
     bool Init(void* native_window_handle = nullptr) override {
         if (!glfwInit()) {
@@ -44,7 +46,8 @@ public:
         window_ = glfwCreateWindow(1280, 720, "UniGUI", nullptr, nullptr);
         if (!window_) {
             UNIGUI_LOG_ERROR("glfwCreateWindow(1280x720) failed");
-            glfwTerminate(); return false;
+            glfwTerminate();
+            return false;
         }
         UNIGUI_LOG_INFO("GLFW window created: 1280x720 'UniGUI' ({})",
                         needGL_ ? "OpenGL context" : "GLFW_NO_API");
@@ -63,10 +66,14 @@ public:
     }
 
     void Shutdown() override {
-        if (!initialized_) return;
+        if (!initialized_)
+            return;
         UNIGUI_LOG_DEBUG("GLFWPlatform shutdown: destroying window");
         ImGui_ImplGlfw_Shutdown();
-        if (window_) { glfwDestroyWindow(window_); window_ = nullptr; }
+        if (window_) {
+            glfwDestroyWindow(window_);
+            window_ = nullptr;
+        }
         glfwTerminate();
         initialized_ = false;
     }
@@ -92,25 +99,43 @@ public:
     }
 
     void GetClientSize(int* w, int* h) override {
-        if (window_) glfwGetWindowSize(window_, w, h);
-        else { if(w)*w=0; if(h)*h=0; }
+        if (window_)
+            glfwGetWindowSize(window_, w, h);
+        else {
+            if (w)
+                *w = 0;
+            if (h)
+                *h = 0;
+        }
     }
 
-    void SetTitle(const char* title) override { if (window_) glfwSetWindowTitle(window_, title); }
-    void SetSize(int w, int h) override { if (window_) glfwSetWindowSize(window_, w, h); }
-    void SwapBuffers() override { if (needGL_ && window_) glfwSwapBuffers(window_); }
+    void SetTitle(const char* title) override {
+        if (window_)
+            glfwSetWindowTitle(window_, title);
+    }
+    void SetSize(int w, int h) override {
+        if (window_)
+            glfwSetWindowSize(window_, w, h);
+    }
+    void SwapBuffers() override {
+        if (needGL_ && window_)
+            glfwSwapBuffers(window_);
+    }
 
 #ifdef UNIGUI_HAS_VULKAN
     void GetVulkanInstanceExtensions(std::vector<const char*>& out) const override {
         uint32_t count = 0;
         const char** exts = glfwGetRequiredInstanceExtensions(&count);
-        for (uint32_t i = 0; i < count; ++i) out.push_back(exts[i]);
+        for (uint32_t i = 0; i < count; ++i)
+            out.push_back(exts[i]);
     }
 
     bool CreateVulkanSurface(void* instance, void* out_surface) override {
-        if (!window_) return false;
+        if (!window_)
+            return false;
         VkSurfaceKHR surface = VK_NULL_HANDLE;
-        if (glfwCreateWindowSurface((VkInstance)instance, window_, nullptr, &surface) != VK_SUCCESS)
+        if (glfwCreateWindowSurface((VkInstance) instance, window_, nullptr, &surface) !=
+            VK_SUCCESS)
             return false;
         *reinterpret_cast<VkSurfaceKHR*>(out_surface) = surface;
         return true;

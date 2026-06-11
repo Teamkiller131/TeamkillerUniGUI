@@ -1,7 +1,8 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <functional>
+#include <string>
 
 namespace unigui {
 class GroupBox : public Widget {
@@ -10,8 +11,9 @@ public:
     void Render() override;
     void SetTitle(std::string title);
     void SetContentCallback(std::function<void()> callback);
+
 private:
     std::string title_;
     std::function<void()> content_callback_;
 };
-}
+} // namespace unigui

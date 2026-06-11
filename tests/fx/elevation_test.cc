@@ -1,21 +1,23 @@
 #include <unigui/fx/elevation.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 using unigui::fx::Elevation;
-using unigui::fx::ElevationTokens;
-using unigui::fx::ElevationPreset;
 using unigui::fx::ElevationName;
+using unigui::fx::ElevationPreset;
+using unigui::fx::ElevationTokens;
 using unigui::theme::SurfaceStyle;
 
 TEST(ElevationTest, HigherLevelMeansBiggerShadow) {
-    auto low  = ElevationPreset(Elevation::Low,    SurfaceStyle::Solid);
-    auto med  = ElevationPreset(Elevation::Medium, SurfaceStyle::Solid);
-    auto high = ElevationPreset(Elevation::High,   SurfaceStyle::Solid);
-    EXPECT_LT(low.shadow_radius,  med.shadow_radius);
-    EXPECT_LT(med.shadow_radius,  high.shadow_radius);
+    auto low = ElevationPreset(Elevation::Low, SurfaceStyle::Solid);
+    auto med = ElevationPreset(Elevation::Medium, SurfaceStyle::Solid);
+    auto high = ElevationPreset(Elevation::High, SurfaceStyle::Solid);
+    EXPECT_LT(low.shadow_radius, med.shadow_radius);
+    EXPECT_LT(med.shadow_radius, high.shadow_radius);
     EXPECT_LT(low.shadow_offset_y, high.shadow_offset_y);
-    EXPECT_LE(low.shadow_alpha,    high.shadow_alpha);
+    EXPECT_LE(low.shadow_alpha, high.shadow_alpha);
 }
 
 TEST(ElevationTest, NoneHasNoShadowOrGlow) {
@@ -43,7 +45,7 @@ TEST(ElevationTest, FrostedAndAcrylicAlsoGetRim) {
 
 TEST(ElevationTest, MinimalIsQuietest) {
     auto minimal = ElevationPreset(Elevation::High, SurfaceStyle::Minimal);
-    auto solid   = ElevationPreset(Elevation::High, SurfaceStyle::Solid);
+    auto solid = ElevationPreset(Elevation::High, SurfaceStyle::Solid);
     EXPECT_LT(minimal.shadow_alpha, solid.shadow_alpha);
     EXPECT_FALSE(minimal.rim_glow);
 }
@@ -69,7 +71,7 @@ TEST(ElevationTest, ActiveSurfaceOverloadFollowsTheme) {
     ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.12f, 1.0f);
     unigui::theme::ApplySurfaceStyle(ImGui::GetStyle(), SurfaceStyle::Glass);
     auto active = ElevationPreset(Elevation::Medium);
-    auto glass  = ElevationPreset(Elevation::Medium, SurfaceStyle::Glass);
+    auto glass = ElevationPreset(Elevation::Medium, SurfaceStyle::Glass);
     EXPECT_FLOAT_EQ(active.shadow_radius, glass.shadow_radius);
     EXPECT_EQ(active.rim_glow, glass.rim_glow);
 
@@ -80,17 +82,17 @@ TEST(ElevationTest, ActiveSurfaceOverloadFollowsTheme) {
 }
 
 TEST(ElevationTest, NamesAreStable) {
-    EXPECT_STREQ(ElevationName(Elevation::None),   "None");
-    EXPECT_STREQ(ElevationName(Elevation::Low),    "Low");
+    EXPECT_STREQ(ElevationName(Elevation::None), "None");
+    EXPECT_STREQ(ElevationName(Elevation::Low), "Low");
     EXPECT_STREQ(ElevationName(Elevation::Medium), "Medium");
-    EXPECT_STREQ(ElevationName(Elevation::High),   "High");
+    EXPECT_STREQ(ElevationName(Elevation::High), "High");
 }
 
 TEST(ElevationTest, MakeShadowConstructs) {
     // Constructing the effect object must not require a draw list.
     auto sh = unigui::fx::MakeElevationShadow(Elevation::High, SurfaceStyle::Solid);
-    (void)sh;
+    (void) sh;
     auto gl = unigui::fx::MakeElevationGlow(Elevation::High, SurfaceStyle::Glass);
-    (void)gl;
+    (void) gl;
     SUCCEED();
 }

@@ -1,7 +1,9 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <imgui.h>
+
+#include <string>
 
 namespace unigui {
 
@@ -29,7 +31,7 @@ private:
     std::string displayText_;
     bool inverted_ = false;
     bool animated_ = false;
-    float animWidth_ = 0.0f;  // for animation
+    float animWidth_ = 0.0f; // for animation
 };
 
 } // namespace unigui

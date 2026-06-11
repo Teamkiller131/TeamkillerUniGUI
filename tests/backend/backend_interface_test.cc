@@ -1,8 +1,10 @@
-#include <unigui/unigui.h>
 #include <unigui/backend/platform_backend.h>
 #include <unigui/backend/renderer_backend.h>
-#include <type_traits>
+#include <unigui/unigui.h>
+
 #include <gtest/gtest.h>
+#include <type_traits>
+
 #include "mock_backends.h"
 
 TEST(PlatformBackend, IsAbstract) {

@@ -1,11 +1,13 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
-#include <vector>
-#include <functional>
-#include <deque>
+
 #include <imgui.h>
 #include <implot.h>
+
+#include <deque>
+#include <functional>
+#include <string>
+#include <vector>
 
 namespace unigui {
 
@@ -37,8 +39,7 @@ public:
     /// (e.g. live ticks + late multi-packet backfill): the points are sorted by X and
     /// trimmed to the sliding window, giving a single source of truth with no
     /// double-counting and no dropped late arrivals.
-    void SetSeriesData(int seriesId, const std::vector<double>& xs,
-                       const std::vector<double>& ys);
+    void SetSeriesData(int seriesId, const std::vector<double>& xs, const std::vector<double>& ys);
 
     /// Clear all series data.
     void ClearAll();
@@ -76,18 +77,28 @@ public:
     /// When true (default), the plot background / border / grid follow the
     /// active ImGui theme palette. Set false to use fixed dark colors.
     void SetThemeBackground(bool on) { themeBackground_ = on; }
-    void SetCrosshairFormatter(std::function<std::string(double,const std::vector<double>&)> fn) { crosshairFmt_=std::move(fn); }
-    void SetXAxisFormatter(std::function<int(double,char*,int,void*)> fn) { xAxisFmt_ = std::move(fn); }
+    void SetCrosshairFormatter(std::function<std::string(double, const std::vector<double>&)> fn) {
+        crosshairFmt_ = std::move(fn);
+    }
+    void SetXAxisFormatter(std::function<int(double, char*, int, void*)> fn) {
+        xAxisFmt_ = std::move(fn);
+    }
     void SetRubberBandZoom(bool on) { rubberBandZoom_ = on; }
     int AddRefLine(std::string label, double value, ImU32 color);
     void RemoveRefLine(int id);
 
 private:
     struct Series {
-        int id; TimeSeriesDef def;
-        std::deque<std::pair<double, float>> points;  // timestamp → value
+        int id;
+        TimeSeriesDef def;
+        std::deque<std::pair<double, float>> points; // timestamp → value
     };
-    struct RefLine { int id; std::string label; double value; ImU32 color; };
+    struct RefLine {
+        int id;
+        std::string label;
+        double value;
+        ImU32 color;
+    };
     std::vector<Series> series_;
     std::vector<RefLine> refLines_;
     int nextId_ = 1;
@@ -96,7 +107,7 @@ private:
     bool yAutoFit_ = true;
     bool yRangeFit_ = true;
     double yMin_ = 0, yMax_ = 100;
-    bool   xRangeSet_ = false;
+    bool xRangeSet_ = false;
     double xMin_ = 0, xMax_ = 1;
     std::string xLabel_, yLabel_;
     bool crosshair_ = false;

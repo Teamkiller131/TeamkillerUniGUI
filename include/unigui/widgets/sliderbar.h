@@ -1,17 +1,19 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
+
+#include <imgui.h>
+
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
-#include <imgui.h>
 
 namespace unigui {
 
 class SliderBar : public Widget {
 public:
     struct Tick {
-        int futuresLots = 0;    // hand count
-        double price = 0.0;     // price ratio
+        int futuresLots = 0; // hand count
+        double price = 0.0;  // price ratio
     };
 
     explicit SliderBar(std::string name);

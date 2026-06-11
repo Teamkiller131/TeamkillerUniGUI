@@ -1,5 +1,6 @@
-#include <unigui/network/network.h>
 #include <unigui/core/log.h>
+#include <unigui/network/network.h>
+
 #include <httplib.h>
 
 namespace unigui::network {
@@ -25,30 +26,40 @@ static httplib::Client* makeClient(const std::string& url) {
     return cli;
 }
 
-HttpResponse HttpClient::Get(const std::string& url, const std::map<std::string,std::string>& headers) {
+HttpResponse HttpClient::Get(const std::string& url,
+                             const std::map<std::string, std::string>& headers) {
     HttpResponse resp;
     auto* cli = makeClient(url);
     httplib::Headers hdrs;
-    for (auto& [k,v] : headers) hdrs.emplace(k, v);
-    auto slash = url.find('/', url.find("://") != std::string::npos ? url.find("://")+3 : 0);
+    for (auto& [k, v] : headers)
+        hdrs.emplace(k, v);
+    auto slash = url.find('/', url.find("://") != std::string::npos ? url.find("://") + 3 : 0);
     std::string path = (slash != std::string::npos) ? url.substr(slash) : "/";
     auto res = cli->Get(path, hdrs);
-    if (res) { resp.status = res->status; resp.body = res->body; }
+    if (res) {
+        resp.status = res->status;
+        resp.body = res->body;
+    }
     delete cli;
     return resp;
 }
 
 HttpResponse HttpClient::Post(const std::string& url, const std::string& body,
-                               const std::string& contentType, const std::map<std::string,std::string>& headers) {
+                              const std::string& contentType,
+                              const std::map<std::string, std::string>& headers) {
     HttpResponse resp;
     auto* cli = makeClient(url);
     httplib::Headers hdrs;
     hdrs.emplace("Content-Type", contentType);
-    for (auto& [k,v] : headers) hdrs.emplace(k, v);
-    auto slash = url.find('/', url.find("://") != std::string::npos ? url.find("://")+3 : 0);
+    for (auto& [k, v] : headers)
+        hdrs.emplace(k, v);
+    auto slash = url.find('/', url.find("://") != std::string::npos ? url.find("://") + 3 : 0);
     std::string path = (slash != std::string::npos) ? url.substr(slash) : "/";
     auto res = cli->Post(path, hdrs, body, contentType.c_str());
-    if (res) { resp.status = res->status; resp.body = res->body; }
+    if (res) {
+        resp.status = res->status;
+        resp.body = res->body;
+    }
     delete cli;
     return resp;
 }
@@ -66,7 +77,9 @@ WebSocketClient::WebSocketClient() {
     });
 }
 
-WebSocketClient::~WebSocketClient() { Disconnect(); }
+WebSocketClient::~WebSocketClient() {
+    Disconnect();
+}
 
 bool WebSocketClient::Connect(const std::string& url) {
     ws_.setUrl(url);
@@ -74,11 +87,23 @@ bool WebSocketClient::Connect(const std::string& url) {
     return true;
 }
 
-void WebSocketClient::Send(const std::string& msg) { ws_.send(msg); }
-void WebSocketClient::OnMessage(std::function<void(const std::string&)> cb) { onMsg_ = std::move(cb); }
-void WebSocketClient::OnOpen(std::function<void()> cb) { onOpen_ = std::move(cb); }
-void WebSocketClient::OnClose(std::function<void()> cb) { onClose_ = std::move(cb); }
-bool WebSocketClient::IsConnected() const { return ws_.getReadyState() == ix::ReadyState::Open; }
-void WebSocketClient::Disconnect() { ws_.stop(); }
+void WebSocketClient::Send(const std::string& msg) {
+    ws_.send(msg);
+}
+void WebSocketClient::OnMessage(std::function<void(const std::string&)> cb) {
+    onMsg_ = std::move(cb);
+}
+void WebSocketClient::OnOpen(std::function<void()> cb) {
+    onOpen_ = std::move(cb);
+}
+void WebSocketClient::OnClose(std::function<void()> cb) {
+    onClose_ = std::move(cb);
+}
+bool WebSocketClient::IsConnected() const {
+    return ws_.getReadyState() == ix::ReadyState::Open;
+}
+void WebSocketClient::Disconnect() {
+    ws_.stop();
+}
 
 } // namespace unigui::network

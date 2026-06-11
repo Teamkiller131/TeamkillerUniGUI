@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/inputint.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class InputIntTest : public ::testing::Test {
@@ -104,7 +106,7 @@ TEST_F(InputIntTest, SetSuffix_DoesNotCrash) {
 // 12. Default min/max boundaries
 TEST_F(InputIntTest, DefaultMinMax_Boundaries) {
     unigui::InputInt ii("ii", "Bounds"); // defaults: min=0, max=100
-    ii.SetValue(-999); // Below default min
+    ii.SetValue(-999);                   // Below default min
     ii.Render();
     EXPECT_GE(ii.GetValue(), 0);
     ii.SetValue(9999); // Above default max

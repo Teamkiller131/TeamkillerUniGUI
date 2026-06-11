@@ -1,10 +1,12 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
-#include <vector>
-#include <functional>
-#include <variant>
+
 #include <imgui.h>
+
+#include <functional>
+#include <string>
+#include <variant>
+#include <vector>
 
 namespace unigui {
 
@@ -35,10 +37,12 @@ public:
     void AddProperty(PropertyDef prop);
     void Clear();
 
-    template<typename T> T GetValue(const std::string& name, T defaultVal = T{}) const;
+    template <typename T> T GetValue(const std::string& name, T defaultVal = T{}) const;
     void SetValue(const std::string& name, PropValue val);
 
-    void SetOnChange(std::function<void(const std::string& name, const PropValue& val)> fn) { onChange_ = std::move(fn); }
+    void SetOnChange(std::function<void(const std::string& name, const PropValue& val)> fn) {
+        onChange_ = std::move(fn);
+    }
 
     const std::vector<PropertyDef>& GetProperties() const { return props_; }
 

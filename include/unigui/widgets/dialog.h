@@ -1,7 +1,8 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <functional>
+#include <string>
 
 namespace unigui {
 class Dialog : public Widget {
@@ -15,9 +16,10 @@ public:
     void SetOnOk(std::function<void()> callback);
     void SetOnCancel(std::function<void()> callback);
     bool WasOkClicked() const;
+
 private:
     std::string title_, message_, okText_ = "OK", cancelText_;
     bool open_ = false, okClicked_ = false;
     std::function<void()> onOk_, onCancel_;
 };
-}
+} // namespace unigui

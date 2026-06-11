@@ -1,8 +1,9 @@
 #include <unigui/core/locale.h>
-#include <vector>
-#include <regex>
-#include <cstdio>
+
 #include <cerrno>
+#include <cstdio>
+#include <regex>
+#include <vector>
 
 namespace unigui {
 
@@ -13,8 +14,12 @@ std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& L
     return table;
 }
 
-void Locale::SetCurrent(const std::string& locale) { current_ = locale; }
-const std::string& Locale::GetCurrent() { return current_; }
+void Locale::SetCurrent(const std::string& locale) {
+    current_ = locale;
+}
+const std::string& Locale::GetCurrent() {
+    return current_;
+}
 
 void Locale::Set(const std::string& locale, const std::string& key, const std::string& value) {
     Table()[locale][key] = value;
@@ -25,7 +30,8 @@ std::string Locale::Tr(const std::string& key) {
     auto it = table.find(current_);
     if (it != table.end()) {
         auto kit = it->second.find(key);
-        if (kit != it->second.end()) return kit->second;
+        if (kit != it->second.end())
+            return kit->second;
     }
     return key;
 }
@@ -33,19 +39,26 @@ std::string Locale::Tr(const std::string& key) {
 bool Locale::Has(const std::string& key) {
     auto& table = Table();
     auto it = table.find(current_);
-    if (it != table.end()) return it->second.count(key) > 0;
+    if (it != table.end())
+        return it->second.count(key) > 0;
     return false;
 }
 
-void Locale::Clear() { Table().clear(); }
+void Locale::Clear() {
+    Table().clear();
+}
 
 bool Locale::LoadFromFile(const std::string& path) {
     FILE* f = fopen(path.c_str(), "r");
-    if (!f) return false;
+    if (!f)
+        return false;
     fseek(f, 0, SEEK_END);
     long sz = ftell(f);
     fseek(f, 0, SEEK_SET);
-    if (sz <= 0) { fclose(f); return false; }
+    if (sz <= 0) {
+        fclose(f);
+        return false;
+    }
     std::string json(sz, '\0');
     fread(&json[0], 1, sz, f);
     fclose(f);
@@ -55,7 +68,8 @@ bool Locale::LoadFromFile(const std::string& path) {
     auto lastSlash = path.find_last_of("/\\");
     auto base = (lastSlash != std::string::npos) ? path.substr(lastSlash + 1) : path;
     auto dot = base.find('.');
-    if (dot != std::string::npos) locale = base.substr(0, dot);
+    if (dot != std::string::npos)
+        locale = base.substr(0, dot);
 
     // Parse JSON {"key":"value","key2":"value2"}
     std::regex re("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"");
@@ -104,7 +118,8 @@ void Locale::LoadBuiltin() {
 
 std::vector<std::string> Locale::GetLocales() {
     std::vector<std::string> locales;
-    for (auto& [code, _] : Table()) locales.push_back(code);
+    for (auto& [code, _] : Table())
+        locales.push_back(code);
     return locales;
 }
 

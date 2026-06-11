@@ -1,8 +1,9 @@
 #pragma once
 
 #include <unigui/widgets/panel.h>
-#include <memory>
+
 #include <functional>
+#include <memory>
 #include <string>
 
 namespace unigui {
@@ -23,7 +24,9 @@ public:
     void SetCloseToTray(bool on) { closeToTray_ = on; }
 
     /// v1.6: file drag-drop support
-    void SetDropCallback(std::function<void(std::vector<std::string>)> cb) { onDrop_ = std::move(cb); }
+    void SetDropCallback(std::function<void(std::vector<std::string>)> cb) {
+        onDrop_ = std::move(cb);
+    }
 
     /// v3.2.6: layout persistence — saves/restores position + size to JSON string
     std::string SaveLayout() const;

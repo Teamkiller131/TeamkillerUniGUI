@@ -1,5 +1,6 @@
-#include <unigui/unigui.h>
 #include <unigui/core/settings.h>
+#include <unigui/unigui.h>
+
 #include <gtest/gtest.h>
 class SettingsTest : public ::testing::Test {
 protected:
@@ -25,14 +26,14 @@ TEST_F(SettingsTest, SetAndGet_IntFloat) {
 TEST_F(SettingsTest, GarbageInt_ReturnsDefault) {
     auto& s = unigui::Settings::Instance();
     s.Set("n", "not-a-number");
-    EXPECT_NO_THROW({ (void)s.GetInt("n", 7); });
+    EXPECT_NO_THROW({ (void) s.GetInt("n", 7); });
     EXPECT_EQ(s.GetInt("n", 7), 7);
 }
 
 TEST_F(SettingsTest, EmptyFloat_ReturnsDefault) {
     auto& s = unigui::Settings::Instance();
     s.Set("f", "");
-    EXPECT_NO_THROW({ (void)s.GetFloat("f", 1.5f); });
+    EXPECT_NO_THROW({ (void) s.GetFloat("f", 1.5f); });
     EXPECT_NEAR(s.GetFloat("f", 1.5f), 1.5f, 0.001f);
 }
 

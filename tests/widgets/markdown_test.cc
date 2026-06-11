@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/markdown.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class MarkdownTest : public ::testing::Test {
@@ -84,25 +86,22 @@ TEST_F(MarkdownTest, Render_HorizontalRule) {
 }
 
 TEST_F(MarkdownTest, Render_AllFormatting) {
-    unigui::Markdown md("md",
-        "# Main Title\n"
-        "## Section\n"
-        "This has **bold**, *italic*, and `code`.\n"
-        "- Bullet 1\n"
-        "- Bullet 2\n"
-        "---\n"
-        "Footer text."
-    );
+    unigui::Markdown md("md", "# Main Title\n"
+                              "## Section\n"
+                              "This has **bold**, *italic*, and `code`.\n"
+                              "- Bullet 1\n"
+                              "- Bullet 2\n"
+                              "---\n"
+                              "Footer text.");
     md.Render();
 }
 
 TEST_F(MarkdownTest, Render_LongText) {
-    unigui::Markdown md("md",
-        "This is a very long paragraph that should be word-wrapped correctly by the "
-        "markdown renderer. It contains enough text to span multiple lines and test "
-        "the wrapping logic thoroughly without causing any crashes or rendering issues. "
-        "The framework should handle this gracefully."
-    );
+    unigui::Markdown md(
+        "md", "This is a very long paragraph that should be word-wrapped correctly by the "
+              "markdown renderer. It contains enough text to span multiple lines and test "
+              "the wrapping logic thoroughly without causing any crashes or rendering issues. "
+              "The framework should handle this gracefully.");
     md.Render();
 }
 
@@ -132,7 +131,6 @@ TEST_F(MarkdownTest, LongText_RendersWithoutCrash) {
     unigui::Markdown md("md_long", std::string(2000, 'x'));
     md.Render();
 }
-
 
 // ---- max width ----
 

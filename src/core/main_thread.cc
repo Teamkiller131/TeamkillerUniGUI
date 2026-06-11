@@ -1,7 +1,8 @@
-#include <unigui/core/main_thread.h>
 #include <unigui/core/log.h>
-#include <vector>
+#include <unigui/core/main_thread.h>
+
 #include <mutex>
+#include <vector>
 
 namespace unigui {
 
@@ -20,8 +21,9 @@ void ProcessMainThreadTasks() {
         tasks.swap(g_pendingTasks);
     }
     for (auto& fn : tasks) {
-        try { fn(); }
-        catch (...) { UNIGUI_LOG_WARN("MainThread task threw exception"); }
+        try {
+            fn();
+        } catch (...) { UNIGUI_LOG_WARN("MainThread task threw exception"); }
     }
 }
 

@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/panelbox.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class PanelBoxTest : public ::testing::Test {
@@ -11,7 +13,10 @@ protected:
         ImGui::GetIO().Fonts->Build();
         ImGui::NewFrame();
     }
-    void TearDown() override { ImGui::Render(); ImGui::DestroyContext(); }
+    void TearDown() override {
+        ImGui::Render();
+        ImGui::DestroyContext();
+    }
 };
 
 TEST_F(PanelBoxTest, GetTitle_ReturnsTitle) {

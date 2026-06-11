@@ -1,11 +1,14 @@
 #pragma once
+#include <imgui.h>
+
 #include <string>
 #include <utility>
-#include <imgui.h>
 
 namespace unigui {
 
-namespace fx { enum class Elevation; }  // fwd; defined in fx/elevation.h
+namespace fx {
+enum class Elevation;
+} // namespace fx
 
 class ShadowConfig {
 public:
@@ -21,13 +24,21 @@ public:
     explicit Widget(std::string name);
     virtual ~Widget() = default;
     virtual void Render() = 0;
-    void Show(); void Hide(); bool IsVisible() const;
-    const std::string& GetName() const; ImGuiID GetID() const;
+    void Show();
+    void Hide();
+    bool IsVisible() const;
+    const std::string& GetName() const;
+    ImGuiID GetID() const;
     void SetTooltip(std::string t);
-    void SetFocused(); bool IsFocused() const; static void SetNextFocused();
-    void SetAccessibleName(std::string n); void SetAccessibleDescription(std::string d);
-    virtual void SetMinSize(float w,float h); virtual void SetMaxSize(float w,float h);
-    ImVec2 GetMinSize()const{return minSize_;} ImVec2 GetMaxSize()const{return maxSize_;}
+    void SetFocused();
+    bool IsFocused() const;
+    static void SetNextFocused();
+    void SetAccessibleName(std::string n);
+    void SetAccessibleDescription(std::string d);
+    virtual void SetMinSize(float w, float h);
+    virtual void SetMaxSize(float w, float h);
+    ImVec2 GetMinSize() const { return minSize_; }
+    ImVec2 GetMaxSize() const { return maxSize_; }
     // ── v3.0 Shadow ────────────────────────────────────────────────────
     void SetShadow(bool enable, float radius = 4.f, float offX = 2.f, float offY = 2.f);
     const ShadowConfig& GetShadowConfig() const { return shadow_; }
@@ -45,11 +56,12 @@ public:
     // ── User Data ───────────────────────────────────────────────────────
     void SetUserData(void* data) { userData_ = data; }
     void* GetUserData() const { return userData_; }
-    template<typename T> T* GetUserDataAs() const { return static_cast<T*>(userData_); }
+    template <typename T> T* GetUserDataAs() const { return static_cast<T*>(userData_); }
 
     // ── Tooltip Render ──────────────────────────────────────────────────
     void RenderTooltip() {
-        if (!tooltip_.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_DelayShort))
+        if (!tooltip_.empty() &&
+            ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_DelayShort))
             ImGui::SetTooltip("%s", tooltip_.c_str());
     }
 
@@ -57,18 +69,49 @@ public:
     // Additive wrappers around the setters above so a widget can be
     // configured in a single expression, e.g.:
     //     btn.WithTooltip("Save").WithEnabled(false).WithShadow();
-    Widget& WithTooltip(std::string t)         { SetTooltip(std::move(t)); return *this; }
-    Widget& WithEnabled(bool on)               { SetEnabled(on); return *this; }
-    Widget& WithVisible(bool v)                { if (v) Show(); else Hide(); return *this; }
-    Widget& WithUserData(void* data)           { SetUserData(data); return *this; }
-    Widget& WithAccessibleName(std::string n)  { SetAccessibleName(std::move(n)); return *this; }
-    Widget& WithAccessibleDescription(std::string d) { SetAccessibleDescription(std::move(d)); return *this; }
-    Widget& WithMinSize(float w, float h)      { SetMinSize(w, h); return *this; }
-    Widget& WithMaxSize(float w, float h)      { SetMaxSize(w, h); return *this; }
-    Widget& WithShadow(bool enable = true, float radius = 4.f, float offX = 2.f, float offY = 2.f) {
-        SetShadow(enable, radius, offX, offY); return *this;
+    Widget& WithTooltip(std::string t) {
+        SetTooltip(std::move(t));
+        return *this;
     }
-    Widget& WithElevation(fx::Elevation level) { SetElevation(level); return *this; }
+    Widget& WithEnabled(bool on) {
+        SetEnabled(on);
+        return *this;
+    }
+    Widget& WithVisible(bool v) {
+        if (v)
+            Show();
+        else
+            Hide();
+        return *this;
+    }
+    Widget& WithUserData(void* data) {
+        SetUserData(data);
+        return *this;
+    }
+    Widget& WithAccessibleName(std::string n) {
+        SetAccessibleName(std::move(n));
+        return *this;
+    }
+    Widget& WithAccessibleDescription(std::string d) {
+        SetAccessibleDescription(std::move(d));
+        return *this;
+    }
+    Widget& WithMinSize(float w, float h) {
+        SetMinSize(w, h);
+        return *this;
+    }
+    Widget& WithMaxSize(float w, float h) {
+        SetMaxSize(w, h);
+        return *this;
+    }
+    Widget& WithShadow(bool enable = true, float radius = 4.f, float offX = 2.f, float offY = 2.f) {
+        SetShadow(enable, radius, offX, offY);
+        return *this;
+    }
+    Widget& WithElevation(fx::Elevation level) {
+        SetElevation(level);
+        return *this;
+    }
 
 protected:
     // ── Lifecycle Hooks ─────────────────────────────────────────────────
@@ -80,11 +123,12 @@ protected:
     static void EndDisabled() { ImGui::EndDisabled(); }
 
     ShadowConfig shadow_;
+
 private:
-    std::string name_,tooltip_,accessibleName_,accessibleDesc_;
-    bool visible_=true,focused_=false,enabled_=true;
+    std::string name_, tooltip_, accessibleName_, accessibleDesc_;
+    bool visible_ = true, focused_ = false, enabled_ = true;
     void* userData_ = nullptr;
-    ImVec2 minSize_=ImVec2(0,0),maxSize_=ImVec2(0,0);
+    ImVec2 minSize_ = ImVec2(0, 0), maxSize_ = ImVec2(0, 0);
 };
 
 // ── FluentWidget<Derived> (CRTP) ─────────────────────────────────────────────
@@ -98,23 +142,54 @@ private:
 // (FluentWidget IS-A Widget, so this is source-compatible with existing code,
 // including `unigui::Widget*` upcasts). Widgets that have not opted in keep the
 // Widget& returning helpers below.
-template <class Derived>
-class FluentWidget : public Widget {
+template <class Derived> class FluentWidget : public Widget {
 public:
     using Widget::Widget;
 
-    Derived& WithTooltip(std::string t)        { SetTooltip(std::move(t)); return self(); }
-    Derived& WithEnabled(bool on)              { SetEnabled(on); return self(); }
-    Derived& WithVisible(bool v)               { if (v) Show(); else Hide(); return self(); }
-    Derived& WithUserData(void* data)          { SetUserData(data); return self(); }
-    Derived& WithAccessibleName(std::string n) { SetAccessibleName(std::move(n)); return self(); }
-    Derived& WithAccessibleDescription(std::string d) { SetAccessibleDescription(std::move(d)); return self(); }
-    Derived& WithMinSize(float w, float h)     { SetMinSize(w, h); return self(); }
-    Derived& WithMaxSize(float w, float h)     { SetMaxSize(w, h); return self(); }
-    Derived& WithShadow(bool enable = true, float radius = 4.f, float offX = 2.f, float offY = 2.f) {
-        SetShadow(enable, radius, offX, offY); return self();
+    Derived& WithTooltip(std::string t) {
+        SetTooltip(std::move(t));
+        return self();
     }
-    Derived& WithElevation(fx::Elevation level) { SetElevation(level); return self(); }
+    Derived& WithEnabled(bool on) {
+        SetEnabled(on);
+        return self();
+    }
+    Derived& WithVisible(bool v) {
+        if (v)
+            Show();
+        else
+            Hide();
+        return self();
+    }
+    Derived& WithUserData(void* data) {
+        SetUserData(data);
+        return self();
+    }
+    Derived& WithAccessibleName(std::string n) {
+        SetAccessibleName(std::move(n));
+        return self();
+    }
+    Derived& WithAccessibleDescription(std::string d) {
+        SetAccessibleDescription(std::move(d));
+        return self();
+    }
+    Derived& WithMinSize(float w, float h) {
+        SetMinSize(w, h);
+        return self();
+    }
+    Derived& WithMaxSize(float w, float h) {
+        SetMaxSize(w, h);
+        return self();
+    }
+    Derived& WithShadow(bool enable = true, float radius = 4.f, float offX = 2.f,
+                        float offY = 2.f) {
+        SetShadow(enable, radius, offX, offY);
+        return self();
+    }
+    Derived& WithElevation(fx::Elevation level) {
+        SetElevation(level);
+        return self();
+    }
 
 protected:
     Derived& self() { return static_cast<Derived&>(*this); }

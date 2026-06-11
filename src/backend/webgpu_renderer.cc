@@ -1,4 +1,5 @@
 #include <unigui/backend/backend_factory.h>
+
 #include <cstdio>
 namespace unigui {
 // WebGPU backend — requires Dawn/WGPU implementation (Emscripten or native)
@@ -7,4 +8,4 @@ std::unique_ptr<RendererBackend> CreateWebGPURenderer() {
     std::fprintf(stderr, "[unigui] WebGPU backend requires Dawn/WGPU\n");
     return nullptr;
 }
-}
+} // namespace unigui

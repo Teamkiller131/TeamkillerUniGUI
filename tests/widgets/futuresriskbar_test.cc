@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/futuresriskbar.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class FuturesRiskBarTest : public ::testing::Test {

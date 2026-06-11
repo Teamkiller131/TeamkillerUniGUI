@@ -1,20 +1,24 @@
 #pragma once
-#include <unigui/widgets/widget_base.h>
 #include <unigui/fx/animation.h>
+#include <unigui/widgets/widget_base.h>
+
+#include <imgui.h>
+
+#include <chrono>
+#include <deque>
+#include <functional>
 #include <string>
 #include <vector>
-#include <deque>
-#include <chrono>
-#include <functional>
-#include <imgui.h>
 
 namespace unigui {
 
 enum class ToastType { Info, Success, Warning, Error };
 
 struct ToastMessage {
-    std::string text; ToastType type = ToastType::Info;
-    std::chrono::steady_clock::time_point showTime; float duration = 3.0f;
+    std::string text;
+    ToastType type = ToastType::Info;
+    std::chrono::steady_clock::time_point showTime;
+    float duration = 3.0f;
     std::function<void()> onDismiss;
     fx::AnimationState anim;
 };
@@ -33,7 +37,7 @@ public:
     static void Error(std::string msg) { Instance().Show(std::move(msg), ToastType::Error); }
 
     /// v1.9: Set anchor position. 0=top-left, 1=top-right, 2=bottom-right(default), 3=bottom-left
-    void SetPosition(int anchor, float offsetX=10, float offsetY=10);
+    void SetPosition(int anchor, float offsetX = 10, float offsetY = 10);
 
 private:
     std::deque<ToastMessage> queue_;

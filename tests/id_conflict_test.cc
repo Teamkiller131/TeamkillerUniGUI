@@ -1,14 +1,16 @@
+#include <unigui/core/context.h>
 #include <unigui/unigui.h>
 #include <unigui/widgets/button.h>
 #include <unigui/widgets/checkbox.h>
 #include <unigui/widgets/combobox.h>
-#include <unigui/widgets/window.h>
 #include <unigui/widgets/panel.h>
-#include <unigui/core/context.h>
+#include <unigui/widgets/window.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
-#include <vector>
 #include <memory>
+#include <vector>
 
 class IdConflictTest : public ::testing::Test {
 protected:
@@ -174,7 +176,7 @@ TEST_F(IdConflictTest, TwoPanels_SameTitle_WithContent) {
 // Mixed widgets with same label → no crash
 // ────────────────────────────────────────────────────────
 TEST_F(IdConflictTest, MixedWidgets_SameLabel_NoCrash) {
-    unigui::Button   btn("mix_btn", "Action");
+    unigui::Button btn("mix_btn", "Action");
     unigui::CheckBox cb("mix_cb", "Action");
     unigui::ComboBox combo("mix_combo", "Action", {"A", "B"});
 
@@ -184,11 +186,11 @@ TEST_F(IdConflictTest, MixedWidgets_SameLabel_NoCrash) {
 }
 
 TEST_F(IdConflictTest, MixedWidgets_SameLabel_AllInOneFrame) {
-    unigui::Button   b("b1", "Item");
+    unigui::Button b("b1", "Item");
     unigui::CheckBox c("c1", "Item");
     unigui::ComboBox cm("cm1", "Item", {"X", "Y"});
-    unigui::Window  win("w1", "Item");
-    unigui::Panel   pnl("p1", "Item");
+    unigui::Window win("w1", "Item");
+    unigui::Panel pnl("p1", "Item");
 
     // All render in same frame
     b.Render();
@@ -207,10 +209,7 @@ TEST_F(IdConflictTest, Stress_HundredButtons_SameLabel) {
     buttons.reserve(100);
 
     for (int i = 0; i < 100; ++i) {
-        auto btn = std::make_unique<unigui::Button>(
-            "stress_btn_" + std::to_string(i),
-            "Submit"
-        );
+        auto btn = std::make_unique<unigui::Button>("stress_btn_" + std::to_string(i), "Submit");
         buttons.push_back(std::move(btn));
     }
 
@@ -227,10 +226,7 @@ TEST_F(IdConflictTest, Stress_HundredCheckBoxes_SameLabel) {
     boxes.reserve(100);
 
     for (int i = 0; i < 100; ++i) {
-        auto cb = std::make_unique<unigui::CheckBox>(
-            "stress_cb_" + std::to_string(i),
-            "Enable"
-        );
+        auto cb = std::make_unique<unigui::CheckBox>("stress_cb_" + std::to_string(i), "Enable");
         boxes.push_back(std::move(cb));
     }
 
@@ -242,10 +238,10 @@ TEST_F(IdConflictTest, Stress_HundredCheckBoxes_SameLabel) {
 TEST_F(IdConflictTest, Stress_HundredWidgets_MixedTypes) {
     // 100 mixed widgets, all with label "Widget"
     for (int i = 0; i < 25; ++i) {
-        unigui::Button   b("b_mix_" + std::to_string(i), "Widget");
+        unigui::Button b("b_mix_" + std::to_string(i), "Widget");
         unigui::CheckBox cb("cb_mix_" + std::to_string(i), "Widget");
         unigui::ComboBox cm("cm_mix_" + std::to_string(i), "Widget", {"A"});
-        unigui::Panel    p("p_mix_" + std::to_string(i), "Widget");
+        unigui::Panel p("p_mix_" + std::to_string(i), "Widget");
 
         b.Render();
         cb.Render();

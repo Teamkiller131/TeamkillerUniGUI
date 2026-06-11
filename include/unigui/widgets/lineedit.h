@@ -1,8 +1,9 @@
 #pragma once
 #include <unigui/widgets/value_widget.h>
+
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
 
 namespace unigui {
 class LineEdit : public ValueWidget<std::string> {
@@ -23,7 +24,8 @@ public:
     bool CanUndo() const;
     bool CanRedo() const;
     int GetUndoDepth() const { return undoIndex_ + 1; }
-    int GetRedoDepth() const { return (int)undoStack_.size() - undoIndex_ - 1; }
+    int GetRedoDepth() const { return (int) undoStack_.size() - undoIndex_ - 1; }
+
 private:
     void PushUndo();
     std::string label_;
@@ -38,4 +40,4 @@ private:
     std::vector<std::string> undoStack_;
     int undoIndex_ = -1;
 };
-}
+} // namespace unigui

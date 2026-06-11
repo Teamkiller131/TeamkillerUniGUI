@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/loadingindicator.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class LoadingIndicatorTest : public ::testing::Test {

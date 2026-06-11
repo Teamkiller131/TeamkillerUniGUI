@@ -1,7 +1,9 @@
+#include <unigui/core/context.h>
 #include <unigui/unigui.h>
 #include <unigui/widgets/form.h>
-#include <unigui/core/context.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class FormTest : public ::testing::Test {
@@ -63,7 +65,7 @@ TEST_F(FormTest, OnSubmit_CallbackIsCalled) {
     form.SetOnSubmit([&called]() { called = true; });
     form.Render(); // Submit button must be clicked, so callback not called automatically
     // Without actual click, callback won't fire - just verify no crash
-    (void)called;
+    (void) called;
 }
 
 TEST_F(FormTest, Hidden_DoesNotRender) {
@@ -253,7 +255,8 @@ TEST_F(FormTest, SerializeRoundtrip_ComplexData) {
     EXPECT_TRUE(restored.Deserialize(json));
 
     EXPECT_EQ(restored.GetFieldValue("username"), "charlie");
-    EXPECT_EQ(restored.GetFieldValue("bio"), "A long bio with\nspecial chars: \"quotes\", \\backslashes\\");
+    EXPECT_EQ(restored.GetFieldValue("bio"),
+              "A long bio with\nspecial chars: \"quotes\", \\backslashes\\");
     EXPECT_EQ(restored.GetFieldValue("premium"), "1");
     EXPECT_EQ(restored.GetFieldValue("verified"), "0");
     EXPECT_EQ(restored.GetFieldValue("role"), "Editor");
@@ -348,13 +351,13 @@ TEST_F(FormTest, InvalidValidatorRegex_DoesNotCrash) {
     form.AddTextField("x", "X");
     form.SetFieldValue("x", "anything");
     form.SetFieldValidatorRegex("x", "(unbalanced", "bad pattern"); // throws in std::regex
-    EXPECT_NO_THROW({ (void)form.Validate(); });
+    EXPECT_NO_THROW({ (void) form.Validate(); });
 }
 
 TEST_F(FormTest, Deserialize_MalformedJson_DoesNotCrash) {
     unigui::Form form("frm_bad_json", "Bad JSON");
     form.AddTextField("name", "Name");
-    EXPECT_NO_THROW({ (void)form.Deserialize("{ this is not valid json "); });
+    EXPECT_NO_THROW({ (void) form.Deserialize("{ this is not valid json "); });
 }
 
 TEST_F(FormTest, ComboAndRanges_UseConfiguredValues) {

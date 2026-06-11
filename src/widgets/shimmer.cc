@@ -1,5 +1,6 @@
-#include <unigui/widgets/shimmer.h>
 #include <unigui/fx/effect_scope.h>
+#include <unigui/widgets/shimmer.h>
+
 #include <cmath>
 
 namespace unigui {
@@ -18,7 +19,8 @@ void Shimmer::AddCircle(float r, float x, float y) {
 }
 
 void Shimmer::Start() {
-    if (!playing_) anim_.Play(1.2f / speed_, fx::EasingCurve::Linear);
+    if (!playing_)
+        anim_.Play(1.2f / speed_, fx::EasingCurve::Linear);
     playing_ = true;
 }
 
@@ -27,7 +29,9 @@ void Shimmer::Stop() {
     playing_ = false;
 }
 
-bool Shimmer::IsPlaying() const { return playing_; }
+bool Shimmer::IsPlaying() const {
+    return playing_;
+}
 
 void Shimmer::SetSpeed(float s) {
     speed_ = s;
@@ -35,7 +39,8 @@ void Shimmer::SetSpeed(float s) {
 }
 
 void Shimmer::Render() {
-    if (!playing_) return;
+    if (!playing_)
+        return;
     ImGui::PushID(this);
 
     float t = anim_.Update(ImGui::GetIO().DeltaTime);
@@ -58,35 +63,32 @@ void Shimmer::Render() {
             dl->AddRectFilled(p0, p1, baseCol, rr);
 
             // Gradient sweep band
-            float bandLeft  = p0.x + e.w * (sweep - 0.15f);
+            float bandLeft = p0.x + e.w * (sweep - 0.15f);
             float bandRight = p0.x + e.w * (sweep + 0.15f);
-            bandLeft  = std::max(p0.x, std::min(p1.x, bandLeft));
+            bandLeft = std::max(p0.x, std::min(p1.x, bandLeft));
             bandRight = std::max(p0.x, std::min(p1.x, bandRight));
 
             if (bandRight > bandLeft) {
-                dl->AddRectFilledMultiColor(
-                    ImVec2(bandLeft, p0.y), ImVec2(bandRight, p1.y),
-                    highlightCol, highlightCol,
-                    IM_COL32(60, 60, 70, 100), IM_COL32(60, 60, 70, 100));
+                dl->AddRectFilledMultiColor(ImVec2(bandLeft, p0.y), ImVec2(bandRight, p1.y),
+                                            highlightCol, highlightCol, IM_COL32(60, 60, 70, 100),
+                                            IM_COL32(60, 60, 70, 100));
             }
         } else {
             // Circle
-            dl->AddCircleFilled(
-                ImVec2(p0.x + e.w * 0.5f, p0.y + e.h * 0.5f),
-                e.w, baseCol);
+            dl->AddCircleFilled(ImVec2(p0.x + e.w * 0.5f, p0.y + e.h * 0.5f), e.w, baseCol);
 
             // Highlight arc
             float cx = p0.x + e.w * 0.5f;
             float sweepX = cx + e.w * (sweep - 0.5f) * 0.8f;
-            dl->AddCircleFilled(ImVec2(sweepX, p0.y + e.h * 0.5f),
-                               e.w * 0.6f, highlightCol);
+            dl->AddCircleFilled(ImVec2(sweepX, p0.y + e.h * 0.5f), e.w * 0.6f, highlightCol);
         }
     }
 
     // Reserve space for rendered elements
     if (!elements_.empty()) {
         float maxY = 0.f;
-        for (auto& e : elements_) maxY = std::max(maxY, e.y + e.h);
+        for (auto& e : elements_)
+            maxY = std::max(maxY, e.y + e.h);
         ImGui::Dummy(ImVec2(0, maxY));
     }
     ImGui::PopID();

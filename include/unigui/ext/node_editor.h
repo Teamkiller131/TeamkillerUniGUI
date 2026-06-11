@@ -1,18 +1,19 @@
 #pragma once
 #include <imgui.h>
-#include <string>
+
+#include <cstdint>
 #include <functional>
 #include <memory>
-#include <cstdint>
+#include <string>
 
 // imgui-node-editor forward declarations
 namespace ax::NodeEditor {
 struct EditorContext;
 using NodeId = uintptr_t;
-using PinId  = uintptr_t;
+using PinId = uintptr_t;
 using LinkId = uintptr_t;
 enum class PinKind { Input, Output };
-}
+} // namespace ax::NodeEditor
 
 namespace unigui {
 
@@ -30,7 +31,8 @@ public:
     void End();
 
     /// Begin a node. Call EndNode() after rendering node content.
-    void BeginNode(ax::NodeEditor::NodeId id, const char* title, const ImVec4& color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
+    void BeginNode(ax::NodeEditor::NodeId id, const char* title,
+                   const ImVec4& color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
     /// End current node.
     void EndNode();
 
@@ -42,8 +44,9 @@ public:
     void EndPin();
 
     /// Create a link between two pins.
-    bool Link(ax::NodeEditor::LinkId id, ax::NodeEditor::PinId startPin, ax::NodeEditor::PinId endPin,
-        const ImVec4& color = ImVec4(1, 1, 1, 1), float thickness = 1.0f);
+    bool Link(ax::NodeEditor::LinkId id, ax::NodeEditor::PinId startPin,
+              ax::NodeEditor::PinId endPin, const ImVec4& color = ImVec4(1, 1, 1, 1),
+              float thickness = 1.0f);
 
     /// Center the view on the content.
     void NavigateToContent();
@@ -55,9 +58,9 @@ private:
 };
 
 /// Node builder helper: NodeEditor::BeginNode/EndNode via callback.
-template<typename F>
+template <typename F>
 void RenderNode(NodeEditor& editor, ax::NodeEditor::NodeId id, const char* title, F&& callback,
-    const ImVec4& color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f)) {
+                const ImVec4& color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f)) {
     editor.BeginNode(id, title, color);
     callback();
     editor.EndNode();

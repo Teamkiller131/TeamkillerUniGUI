@@ -1,15 +1,17 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <vector>
-#include <functional>
+
 #include <imgui.h>
+
+#include <functional>
+#include <vector>
 
 namespace unigui {
 
 /// Slider tick entry — position + metadata
 struct SliderTick {
-    int   id = -1;
-    float position = 0.f;   // 0.0 .. barMax
+    int id = -1;
+    float position = 0.f; // 0.0 .. barMax
     ImU32 color = IM_COL32(14, 165, 233, 255);
 };
 
@@ -38,7 +40,11 @@ public:
     void SetTickOverlay(TickOverlayFn fn) { overlayFn_ = std::move(fn); }
 
     // ── Current marker ───────────────────────────────────────────────────
-    void SetCurrentMarker(float pos, ImU32 color) { markerPos_=pos; markerColor_=color; hasMarker_=true; }
+    void SetCurrentMarker(float pos, ImU32 color) {
+        markerPos_ = pos;
+        markerColor_ = color;
+        hasMarker_ = true;
+    }
 
 private:
     std::vector<SliderTick> ticks_;

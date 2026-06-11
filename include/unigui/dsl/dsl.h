@@ -25,12 +25,12 @@
 // itself — so simply re-`Render()`-ing the same tree preserves user input.
 // ─────────────────────────────────────────────────────────────────────────────
 
+#include <unigui/im/im.h>
+
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <unigui/im/im.h>
 
 namespace unigui::dsl {
 
@@ -44,11 +44,22 @@ using ButtonVariant = im::ButtonVariant;
 /// A DSL node. Every builder function below produces one of these `Kind`s.
 struct Node {
     enum class Kind {
-        Window, VBox, HBox,
-        Button, Label, Text, TextWrapped, TextDisabled, BulletText,
-        CheckBox, SliderFloat, InputText,
-        Separator, Spacing,
-        If, For,
+        Window,
+        VBox,
+        HBox,
+        Button,
+        Label,
+        Text,
+        TextWrapped,
+        TextDisabled,
+        BulletText,
+        CheckBox,
+        SliderFloat,
+        InputText,
+        Separator,
+        Spacing,
+        If,
+        For,
     };
     Kind kind = Kind::Label;
 
@@ -106,16 +117,13 @@ NodePtr BulletText(std::string text);
 
 // ── Buttons ──────────────────────────────────────────────────────────────────
 NodePtr Button(std::string label, std::function<void()> onClick = nullptr);
-NodePtr Button(std::string label, ButtonVariant variant,
-               std::function<void()> onClick = nullptr);
+NodePtr Button(std::string label, ButtonVariant variant, std::function<void()> onClick = nullptr);
 
 // ── Stateful inputs ──────────────────────────────────────────────────────────
 /// Checkbox holding its own state inside the node (persists across frames).
-NodePtr CheckBox(std::string label,
-                 std::function<void(bool)> onChange = nullptr);
+NodePtr CheckBox(std::string label, std::function<void(bool)> onChange = nullptr);
 /// Checkbox bound to an external `bool` (caller owns the storage).
-NodePtr CheckBox(std::string label, bool* bound,
-                 std::function<void(bool)> onChange = nullptr);
+NodePtr CheckBox(std::string label, bool* bound, std::function<void(bool)> onChange = nullptr);
 
 /// Slider holding its own value inside the node.
 NodePtr SliderFloat(std::string label, float min, float max,
@@ -125,8 +133,7 @@ NodePtr SliderFloat(std::string label, float* bound, float min, float max,
                     std::function<void(float)> onChange = nullptr);
 
 /// Single-line text input holding its own value inside the node.
-NodePtr InputText(std::string label,
-                  std::function<void(const std::string&)> onChange = nullptr);
+NodePtr InputText(std::string label, std::function<void(const std::string&)> onChange = nullptr);
 /// Single-line text input bound to an external `std::string`.
 NodePtr InputText(std::string label, std::string* bound,
                   std::function<void(const std::string&)> onChange = nullptr);
@@ -137,8 +144,7 @@ NodePtr Spacing();
 
 // ── Control flow ─────────────────────────────────────────────────────────────
 NodePtr If(std::function<bool()> condition, NodePtr thenNode);
-NodePtr IfElse(std::function<bool()> condition, NodePtr thenNode,
-               NodePtr elseNode);
+NodePtr IfElse(std::function<bool()> condition, NodePtr thenNode, NodePtr elseNode);
 NodePtr For(int count, std::function<NodePtr(int)> builder);
 
 // ── Render ───────────────────────────────────────────────────────────────────

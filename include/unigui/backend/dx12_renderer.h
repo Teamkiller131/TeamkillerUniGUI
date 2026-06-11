@@ -1,5 +1,6 @@
 #pragma once
 #include <unigui/backend/renderer_backend.h>
+
 #include <cstddef>
 #include <cstdint>
 
@@ -14,10 +15,10 @@ struct IDXGISwapChain3;
 
 namespace unigui {
 
-bool CreateDX12DeviceAndSwapChain(void* hwnd, int w, int h,
-    ID3D12Device** dev, ID3D12CommandQueue** queue,
-    ID3D12GraphicsCommandList** cmdList, IDXGISwapChain3** swap,
-    ID3D12DescriptorHeap** rtvHeap, ID3D12DescriptorHeap** srvHeap);
+bool CreateDX12DeviceAndSwapChain(void* hwnd, int w, int h, ID3D12Device** dev,
+                                  ID3D12CommandQueue** queue, ID3D12GraphicsCommandList** cmdList,
+                                  IDXGISwapChain3** swap, ID3D12DescriptorHeap** rtvHeap,
+                                  ID3D12DescriptorHeap** srvHeap);
 
 class DX12Renderer : public RendererBackend {
 public:
@@ -38,8 +39,8 @@ public:
     bool ResizeSwapChain(int w, int h);
 
 private:
-    static constexpr int kNumFrames = 2;       // command-allocator ring (frames in flight)
-    static constexpr int kNumBackBuffers = 2;  // swap-chain buffer count
+    static constexpr int kNumFrames = 2;      // command-allocator ring (frames in flight)
+    static constexpr int kNumBackBuffers = 2; // swap-chain buffer count
 
     struct FrameContext {
         ID3D12CommandAllocator* alloc = nullptr;
@@ -50,7 +51,7 @@ private:
     unsigned int frameIndex_ = 0;
 
     ID3D12Fence* fence_ = nullptr;
-    void* fenceEvent_ = nullptr;               // HANDLE
+    void* fenceEvent_ = nullptr; // HANDLE
     std::uint64_t fenceLastSignaled_ = 0;
 
     ID3D12Resource* backBuffers_[kNumBackBuffers]{};

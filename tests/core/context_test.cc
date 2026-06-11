@@ -1,5 +1,6 @@
-#include <unigui/unigui.h>
 #include <unigui/core/context.h>
+#include <unigui/unigui.h>
+
 #include <gtest/gtest.h>
 
 TEST(CreateContext, ReturnsValidPointer) {

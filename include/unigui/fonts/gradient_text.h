@@ -11,8 +11,8 @@ struct GradientText {
     static void Render(const char* text, ImU32 leftColor, ImU32 rightColor);
 
     /// Convenience: gradient with hex colours
-    static void RenderHex(const char* text, unsigned lr, unsigned lg, unsigned lb,
-                          unsigned rr, unsigned rg, unsigned rb);
+    static void RenderHex(const char* text, unsigned lr, unsigned lg, unsigned lb, unsigned rr,
+                          unsigned rg, unsigned rb);
 };
 
 } // namespace unigui

@@ -1,6 +1,6 @@
 #pragma once
-#include <functional>
 #include <cstddef>
+#include <functional>
 
 namespace unigui {
 

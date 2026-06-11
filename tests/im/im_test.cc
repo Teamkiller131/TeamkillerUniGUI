@@ -1,8 +1,8 @@
 #include <unigui/im/im.h>
 
 #include <imgui.h>
-#include <gtest/gtest.h>
 
+#include <gtest/gtest.h>
 #include <string>
 #include <vector>
 
@@ -43,7 +43,7 @@ TEST_F(ImTest, Text_VariantsDoNotCrash) {
 
 TEST_F(ImTest, Checkbox_BindsValue) {
     bool v = false;
-    unigui::im::Checkbox("flag", &v);  // no click: stays false
+    unigui::im::Checkbox("flag", &v); // no click: stays false
     EXPECT_FALSE(v);
 }
 

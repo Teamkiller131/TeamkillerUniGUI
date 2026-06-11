@@ -1,14 +1,19 @@
 #include <unigui/widgets/markdown.h>
+
 #include <imgui.h>
-#include <sstream>
+
 #include <regex>
+#include <sstream>
 
 namespace unigui {
 
 Markdown::Markdown(std::string name, std::string markdown)
-    : Widget(std::move(name)), source_(std::move(markdown)) {}
+        : Widget(std::move(name))
+        , source_(std::move(markdown)) {}
 
-void Markdown::SetMarkdown(std::string md) { source_ = std::move(md); }
+void Markdown::SetMarkdown(std::string md) {
+    source_ = std::move(md);
+}
 
 void Markdown::RenderInline(const std::string& text) {
     // Parse inline: **bold**, *italic*, `code`, [link](url), plain text
@@ -16,8 +21,12 @@ void Markdown::RenderInline(const std::string& text) {
     size_t i = 0;
     while (i < text.size()) {
         // Bold **...**
-        if (i + 1 < text.size() && text[i] == '*' && text[i+1] == '*') {
-            if (!current.empty()) { ImGui::TextUnformatted(current.c_str()); ImGui::SameLine(0, 0); current.clear(); }
+        if (i + 1 < text.size() && text[i] == '*' && text[i + 1] == '*') {
+            if (!current.empty()) {
+                ImGui::TextUnformatted(current.c_str());
+                ImGui::SameLine(0, 0);
+                current.clear();
+            }
             size_t end = text.find("**", i + 2);
             if (end != std::string::npos) {
                 std::string bold = text.substr(i + 2, end - i - 2);
@@ -31,8 +40,13 @@ void Markdown::RenderInline(const std::string& text) {
             }
         }
         // Italic *...* (but not **)
-        if (text[i] == '*' && (i == 0 || text[i-1] != '*') && (i+1 >= text.size() || text[i+1] != '*')) {
-            if (!current.empty()) { ImGui::TextUnformatted(current.c_str()); ImGui::SameLine(0, 0); current.clear(); }
+        if (text[i] == '*' && (i == 0 || text[i - 1] != '*') &&
+            (i + 1 >= text.size() || text[i + 1] != '*')) {
+            if (!current.empty()) {
+                ImGui::TextUnformatted(current.c_str());
+                ImGui::SameLine(0, 0);
+                current.clear();
+            }
             size_t end = text.find('*', i + 1);
             if (end != std::string::npos) {
                 std::string italic = text.substr(i + 1, end - i - 1);
@@ -46,7 +60,11 @@ void Markdown::RenderInline(const std::string& text) {
         }
         // Inline code `...`
         if (text[i] == '`') {
-            if (!current.empty()) { ImGui::TextUnformatted(current.c_str()); ImGui::SameLine(0, 0); current.clear(); }
+            if (!current.empty()) {
+                ImGui::TextUnformatted(current.c_str());
+                ImGui::SameLine(0, 0);
+                current.clear();
+            }
             size_t end = text.find('`', i + 1);
             if (end != std::string::npos) {
                 std::string code = text.substr(i + 1, end - i - 1);
@@ -60,17 +78,24 @@ void Markdown::RenderInline(const std::string& text) {
         }
         // Link [text](url)
         if (text[i] == '[') {
-            if (!current.empty()) { ImGui::TextUnformatted(current.c_str()); ImGui::SameLine(0, 0); current.clear(); }
+            if (!current.empty()) {
+                ImGui::TextUnformatted(current.c_str());
+                ImGui::SameLine(0, 0);
+                current.clear();
+            }
             size_t endBracket = text.find(']', i + 1);
-            size_t endParen = (endBracket != std::string::npos && endBracket + 1 < text.size() && text[endBracket+1] == '(')
-                ? text.find(')', endBracket + 2) : std::string::npos;
+            size_t endParen = (endBracket != std::string::npos && endBracket + 1 < text.size() &&
+                               text[endBracket + 1] == '(')
+                                  ? text.find(')', endBracket + 2)
+                                  : std::string::npos;
             if (endBracket != std::string::npos && endParen != std::string::npos) {
                 std::string linkText = text.substr(i + 1, endBracket - i - 1);
                 std::string url = text.substr(endBracket + 2, endParen - endBracket - 2);
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.5f, 1.0f, 1.0f));
                 ImGui::TextUnformatted(linkText.c_str());
                 ImGui::PopStyleColor();
-                if (ImGui::IsItemClicked() && linkCallback_) linkCallback_(url);
+                if (ImGui::IsItemClicked() && linkCallback_)
+                    linkCallback_(url);
                 ImGui::SameLine(0, 0);
                 i = endParen + 1;
                 continue;
@@ -79,7 +104,8 @@ void Markdown::RenderInline(const std::string& text) {
         current += text[i];
         i++;
     }
-    if (!current.empty()) ImGui::TextUnformatted(current.c_str());
+    if (!current.empty())
+        ImGui::TextUnformatted(current.c_str());
 }
 
 void Markdown::RenderLine(const std::string& line) {
@@ -91,13 +117,18 @@ void Markdown::RenderLine(const std::string& line) {
     // Headers
     if (line[0] == '#') {
         int level = 0;
-        while (level < (int)line.size() && level < 3 && line[level] == '#') level++;
+        while (level < (int) line.size() && level < 3 && line[level] == '#')
+            level++;
         std::string header = line.substr(level);
-        while (!header.empty() && header[0] == ' ') header.erase(0, 1);
+        while (!header.empty() && header[0] == ' ')
+            header.erase(0, 1);
         float scale = 1.0f;
-        if (level == 1) scale = 1.5f;
-        else if (level == 2) scale = 1.3f;
-        else if (level == 3) scale = 1.15f;
+        if (level == 1)
+            scale = 1.5f;
+        else if (level == 2)
+            scale = 1.3f;
+        else if (level == 3)
+            scale = 1.15f;
         ImGui::SetWindowFontScale(scale);
         ImGui::TextUnformatted(header.c_str());
         ImGui::SetWindowFontScale(1.0f);
@@ -119,20 +150,24 @@ void Markdown::RenderLine(const std::string& line) {
     }
 
     // Regular paragraph
-    if (maxWidth_ > 0) ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + maxWidth_);
+    if (maxWidth_ > 0)
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + maxWidth_);
     RenderInline(line);
-    if (maxWidth_ > 0) ImGui::PopTextWrapPos();
+    if (maxWidth_ > 0)
+        ImGui::PopTextWrapPos();
 }
 
 void Markdown::Render() {
-    if (!IsVisible()) return;
+    if (!IsVisible())
+        return;
     ImGui::PushID(GetName().c_str());
     ImGui::BeginGroup();
     std::istringstream stream(source_);
     std::string line;
     while (std::getline(stream, line)) {
         // Strip trailing \r
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
         RenderLine(line);
     }
     ImGui::EndGroup();

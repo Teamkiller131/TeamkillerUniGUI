@@ -1,7 +1,8 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <functional>
+#include <string>
 
 namespace unigui {
 
@@ -20,7 +21,7 @@ public:
 private:
     std::string title_, subtitle_, actionLabel_;
     std::function<void()> actionCallback_;
-    ImU32 bgTop_   = IM_COL32(40, 49, 237, 255);
+    ImU32 bgTop_ = IM_COL32(40, 49, 237, 255);
     ImU32 bgBottom_ = IM_COL32(233, 69, 96, 255);
     float height_ = 200.f;
 };

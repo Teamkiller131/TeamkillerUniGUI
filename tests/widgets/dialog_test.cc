@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/dialog.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class DialogTest : public ::testing::Test {

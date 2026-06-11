@@ -1,14 +1,16 @@
-#include <unigui/widgets/sliderbar.h>
 #include <unigui/theme/color_tokens.h>
+#include <unigui/widgets/sliderbar.h>
+
 #include <imgui.h>
 #include <imgui_internal.h>
+
 #include <algorithm>
 #include <cmath>
 
 namespace unigui {
 
 SliderBar::SliderBar(std::string name)
-    : Widget(std::move(name)) {}
+        : Widget(std::move(name)) {}
 
 // ── Helper: convert tick index → screen position on bar ────────────────────
 ImVec2 SliderBar::TickToPos(int index, float barX, float barY, float barW) const {
@@ -21,7 +23,8 @@ ImVec2 SliderBar::TickToPos(int index, float barX, float barY, float barW) const
 
 // ── Helper: convert screen x → tick index (closest) ────────────────────────
 int SliderBar::PosToTick(float x, float barX, float barW) const {
-    if (barW <= 0.0f || maxValue_ <= 0) return -1;
+    if (barW <= 0.0f || maxValue_ <= 0)
+        return -1;
     float frac = (x - barX) / barW;
     frac = std::clamp(frac, 0.0f, 1.0f);
     int targetLots = static_cast<int>(std::round(frac * static_cast<float>(maxValue_)));
@@ -39,7 +42,8 @@ int SliderBar::PosToTick(float x, float barX, float barW) const {
 }
 
 void SliderBar::Render() {
-    if (!IsVisible()) return;
+    if (!IsVisible())
+        return;
 
     ImGui::PushID(GetName().c_str());
 
@@ -52,7 +56,8 @@ void SliderBar::Render() {
     // ── Layout: [left panel | gap |] bar area ──────────────────────────────
     float availWidth = ImGui::GetContentRegionAvail().x;
     float barAreaWidth = hasLeftPanel ? (availWidth - leftPanelWidth - spacing) : availWidth;
-    if (barAreaWidth < 40.0f) barAreaWidth = 40.0f;
+    if (barAreaWidth < 40.0f)
+        barAreaWidth = 40.0f;
 
     // ── Left panel (optional) ──────────────────────────────────────────────
     if (hasLeftPanel) {
@@ -70,7 +75,8 @@ void SliderBar::Render() {
 
             // Buttons row
             float btnWidth = (leftPanelWidth - 3.0f * spacing) / 4.0f;
-            if (btnWidth < 20.0f) btnWidth = 20.0f;
+            if (btnWidth < 20.0f)
+                btnWidth = 20.0f;
 
             if (onAdd_) {
                 if (ImGui::Button("Add", ImVec2(btnWidth, 0))) {
@@ -125,24 +131,21 @@ void SliderBar::Render() {
         // ── 1. Background bar ──────────────────────────────────────────────
         // Theme-aware track colour (light themes get a light track, dark a dark one)
         ImU32 bgColor = ImGui::GetColorU32(ImGuiCol_FrameBg);
-        dl->AddRectFilled(
-            ImVec2(barX, barTop),
-            ImVec2(barX + barAreaWidth, barBottom),
-            bgColor,
-            3.0f  // rounding
+        dl->AddRectFilled(ImVec2(barX, barTop), ImVec2(barX + barAreaWidth, barBottom), bgColor,
+                          3.0f // rounding
         );
 
         // ── 2. Warning ("警戒持仓") band + endpoint markers ────────────────
         // Red band from warnRatio_ → full marks the danger zone (default 90%).
         float warn = std::clamp(warnRatio_, 0.0f, 1.0f);
-        ImU32 dangerCol = ImGui::GetColorU32(
-            unigui::theme::GetSemanticColor(unigui::theme::Semantic::Danger));
+        ImU32 dangerCol =
+            ImGui::GetColorU32(unigui::theme::GetSemanticColor(unigui::theme::Semantic::Danger));
         {
             float wx = barX + warn * barAreaWidth;
             // translucent fill across the warning zone
             ImU32 bandFill = (dangerCol & 0x00FFFFFF) | 0x40000000;
-            dl->AddRectFilled(ImVec2(wx, barTop), ImVec2(barX + barAreaWidth, barBottom),
-                              bandFill, 3.0f);
+            dl->AddRectFilled(ImVec2(wx, barTop), ImVec2(barX + barAreaWidth, barBottom), bandFill,
+                              3.0f);
             // solid red bar at the warning threshold
             dl->AddLine(ImVec2(wx, barTop - 4.0f), ImVec2(wx, barBottom + 4.0f), dangerCol, 3.0f);
         }
@@ -151,7 +154,8 @@ void SliderBar::Render() {
             ImU32 endCol = ImGui::GetColorU32(ImGuiCol_Text);
             float top = barTop - 4.0f, bot = barBottom + 4.0f;
             dl->AddLine(ImVec2(barX, top), ImVec2(barX, bot), endCol, 2.0f);
-            dl->AddLine(ImVec2(barX + barAreaWidth, top), ImVec2(barX + barAreaWidth, bot), endCol, 2.0f);
+            dl->AddLine(ImVec2(barX + barAreaWidth, top), ImVec2(barX + barAreaWidth, bot), endCol,
+                        2.0f);
         }
 
         // ── 3. Active fill region ──────────────────────────────────────────
@@ -162,12 +166,7 @@ void SliderBar::Render() {
             toFrac = std::clamp(toFrac, 0.0f, 1.0f);
             float fillX1 = barX + fromFrac * barAreaWidth;
             float fillX2 = barX + toFrac * barAreaWidth;
-            dl->AddRectFilled(
-                ImVec2(fillX1, barTop),
-                ImVec2(fillX2, barBottom),
-                fillColor_,
-                3.0f
-            );
+            dl->AddRectFilled(ImVec2(fillX1, barTop), ImVec2(fillX2, barBottom), fillColor_, 3.0f);
         }
 
         // ── 4. Current lots marker ─────────────────────────────────────────
@@ -175,20 +174,13 @@ void SliderBar::Render() {
             float curFrac = static_cast<float>(currentLots_) / static_cast<float>(maxValue_);
             curFrac = std::clamp(curFrac, 0.0f, 1.0f);
             float curX = barX + curFrac * barAreaWidth;
-            ImU32 markerColor = ImGui::GetColorU32(ImGuiCol_Text); // theme text (visible on light + dark)
-            dl->AddLine(
-                ImVec2(curX, barTop - 6.0f),
-                ImVec2(curX, barBottom + 6.0f),
-                markerColor,
-                2.0f
-            );
+            ImU32 markerColor =
+                ImGui::GetColorU32(ImGuiCol_Text); // theme text (visible on light + dark)
+            dl->AddLine(ImVec2(curX, barTop - 6.0f), ImVec2(curX, barBottom + 6.0f), markerColor,
+                        2.0f);
             // Small triangle on top
-            dl->AddTriangleFilled(
-                ImVec2(curX, barTop - 6.0f),
-                ImVec2(curX - 5.0f, barTop - 12.0f),
-                ImVec2(curX + 5.0f, barTop - 12.0f),
-                markerColor
-            );
+            dl->AddTriangleFilled(ImVec2(curX, barTop - 6.0f), ImVec2(curX - 5.0f, barTop - 12.0f),
+                                  ImVec2(curX + 5.0f, barTop - 12.0f), markerColor);
         }
 
         // ── 5. Handle interaction (dragging) ───────────────────────────────
@@ -239,7 +231,8 @@ void SliderBar::Render() {
             if (i < static_cast<int>(tickColors_.size())) {
                 circleColor = tickColors_[i];
             } else {
-                circleColor = ImGui::GetColorU32(unigui::theme::ActiveColorTokens().accent); // theme accent
+                circleColor =
+                    ImGui::GetColorU32(unigui::theme::ActiveColorTokens().accent); // theme accent
             }
 
             dl->AddCircleFilled(hPos, radius, circleColor);

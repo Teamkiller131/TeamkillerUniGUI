@@ -1,8 +1,10 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/inputfloat.h>
+
 #include <imgui.h>
-#include <gtest/gtest.h>
+
 #include <cmath>
+#include <gtest/gtest.h>
 
 class InputFloatTest : public ::testing::Test {
 protected:

@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/checkbox.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class CheckBoxTest : public ::testing::Test {
@@ -55,7 +57,7 @@ TEST_F(CheckBoxTest, SetOnChange_StoresCallback) {
     cb.SetOnChange([&](bool) { callback_set = true; });
     cb.Render();
     // Callback is stored; fires only on real ImGui click, not SetChecked
-    (void)callback_set;
+    (void) callback_set;
 }
 
 // 7. State persists across renders without interaction

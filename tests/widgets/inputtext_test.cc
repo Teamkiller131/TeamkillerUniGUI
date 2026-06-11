@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/inputtext.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class InputTextTest : public ::testing::Test {

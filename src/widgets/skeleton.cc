@@ -1,11 +1,18 @@
 #include <unigui/widgets/skeleton.h>
+
 #include <cmath>
 
 namespace unigui {
 
-void SkeletonScreen::AddBlock(float w, float h, float x, float y) { elements_.push_back({Element::Block, x, y, w, h}); }
-void SkeletonScreen::AddLine(float w, float x, float y) { elements_.push_back({Element::Line, x, y, w, 14.f}); }
-void SkeletonScreen::AddCircle(float r, float x, float y) { elements_.push_back({Element::Circle, x, y, r, r}); }
+void SkeletonScreen::AddBlock(float w, float h, float x, float y) {
+    elements_.push_back({Element::Block, x, y, w, h});
+}
+void SkeletonScreen::AddLine(float w, float x, float y) {
+    elements_.push_back({Element::Line, x, y, w, 14.f});
+}
+void SkeletonScreen::AddCircle(float r, float x, float y) {
+    elements_.push_back({Element::Circle, x, y, r, r});
+}
 
 void SkeletonScreen::SetShimmer(bool enable, float speed) {
     shimmer_ = enable;
@@ -22,7 +29,7 @@ SkeletonScreen SkeletonScreen::FromSize(float w, float h, int lineCount) {
     s.AddBlock(w * 0.4f, 20.f, 0, 0);
     for (int i = 0; i < lineCount; ++i) {
         float lw = (i == lineCount - 1) ? w * 0.6f : w;
-        s.AddLine(lw, 0, 28.f + (float)i * 20.f);
+        s.AddLine(lw, 0, 28.f + (float) i * 20.f);
     }
     s.AddCircle(32.f, 0, 28.f + lineCount * 20.f);
     s.AddBlock(w * 0.3f, 14.f, 40.f, 28.f + lineCount * 20.f);
@@ -37,7 +44,7 @@ void SkeletonScreen::Render() {
 
     float t = shimmer_ ? shimmerAnim_.Update(ImGui::GetIO().DeltaTime) : 0.f;
     ImU32 baseCol = kColor;
-    ImU32 hiCol   = IM_COL32(140, 140, 160, 60);
+    ImU32 hiCol = IM_COL32(140, 140, 160, 60);
 
     float maxY = 0.f;
     for (auto& e : elements_) {
@@ -66,7 +73,8 @@ void SkeletonScreen::Render() {
         maxY = std::max(maxY, e.y + e.h);
     }
 
-    if (!elements_.empty()) ImGui::Dummy(ImVec2(0, maxY + 4));
+    if (!elements_.empty())
+        ImGui::Dummy(ImVec2(0, maxY + 4));
     ImGui::PopID();
 }
 

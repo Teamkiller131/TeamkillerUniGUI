@@ -1,5 +1,6 @@
-#include <unigui/widgets/toast.h>
 #include <unigui/fx/animation.h>
+#include <unigui/widgets/toast.h>
+
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -10,12 +11,18 @@ Toast& Toast::Instance() {
     return t;
 }
 
-Toast::Toast(std::string name) : Widget(std::move(name)) {}
+Toast::Toast(std::string name)
+        : Widget(std::move(name)) {}
 
-void Toast::SetPosition(int anchor, float offsetX, float offsetY) { anchor_=anchor; offX_=offsetX; offY_=offsetY; }
+void Toast::SetPosition(int anchor, float offsetX, float offsetY) {
+    anchor_ = anchor;
+    offX_ = offsetX;
+    offY_ = offsetY;
+}
 
 void Toast::Show(std::string msg, ToastType type, float duration, std::function<void()> onDismiss) {
-    queue_.push_back({std::move(msg), type, std::chrono::steady_clock::now(), duration, std::move(onDismiss), fx::AnimationState{}});
+    queue_.push_back({std::move(msg), type, std::chrono::steady_clock::now(), duration,
+                      std::move(onDismiss), fx::AnimationState{}});
     queue_.back().anim.Play(0.25f, fx::EasingCurve::CubicOut);
 }
 
@@ -27,11 +34,17 @@ void Toast::Render() {
     while (!queue_.empty()) {
         auto elapsed = std::chrono::duration<float>(now - queue_.front().showTime).count();
         if (elapsed > queue_.front().duration) {
-            if (queue_.front().onDismiss) queue_.front().onDismiss();
+            if (queue_.front().onDismiss)
+                queue_.front().onDismiss();
             queue_.pop_front();
-        } else { break; }
+        } else {
+            break;
+        }
     }
-    if (queue_.empty()) { ImGui::PopID(); return; }
+    if (queue_.empty()) {
+        ImGui::PopID();
+        return;
+    }
 
     float dt = ImGui::GetIO().DeltaTime;
 
@@ -44,9 +57,10 @@ void Toast::Render() {
         float alpha = t.anim.Update(dt);
 
         // Position: each toast shifts upward from the anchor
-        float y = baseY - (float)(queue_.size() - 1 - i) * (lineH + 4.f);
-        ImVec2 pivot((anchor_==1||anchor_==2)?1.0f:0.0f, (anchor_>=2)?1.0f:0.0f);
-        ImVec2 pos((anchor_==1||anchor_==2) ? ImGui::GetIO().DisplaySize.x - offX_ : offX_, y);
+        float y = baseY - (float) (queue_.size() - 1 - i) * (lineH + 4.f);
+        ImVec2 pivot((anchor_ == 1 || anchor_ == 2) ? 1.0f : 0.0f, (anchor_ >= 2) ? 1.0f : 0.0f);
+        ImVec2 pos((anchor_ == 1 || anchor_ == 2) ? ImGui::GetIO().DisplaySize.x - offX_ : offX_,
+                   y);
         ImGui::SetNextWindowPos(pos, ImGuiCond_Always, pivot);
         ImGui::SetNextWindowBgAlpha(0.85f * alpha);
 
@@ -60,10 +74,18 @@ void Toast::Render() {
 
         ImVec4 color;
         switch (t.type) {
-        case ToastType::Info:    color = ImVec4(0.4f, 0.6f, 1.0f, alpha);     break;
-        case ToastType::Success: color = ImVec4(0.3f, 0.8f, 0.3f, alpha);     break;
-        case ToastType::Warning: color = ImVec4(1.0f, 0.8f, 0.2f, alpha);     break;
-        case ToastType::Error:   color = ImVec4(1.0f, 0.3f, 0.3f, alpha);     break;
+        case ToastType::Info:
+            color = ImVec4(0.4f, 0.6f, 1.0f, alpha);
+            break;
+        case ToastType::Success:
+            color = ImVec4(0.3f, 0.8f, 0.3f, alpha);
+            break;
+        case ToastType::Warning:
+            color = ImVec4(1.0f, 0.8f, 0.2f, alpha);
+            break;
+        case ToastType::Error:
+            color = ImVec4(1.0f, 0.3f, 0.3f, alpha);
+            break;
         }
         ImGui::PushStyleColor(ImGuiCol_Text, color);
         ImGui::TextUnformatted(t.text.c_str());
@@ -72,7 +94,8 @@ void Toast::Render() {
         ImGui::End();
         // Force toast to front of z-order
         ImGuiWindow* w = ImGui::FindWindowByName(winName);
-        if (w) ImGui::BringWindowToDisplayFront(w);
+        if (w)
+            ImGui::BringWindowToDisplayFront(w);
     }
     ImGui::PopID();
 }

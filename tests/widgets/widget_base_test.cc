@@ -1,5 +1,6 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/widget_base.h>
+
 #include <gtest/gtest.h>
 
 TEST(Widget, GetID_ReturnsConsistentValue) {
@@ -7,7 +8,8 @@ TEST(Widget, GetID_ReturnsConsistentValue) {
     // Use a concrete test widget
     class TestWidget : public unigui::Widget {
     public:
-        explicit TestWidget(std::string name) : Widget(std::move(name)) {}
+        explicit TestWidget(std::string name)
+                : Widget(std::move(name)) {}
         void Render() override {}
     };
 
@@ -22,7 +24,8 @@ TEST(Widget, GetID_ReturnsConsistentValue) {
 TEST(Widget, IsVisible_DefaultsToTrue) {
     class TestWidget : public unigui::Widget {
     public:
-        explicit TestWidget(std::string name) : Widget(std::move(name)) {}
+        explicit TestWidget(std::string name)
+                : Widget(std::move(name)) {}
         void Render() override {}
     };
 
@@ -33,7 +36,8 @@ TEST(Widget, IsVisible_DefaultsToTrue) {
 TEST(Widget, Show_Hide_TogglesVisibility) {
     class TestWidget : public unigui::Widget {
     public:
-        explicit TestWidget(std::string name) : Widget(std::move(name)) {}
+        explicit TestWidget(std::string name)
+                : Widget(std::move(name)) {}
         void Render() override {}
     };
 
@@ -47,7 +51,8 @@ TEST(Widget, Show_Hide_TogglesVisibility) {
 TEST(Widget, GetName_ReturnsGivenName) {
     class TestWidget : public unigui::Widget {
     public:
-        explicit TestWidget(std::string name) : Widget(std::move(name)) {}
+        explicit TestWidget(std::string name)
+                : Widget(std::move(name)) {}
         void Render() override {}
     };
 
@@ -58,7 +63,8 @@ TEST(Widget, GetName_ReturnsGivenName) {
 TEST(Widget, SetMinSize_StoresValues) {
     class TestWidget : public unigui::Widget {
     public:
-        explicit TestWidget(std::string name) : Widget(std::move(name)) {}
+        explicit TestWidget(std::string name)
+                : Widget(std::move(name)) {}
         void Render() override {}
     };
     TestWidget w("test");
@@ -72,7 +78,8 @@ TEST(Widget, SetMinSize_StoresValues) {
 namespace {
 class ElevWidget : public unigui::Widget {
 public:
-    explicit ElevWidget(std::string name) : Widget(std::move(name)) {}
+    explicit ElevWidget(std::string name)
+            : Widget(std::move(name)) {}
     void Render() override {}
 };
 } // namespace

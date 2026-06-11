@@ -1,10 +1,12 @@
 #pragma once
 
+#include <unigui/theme/color_tokens.h>
+#include <unigui/theme/surface_style.h>
+
+#include <imgui.h>
+
 #include <string>
 #include <string_view>
-#include <imgui.h>
-#include <unigui/theme/surface_style.h>
-#include <unigui/theme/color_tokens.h>
 
 namespace unigui {
 
@@ -15,10 +17,10 @@ enum class ThemePreset {
 
 struct ThemeConfig {
     ThemePreset preset = ThemePreset::Dark;
-    float dpi_scale = 0.0f;  // 0 = auto-detect from system DPI
-    float font_size = 16.0f; // logical px at 96 DPI (scaled by auto-DPI)
+    float dpi_scale = 0.0f;          // 0 = auto-detect from system DPI
+    float font_size = 16.0f;         // logical px at 96 DPI (scaled by auto-DPI)
     const char* font_path = nullptr; // nullptr = auto-detect system CJK font
-    bool emoji_fallback = true;  // auto-load system emoji font
+    bool emoji_fallback = true;      // auto-load system emoji font
     // Surface material applied on top of the palette. Frosted glass / glassmorphism
     // (毛玻璃, the general aesthetic — not the specific `Frosted` enum value) is the
     // default; switch to Solid for fully opaque classic surfaces, or pick another
@@ -50,8 +52,12 @@ void ApplyPendingFontRebuild();
 
 /// Set global font scale. Wraps ImGui::GetIO().FontGlobalScale.
 /// Call after Init(), before the render loop. Default is 1.0f.
-inline void SetFontScale(float scale) { ImGui::GetIO().FontGlobalScale = scale; }
-inline float GetFontScale() { return ImGui::GetIO().FontGlobalScale; }
+inline void SetFontScale(float scale) {
+    ImGui::GetIO().FontGlobalScale = scale;
+}
+inline float GetFontScale() {
+    return ImGui::GetIO().FontGlobalScale;
+}
 /// Export/Import current ImGui theme colors to/from JSON.
 std::string ExportThemeJSON();
 bool ImportThemeJSON(const std::string& json);
@@ -67,7 +73,11 @@ ImVec4 GetBackdropColor();
 /// on every ApplyTheme() and ThemeRegistry::Apply(). Widgets that need semantic
 /// colours (success/warning/danger/info) should read them from here so they track
 /// the active theme's accent. Thin wrappers over theme::ActiveColorTokens().
-inline const theme::ColorTokens& GetColorTokens() { return theme::ActiveColorTokens(); }
-inline ImVec4 GetSemanticColor(theme::Semantic role) { return theme::GetSemanticColor(role); }
+inline const theme::ColorTokens& GetColorTokens() {
+    return theme::ActiveColorTokens();
+}
+inline ImVec4 GetSemanticColor(theme::Semantic role) {
+    return theme::GetSemanticColor(role);
+}
 
 } // namespace unigui

@@ -1,10 +1,10 @@
 #pragma once
-#include <string>
-#include <vector>
 #include <functional>
 #include <memory>
-#include <variant>
 #include <sqlite3.h>
+#include <string>
+#include <variant>
+#include <vector>
 
 namespace unigui::sqlite {
 
@@ -12,7 +12,7 @@ using Param = std::variant<int, double, std::string, std::nullptr_t, const char*
 
 struct Row {
     std::vector<std::string> columns;
-    std::string Get(int i) const { return i<(int)columns.size()?columns[i]:""; }
+    std::string Get(int i) const { return i < (int) columns.size() ? columns[i] : ""; }
     std::string Get(const char* name); // not implemented inline — needs column index
 };
 
@@ -50,11 +50,22 @@ private:
 
 class Transaction {
 public:
-    Transaction(Database& db) : db_(db) { db_.Execute("BEGIN"); }
-    ~Transaction() { if (!committed_) db_.Execute("ROLLBACK"); }
-    void Commit() { db_.Execute("COMMIT"); committed_ = true; }
+    Transaction(Database& db)
+            : db_(db) {
+        db_.Execute("BEGIN");
+    }
+    ~Transaction() {
+        if (!committed_)
+            db_.Execute("ROLLBACK");
+    }
+    void Commit() {
+        db_.Execute("COMMIT");
+        committed_ = true;
+    }
+
 private:
-    Database& db_; bool committed_ = false;
+    Database& db_;
+    bool committed_ = false;
 };
 
 } // namespace unigui::sqlite

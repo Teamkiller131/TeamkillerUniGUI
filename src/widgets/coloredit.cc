@@ -1,10 +1,13 @@
 #include <unigui/widgets/coloredit.h>
+
 #include <imgui.h>
 
 namespace unigui {
 
 ColorEdit::ColorEdit(std::string name, std::string label, float r, float g, float b, float a)
-    : Widget(std::move(name)), label_(std::move(label)), changed_(false) {
+        : Widget(std::move(name))
+        , label_(std::move(label))
+        , changed_(false) {
     color_[0] = r;
     color_[1] = g;
     color_[2] = b;
@@ -12,10 +15,12 @@ ColorEdit::ColorEdit(std::string name, std::string label, float r, float g, floa
 }
 
 void ColorEdit::Render() {
-    if (!IsVisible()) return;
+    if (!IsVisible())
+        return;
     ImGui::PushID(GetName().c_str());
     changed_ = ImGui::ColorEdit4(label_.c_str(), color_);
-    if (changed_ && onChange_) onChange_(GetColor());
+    if (changed_ && onChange_)
+        onChange_(GetColor());
     ImGui::PopID();
 }
 
@@ -38,6 +43,8 @@ const std::string& ColorEdit::GetLabel() const {
     return label_;
 }
 
-void ColorEdit::SetOnChange(std::function<void(ImVec4)> fn) { onChange_ = std::move(fn); }
+void ColorEdit::SetOnChange(std::function<void(ImVec4)> fn) {
+    onChange_ = std::move(fn);
+}
 
 } // namespace unigui

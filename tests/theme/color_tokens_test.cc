@@ -1,17 +1,19 @@
 #include <unigui/theme/color_tokens.h>
-#include <unigui/theme/theme.h>
 #include <unigui/theme/presets/registry.h>
+#include <unigui/theme/theme.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
-using unigui::theme::Semantic;
+using unigui::theme::AccentFromStyle;
+using unigui::theme::AllSemantics;
+using unigui::theme::ApplyColorTokens;
 using unigui::theme::ColorTokens;
 using unigui::theme::DeriveColorTokens;
-using unigui::theme::ApplyColorTokens;
+using unigui::theme::Semantic;
 using unigui::theme::SemanticColor;
 using unigui::theme::SemanticName;
-using unigui::theme::AllSemantics;
-using unigui::theme::AccentFromStyle;
 using unigui::theme::StyleIsDark;
 
 class ColorTokensTest : public ::testing::Test {
@@ -35,11 +37,11 @@ TEST_F(ColorTokensTest, DeriveProducesHoverAndActiveFromAccent) {
 
 TEST_F(ColorTokensTest, DarkAndLightSemanticsDiffer) {
     ImVec4 accent(0.40f, 0.58f, 0.93f, 1.00f);
-    ColorTokens dark  = DeriveColorTokens(accent, true);
+    ColorTokens dark = DeriveColorTokens(accent, true);
     ColorTokens light = DeriveColorTokens(accent, false);
     // Dark semantics are brighter than the matching light ones.
     EXPECT_GT(dark.success.y, light.success.y);
-    EXPECT_GT(dark.danger.x,  light.danger.x);
+    EXPECT_GT(dark.danger.x, light.danger.x);
 }
 
 TEST_F(ColorTokensTest, SemanticColorSelectsRole) {
@@ -76,7 +78,8 @@ TEST_F(ColorTokensTest, ApplyUpdatesActiveSemanticPalette) {
 TEST_F(ColorTokensTest, AllSemanticsAreNamed) {
     const auto& all = AllSemantics();
     EXPECT_EQ(all.size(), 5u);
-    for (auto sem : all) EXPECT_STRNE(SemanticName(sem), "");
+    for (auto sem : all)
+        EXPECT_STRNE(SemanticName(sem), "");
     EXPECT_STREQ(SemanticName(Semantic::Danger), "Danger");
 }
 
@@ -117,7 +120,7 @@ TEST_F(ColorTokensTest, AllPresetsShareAccentRelationship) {
         // Every preset's accent-driven slots track its own accent (CheckMark),
         // so the accent→hover→active relationship is consistent across themes.
         EXPECT_FLOAT_EQ(c[ImGuiCol_SeparatorActive].x, c[ImGuiCol_CheckMark].x) << name;
-        EXPECT_FLOAT_EQ(c[ImGuiCol_NavHighlight].y,   c[ImGuiCol_CheckMark].y) << name;
+        EXPECT_FLOAT_EQ(c[ImGuiCol_NavHighlight].y, c[ImGuiCol_CheckMark].y) << name;
         EXPECT_FLOAT_EQ(c[ImGuiCol_DockingPreview].w, 0.70f) << name;
     }
 }

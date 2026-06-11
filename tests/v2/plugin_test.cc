@@ -1,5 +1,6 @@
-#include <unigui/unigui.h>
 #include <unigui/plugin/plugin_manager.h>
+#include <unigui/unigui.h>
+
 #include <gtest/gtest.h>
 using namespace unigui::plugin;
 
@@ -19,7 +20,7 @@ TEST_F(PluginTest, Load_Nonexistent_ReturnsNull) {
 
 TEST_F(PluginTest, Register_Builtin_Works) {
     class TestPlugin : public IPlugin {
-        PluginInfo GetInfo() const override { return {"Test","1.0"}; }
+        PluginInfo GetInfo() const override { return {"Test", "1.0"}; }
         bool Init() override { return true; }
         void Shutdown() override {}
     };
@@ -31,7 +32,7 @@ TEST_F(PluginTest, Register_Builtin_Works) {
 
 TEST_F(PluginTest, Unload_RemovesPlugin) {
     class TestPlugin : public IPlugin {
-        PluginInfo GetInfo() const override { return {"T2","1.0"}; }
+        PluginInfo GetInfo() const override { return {"T2", "1.0"}; }
         bool Init() override { return true; }
         void Shutdown() override {}
     };

@@ -1,8 +1,8 @@
 #include <unigui/core/scope.h>
 
 #include <imgui.h>
-#include <gtest/gtest.h>
 
+#include <gtest/gtest.h>
 #include <type_traits>
 
 // RAII scope guards. Verify they pair Begin*/End* correctly without leaving the
@@ -17,7 +17,7 @@ protected:
         ImGui::NewFrame();
     }
     void TearDown() override {
-        ImGui::Render();  // asserts internally if any stack is unbalanced
+        ImGui::Render(); // asserts internally if any stack is unbalanced
         ImGui::DestroyContext();
     }
 };
@@ -25,7 +25,8 @@ protected:
 TEST_F(ScopeTest, WindowScope_BalancesBeginEnd) {
     {
         unigui::WindowScope w{"Settings"};
-        if (w) ImGui::TextUnformatted("content");
+        if (w)
+            ImGui::TextUnformatted("content");
     }
     SUCCEED();
 }
@@ -34,7 +35,8 @@ TEST_F(ScopeTest, ChildScope_BalancesBeginEnd) {
     unigui::WindowScope w{"Host"};
     {
         unigui::ChildScope c{"child", ImVec2(100, 100)};
-        if (c) ImGui::TextUnformatted("inside");
+        if (c)
+            ImGui::TextUnformatted("inside");
     }
     SUCCEED();
 }
@@ -77,7 +79,8 @@ TEST_F(ScopeTest, TabBarScope_BalancesBeginEnd) {
         unigui::TabBarScope bar{"bar"};
         if (bar) {
             unigui::TabItemScope item{"One"};
-            if (item) ImGui::TextUnformatted("tab one");
+            if (item)
+                ImGui::TextUnformatted("tab one");
         }
     }
     SUCCEED();
@@ -86,8 +89,9 @@ TEST_F(ScopeTest, TabBarScope_BalancesBeginEnd) {
 TEST_F(ScopeTest, WindowScope_MoveLeavesStackBalanced) {
     {
         unigui::WindowScope a{"Movable"};
-        unigui::WindowScope b{std::move(a)};  // only b should call End()
-        if (b) ImGui::TextUnformatted("moved");
+        unigui::WindowScope b{std::move(a)}; // only b should call End()
+        if (b)
+            ImGui::TextUnformatted("moved");
     }
     SUCCEED();
 }

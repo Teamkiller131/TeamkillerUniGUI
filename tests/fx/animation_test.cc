@@ -1,4 +1,5 @@
 #include <unigui/fx/animation.h>
+
 #include <gtest/gtest.h>
 
 using namespace unigui::fx;
@@ -50,12 +51,12 @@ TEST(AnimationTest, PingPong_ReversesAtEnd) {
     AnimationState s;
     s.pingPong = true;
     s.Play(0.4f, EasingCurve::Linear);
-    float v1 = s.Update(0.4f);   // completes first pass
+    float v1 = s.Update(0.4f); // completes first pass
     EXPECT_NEAR(v1, 1.0f, 0.01f);
-    float v2 = s.Update(0.2f);   // half-way back
+    float v2 = s.Update(0.2f); // half-way back
     EXPECT_NEAR(v2, 0.5f, 0.05f);
     EXPECT_TRUE(s.IsPlaying());
-    float v3 = s.Update(0.2f);   // back to 0
+    float v3 = s.Update(0.2f); // back to 0
     EXPECT_NEAR(v3, 0.0f, 0.01f);
 }
 
@@ -71,7 +72,7 @@ TEST(AnimationTest, OnComplete_FiresAtEnd) {
 TEST(AnimationTest, UpdateFromStart_ClampsToOne) {
     AnimationState s;
     s.Play(0.5f);
-    float v = s.UpdateFromStart(1.0f);   // overshoot duration
+    float v = s.UpdateFromStart(1.0f); // overshoot duration
     EXPECT_NEAR(v, 1.0f, 0.01f);
     EXPECT_FALSE(s.IsPlaying());
 }

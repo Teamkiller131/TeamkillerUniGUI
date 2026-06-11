@@ -1,6 +1,8 @@
-#include <unigui/unigui.h>
 #include <unigui/theme/theme.h>
+#include <unigui/unigui.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class FontTest : public ::testing::Test {

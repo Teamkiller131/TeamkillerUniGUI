@@ -1,5 +1,6 @@
-#include <unigui/unigui.h>
 #include <unigui/app/app.h>
+#include <unigui/unigui.h>
+
 #include <gtest/gtest.h>
 
 // App tests are integration-level - verify Init/Shutdown lifecycle

@@ -1,19 +1,38 @@
-#include <unigui/widgets/card.h>
 #include <unigui/fx/effect_scope.h>
+#include <unigui/widgets/card.h>
 
 namespace unigui {
 
-Card::Card(const std::string& title) : title_(title) {}
+Card::Card(const std::string& title)
+        : title_(title) {}
 
-void Card::SetTitle(const std::string& t)       { title_ = t; }
-void Card::SetContent(std::function<void()> fn)  { contentFn_ = std::move(fn); }
-void Card::SetFooter(std::function<void()> fn)   { footerFn_ = std::move(fn); }
-void Card::SetVariant(Variant v)                 { variant_ = v; }
-void Card::SetShadow(bool enable)                { hasShadow_ = enable; }
-void Card::SetShadowRadius(float r)              { shadowRadius_ = r; }
-void Card::SetPadding(float p)                   { padding_ = p; }
-void Card::SetBorderColor(ImU32 c)              { borderColor_ = c; }
-void Card::SetBorderRadius(float r)              { borderRadius_ = r; }
+void Card::SetTitle(const std::string& t) {
+    title_ = t;
+}
+void Card::SetContent(std::function<void()> fn) {
+    contentFn_ = std::move(fn);
+}
+void Card::SetFooter(std::function<void()> fn) {
+    footerFn_ = std::move(fn);
+}
+void Card::SetVariant(Variant v) {
+    variant_ = v;
+}
+void Card::SetShadow(bool enable) {
+    hasShadow_ = enable;
+}
+void Card::SetShadowRadius(float r) {
+    shadowRadius_ = r;
+}
+void Card::SetPadding(float p) {
+    padding_ = p;
+}
+void Card::SetBorderColor(ImU32 c) {
+    borderColor_ = c;
+}
+void Card::SetBorderRadius(float r) {
+    borderRadius_ = r;
+}
 
 void Card::Render() {
     ImGui::PushID(title_.c_str());
@@ -33,16 +52,18 @@ void Card::Render() {
     if (hasShadow_ && variant_ == Elevated) {
         ImVec2 cursor = ImGui::GetCursorScreenPos();
         ImVec2 avail = ImGui::GetContentRegionAvail();
-        float estH = ImGui::GetTextLineHeightWithSpacing() * (contentFn_ ? 5.f : 2.f) + padding_ * 2.f;
+        float estH =
+            ImGui::GetTextLineHeightWithSpacing() * (contentFn_ ? 5.f : 2.f) + padding_ * 2.f;
         fx::ShadowEffect sh(shadowRadius_, 2.f, 2.f, IM_COL32(0, 0, 0, 60), 3);
         sh.SetRect(cursor, ImVec2(cursor.x + avail.x, cursor.y + estH));
-        sh.Push(ImGui::GetWindowDrawList()); sh.Pop();
+        sh.Push(ImGui::GetWindowDrawList());
+        sh.Pop();
     }
 
     // ── Card body (child window) ─────────────────────────────────────────
     ImGuiChildFlags flags = (variant_ == Filled)
-        ? ImGuiChildFlags_AutoResizeY
-        : ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY;
+                                ? ImGuiChildFlags_AutoResizeY
+                                : ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY;
 
     ImGui::BeginChild(title_.c_str(), ImVec2(0, 0), flags);
 
@@ -52,7 +73,8 @@ void Card::Render() {
         ImGui::Dummy(ImVec2(0, 4));
     }
 
-    if (contentFn_) contentFn_();
+    if (contentFn_)
+        contentFn_();
     if (footerFn_) {
         ImGui::Spacing();
         ImGui::Separator();

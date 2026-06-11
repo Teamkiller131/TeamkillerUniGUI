@@ -1,10 +1,12 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
+
+#include <imgui.h>
+
+#include <functional>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
-#include <functional>
-#include <imgui.h>
 
 namespace unigui {
 

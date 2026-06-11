@@ -1,6 +1,8 @@
 #include <unigui/unigui.h>
 #include <unigui/widgets/alertbar.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class AlertBarTest : public ::testing::Test {

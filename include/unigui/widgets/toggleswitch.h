@@ -1,13 +1,14 @@
 #pragma once
-#include <unigui/widgets/value_widget.h>
 #include <unigui/fx/animation.h>
+#include <unigui/widgets/value_widget.h>
+
 #include <string>
 
 namespace unigui {
 class ToggleSwitch : public ValueWidget<bool> {
 public:
-    using ValueWidget::SetValue;
     using ValueWidget::GetValue;
+    using ValueWidget::SetValue;
 
     ToggleSwitch(std::string name, std::string label, bool on = false);
     void Render() override;
@@ -22,4 +23,4 @@ private:
     std::string label_;
     fx::AnimationState anim_;
 };
-}
+} // namespace unigui

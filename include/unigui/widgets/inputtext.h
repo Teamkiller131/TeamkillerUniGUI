@@ -1,15 +1,18 @@
 #pragma once
 #include <unigui/widgets/value_widget.h>
+
+#include <imgui.h>
+
 #include <string>
 #include <vector>
-#include <imgui.h>
 
 namespace unigui {
 
 /// InputText — wrapper for ImGui::InputText with hint, password, multiline, read-only support.
 class InputText : public ValueWidget<std::string> {
 public:
-    InputText(std::string name, std::string label, std::string value = "", ImGuiInputTextFlags flags = 0);
+    InputText(std::string name, std::string label, std::string value = "",
+              ImGuiInputTextFlags flags = 0);
 
     void Render() override;
 

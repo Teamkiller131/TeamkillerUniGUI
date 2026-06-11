@@ -1,8 +1,8 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
-#include <optional>
 
 namespace unigui {
 
@@ -21,14 +21,17 @@ std::string_view ErrorMessage(ErrorCode code);
 
 /// Simple Result type. Holds either a value or an error code.
 /// Uses std::optional internally for the value path.
-template <typename T>
-class Result {
+template <typename T> class Result {
 public:
     /// Construct a success result with a value.
-    Result(T value) : value_(std::move(value)), error_(ErrorCode::None) {}
+    Result(T value)
+            : value_(std::move(value))
+            , error_(ErrorCode::None) {}
 
     /// Construct an error result with an error code.
-    Result(ErrorCode error) : value_(std::nullopt), error_(error) {}
+    Result(ErrorCode error)
+            : value_(std::nullopt)
+            , error_(error) {}
 
     /// Returns true if the result holds a value.
     bool has_value() const { return value_.has_value(); }

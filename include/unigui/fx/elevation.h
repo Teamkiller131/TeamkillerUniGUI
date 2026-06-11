@@ -1,7 +1,8 @@
 #pragma once
-#include <imgui.h>
 #include <unigui/fx/effect_scope.h>
 #include <unigui/theme/surface_style.h>
+
+#include <imgui.h>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme-driven elevation (UI beautification — Step 4)
@@ -26,22 +27,22 @@ namespace unigui::fx {
 
 /// Semantic depth scale. Higher = the surface floats further above the page.
 enum class Elevation {
-    None,    ///< Flush with the page — no shadow.
-    Low,     ///< Cards, list rows.
-    Medium,  ///< Panels, popovers.
-    High,    ///< Dialogs, menus, floating windows.
+    None,   ///< Flush with the page — no shadow.
+    Low,    ///< Cards, list rows.
+    Medium, ///< Panels, popovers.
+    High,   ///< Dialogs, menus, floating windows.
 };
 
 /// Tuning derived from an elevation level + surface material.
 struct ElevationTokens {
-    float shadow_radius   = 0.0f;  ///< blur spread (px)
-    float shadow_offset_x = 0.0f;  ///< horizontal offset (px)
-    float shadow_offset_y = 0.0f;  ///< vertical offset (px, positive = down)
-    int   shadow_alpha    = 0;     ///< shadow opacity (0..255)
-    int   shadow_samples  = 3;     ///< blur passes (1..4)
-    bool  rim_glow        = false; ///< add a bright rim glow (glass materials)
-    float glow_radius     = 0.0f;  ///< rim glow spread (px)
-    int   glow_alpha      = 0;     ///< rim glow opacity (0..255)
+    float shadow_radius = 0.0f;   ///< blur spread (px)
+    float shadow_offset_x = 0.0f; ///< horizontal offset (px)
+    float shadow_offset_y = 0.0f; ///< vertical offset (px, positive = down)
+    int shadow_alpha = 0;         ///< shadow opacity (0..255)
+    int shadow_samples = 3;       ///< blur passes (1..4)
+    bool rim_glow = false;        ///< add a bright rim glow (glass materials)
+    float glow_radius = 0.0f;     ///< rim glow spread (px)
+    int glow_alpha = 0;           ///< rim glow opacity (0..255)
 };
 
 namespace detail {
@@ -50,22 +51,30 @@ namespace detail {
 inline ElevationTokens ElevationBase(Elevation level) {
     ElevationTokens t;
     switch (level) {
-        case Elevation::None:
-            t.shadow_radius = 0.f;  t.shadow_offset_y = 0.f;
-            t.shadow_alpha  = 0;    t.shadow_samples  = 1;
-            break;
-        case Elevation::Low:
-            t.shadow_radius = 4.f;  t.shadow_offset_y = 2.f;
-            t.shadow_alpha  = 60;   t.shadow_samples  = 3;
-            break;
-        case Elevation::Medium:
-            t.shadow_radius = 10.f; t.shadow_offset_y = 4.f;
-            t.shadow_alpha  = 80;   t.shadow_samples  = 3;
-            break;
-        case Elevation::High:
-            t.shadow_radius = 18.f; t.shadow_offset_y = 8.f;
-            t.shadow_alpha  = 100;  t.shadow_samples  = 4;
-            break;
+    case Elevation::None:
+        t.shadow_radius = 0.f;
+        t.shadow_offset_y = 0.f;
+        t.shadow_alpha = 0;
+        t.shadow_samples = 1;
+        break;
+    case Elevation::Low:
+        t.shadow_radius = 4.f;
+        t.shadow_offset_y = 2.f;
+        t.shadow_alpha = 60;
+        t.shadow_samples = 3;
+        break;
+    case Elevation::Medium:
+        t.shadow_radius = 10.f;
+        t.shadow_offset_y = 4.f;
+        t.shadow_alpha = 80;
+        t.shadow_samples = 3;
+        break;
+    case Elevation::High:
+        t.shadow_radius = 18.f;
+        t.shadow_offset_y = 8.f;
+        t.shadow_alpha = 100;
+        t.shadow_samples = 4;
+        break;
     }
     return t;
 }
@@ -80,30 +89,31 @@ inline int ClampAlpha(float a) {
 /// Derive elevation tuning for a level under a given surface material.
 inline ElevationTokens ElevationPreset(Elevation level, theme::SurfaceStyle surface) {
     ElevationTokens t = detail::ElevationBase(level);
-    if (level == Elevation::None) return t; // nothing to modulate
+    if (level == Elevation::None)
+        return t; // nothing to modulate
 
     switch (surface) {
-        case theme::SurfaceStyle::Glass:
-        case theme::SurfaceStyle::Frosted:
-        case theme::SurfaceStyle::Acrylic:
-            // Softer, more diffuse shadow + a bright rim so glass reads with depth.
-            t.shadow_radius *= 1.15f;
-            t.shadow_alpha   = detail::ClampAlpha(t.shadow_alpha * 0.70f);
-            t.rim_glow       = true;
-            t.glow_radius    = t.shadow_radius * 0.6f;
-            t.glow_alpha     = detail::ClampAlpha(t.shadow_alpha * 0.9f) / 2 + 24;
-            break;
-        case theme::SurfaceStyle::Solid:
-            // Firmer, slightly darker drop shadow; no rim.
-            t.shadow_alpha   = detail::ClampAlpha(t.shadow_alpha * 1.10f);
-            t.rim_glow       = false;
-            break;
-        case theme::SurfaceStyle::Minimal:
-            // Very quiet — minimal chrome.
-            t.shadow_radius *= 0.8f;
-            t.shadow_alpha   = detail::ClampAlpha(t.shadow_alpha * 0.40f);
-            t.rim_glow       = false;
-            break;
+    case theme::SurfaceStyle::Glass:
+    case theme::SurfaceStyle::Frosted:
+    case theme::SurfaceStyle::Acrylic:
+        // Softer, more diffuse shadow + a bright rim so glass reads with depth.
+        t.shadow_radius *= 1.15f;
+        t.shadow_alpha = detail::ClampAlpha(t.shadow_alpha * 0.70f);
+        t.rim_glow = true;
+        t.glow_radius = t.shadow_radius * 0.6f;
+        t.glow_alpha = detail::ClampAlpha(t.shadow_alpha * 0.9f) / 2 + 24;
+        break;
+    case theme::SurfaceStyle::Solid:
+        // Firmer, slightly darker drop shadow; no rim.
+        t.shadow_alpha = detail::ClampAlpha(t.shadow_alpha * 1.10f);
+        t.rim_glow = false;
+        break;
+    case theme::SurfaceStyle::Minimal:
+        // Very quiet — minimal chrome.
+        t.shadow_radius *= 0.8f;
+        t.shadow_alpha = detail::ClampAlpha(t.shadow_alpha * 0.40f);
+        t.rim_glow = false;
+        break;
     }
     return t;
 }
@@ -136,18 +146,21 @@ inline GlowEffect MakeElevationGlow(Elevation level, theme::SurfaceStyle surface
 }
 
 /// Build the rim GlowEffect for an elevation using the active surface material.
-inline GlowEffect MakeElevationGlow(Elevation level,
-                                    ImU32 color = IM_COL32(255, 255, 255, 255)) {
+inline GlowEffect MakeElevationGlow(Elevation level, ImU32 color = IM_COL32(255, 255, 255, 255)) {
     return MakeElevationGlow(level, theme::ActiveSurfaceStyle(), color);
 }
 
 /// Stable, human-readable name for an elevation level.
 inline const char* ElevationName(Elevation level) {
     switch (level) {
-        case Elevation::None:   return "None";
-        case Elevation::Low:    return "Low";
-        case Elevation::Medium: return "Medium";
-        case Elevation::High:   return "High";
+    case Elevation::None:
+        return "None";
+    case Elevation::Low:
+        return "Low";
+    case Elevation::Medium:
+        return "Medium";
+    case Elevation::High:
+        return "High";
     }
     return "None";
 }

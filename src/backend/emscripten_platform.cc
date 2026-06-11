@@ -7,13 +7,15 @@
 
 #include <unigui/backend/backend_factory.h>
 #include <unigui/core/log.h>
+
 #include <cstdio>
 #include <memory>
 
 #ifdef __EMSCRIPTEN__
+#include <GLFW/glfw3.h>
+
 #include <emscripten.h>
 #include <emscripten/html5.h>
-#include <GLFW/glfw3.h>
 #endif
 
 namespace unigui {
@@ -26,7 +28,8 @@ public:
     bool Init(void* handle) override {
         // GLFW window is already created by GLFW3 backend init path.
         // This platform wrapper provides Emscripten-specific canvas sizing and input loop.
-        if (handle) window_ = static_cast<GLFWwindow*>(handle);
+        if (handle)
+            window_ = static_cast<GLFWwindow*>(handle);
         initialized_ = true;
         UNIGUI_LOG_INFO("Emscripten: platform initialized");
         return true;
@@ -38,7 +41,8 @@ public:
     }
 
     void NewFrame() override {
-        if (!initialized_) return;
+        if (!initialized_)
+            return;
         // Canvas auto-sizing to match CSS viewport
         int w, h, fbW, fbH;
         emscripten_get_canvas_element_size("#canvas", &w, &h);
@@ -56,13 +60,9 @@ public:
         return false; // Web app never "closes" — runs until tab closed
     }
 
-    void SetTitle(const char* title) override {
-        emscripten_set_window_title(title);
-    }
+    void SetTitle(const char* title) override { emscripten_set_window_title(title); }
 
-    void SetSize(int w, int h) override {
-        emscripten_set_canvas_element_size("#canvas", w, h);
-    }
+    void SetSize(int w, int h) override { emscripten_set_canvas_element_size("#canvas", w, h); }
 
     void SwapBuffers() override {
         // Emscripten automatically swaps via RAF callback
@@ -87,7 +87,8 @@ std::unique_ptr<PlatformBackend> CreateEmscriptenPlatform() {
 
 // ── Emscripten main loop helper ──────────────────────────────────────────────
 
-void EmscriptenSetMainLoop(std::function<void()> callback, int fps = 0, bool simulateInfiniteLoop = true) {
+void EmscriptenSetMainLoop(std::function<void()> callback, int fps = 0,
+                           bool simulateInfiniteLoop = true) {
     emscripten_set_main_loop_arg(
         [](void* arg) {
             auto* cb = static_cast<std::function<void()>*>(arg);

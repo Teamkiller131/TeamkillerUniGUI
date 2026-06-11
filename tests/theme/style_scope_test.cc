@@ -1,6 +1,8 @@
-#include <unigui/unigui.h>
 #include <unigui/theme/style_scope.h>
+#include <unigui/unigui.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 
 class StyleScopeTest : public ::testing::Test {
@@ -11,9 +13,7 @@ protected:
         // Set a known baseline color
         ImGui::GetStyle().Colors[ImGuiCol_Button] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
     }
-    void TearDown() override {
-        ImGui::DestroyContext();
-    }
+    void TearDown() override { ImGui::DestroyContext(); }
 };
 
 TEST_F(StyleScopeTest, PushColor_ModifiesColor) {

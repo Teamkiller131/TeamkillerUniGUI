@@ -1,19 +1,16 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
-#include <vector>
-#include <functional>
+
 #include <array>
+#include <functional>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace unigui {
 class Table : public Widget {
 public:
-    enum class Alignment {
-        Left,
-        Center,
-        Right
-    };
+    enum class Alignment { Left, Center, Right };
 
     Table(std::string name, std::vector<std::string> columns);
     void Render() override;
@@ -41,8 +38,8 @@ public:
     void RestoreColumnWidths();
 
     /// Number of data rows / columns.
-    int RowCount() const { return (int)rows_.size(); }
-    int ColumnCount() const { return (int)columns_.size(); }
+    int RowCount() const { return (int) rows_.size(); }
+    int ColumnCount() const { return (int) columns_.size(); }
     /// Read the raw string value of a cell (empty if out of range).
     const std::string& CellText(int row, int col) const;
 
@@ -57,12 +54,15 @@ public:
     /// two rows for that column and returns true if 'a' should sort before 'b'
     /// (ascending). If none is set, a numeric-aware comparison is used.
     using SortComparator = std::function<bool(const std::string& a, const std::string& b)>;
-    void SetColumnSortComparator(int col, SortComparator cmp) { sort_comparators_[col] = std::move(cmp); }
+    void SetColumnSortComparator(int col, SortComparator cmp) {
+        sort_comparators_[col] = std::move(cmp);
+    }
 
     /// Export table to CSV string.
     std::string ExportCSV() const;
     /// Import table from CSV string. Returns true on success.
     bool ImportCSV(const std::string& csv);
+
 private:
     void ApplySort(int col, bool ascending);
 
@@ -81,4 +81,4 @@ private:
     std::vector<float> col_stretches_;
     bool scrollX_ = false;
 };
-}
+} // namespace unigui

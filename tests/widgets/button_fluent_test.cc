@@ -1,8 +1,8 @@
 #include <unigui/widgets/button.h>
 
 #include <imgui.h>
-#include <gtest/gtest.h>
 
+#include <gtest/gtest.h>
 #include <type_traits>
 
 // CRTP fluent API: base With* helpers must return Button& (not Widget&) so that
@@ -24,12 +24,10 @@ protected:
 
 TEST_F(ButtonFluentTest, BaseWithReturnsDerivedReference) {
     unigui::Button btn("b", "Save");
-    static_assert(
-        std::is_same_v<decltype(btn.WithTooltip("x")), unigui::Button&>,
-        "WithTooltip must return Button& via the CRTP FluentWidget base");
-    static_assert(
-        std::is_same_v<decltype(btn.WithEnabled(true)), unigui::Button&>,
-        "WithEnabled must return Button&");
+    static_assert(std::is_same_v<decltype(btn.WithTooltip("x")), unigui::Button&>,
+                  "WithTooltip must return Button& via the CRTP FluentWidget base");
+    static_assert(std::is_same_v<decltype(btn.WithEnabled(true)), unigui::Button&>,
+                  "WithEnabled must return Button&");
 }
 
 TEST_F(ButtonFluentTest, ChainMixesBaseAndDerivedHelpers) {
@@ -37,12 +35,9 @@ TEST_F(ButtonFluentTest, ChainMixesBaseAndDerivedHelpers) {
     unigui::Button btn("b", "Save");
     // Base helper (WithTooltip) followed by derived helpers (WithPrimary,
     // WithOnClick) — only compiles if the chain stays Button&.
-    btn.WithTooltip("Ctrl+S")
-        .WithEnabled(true)
-        .WithPrimary()
-        .WithOnClick([&] { clicked = true; });
+    btn.WithTooltip("Ctrl+S").WithEnabled(true).WithPrimary().WithOnClick([&] { clicked = true; });
     EXPECT_TRUE(btn.IsEnabled());
-    (void)clicked;
+    (void) clicked;
 }
 
 TEST_F(ButtonFluentTest, DerivedWithHelpersMutateState) {
@@ -53,7 +48,7 @@ TEST_F(ButtonFluentTest, DerivedWithHelpersMutateState) {
 
 TEST_F(ButtonFluentTest, UpcastToWidgetStillWorks) {
     unigui::Button btn("b", "Save");
-    unigui::Widget* w = &btn;  // FluentWidget<Button> IS-A Widget
+    unigui::Widget* w = &btn; // FluentWidget<Button> IS-A Widget
     w->SetEnabled(false);
     EXPECT_FALSE(btn.IsEnabled());
 }

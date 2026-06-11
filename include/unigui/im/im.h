@@ -35,8 +35,7 @@ enum class ButtonVariant { Default, Primary, Danger, Success };
 /// Themed button. Returns true on the frame it is clicked.
 bool Button(std::string_view label, const ImVec2& size = ImVec2(0, 0));
 /// Themed button with an explicit color variant (Primary/Danger/Success).
-bool Button(std::string_view label, ButtonVariant variant,
-            const ImVec2& size = ImVec2(0, 0));
+bool Button(std::string_view label, ButtonVariant variant, const ImVec2& size = ImVec2(0, 0));
 /// Small (single-line) button — convenience for inline placement.
 bool SmallButton(std::string_view label);
 
@@ -58,31 +57,27 @@ bool SliderFloat(std::string_view label, float* value, float min, float max,
                  std::string_view format = "%.3f");
 bool SliderInt(std::string_view label, int* value, int min, int max,
                std::string_view format = "%d");
-bool DragFloat(std::string_view label, float* value, float speed = 1.0f,
-               float min = 0.0f, float max = 0.0f,
-               std::string_view format = "%.3f");
-bool DragInt(std::string_view label, int* value, float speed = 1.0f, int min = 0,
-             int max = 0, std::string_view format = "%d");
-bool InputInt(std::string_view label, int* value, int step = 1,
-              int stepFast = 100);
-bool InputFloat(std::string_view label, float* value, float step = 0.0f,
-                float stepFast = 0.0f, std::string_view format = "%.3f");
+bool DragFloat(std::string_view label, float* value, float speed = 1.0f, float min = 0.0f,
+               float max = 0.0f, std::string_view format = "%.3f");
+bool DragInt(std::string_view label, int* value, float speed = 1.0f, int min = 0, int max = 0,
+             std::string_view format = "%d");
+bool InputInt(std::string_view label, int* value, int step = 1, int stepFast = 100);
+bool InputFloat(std::string_view label, float* value, float step = 0.0f, float stepFast = 0.0f,
+                std::string_view format = "%.3f");
 
 // ── Text inputs ───────────────────────────────────────────────────────────────
 /// Single-line text input bound to a std::string. Returns true when edited.
-bool InputText(std::string_view label, std::string* value,
-               std::size_t maxLength = 256, ImGuiInputTextFlags flags = 0);
+bool InputText(std::string_view label, std::string* value, std::size_t maxLength = 256,
+               ImGuiInputTextFlags flags = 0);
 /// Multi-line text input bound to a std::string.
 bool InputTextMultiline(std::string_view label, std::string* value,
-                        const ImVec2& size = ImVec2(0, 0),
-                        std::size_t maxLength = 4096,
+                        const ImVec2& size = ImVec2(0, 0), std::size_t maxLength = 4096,
                         ImGuiInputTextFlags flags = 0);
 
 // ── Combo ─────────────────────────────────────────────────────────────────────
 /// Dropdown bound to an index into @p items. Returns true when the selection
 /// changes.
-bool Combo(std::string_view label, int* current,
-           const std::vector<std::string>& items);
+bool Combo(std::string_view label, int* current, const std::vector<std::string>& items);
 
 // ── Layout helpers (thin wrappers — keep user code free of raw ImGui::) ───────
 void SameLine(float offsetFromStart = 0.0f, float spacing = -1.0f);
@@ -95,4 +90,4 @@ void Indent(float width = 0.0f);
 void Unindent(float width = 0.0f);
 void Bullet();
 
-}  // namespace unigui::im
+} // namespace unigui::im

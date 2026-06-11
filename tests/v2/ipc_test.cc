@@ -1,7 +1,8 @@
 #include <unigui/ipc/ipc.h>
 #include <unigui/ipc/shmem.h>
-#include <gtest/gtest.h>
+
 #include <cstring>
+#include <gtest/gtest.h>
 using namespace unigui::ipc;
 
 TEST(IPCTest, SharedMemory_WriteRead) {

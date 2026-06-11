@@ -1,7 +1,8 @@
 #pragma once
 
-#include <unigui/theme/theme.h>
 #include <unigui/backend/backend_types.h>
+#include <unigui/theme/theme.h>
+
 #include <functional>
 
 namespace unigui {
@@ -10,7 +11,7 @@ struct AppConfig {
     int width = 1280;
     int height = 720;
     const char* title = "UniGUI Application";
-    ThemeConfig theme = { ThemePreset::Dark, 0.0f, 16.0f }; // auto-DPI, 16px logical
+    ThemeConfig theme = {ThemePreset::Dark, 0.0f, 16.0f}; // auto-DPI, 16px logical
 #ifdef _WIN32
     BackendType backend = BackendType::DX11; // DX11 is stable on Windows
 #else
@@ -41,10 +42,7 @@ void Run(const std::function<void()>& callback, int maxFrames = 0);
 ///     }
 ///
 /// @return 0 on success, 1 if initialization failed.
-int RunApp(const AppConfig& config,
-           const std::function<void()>& callback,
-           int maxFrames = 0);
-
+int RunApp(const AppConfig& config, const std::function<void()>& callback, int maxFrames = 0);
 
 /// v1.9: Get native window handle. Returns HWND on Windows, GLFWwindow* elsewhere.
 void* GetNativeWindowHandle();

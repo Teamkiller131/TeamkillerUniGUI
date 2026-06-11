@@ -1,8 +1,9 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
+
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
 
 namespace unigui {
 
@@ -20,10 +21,13 @@ public:
     void Render() override;
 
     void AddStep(std::string name, std::string title, std::function<void()> renderFn);
-    void Clear() { steps_.clear(); curStep_ = 0; }
+    void Clear() {
+        steps_.clear();
+        curStep_ = 0;
+    }
 
     int GetCurrentStep() const { return curStep_; }
-    int GetStepCount() const { return (int)steps_.size(); }
+    int GetStepCount() const { return (int) steps_.size(); }
 
     void Next();
     void Previous();

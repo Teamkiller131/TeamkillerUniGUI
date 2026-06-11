@@ -1,13 +1,15 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
-#include <string>
+
 #include <functional>
+#include <string>
 
 namespace unigui {
 
 class ColorEdit : public Widget {
 public:
-    ColorEdit(std::string name, std::string label, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f);
+    ColorEdit(std::string name, std::string label, float r = 1.0f, float g = 1.0f, float b = 1.0f,
+              float a = 1.0f);
     void Render() override;
     ImVec4 GetColor() const;
     void SetColor(float r, float g, float b, float a = 1.0f);

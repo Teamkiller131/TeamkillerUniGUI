@@ -48,8 +48,12 @@ static NodePtr makeText(Node::Kind k, std::string text) {
     return n;
 }
 
-NodePtr Label(std::string text) { return makeText(Node::Kind::Label, std::move(text)); }
-NodePtr Text(std::string text) { return makeText(Node::Kind::Text, std::move(text)); }
+NodePtr Label(std::string text) {
+    return makeText(Node::Kind::Label, std::move(text));
+}
+NodePtr Text(std::string text) {
+    return makeText(Node::Kind::Text, std::move(text));
+}
 NodePtr TextWrapped(std::string text) {
     return makeText(Node::Kind::TextWrapped, std::move(text));
 }
@@ -65,8 +69,7 @@ NodePtr BulletText(std::string text) {
 NodePtr Button(std::string label, std::function<void()> onClick) {
     return Button(std::move(label), ButtonVariant::Default, std::move(onClick));
 }
-NodePtr Button(std::string label, ButtonVariant variant,
-               std::function<void()> onClick) {
+NodePtr Button(std::string label, ButtonVariant variant, std::function<void()> onClick) {
     auto n = makeNode(Node::Kind::Button);
     n->label = std::move(label);
     n->buttonVariant = variant;
@@ -82,15 +85,13 @@ NodePtr CheckBox(std::string label, std::function<void(bool)> onChange) {
     n->onToggle = std::move(onChange);
     return n;
 }
-NodePtr CheckBox(std::string label, bool* bound,
-                 std::function<void(bool)> onChange) {
+NodePtr CheckBox(std::string label, bool* bound, std::function<void(bool)> onChange) {
     auto n = CheckBox(std::move(label), std::move(onChange));
     n->boolBinding = bound;
     return n;
 }
 
-NodePtr SliderFloat(std::string label, float min, float max,
-                    std::function<void(float)> onChange) {
+NodePtr SliderFloat(std::string label, float min, float max, std::function<void(float)> onChange) {
     auto n = makeNode(Node::Kind::SliderFloat);
     n->label = std::move(label);
     n->minValue = min;
@@ -106,8 +107,7 @@ NodePtr SliderFloat(std::string label, float* bound, float min, float max,
     return n;
 }
 
-NodePtr InputText(std::string label,
-                  std::function<void(const std::string&)> onChange) {
+NodePtr InputText(std::string label, std::function<void(const std::string&)> onChange) {
     auto n = makeNode(Node::Kind::InputText);
     n->label = std::move(label);
     n->onChangeText = std::move(onChange);
@@ -122,8 +122,12 @@ NodePtr InputText(std::string label, std::string* bound,
 
 // ── Spacers ──────────────────────────────────────────────────────────────────
 
-NodePtr Separator() { return makeNode(Node::Kind::Separator); }
-NodePtr Spacing() { return makeNode(Node::Kind::Spacing); }
+NodePtr Separator() {
+    return makeNode(Node::Kind::Separator);
+}
+NodePtr Spacing() {
+    return makeNode(Node::Kind::Spacing);
+}
 
 // ── Control flow ─────────────────────────────────────────────────────────────
 
@@ -133,8 +137,7 @@ NodePtr If(std::function<bool()> condition, NodePtr thenNode) {
     n->children.push_back(std::move(thenNode));
     return n;
 }
-NodePtr IfElse(std::function<bool()> condition, NodePtr thenNode,
-               NodePtr elseNode) {
+NodePtr IfElse(std::function<bool()> condition, NodePtr thenNode, NodePtr elseNode) {
     auto n = If(std::move(condition), std::move(thenNode));
     n->children.push_back(std::move(elseNode));
     return n;
@@ -149,24 +152,28 @@ NodePtr For(int count, std::function<NodePtr(int)> builder) {
 // ── Render ─────────────────────────────────────────────────────────────────
 
 static void renderImpl(const NodePtr& node) {
-    if (!node) return;
+    if (!node)
+        return;
 
     switch (node->kind) {
     case Node::Kind::Window:
         if (ImGui::Begin(node->title.c_str())) {
-            for (auto& c : node->children) renderImpl(c);
+            for (auto& c : node->children)
+                renderImpl(c);
         }
         ImGui::End();
         break;
 
     case Node::Kind::VBox:
-        for (auto& c : node->children) renderImpl(c);
+        for (auto& c : node->children)
+            renderImpl(c);
         break;
 
     case Node::Kind::HBox:
         for (size_t i = 0; i < node->children.size(); ++i) {
             renderImpl(node->children[i]);
-            if (i + 1 < node->children.size()) im::SameLine();
+            if (i + 1 < node->children.size())
+                im::SameLine();
         }
         break;
 
@@ -218,7 +225,8 @@ static void renderImpl(const NodePtr& node) {
 
     case Node::Kind::If:
         if (node->condition && node->condition()) {
-            if (!node->children.empty()) renderImpl(node->children[0]);
+            if (!node->children.empty())
+                renderImpl(node->children[0]);
         } else if (node->children.size() > 1) {
             renderImpl(node->children[1]);
         }
@@ -231,6 +239,8 @@ static void renderImpl(const NodePtr& node) {
     }
 }
 
-void Render(NodePtr root) { renderImpl(root); }
+void Render(NodePtr root) {
+    renderImpl(root);
+}
 
 } // namespace unigui::dsl

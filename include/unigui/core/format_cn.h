@@ -1,7 +1,7 @@
 #pragma once
-#include <string>
 #include <cinttypes>
 #include <cstdio>
+#include <string>
 
 namespace unigui::format {
 inline std::string MoneyCN(int64_t amount) {
@@ -15,4 +15,4 @@ inline std::string VolumeCN(int64_t vol) {
     snprintf(buf, sizeof(buf), "%lld手", static_cast<long long>(vol));
     return buf;
 }
-}
+} // namespace unigui::format

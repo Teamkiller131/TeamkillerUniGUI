@@ -1,11 +1,16 @@
 #include <unigui/styling/style_engine.h>
+
 #include <imgui.h>
+
 #include <gtest/gtest.h>
 using namespace unigui::styling;
 
 class StyleTest : public ::testing::Test {
 protected:
-    void SetUp() override { ImGui::CreateContext(); Engine::Instance().Parse(""); }
+    void SetUp() override {
+        ImGui::CreateContext();
+        Engine::Instance().Parse("");
+    }
     void TearDown() override { ImGui::DestroyContext(); }
 };
 

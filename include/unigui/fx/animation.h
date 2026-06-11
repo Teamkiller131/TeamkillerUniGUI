@@ -1,9 +1,10 @@
 #pragma once
 #include <unigui/fx/easing.h>
-#include <functional>
-#include <vector>
-#include <string>
+
 #include <chrono>
+#include <functional>
+#include <string>
+#include <vector>
 
 namespace unigui::fx {
 
@@ -25,14 +26,14 @@ namespace unigui::fx {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 struct AnimationState {
-    float      progress = 0.f;       // target [0..1] — Update() returns eased current
-    EasingCurve curve   = EasingCurve::Ease;
-    float      duration = 0.3f;      // seconds
-    float      elapsed  = 0.f;       // seconds since Play()
-    bool       playing  = false;
-    bool       loop     = false;     // repeat from 0 after reaching 1
-    bool       pingPong = false;     // reverse direction at end, then loop
-    int        direction = 1;        // 1=forward, -1=reverse
+    float progress = 0.f; // target [0..1] — Update() returns eased current
+    EasingCurve curve = EasingCurve::Ease;
+    float duration = 0.3f; // seconds
+    float elapsed = 0.f;   // seconds since Play()
+    bool playing = false;
+    bool loop = false;     // repeat from 0 after reaching 1
+    bool pingPong = false; // reverse direction at end, then loop
+    int direction = 1;     // 1=forward, -1=reverse
 
     /// Start playing. Resets elapsed to 0, sets curve, returns eased progress via Update().
     void Play(float dur = -1.f, EasingCurve c = EasingCurve::Ease);

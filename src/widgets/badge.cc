@@ -2,11 +2,21 @@
 
 namespace unigui {
 
-Badge::Badge(const std::string& label) : text_(label) {}
-void Badge::SetText(const std::string& t)  { text_ = t; }
-void Badge::SetVariant(Variant v)           { variant_ = v; }
-void Badge::SetColor(ImU32 c)              { color_ = c; }
-void Badge::SetCount(int n)                { count_ = n; variant_ = Count; }
+Badge::Badge(const std::string& label)
+        : text_(label) {}
+void Badge::SetText(const std::string& t) {
+    text_ = t;
+}
+void Badge::SetVariant(Variant v) {
+    variant_ = v;
+}
+void Badge::SetColor(ImU32 c) {
+    color_ = c;
+}
+void Badge::SetCount(int n) {
+    count_ = n;
+    variant_ = Count;
+}
 
 void Badge::Render() {
     ImGui::PushID(this);
@@ -45,8 +55,7 @@ void Badge::Render() {
             ImVec2 p0(cursor.x, cursor.y);
             ImVec2 p1(p0.x + w, p0.y + size);
             dl->AddRectFilled(p0, p1, color_, size * 0.5f);
-            dl->AddText(ImVec2(p0.x + 4.f, p0.y + 1.f),
-                        IM_COL32_WHITE, display.c_str());
+            dl->AddText(ImVec2(p0.x + 4.f, p0.y + 1.f), IM_COL32_WHITE, display.c_str());
             ImGui::Dummy(ImVec2(w, size));
         }
         break;

@@ -1,22 +1,26 @@
-#include <unigui/widgets/riskbar.h>
 #include <unigui/theme/color_tokens.h>
+#include <unigui/widgets/riskbar.h>
+
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 
 namespace unigui {
 
 RiskBar::RiskBar(std::string name)
-    : Widget(std::move(name)) {}
+        : Widget(std::move(name)) {}
 
 void RiskBar::Render() {
-    if (!IsVisible()) return;
+    if (!IsVisible())
+        return;
 
     ImGui::PushID(GetName().c_str());
 
     const float barHeight = 28.0f;
     float barWidth = ImGui::GetContentRegionAvail().x;
-    if (barWidth < 1.0f) barWidth = 1.0f;
+    if (barWidth < 1.0f)
+        barWidth = 1.0f;
 
     ImVec2 pos = ImGui::GetCursorScreenPos();
     ImVec2 size(barWidth, barHeight);
@@ -88,14 +92,13 @@ void RiskBar::Render() {
         // border (long account names + margin amounts can exceed the bar width,
         // especially inside indented tree rows).
         const bool fits = textSize.x <= (size.x - 2.0f * kTextPad);
-        const float textX = fits ? pos.x + (size.x - textSize.x) * 0.5f
-                                  : pos.x + kTextPad;
+        const float textX = fits ? pos.x + (size.x - textSize.x) * 0.5f : pos.x + kTextPad;
         ImVec2 textPos(textX, pos.y + (size.y - textSize.y) * 0.5f);
         const bool darkTheme = unigui::theme::ActiveColorTokens().dark;
-        const ImU32 fg = darkTheme ? IM_COL32(0xff, 0xff, 0xff, 0xff)
-                                   : IM_COL32(0x1a, 0x1d, 0x21, 0xff);
-        const ImU32 outline = darkTheme ? IM_COL32(0x00, 0x00, 0x00, 0xb0)
-                                        : IM_COL32(0xff, 0xff, 0xff, 0xc0);
+        const ImU32 fg =
+            darkTheme ? IM_COL32(0xff, 0xff, 0xff, 0xff) : IM_COL32(0x1a, 0x1d, 0x21, 0xff);
+        const ImU32 outline =
+            darkTheme ? IM_COL32(0x00, 0x00, 0x00, 0xb0) : IM_COL32(0xff, 0xff, 0xff, 0xc0);
         const char* s = displayText_.c_str();
         dl->PushClipRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), true);
         dl->AddText(ImVec2(textPos.x - 1.0f, textPos.y), outline, s);
@@ -109,12 +112,26 @@ void RiskBar::Render() {
     ImGui::PopID();
 }
 
-void RiskBar::SetRatio(double ratio) { ratio_ = ratio; }
-void RiskBar::SetMaxRatio(double max) { maxRatio_ = max; }
-void RiskBar::SetDisplayText(std::string txt) { displayText_ = std::move(txt); }
-void RiskBar::SetWarnThreshold(double v) { warnThresh_ = v; }
-void RiskBar::SetDangerThreshold(double v) { dangerThresh_ = v; }
-void RiskBar::SetInverted(bool on) { inverted_ = on; }
-void RiskBar::SetAnimated(bool on) { animated_ = on; }
+void RiskBar::SetRatio(double ratio) {
+    ratio_ = ratio;
+}
+void RiskBar::SetMaxRatio(double max) {
+    maxRatio_ = max;
+}
+void RiskBar::SetDisplayText(std::string txt) {
+    displayText_ = std::move(txt);
+}
+void RiskBar::SetWarnThreshold(double v) {
+    warnThresh_ = v;
+}
+void RiskBar::SetDangerThreshold(double v) {
+    dangerThresh_ = v;
+}
+void RiskBar::SetInverted(bool on) {
+    inverted_ = on;
+}
+void RiskBar::SetAnimated(bool on) {
+    animated_ = on;
+}
 
 } // namespace unigui

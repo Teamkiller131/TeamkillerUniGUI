@@ -1,8 +1,9 @@
 #pragma once
 #include <unigui/widgets/widget_base.h>
+
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
 
 namespace unigui {
 
@@ -10,8 +11,8 @@ class CascadingCombo : public Widget {
 public:
     // Arrangement of the per-level combo boxes.
     enum class Layout {
-        Vertical,   // stacked top-to-bottom (default)
-        Horizontal  // placed left-to-right on one line
+        Vertical,  // stacked top-to-bottom (default)
+        Horizontal // placed left-to-right on one line
     };
 
     struct Level {
@@ -51,10 +52,22 @@ public:
     bool GetShowLabels() const { return showLabels_; }
 
     // ── Fluent configuration (chainable) ───────────────────────────────
-    CascadingCombo& WithLayout(Layout layout)   { SetLayout(layout); return *this; }
-    CascadingCombo& WithItemWidth(float width)  { SetItemWidth(width); return *this; }
-    CascadingCombo& WithSpacing(float spacing)  { SetSpacing(spacing); return *this; }
-    CascadingCombo& WithShowLabels(bool on)     { SetShowLabels(on); return *this; }
+    CascadingCombo& WithLayout(Layout layout) {
+        SetLayout(layout);
+        return *this;
+    }
+    CascadingCombo& WithItemWidth(float width) {
+        SetItemWidth(width);
+        return *this;
+    }
+    CascadingCombo& WithSpacing(float spacing) {
+        SetSpacing(spacing);
+        return *this;
+    }
+    CascadingCombo& WithShowLabels(bool on) {
+        SetShowLabels(on);
+        return *this;
+    }
 
     using OnChanged = std::function<void(int level, int index)>;
     void SetOnChanged(OnChanged fn);
