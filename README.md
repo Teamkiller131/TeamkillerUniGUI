@@ -89,7 +89,7 @@ unigui:: API
     │   ├── SDL3 + Vulkan 1.3 ★ (production)
     │   ├── GLFW + DX11 ★ (production, Windows default)
     │   ├── GLFW + DX12 ★ (production)
-    │   ├── Metal          (macOS, stub on Windows)
+    │   ├── Metal          (macOS, stub — not yet implemented)
     │   ├── WebGPU         (cross-platform, stub)
     │   └── Emscripten     (Web/HTML5, stub)
     └── App Bootstrap (Init / Run / NewFrame / Render)
@@ -438,7 +438,7 @@ cfg.backend = BackendType::Vulkan;        // GLFW + Vulkan 1.3 (cross-platform) 
 cfg.backend = BackendType::SDL3_Vulkan;   // SDL3 + Vulkan 1.3 (opt-in, see below)
 cfg.backend = BackendType::DX11;          // GLFW + DirectX 11 ★
 cfg.backend = BackendType::DX12;          // GLFW + DirectX 12 ★
-cfg.backend = BackendType::Metal;         // macOS Metal (stub on Win)
+cfg.backend = BackendType::Metal;         // macOS Metal (stub, not yet implemented)
 cfg.backend = BackendType::WebGPU;        // Dawn/WGPU (stub)
 cfg.backend = BackendType::Emscripten;    // Web/HTML5 (stub)
 ```

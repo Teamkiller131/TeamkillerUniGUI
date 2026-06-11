@@ -84,7 +84,11 @@
       "binaryDir": "${sourceDir}/build/linux-gcc-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_STANDARD": "23"
+        "CMAKE_CXX_STANDARD": "23",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "UNIGUI_BACKEND_DX11": "OFF",
+        "UNIGUI_BACKEND_DX12": "OFF"
       }
     },
     {
@@ -96,7 +100,11 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_STANDARD": "23",
         "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-omit-frame-pointer",
-        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address,undefined"
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address,undefined",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "UNIGUI_BACKEND_DX11": "OFF",
+        "UNIGUI_BACKEND_DX12": "OFF"
       }
     },
     {
@@ -106,7 +114,11 @@
       "binaryDir": "${sourceDir}/build/macos-clang-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_STANDARD": "23"
+        "CMAKE_CXX_STANDARD": "23",
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "UNIGUI_BACKEND_DX11": "OFF",
+        "UNIGUI_BACKEND_DX12": "OFF"
       }
     },
     {
