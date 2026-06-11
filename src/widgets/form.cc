@@ -1,4 +1,5 @@
 #include <unigui/widgets/form.h>
+#include <unigui/core/log.h>
 #include <imgui.h>
 #include <sstream>
 #include <regex>
@@ -104,7 +105,10 @@ std::vector<FormError> Form::Validate() const {
                     if (!std::regex_match(f.value, re)) {
                         errors.push_back({f.name, it->second.errorMsg});
                     }
-                } catch (...) {}
+                } catch (const std::exception& e) {
+                    UNIGUI_LOG_WARN("Form '{}' field '{}': invalid validator regex '{}': {}",
+                                    GetName(), f.name, it->second.pattern, e.what());
+                }
             }
             if (it->second.hasRange && (f.type == FormField::Type::Number || f.type == FormField::Type::Slider)) {
                 try {
@@ -113,7 +117,9 @@ std::vector<FormError> Form::Validate() const {
                         errors.push_back({f.name, "Value out of range [" +
                             std::to_string(it->second.min) + ", " + std::to_string(it->second.max) + "]"});
                     }
-                } catch (...) {}
+                } catch (const std::exception&) {
+                    errors.push_back({f.name, "Not a valid number"});
+                }
             }
         }
     }

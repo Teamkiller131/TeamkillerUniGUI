@@ -5,6 +5,23 @@
 
 namespace unigui {
 
+namespace {
+// strtol/strtof never throw, unlike std::stoi/std::stof — fall back to the
+// caller's default on empty/garbage input instead of crashing.
+int SafeToInt(const std::string& s, int def) {
+    if (s.empty()) return def;
+    char* end = nullptr;
+    long v = std::strtol(s.c_str(), &end, 10);
+    return end == s.c_str() ? def : static_cast<int>(v);
+}
+float SafeToFloat(const std::string& s, float def) {
+    if (s.empty()) return def;
+    char* end = nullptr;
+    float v = std::strtof(s.c_str(), &end);
+    return end == s.c_str() ? def : v;
+}
+} // namespace
+
 bool Settings::autoSaveEnabled_ = false;
 std::string Settings::autoSavePathStatic_;
 
@@ -15,11 +32,11 @@ std::string Settings::Get(const std::string& key, const std::string& defaultVal)
 }
 void Settings::SetInt(const std::string& key, int value) { Set(key, std::to_string(value)); }
 int Settings::GetInt(const std::string& key, int defaultVal) const {
-    auto it = data_.find(key); return it != data_.end() ? std::stoi(it->second) : defaultVal;
+    auto it = data_.find(key); return it != data_.end() ? SafeToInt(it->second, defaultVal) : defaultVal;
 }
 void Settings::SetFloat(const std::string& key, float value) { Set(key, std::to_string(value)); }
 float Settings::GetFloat(const std::string& key, float defaultVal) const {
-    auto it = data_.find(key); return it != data_.end() ? std::stof(it->second) : defaultVal;
+    auto it = data_.find(key); return it != data_.end() ? SafeToFloat(it->second, defaultVal) : defaultVal;
 }
 void Settings::SetBool(const std::string& key, bool value) { Set(key, value ? "1" : "0"); }
 bool Settings::GetBool(const std::string& key, bool defaultVal) const {

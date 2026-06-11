@@ -332,6 +332,31 @@ TEST_F(FormTest, Serialize_Modify_Deserialize_Roundtrip) {
     EXPECT_EQ(copy2.GetFieldValue("color"), "Blue");
 }
 
+// ── Error-path: malformed values must be handled gracefully, not crash. ──
+TEST_F(FormTest, NumberField_NonNumericValue_ReportsErrorNoCrash) {
+    unigui::Form form("frm_bad_num", "Bad Number");
+    form.AddNumberField("age", "Age", 0, 120);
+    form.SetFieldMinMax("age", 0, 120);
+    form.SetFieldValue("age", "not-a-number");
+    std::vector<unigui::FormError> errors;
+    EXPECT_NO_THROW({ errors = form.Validate(); });
+    EXPECT_GE(errors.size(), 1u); // previously the bad value was silently ignored
+}
+
+TEST_F(FormTest, InvalidValidatorRegex_DoesNotCrash) {
+    unigui::Form form("frm_bad_re", "Bad Regex");
+    form.AddTextField("x", "X");
+    form.SetFieldValue("x", "anything");
+    form.SetFieldValidatorRegex("x", "(unbalanced", "bad pattern"); // throws in std::regex
+    EXPECT_NO_THROW({ (void)form.Validate(); });
+}
+
+TEST_F(FormTest, Deserialize_MalformedJson_DoesNotCrash) {
+    unigui::Form form("frm_bad_json", "Bad JSON");
+    form.AddTextField("name", "Name");
+    EXPECT_NO_THROW({ (void)form.Deserialize("{ this is not valid json "); });
+}
+
 TEST_F(FormTest, ComboAndRanges_UseConfiguredValues) {
     unigui::Form form("frm_cfg", "Configured");
     form.AddComboField("role", "Role", {"Admin", "Editor", "Viewer"});

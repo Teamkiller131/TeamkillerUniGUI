@@ -19,3 +19,30 @@ TEST_F(SettingsTest, SetAndGet_IntFloat) {
     EXPECT_NEAR(s.GetFloat("pi"), 3.14f, 0.01f);
     EXPECT_TRUE(s.GetBool("flag"));
 }
+
+// ── Error-path: malformed stored values must fall back to the default,
+//    not throw (regression for the previous unguarded std::stoi/std::stof). ──
+TEST_F(SettingsTest, GarbageInt_ReturnsDefault) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("n", "not-a-number");
+    EXPECT_NO_THROW({ (void)s.GetInt("n", 7); });
+    EXPECT_EQ(s.GetInt("n", 7), 7);
+}
+
+TEST_F(SettingsTest, EmptyFloat_ReturnsDefault) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("f", "");
+    EXPECT_NO_THROW({ (void)s.GetFloat("f", 1.5f); });
+    EXPECT_NEAR(s.GetFloat("f", 1.5f), 1.5f, 0.001f);
+}
+
+TEST_F(SettingsTest, MissingKey_ReturnsDefault) {
+    EXPECT_EQ(unigui::Settings::Instance().GetInt("nope", -1), -1);
+    EXPECT_NEAR(unigui::Settings::Instance().GetFloat("nope", 2.5f), 2.5f, 0.001f);
+}
+
+TEST_F(SettingsTest, IntWithTrailingText_ParsesLeadingNumber) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("n", "42abc");
+    EXPECT_EQ(s.GetInt("n", 0), 42);
+}
