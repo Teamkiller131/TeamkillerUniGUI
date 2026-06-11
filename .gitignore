@@ -17,10 +17,8 @@ CMakeUserPresets.json
 .DS_Store
 Thumbs.db
 
-# .omo — keep plans, ignore evidence/run artifacts
-.omo/evidence/
-.omo/drafts/
-.omo/run-continuation/
+# .omo — internal tooling/planning metadata (not part of the public project)
+.omo/
 unigui.log
 imgui.ini
 release/

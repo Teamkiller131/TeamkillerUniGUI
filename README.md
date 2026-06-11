@@ -493,7 +493,7 @@ All sub-module headers are also pulled in by `<unigui/unigui.h>` for convenience
 
 ## Fonts
 
-UniGUI embeds **JetBrains Mono Nerd Font** directly in the library binary. No system font installation required.
+UniGUI embeds **JetBrains Mono Nerd Font** directly in the library binary. No system font installation required. The bundled font is licensed under the SIL Open Font License 1.1 — see [fonts/LICENSE](fonts/LICENSE).
 
 ```cpp
 unigui::AppConfig cfg;
@@ -532,4 +532,8 @@ See **[docs/README.md](docs/README.md)** for the full documentation index.
 
 ## License
 
-MIT
+The source code is licensed under the **MIT License** — see [LICENSE](LICENSE).
+
+The bundled font (`fonts/JetBrainsMonoNerdFont-Regular.ttf`) is a Nerd Fonts
+build of JetBrains Mono, licensed separately under the **SIL Open Font License
+1.1** — see [fonts/LICENSE](fonts/LICENSE).

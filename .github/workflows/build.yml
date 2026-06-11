@@ -1,4 +1,4 @@
-name: Build & Test (v4 Cross-Platform)
+name: Build & Test (Cross-Platform)
 
 on: [push, pull_request]
 

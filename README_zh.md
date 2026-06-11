@@ -371,7 +371,7 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5（桩）
 
 ## 字体
 
-UniGUI 直接将 **JetBrains Mono Nerd Font** 嵌入库二进制文件中，无需安装系统字体。
+UniGUI 直接将 **JetBrains Mono Nerd Font** 嵌入库二进制文件中，无需安装系统字体。所嵌入字体基于 SIL Open Font License 1.1 授权 —— 见 [fonts/LICENSE](fonts/LICENSE)。
 
 ```cpp
 unigui::AppConfig cfg;
@@ -395,4 +395,8 @@ Windows：d3d11，d3d12，d3dcompiler，dxgi，dxguid
 
 ## License
 
-MIT
+源代码采用 **MIT License** 授权 —— 见 [LICENSE](LICENSE)。
+
+随仓库分发的字体（`fonts/JetBrainsMonoNerdFont-Regular.ttf`）是 JetBrains Mono
+的 Nerd Fonts 构建版本，单独采用 **SIL Open Font License 1.1** 授权 —— 见
+[fonts/LICENSE](fonts/LICENSE)。
