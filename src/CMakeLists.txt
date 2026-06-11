@@ -13,17 +13,6 @@ if(MSVC)
     endif()
 endif()
 
-# CRT diagnostic for MSVC users
-if(MSVC)
-    if(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "MultiThreadedDLL")
-        message(STATUS "UniGUI CRT: /MD (Dynamic)")
-    elseif(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "MultiThreaded\$")
-        message(STATUS "UniGUI CRT: /MT (Static)")
-    else()
-        message(WARNING "UniGUI: Unknown MSVC runtime library: ${CMAKE_MSVC_RUNTIME_LIBRARY}")
-    endif()
-endif()
-
 set_target_properties(unigui PROPERTIES
     CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON

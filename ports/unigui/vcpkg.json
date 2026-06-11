@@ -1,7 +1,7 @@
 {
   "name": "unigui",
-  "version": "0.3.0",
-  "description": "Modern Dear ImGui C++23 wrapper with 45 widgets, multi-backend, theme engine",
+  "version": "3.5.0",
+  "description": "Modern Dear ImGui C++ wrapper — SDL3+Vulkan + GLFW+OpenGL3 backends, theme engine, 82-widget library",
   "homepage": "https://github.com/Teamkiller131/TeamkillerUniGUI",
   "license": "MIT",
   "dependencies": [
@@ -9,18 +9,44 @@
       "name": "imgui",
       "default-features": false,
       "features": [
-        "docking-experimental", "freetype",
-        "glfw-binding", "opengl3-binding",
-        "sdl3-binding", "vulkan-binding",
-        "dx11-binding"
+        "docking-experimental",
+        "freetype",
+        "glfw-binding",
+        "opengl3-binding"
+      ]
+    },
+    {
+      "name": "imgui",
+      "default-features": false,
+      "platform": "windows",
+      "features": [
+        "dx11-binding",
+        "dx12-binding"
       ]
     },
     { "name": "glfw3" },
-    { "name": "sdl3" },
-    { "name": "vulkan" },
-    { "name": "freetype" },
     { "name": "glad", "features": ["loader"] },
     { "name": "gtest" },
-    { "name": "implot" }
-  ]
+    { "name": "implot" },
+    { "name": "imgui-node-editor" },
+    { "name": "spdlog" }
+  ],
+  "features": {
+    "sqlite": {
+      "description": "SQLite database module",
+      "dependencies": ["sqlite3"]
+    },
+    "config": {
+      "description": "TOML/JSON config module",
+      "dependencies": ["cpptoml", "nlohmann-json"]
+    },
+    "ipc": {
+      "description": "Shared memory IPC module",
+      "dependencies": ["zeromq"]
+    },
+    "network": {
+      "description": "HTTP/WebSocket module",
+      "dependencies": ["cpp-httplib", "ixwebsocket"]
+    }
+  }
 }
