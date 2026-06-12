@@ -8,14 +8,16 @@ namespace unigui::events {
 // ── Subscription RAII handle ────────────────────────────────────────────────
 
 Subscription::Subscription(Bus& bus, Bus::SubID id) noexcept
-    : bus_(&bus), id_(id) {}
+        : bus_(&bus)
+        , id_(id) {}
 
 Subscription::~Subscription() {
     Unsubscribe();
 }
 
 Subscription::Subscription(Subscription&& other) noexcept
-    : bus_(other.bus_), id_(other.id_) {
+        : bus_(other.bus_)
+        , id_(other.id_) {
     other.bus_ = nullptr;
     other.id_ = 0;
 }
@@ -72,8 +74,9 @@ Subscription Bus::SubscribeScoped(const std::string& topic, Handler handler) {
 
 void Bus::Unsubscribe(SubID id) {
     std::lock_guard lock(mutex_);
-    entries_.erase(std::remove_if(entries_.begin(), entries_.end(), [id](auto& s) { return s.id == id; }),
-                entries_.end());
+    entries_.erase(
+        std::remove_if(entries_.begin(), entries_.end(), [id](auto& s) { return s.id == id; }),
+        entries_.end());
 }
 
 Bus::SubID Bus::SubscribeAll(Handler handler) {
@@ -126,8 +129,7 @@ void Bus::Publish(const std::string& topic, const std::any& event) {
         } catch (const std::exception& e) {
             UNIGUI_LOG_ERROR("EventBus: handler for topic '{}' threw: {}", topic, e.what());
         } catch (...) {
-            UNIGUI_LOG_ERROR("EventBus: handler for topic '{}' threw a non-std exception",
-                             topic);
+            UNIGUI_LOG_ERROR("EventBus: handler for topic '{}' threw a non-std exception", topic);
         }
     }
 }

@@ -70,9 +70,9 @@ TEST_F(BenchTest, CSV_Import_100kRows) {
     // Generate a realistic CSV: header + 100,000 data rows, 5 columns
     std::string csv = "Name,Value,Category,Score,Notes\n";
     for (int i = 0; i < 100000; i++) {
-        csv += "item_" + std::to_string(i) + "," + std::to_string(i % 1000) +
-               ",cat_" + std::to_string(i % 10) + "," + std::to_string(i * 0.1f) +
-               ",\"note " + std::to_string(i) + "\"\n";
+        csv += "item_" + std::to_string(i) + "," + std::to_string(i % 1000) + ",cat_" +
+               std::to_string(i % 10) + "," + std::to_string(i * 0.1f) + ",\"note " +
+               std::to_string(i) + "\"\n";
     }
 
     unigui::Table tbl("bench_csv", {"Name", "Value", "Category", "Score", "Notes"});
@@ -91,5 +91,5 @@ TEST_F(BenchTest, CSV_Import_100kRows) {
 
     // Performance budget: 100k rows should parse in under 500ms on modern hardware
     EXPECT_LT(ms, 500) << "CSV import of 100k rows took " << ms
-                        << "ms (budget: 500ms). Consider optimizing the parser.";
+                       << "ms (budget: 500ms). Consider optimizing the parser.";
 }

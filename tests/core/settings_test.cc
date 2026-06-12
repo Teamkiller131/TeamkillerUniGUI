@@ -7,7 +7,8 @@
 
 namespace {
 std::string TempCfgPath(const char* tag) {
-    auto p = std::filesystem::temp_directory_path() / (std::string("unigui_settings_") + tag + ".ini");
+    auto p =
+        std::filesystem::temp_directory_path() / (std::string("unigui_settings_") + tag + ".ini");
     return p.string();
 }
 } // namespace
@@ -205,12 +206,16 @@ TEST_F(SettingsTest, ClearRecentFiles_NoRecent_IsNoOp) {
 TEST_F(SettingsTest, SaveLoad_NonAsciiPath_RoundTrip) {
     auto& s = unigui::Settings::Instance();
     s.Set("key", "中文值");
-    auto base = std::filesystem::temp_directory_path() / "unigui_配置_test";
+    // Build a UTF-8 path string directly. "配置" = \xE9\x85\x8D\xE7\xBD\xAE
+    // std::filesystem::path on POSIX treats char* as UTF-8 natively.
+    // On Windows, the path is handed to Utf8ToWide (MultiByteToWideChar CP_UTF8).
+    auto utf8Dir = std::string("unigui_\xE9\x85\x8D\xE7\xBD\xAE_test");
+    auto base = std::filesystem::temp_directory_path() / utf8Dir;
     std::filesystem::create_directories(base);
-    auto path = (base / "app.ini").string();
-    ASSERT_TRUE(s.Save(path));
+    auto filePath = (base / "app.ini").string();
+    ASSERT_TRUE(s.Save(filePath));
     s.Clear();
-    ASSERT_TRUE(s.Load(path));
+    ASSERT_TRUE(s.Load(filePath));
     EXPECT_EQ(s.Get("key"), "中文值");
     std::filesystem::remove_all(base);
 }

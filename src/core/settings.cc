@@ -4,17 +4,11 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 
 #ifdef _WIN32
-#include <filesystem>
 #include <windows.h>
-namespace {
-std::wstring PathToWide(const std::string& s) {
-    // std::filesystem::path handles the native encoding correctly on Windows
-    return std::filesystem::path(s).wstring();
-}
-} // namespace
 #endif
 
 namespace unigui {
@@ -26,11 +20,21 @@ std::string EscapeSetting(const std::string& s) {
     out.reserve(s.size());
     for (char ch : s) {
         switch (ch) {
-        case '\\': out += "\\\\"; break;
-        case '\n': out += "\\n"; break;
-        case '\r': out += "\\r"; break;
-        case '=':  out += "\\="; break;
-        default:   out += ch; break;
+        case '\\':
+            out += "\\\\";
+            break;
+        case '\n':
+            out += "\\n";
+            break;
+        case '\r':
+            out += "\\r";
+            break;
+        case '=':
+            out += "\\=";
+            break;
+        default:
+            out += ch;
+            break;
         }
     }
     return out;
@@ -42,11 +46,25 @@ std::string UnescapeSetting(const std::string& s) {
     for (size_t i = 0; i < s.size(); ++i) {
         if (s[i] == '\\' && i + 1 < s.size()) {
             switch (s[i + 1]) {
-            case '\\': out += '\\'; ++i; break;
-            case 'n':  out += '\n'; ++i; break;
-            case 'r':  out += '\r'; ++i; break;
-            case '=':  out += '=';  ++i; break;
-            default:   out += s[i]; break;
+            case '\\':
+                out += '\\';
+                ++i;
+                break;
+            case 'n':
+                out += '\n';
+                ++i;
+                break;
+            case 'r':
+                out += '\r';
+                ++i;
+                break;
+            case '=':
+                out += '=';
+                ++i;
+                break;
+            default:
+                out += s[i];
+                break;
             }
         } else {
             out += s[i];
@@ -124,11 +142,12 @@ void Settings::Clear() {
     data_.clear();
 }
 
-bool Settings::Save(const std::string& path) {
-    std::string tmpPath = path + ".tmp";
+bool Settings::Save(const std::filesystem::path& path) {
+    auto tmpPath = path;
+    tmpPath += ".tmp";
 #ifdef _WIN32
-    auto wtmp = PathToWide(tmpPath);
-    auto wpath = PathToWide(path);
+    auto wtmp = tmpPath.wstring();
+    auto wpath = path.wstring();
     FILE* f = _wfopen(wtmp.c_str(), L"w");
 #else
     FILE* f = fopen(tmpPath.c_str(), "w");
@@ -151,10 +170,10 @@ bool Settings::Save(const std::string& path) {
 #endif
     return true;
 }
-bool Settings::Load(const std::string& path) {
+bool Settings::Load(const std::filesystem::path& path) {
     data_.clear();
 #ifdef _WIN32
-    auto wpath = PathToWide(path);
+    auto wpath = path.wstring();
     FILE* f = _wfopen(wpath.c_str(), L"r");
 #else
     FILE* f = fopen(path.c_str(), "r");
@@ -162,20 +181,38 @@ bool Settings::Load(const std::string& path) {
     if (!f)
         return false;
     char buf[4096];
+    std::string line;
     while (fgets(buf, sizeof(buf), f)) {
-        std::string line(buf);
+        line.append(buf);
+        // If the line was NOT truncated (i.e. we hit \n or EOF), process it
+        if (line.empty() || (line.back() != '\n' && !feof(f)))
+            continue;
         while (!line.empty() && (line.back() == '\r' || line.back() == '\n'))
             line.pop_back();
-        if (line.empty() || line[0] == '#' || line[0] == ';')
-            continue;
-        auto eq = FindSeparator(line);
-        if (eq == std::string::npos)
-            continue;
-        std::string key = UnescapeSetting(line.substr(0, eq));
-        TrimInPlace(key);
-        if (key.empty())
-            continue;
-        data_[key] = UnescapeSetting(line.substr(eq + 1));
+        if (!line.empty() && line[0] != '#' && line[0] != ';') {
+            auto eq = FindSeparator(line);
+            if (eq != std::string::npos) {
+                std::string key = UnescapeSetting(line.substr(0, eq));
+                TrimInPlace(key);
+                if (!key.empty())
+                    data_[key] = UnescapeSetting(line.substr(eq + 1));
+            }
+        }
+        line.clear();
+    }
+    // Handle final line without trailing newline
+    if (!line.empty()) {
+        while (!line.empty() && (line.back() == '\r' || line.back() == '\n'))
+            line.pop_back();
+        if (line[0] != '#' && line[0] != ';') {
+            auto eq = FindSeparator(line);
+            if (eq != std::string::npos) {
+                std::string key = UnescapeSetting(line.substr(0, eq));
+                TrimInPlace(key);
+                if (!key.empty())
+                    data_[key] = UnescapeSetting(line.substr(eq + 1));
+            }
+        }
     }
     fclose(f);
     return true;
