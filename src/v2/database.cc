@@ -1,6 +1,7 @@
 #include <unigui/core/log.h>
 #include <unigui/sqlite/database.h>
 
+#include <cstdlib>
 #include <cstring>
 
 namespace unigui::sqlite {
@@ -99,7 +100,14 @@ bool Database::Migrate(int version, const std::string& sql) {
     if (!db_)
         return false;
     Execute("CREATE TABLE IF NOT EXISTS _migrations (version INT PRIMARY KEY)");
-    int current = std::stoi(QueryValue("SELECT COALESCE(MAX(version),0) FROM _migrations"));
+    std::string verStr = QueryValue("SELECT COALESCE(MAX(version),0) FROM _migrations");
+    int current = 0;
+    if (!verStr.empty()) {
+        char* end = nullptr;
+        long v = std::strtol(verStr.c_str(), &end, 10);
+        if (end != verStr.c_str())
+            current = static_cast<int>(v);
+    }
     if (version > current) {
         Execute("BEGIN");
         char* err = nullptr;

@@ -132,6 +132,7 @@ target_sources(unigui PRIVATE
     core/error.cc
     core/locale.cc
     core/settings.cc
+    core/strutil.cc
     core/log.cc
     core/main_thread.cc
     backend/glfw_platform.cc

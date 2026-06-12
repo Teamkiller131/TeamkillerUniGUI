@@ -1,4 +1,5 @@
 #include <unigui/core/log.h>
+#include <unigui/core/strutil.h>
 #include <unigui/fx/effect_scope.h>
 #include <unigui/styling/style_engine.h>
 
@@ -11,18 +12,6 @@
 #include <unordered_map>
 
 namespace unigui::styling {
-
-namespace {
-// strtof never throws — malformed CSS values fall back to `def` instead of
-// throwing std::invalid_argument/out_of_range like std::stof would.
-float CssFloat(const std::string& s, float def = 0.f) {
-    if (s.empty())
-        return def;
-    char* end = nullptr;
-    float v = std::strtof(s.c_str(), &end);
-    return end == s.c_str() ? def : v;
-}
-} // namespace
 
 Engine& Engine::Instance() {
     static Engine se;
@@ -185,19 +174,19 @@ void Engine::EvaluateMedia(float viewWidth, float viewHeight, bool darkMode) {
         if (mr.condition.find("min-width") != std::string::npos) {
             auto colon = mr.condition.find(':');
             if (colon != std::string::npos) {
-                float val = CssFloat(mr.condition.substr(colon + 1));
+                float val = ToFloatOr(mr.condition.substr(colon + 1));
                 match = (viewWidth >= val);
             }
         } else if (mr.condition.find("max-width") != std::string::npos) {
             auto colon = mr.condition.find(':');
             if (colon != std::string::npos) {
-                float val = CssFloat(mr.condition.substr(colon + 1));
+                float val = ToFloatOr(mr.condition.substr(colon + 1));
                 match = (viewWidth <= val);
             }
         } else if (mr.condition.find("min-height") != std::string::npos) {
             auto colon = mr.condition.find(':');
             if (colon != std::string::npos) {
-                float val = CssFloat(mr.condition.substr(colon + 1));
+                float val = ToFloatOr(mr.condition.substr(colon + 1));
                 match = (viewHeight >= val);
             }
         } else if (mr.condition.find("prefers-color-scheme") != std::string::npos) {
@@ -296,7 +285,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
 
     // ── Sizing & spacing (10+) ──────────────────────────────────────────
     if (key == "rounding" || key == "border-radius") {
-        float v = CssFloat(val);
+        float v = ToFloatOr(val);
         style.WindowRounding = v;
         style.FrameRounding = v;
         style.GrabRounding = v;
@@ -307,71 +296,71 @@ static void ApplyProp(const std::string& key, const std::string& val) {
         return;
     }
     if (key == "border-radius-top-left") {
-        style.WindowRounding = CssFloat(val);
+        style.WindowRounding = ToFloatOr(val);
         return;
     }
     if (key == "border-radius-top-right") {
-        style.FrameRounding = CssFloat(val);
+        style.FrameRounding = ToFloatOr(val);
         return;
     }
     if (key == "border-radius-bottom-left") {
-        style.GrabRounding = CssFloat(val);
+        style.GrabRounding = ToFloatOr(val);
         return;
     }
     if (key == "border-radius-bottom-right") {
-        style.TabRounding = CssFloat(val);
+        style.TabRounding = ToFloatOr(val);
         return;
     }
     if (key == "border-width") {
-        style.WindowBorderSize = CssFloat(val);
+        style.WindowBorderSize = ToFloatOr(val);
         return;
     }
     if (key == "padding") {
-        float v = CssFloat(val);
+        float v = ToFloatOr(val);
         style.WindowPadding = ImVec2(v, v);
         style.FramePadding = ImVec2(v, v * 0.75f);
         return;
     }
     if (key == "padding-x") {
-        style.FramePadding.x = CssFloat(val);
+        style.FramePadding.x = ToFloatOr(val);
         return;
     }
     if (key == "padding-y") {
-        style.FramePadding.y = CssFloat(val);
+        style.FramePadding.y = ToFloatOr(val);
         return;
     }
     if (key == "spacing") {
-        float v = CssFloat(val);
+        float v = ToFloatOr(val);
         style.ItemSpacing = ImVec2(v, v * 0.75f);
         style.ItemInnerSpacing = ImVec2(v, v * 0.5f);
         return;
     }
     if (key == "spacing-x") {
-        style.ItemSpacing.x = CssFloat(val);
+        style.ItemSpacing.x = ToFloatOr(val);
         return;
     }
     if (key == "spacing-y") {
-        style.ItemSpacing.y = CssFloat(val);
+        style.ItemSpacing.y = ToFloatOr(val);
         return;
     }
     if (key == "indent") {
-        style.IndentSpacing = CssFloat(val);
+        style.IndentSpacing = ToFloatOr(val);
         return;
     }
     if (key == "scrollbar-size") {
-        style.ScrollbarSize = CssFloat(val);
+        style.ScrollbarSize = ToFloatOr(val);
         return;
     }
     if (key == "alpha" || key == "opacity") {
-        style.Alpha = CssFloat(val);
+        style.Alpha = ToFloatOr(val);
         return;
     }
     if (key == "min-width") {
-        style.WindowMinSize.x = CssFloat(val);
+        style.WindowMinSize.x = ToFloatOr(val);
         return;
     }
     if (key == "min-height") {
-        style.WindowMinSize.y = CssFloat(val);
+        style.WindowMinSize.y = ToFloatOr(val);
         return;
     }
     if (key == "max-width") {
@@ -403,7 +392,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
         return;
     }
     if (key == "blur") {
-        float v = CssFloat(val);
+        float v = ToFloatOr(val);
         style.WindowRounding = std::max(style.WindowRounding, v);
         style.Alpha = std::max(style.Alpha, 0.85f);
         return;
@@ -428,7 +417,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
 
     // ── Layout hints ──────────────────────────────────────────────────
     if (key == "columns") {
-        style.ColumnsMinSpacing = CssFloat(val);
+        style.ColumnsMinSpacing = ToFloatOr(val);
         return;
     }
     if (key == "display-scale") { /* responsive hint */
@@ -444,7 +433,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
             auto sp = val.find(' ');
             if (sp != std::string::npos) {
                 std::string durStr = val.substr(sp + 1, val.find('s', sp) - sp);
-                dur = CssFloat(durStr);
+                dur = ToFloatOr(durStr);
                 auto cp = val.rfind(' ');
                 if (cp != std::string::npos && cp > sp)
                     curve = val.substr(cp + 1);
@@ -476,7 +465,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
         float angle = 0.f;
         bool horiz = true;
         if (v.find("deg") != std::string::npos) {
-            angle = CssFloat(v.substr(0, v.find("deg")));
+            angle = ToFloatOr(v.substr(0, v.find("deg")));
             horiz = (angle < 45.f || angle > 315.f || (angle > 135.f && angle < 225.f));
         } else if (v.find("to right") != std::string::npos ||
                    v.find("to left") != std::string::npos) {

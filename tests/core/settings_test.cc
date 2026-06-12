@@ -7,7 +7,8 @@
 
 namespace {
 std::string TempCfgPath(const char* tag) {
-    auto p = std::filesystem::temp_directory_path() / (std::string("unigui_settings_") + tag + ".ini");
+    auto p =
+        std::filesystem::temp_directory_path() / (std::string("unigui_settings_") + tag + ".ini");
     return p.string();
 }
 } // namespace
@@ -146,4 +147,75 @@ TEST_F(SettingsTest, Save_OverwritesExistingFile_NoTempLeftover) {
     EXPECT_FALSE(s.Has("b"));
     EXPECT_FALSE(std::filesystem::exists(path + ".tmp"));
     std::filesystem::remove(path);
+}
+
+// ── Erase / Keys / ClearRecentFiles gap tolerance ───────────────────────────
+
+TEST_F(SettingsTest, Erase_RemovesKey) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("x", "1");
+    EXPECT_TRUE(s.Has("x"));
+    s.Erase("x");
+    EXPECT_FALSE(s.Has("x"));
+}
+
+TEST_F(SettingsTest, Erase_NonexistentKey_IsNoOp) {
+    auto& s = unigui::Settings::Instance();
+    EXPECT_NO_THROW(s.Erase("does_not_exist"));
+}
+
+TEST_F(SettingsTest, Keys_ReturnsAllKeys) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("a", "1");
+    s.Set("b", "2");
+    auto ks = s.Keys();
+    EXPECT_GE(ks.size(), 2u);
+}
+
+TEST_F(SettingsTest, Keys_PrefixFilter_Works) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("recent.0", "/a");
+    s.Set("recent.1", "/b");
+    s.Set("other", "x");
+    auto ks = s.Keys("recent.");
+    EXPECT_EQ(ks.size(), 2u);
+    for (auto& k : ks)
+        EXPECT_EQ(k.compare(0, 7, "recent."), 0);
+}
+
+TEST_F(SettingsTest, ClearRecentFiles_HandlesGaps) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("recent.0", "/a");
+    // gap: no recent.1
+    s.Set("recent.2", "/c");
+    s.Set("recent.5", "/f");
+    s.ClearRecentFiles();
+    EXPECT_FALSE(s.Has("recent.0"));
+    EXPECT_FALSE(s.Has("recent.2"));
+    EXPECT_FALSE(s.Has("recent.5"));
+}
+
+TEST_F(SettingsTest, ClearRecentFiles_NoRecent_IsNoOp) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("other", "x");
+    EXPECT_NO_THROW(s.ClearRecentFiles());
+    EXPECT_TRUE(s.Has("other"));
+}
+
+// ── Non-ASCII path round-trip (Windows UTF-8) ──────────────────────────────
+TEST_F(SettingsTest, SaveLoad_NonAsciiPath_RoundTrip) {
+    auto& s = unigui::Settings::Instance();
+    s.Set("key", "中文值");
+    // Build a UTF-8 path string directly. "配置" = \xE9\x85\x8D\xE7\xBD\xAE
+    // std::filesystem::path on POSIX treats char* as UTF-8 natively.
+    // On Windows, the path is handed to Utf8ToWide (MultiByteToWideChar CP_UTF8).
+    auto utf8Dir = std::string("unigui_\xE9\x85\x8D\xE7\xBD\xAE_test");
+    auto base = std::filesystem::temp_directory_path() / utf8Dir;
+    std::filesystem::create_directories(base);
+    auto filePath = (base / "app.ini").string();
+    ASSERT_TRUE(s.Save(filePath));
+    s.Clear();
+    ASSERT_TRUE(s.Load(filePath));
+    EXPECT_EQ(s.Get("key"), "中文值");
+    std::filesystem::remove_all(base);
 }

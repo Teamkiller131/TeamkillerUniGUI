@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -19,9 +20,11 @@ public:
     void SetBool(const std::string& key, bool value);
     bool GetBool(const std::string& key, bool defaultVal = false) const;
     bool Has(const std::string& key) const;
+    void Erase(const std::string& key);
+    std::vector<std::string> Keys(const std::string& prefix = "") const;
 
-    bool Save(const std::string& path);
-    bool Load(const std::string& path);
+    bool Save(const std::filesystem::path& path);
+    bool Load(const std::filesystem::path& path);
     void Clear();
 
     /// Enable auto-save on program exit. Call Shutdown() to trigger save.

@@ -134,3 +134,18 @@ TEST_F(ThemeTest, AccentHelpers_ClampAndAlpha) {
     EXPECT_FLOAT_EQ(a.w, 0.35f);
     EXPECT_FLOAT_EQ(a.x, white.x);
 }
+
+// ── Error-path: ImportThemeJSON with malformed array values ─────────────────
+TEST_F(ThemeTest, ImportThemeJSON_MalformedValues_DoesNotCrash) {
+    // "abc" tokens should be skipped (parsed as 0.0 via strtof), not crash
+    std::string bad = R"({"WindowBg": ["abc", "xyz", "NaN", ""]})";
+    EXPECT_NO_THROW(unigui::ImportThemeJSON(bad));
+}
+TEST_F(ThemeTest, ImportThemeJSON_EmptyString_DoesNotCrash) {
+    EXPECT_NO_THROW(unigui::ImportThemeJSON(""));
+}
+TEST_F(ThemeTest, ImportThemeJSON_PartialArray_UsesDefaults) {
+    // Only 2 values provided; remaining should stay at defaults (0, 1)
+    std::string partial = R"({"Text": [0.5, 0.6]})";
+    EXPECT_NO_THROW(unigui::ImportThemeJSON(partial));
+}

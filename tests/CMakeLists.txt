@@ -198,7 +198,7 @@ if(UNIGUI_MODULE_WIDGETS)
 endif()
 
 # v2.9 core tests
-foreach(_core locale settings undo_stack)
+foreach(_core locale settings strutil undo_stack)
     add_executable(test_${_core} core/${_core}_test.cc)
     target_link_libraries(test_${_core} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_core} PRIVATE cxx_std_23)
@@ -216,6 +216,12 @@ endif()
 # v1.3 tests — run manually (GL context needed for render/fuzz/font tests)
 # add_executable(test_fuzz fuzz/fuzz_test.cc)
 # add_executable(test_font theme/font_test.cc)
+
+# Parser fuzz tests (no GL context needed)
+add_executable(test_parser_fuzz fuzz/parser_fuzz_test.cc)
+target_link_libraries(test_parser_fuzz PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_parser_fuzz PRIVATE cxx_std_23)
+gtest_discover_tests(test_parser_fuzz)
 
 # v2 plugin tests
 if(UNIGUI_MODULE_PLUGIN)
