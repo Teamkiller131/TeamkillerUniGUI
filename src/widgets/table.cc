@@ -357,19 +357,31 @@ std::string Table::ExportCSV() const {
 
 bool Table::ImportCSV(const std::string& csv) {
     rows_.clear();
-    std::istringstream ss(csv);
-    std::string line;
+    std::string_view sv(csv);
     bool first = true;
-    while (std::getline(ss, line)) {
-        if (!line.empty() && line.back() == '\r')
-            line.pop_back();
+    size_t lineStart = 0;
+
+    while (lineStart < sv.size()) {
+        size_t lineEnd = sv.find('\n', lineStart);
+        if (lineEnd == std::string_view::npos)
+            lineEnd = sv.size();
+        size_t realEnd = lineEnd;
+        if (realEnd > lineStart && sv[realEnd - 1] == '\r')
+            realEnd--;
+        std::string_view line = sv.substr(lineStart, realEnd - lineStart);
+        lineStart = lineEnd + 1;
+
         if (line.empty())
             continue;
+
         std::vector<std::string> cells;
+        cells.reserve(8);
         size_t pos = 0;
         while (pos < line.size()) {
-            std::string cell;
             if (line[pos] == '"') {
+                // Quoted field: accumulate into a single string
+                std::string cell;
+                cell.reserve(64);
                 pos++;
                 while (pos < line.size()) {
                     if (line[pos] == '"') {
@@ -385,17 +397,18 @@ bool Table::ImportCSV(const std::string& csv) {
                         pos++;
                     }
                 }
+                cells.push_back(std::move(cell));
             } else {
+                // Unquoted field: find comma, assign as substring (zero-copy)
                 size_t comma = line.find(',', pos);
-                if (comma == std::string::npos) {
-                    cell = line.substr(pos);
+                if (comma == std::string_view::npos) {
+                    cells.emplace_back(line.data() + pos, line.size() - pos);
                     pos = line.size();
                 } else {
-                    cell = line.substr(pos, comma - pos);
+                    cells.emplace_back(line.data() + pos, comma - pos);
                     pos = comma + 1;
                 }
             }
-            cells.push_back(cell);
             if (pos < line.size() && line[pos] == ',')
                 pos++;
         }
