@@ -38,12 +38,13 @@ src/                 Implementation (.cc) mirroring the include tree
   widgets/           One .cc per widget (button.cc, table.cc, …)
   backend/           Platform + renderer backends, backend_registry.cc
   core/, theme/, fx/, im/, fonts/, app/
-  v2/                Newer/parallel implementations: dsl, eventbus, style_engine,
-                     plugin_manager, config, database, ipc, shmem, network, font_manager
+  dsl/, styling/, events/, plugin/, config/, sqlite/, ipc/, network/
+                     Optional-module impls, each mirroring include/unigui/<module>/
 examples/            hello_unigui, widget_gallery, theme_demo, form_demo,
                      plot_demo, plugin_example, v3_overview, vulkan_triangle, …
 tests/               GoogleTest suites mirroring src (widgets/, core/, theme/,
-                     backend/, fx/, im/, v2/, integration_test.cc, bench/, fuzz/)
+                     backend/, fx/, im/, dsl/, styling/, events/, plugin/, config/,
+                     sqlite/, ipc/, integration_test.cc, bench/, fuzz/)
 docs/                API_INDEX, WIDGET_API, WIDGET_EXAMPLES, GETTING_STARTED, …
 scripts/             check_env.ps1, build.ps1, helpers
 cmake/, ports/       CMake helpers and vcpkg port overlays

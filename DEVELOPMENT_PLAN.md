@@ -47,9 +47,12 @@ Guiding principles:
 
 ### Known gaps / debt to address
 
-- **`src/v2/` parallel implementations** (dsl, eventbus, style_engine, config,
-  database, ipc, network, font_manager, plugin_manager) suggest an in-progress
-  migration. The dual code paths need to be reconciled and consolidated.
+- ~~**`src/v2/` parallel implementations** suggest an in-progress migration.~~
+  **Done** — the `v2/` directory was a naming holdover, not a second code path:
+  after the v2.9.0 namespace removal these were the *sole* implementations of
+  `dsl`/`styling`/`events`/`plugin`/`config`/`sqlite`/`ipc`/`network`/
+  `font_manager`. They (and their tests) have been relocated into the mirrored
+  `src/<module>/` and `tests/<module>/` layout; no duplicate paths remain.
 - Metal / WebGPU / Emscripten backends are non-functional stubs.
 - Theme "UI beautification" work is still in `Unreleased` — needs to land and be
   visually regression-tested.
@@ -70,8 +73,10 @@ the public API contract explicit.
 
 - **P0 · M — Land the UI-beautification work.** Move the `Unreleased` theme/token
   changes into a tagged release; add before/after screenshots to docs.
-- **P0 · L — Reconcile `src/v2/`.** Decide per-module whether v2 replaces or
-  augments the original; delete dead paths, document the survivor, migrate tests.
+- ~~**P0 · L — Reconcile `src/v2/`.**~~ **Done.** No competing "original" existed
+  — the `v2/` files were the survivors. Relocated every module impl and test into
+  the mirrored `src/<module>/` / `tests/<module>/` layout and updated CMake; the
+  `v2` duplicate-path count is now 0.
 - **P0 · S — Publish an API-stability policy.** Semver contract for
   `include/unigui/**`; mark experimental headers explicitly; add a deprecation
   process to `RELEASE.md`.
