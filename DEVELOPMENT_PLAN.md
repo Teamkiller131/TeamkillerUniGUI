@@ -91,7 +91,12 @@ the public API contract explicit.
   style engine) and `test_config_fuzz` (TOML/JSON/INI parsers) alongside the
   existing CSV/JSON targets. DSL has no string-parser surface to fuzz (it is a
   programmatic builder), so it is left to its unit tests.
-- **P2 · S — Warnings-as-errors** across all presets where compilers agree.
+- **P2 · S — Warnings-as-errors.** _Infrastructure landed._ `cmake/CompilerWarnings.cmake`
+  applies a base warning level (`/W4` on MSVC, `-Wall -Wextra -Wpedantic -Wshadow
+  -Wnon-virtual-dtor` on GCC/Clang) to the library, with `-Werror`/`/WX` gated by
+  the opt-in `UNIGUI_WARNINGS_AS_ERRORS` option (preset: `linux-gcc-debug-werror`).
+  _Remaining:_ verify the tree is warning-clean on each compiler, then flip the
+  option on in CI and extend the helper to the tests/examples targets.
 
 ### Horizon 2 — Backend completeness & performance (2–4 releases out)
 

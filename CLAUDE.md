@@ -86,6 +86,7 @@ ctest --preset windows-msvc-debug --output-on-failure
 | AddressSanitizer | `windows-msvc-debug-asan`, `linux-gcc-debug-asan` |
 | clang-tidy lint | `windows-clang-tidy` |
 | Coverage | `windows-clang-coverage` (target `coverage`) |
+| Warnings-as-errors | `linux-gcc-debug-werror` (or `-DUNIGUI_WARNINGS_AS_ERRORS=ON`) |
 | SDL3 + Vulkan | `windows-msvc-sdl3-vulkan-{debug,release}` |
 
 ### Run an example (headless-friendly)

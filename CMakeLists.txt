@@ -26,7 +26,11 @@ option(UNIGUI_BACKEND_GLFW3    "GLFW+OpenGL3 backend" ON)
 option(UNIGUI_BUILD_SHARED     "Build as DLL"         OFF)
 option(UNIGUI_BUILD_TESTS      "Build test suite"     ON)
 option(UNIGUI_BUILD_EXAMPLES   "Build examples"       ON)
+option(UNIGUI_WARNINGS_AS_ERRORS "Treat compiler warnings as errors (opt-in)" OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile_commands.json for clang-tidy/IDE")
+
+# ── Warning configuration ────────────────────────────────────────────────────
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerWarnings.cmake)
 
 # ── Subdirectories ───────────────────────────────────────────────────────────
 add_subdirectory(src)

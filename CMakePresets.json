@@ -108,6 +108,15 @@
       }
     },
     {
+      "name": "linux-gcc-debug-werror",
+      "displayName": "Linux GCC Debug + warnings-as-errors",
+      "inherits": "linux-gcc-debug",
+      "binaryDir": "${sourceDir}/build/linux-gcc-debug-werror",
+      "cacheVariables": {
+        "UNIGUI_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
       "name": "macos-clang-debug",
       "displayName": "macOS Clang Debug",
       "generator": "Ninja",
@@ -156,6 +165,7 @@
     { "name": "windows-clang-coverage",          "configurePreset": "windows-clang-coverage" },
     { "name": "linux-gcc-debug",                 "configurePreset": "linux-gcc-debug" },
     { "name": "linux-gcc-debug-asan",            "configurePreset": "linux-gcc-debug-asan" },
+    { "name": "linux-gcc-debug-werror",          "configurePreset": "linux-gcc-debug-werror" },
     { "name": "macos-clang-debug",               "configurePreset": "macos-clang-debug" },
     { "name": "windows-msvc-sdl3-vulkan-debug",  "configurePreset": "windows-msvc-sdl3-vulkan-debug" },
     { "name": "windows-msvc-sdl3-vulkan-release","configurePreset": "windows-msvc-sdl3-vulkan-release" }
@@ -168,6 +178,7 @@
     { "name": "windows-clang-coverage",          "configurePreset": "windows-clang-coverage",          "output": { "outputOnFailure": true } },
     { "name": "linux-gcc-debug",                 "configurePreset": "linux-gcc-debug",                 "output": { "outputOnFailure": true } },
     { "name": "linux-gcc-debug-asan",            "configurePreset": "linux-gcc-debug-asan",            "output": { "outputOnFailure": true } },
+    { "name": "linux-gcc-debug-werror",          "configurePreset": "linux-gcc-debug-werror",          "output": { "outputOnFailure": true } },
     { "name": "macos-clang-debug",               "configurePreset": "macos-clang-debug",               "output": { "outputOnFailure": true } },
     { "name": "windows-msvc-sdl3-vulkan-debug",  "configurePreset": "windows-msvc-sdl3-vulkan-debug",  "output": { "outputOnFailure": true } },
     { "name": "windows-msvc-sdl3-vulkan-release","configurePreset": "windows-msvc-sdl3-vulkan-release","output": { "outputOnFailure": true } }

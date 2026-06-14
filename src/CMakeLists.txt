@@ -19,6 +19,9 @@ set_target_properties(unigui PROPERTIES
     CXX_EXTENSIONS OFF
 )
 
+# Base compiler warnings (always on); -Werror/-WX gated by UNIGUI_WARNINGS_AS_ERRORS.
+unigui_set_warnings(unigui)
+
 # ── Export header ─────────────────────────────────────────────────────────────
 include(GenerateExportHeader)
 generate_export_header(unigui
