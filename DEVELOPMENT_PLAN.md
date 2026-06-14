@@ -113,13 +113,14 @@ release with tests + docs.
   GPU-capable CI runner.)_
 - **P1 · S — Coverage gate.** _Advisory landed._ Confirm the headless baseline,
   raise `COVERAGE_FLOOR` to just under it, then flip the step to a hard `exit 1`.
-- ~~**P2 · S — Warnings-as-errors.**~~ **Mostly done.** Infrastructure landed; the
-  whole tree (library + tests + examples) now builds **warning-clean under GCC
-  with `UNIGUI_WARNINGS_AS_ERRORS=ON`** and all 895 tests pass. `-Wextra`'s
-  `missing-field-initializers` is suppressed (`-Wno-missing-field-initializers`)
-  because it conflicts with the clang-tidy `readability-redundant-member-init`
-  policy. _Remaining: confirm MSVC/Clang are equally clean and flip the flag on
-  in a CI preset._
+- ~~**P2 · S — Warnings-as-errors.**~~ **Done (GCC).** The whole tree (library +
+  tests + examples) builds **warning-clean under GCC with
+  `UNIGUI_WARNINGS_AS_ERRORS=ON`** (all tests pass), and a dedicated
+  `linux-werror` job in `build.yml` now **enforces** it on every push/PR.
+  `-Wextra`'s `missing-field-initializers` is suppressed
+  (`-Wno-missing-field-initializers`) because it conflicts with the clang-tidy
+  `readability-redundant-member-init` policy. _Remaining: confirm MSVC/Clang are
+  equally clean and add them to the gate._
 
 ### Horizon 2 — Complete the ImGui wrapper (im layer first)
 
