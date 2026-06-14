@@ -16,7 +16,9 @@
 #include <unigui/backend/renderer_backend.h>
 #include <unigui/core/context.h>
 #include <unigui/core/error.h>
+#include <unigui/core/api.h>
 #include <unigui/core/format_cn.h>
+#include <unigui/core/format_num.h>
 #include <unigui/core/locale.h>
 #include <unigui/core/log.h>
 #include <unigui/core/main_thread.h>
@@ -104,6 +106,11 @@
 #ifdef UNIGUI_HAS_IPC
 #include <unigui/ipc/ipc.h>
 #include <unigui/ipc/shmem.h>
+#endif
+#ifdef UNIGUI_HAS_TRADING
+#include <unigui/trading/ohlc_series.h>
+#include <unigui/trading/order_book.h>
+#include <unigui/trading/quote.h>
 #endif
 #include <unigui/app/app.h>
 #include <unigui/fonts/gradient_text.h>

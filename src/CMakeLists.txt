@@ -274,6 +274,12 @@ if(UNIGUI_MODULE_NETWORK)
     target_sources(unigui PRIVATE network/network.cc)
     message(STATUS "Network module enabled")
 endif()
+if(UNIGUI_MODULE_TRADING)
+    # Models (order_book/ohlc_series/quote) are header-only today; widget .cc
+    # files land in later phases. The macro exposes the headers via unigui.h.
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_TRADING)
+    message(STATUS "Trading toolkit enabled")
+endif()
 
 # ── fx effects (core — always compiled) ─────────────────────────────────────
 target_sources(unigui PRIVATE     fx/effect_scope.cc fx/animation.cc

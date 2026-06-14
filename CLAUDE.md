@@ -33,6 +33,7 @@ include/unigui/      Public headers (the API surface — keep stable & documente
   events/            EventBus (unigui::events)
   styling/           CSS-like style engine (unigui::styling)
   plugin/            Plugin interface + manager (unigui::plugin)
+  trading/           Trading toolkit: formatting, models (order_book, ohlc_series, quote)
   fonts/, config/, sqlite/, ipc/, network/, backend/, fx/, app/, ext/
 src/                 Implementation (.cc) mirroring the include tree
   widgets/           One .cc per widget (button.cc, table.cc, …)
@@ -144,6 +145,7 @@ Examples accept `--frames N` to render N frames and exit — use this in CI/smok
 | `docs/WIDGET_EXAMPLES.md` | One minimal example per widget |
 | `docs/API_INDEX.md` | Master index (widgets + `im` + DSL + core) |
 | `docs/MODULES.md` | Sub-module overview |
+| `docs/TRADING.md` | Trading toolkit (financial formatting, models; widgets upcoming) |
 | `docs/API_STABILITY.md` | **Public-API contract (semver, tiers, deprecation lifecycle)** |
 | `docs/TROUBLESHOOTING.md` | Build / CRT / CI FAQ |
 | `INTEGRATION.md` | Submodule + vcpkg embedding |

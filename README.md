@@ -66,6 +66,7 @@ ctest --test-dir build
 | [docs/WIDGET_API.md](docs/WIDGET_API.md) | Full API (widgets + inline TreeView / CascadingCombo) |
 | [docs/API_INDEX.md](docs/API_INDEX.md) | Master index (widgets + `im` + DSL + core) |
 | [docs/API_STABILITY.md](docs/API_STABILITY.md) | API contract: semver, stability tiers, deprecation policy |
+| [docs/TRADING.md](docs/TRADING.md) | Trading toolkit: financial formatting + models |
 | [INTEGRATION.md](INTEGRATION.md) | Submodule + vcpkg embedding |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Build / CRT / CI FAQ |
 
