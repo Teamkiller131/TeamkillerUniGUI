@@ -5,6 +5,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <regex>
 #include <sstream>
@@ -201,6 +202,17 @@ void Engine::EvaluateMedia(float viewWidth, float viewHeight, bool darkMode) {
     }
 }
 
+namespace {
+// File modification time as an integer tick, or 0 if the file is unavailable.
+long long FileMtimeTicks(const std::string& path) {
+    std::error_code ec;
+    const auto t = std::filesystem::last_write_time(path, ec);
+    if (ec)
+        return 0;
+    return static_cast<long long>(t.time_since_epoch().count());
+}
+} // namespace
+
 int Engine::LoadFile(const std::string& path) {
     std::ifstream f(path);
     if (!f) {
@@ -209,7 +221,26 @@ int Engine::LoadFile(const std::string& path) {
     }
     std::stringstream ss;
     ss << f.rdbuf();
+    watchedPath_ = path;
+    watchedMtime_ = FileMtimeTicks(path);
     return Parse(ss.str());
+}
+
+void Engine::Clear() {
+    rules_.clear();
+    mediaRules_.clear();
+    vars_.clear();
+}
+
+bool Engine::ReloadIfChanged() {
+    if (watchedPath_.empty())
+        return false;
+    const long long now = FileMtimeTicks(watchedPath_);
+    if (now == 0 || now == watchedMtime_)
+        return false; // file gone or unchanged
+    Clear();
+    LoadFile(watchedPath_); // re-parses and refreshes watchedMtime_
+    return true;
 }
 
 // ── Property Mapping (50+ CSS properties) ────────────────────────────────────
