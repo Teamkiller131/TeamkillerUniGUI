@@ -5,7 +5,7 @@ Master lookup for the **entire public surface** of TeamkillerUniGUI 3.5.0.
 | Category | Count | Primary doc |
 |----------|------:|-------------|
 | Retained widgets & helpers | **82** | [WIDGET_API.md](WIDGET_API.md), [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) |
-| `unigui::im` functions | **22** | [WIDGET_API §2](WIDGET_API.md#immediate-mode-uniguiim-vs-retained-mode) |
+| `unigui::im` functions | **201** | [WIDGET_API §2](WIDGET_API.md#immediate-mode-uniguiim-vs-retained-mode) |
 | `unigui::dsl` builders | **18** | [WIDGET_API — DSL](WIDGET_API.md#declarative-dsl-uniguidsl) |
 | App / theme / core | **15+** | Below + [GETTING_STARTED.md](GETTING_STARTED.md) |
 
@@ -39,13 +39,80 @@ Header: `im/im.h`. Complements retained widgets; same frame, no `shared_ptr`.
 | `Text`, `TextWrapped`, `TextDisabled`, `TextColored` | Labels |
 | `BulletText`, `LabelText` | Bulleted / label-value text |
 | `Checkbox`, `RadioButton` (×2 overloads) | Booleans / radio groups |
-| `SliderFloat`, `SliderInt` | Bounded sliders |
-| `DragFloat`, `DragInt` | Drag fields |
-| `InputInt`, `InputFloat` | Typed numeric inputs |
-| `InputText`, `InputTextMultiline` | `std::string` binding |
+| `SliderFloat`, `SliderFloat2/3/4` | Horizontal float sliders (scalar and vector) |
+| `SliderAngle` | Angle slider (radians storage, degrees display) |
+| `SliderInt`, `SliderInt2/3/4` | Horizontal int sliders (scalar and vector) |
+| `VSliderFloat`, `VSliderInt` | Vertical sliders |
+| `DragFloat`, `DragFloat2/3/4`, `DragFloatRange2` | Drag float fields (scalar, vector, range) |
+| `DragInt`, `DragInt2/3/4`, `DragIntRange2` | Drag int fields (scalar, vector, range) |
+| `InputInt`, `InputInt2/3/4` | Typed int inputs |
+| `InputFloat`, `InputFloat2/3/4` | Typed float inputs |
+| `InputDouble` | Typed double input |
+| `InputText`, `InputTextWithHint`, `InputTextMultiline` | `std::string` binding (with optional hint) |
 | `Combo` | Index into `vector<string>` |
 | `SameLine`, `NewLine`, `Spacing`, `Separator`, `SeparatorText` | Layout |
 | `Dummy`, `Indent`, `Unindent`, `Bullet` | Spacing / indent |
+| `PushItemWidth`, `PopItemWidth`, `SetNextItemWidth`, `CalcItemWidth` | Item-width stack |
+| `BeginGroup`, `EndGroup` | Horizontal group bounding box |
+| `BeginChild` (string-id + numeric-id), `EndChild` | Scrollable sub-region |
+| `SetNextWindowPos`, `SetNextWindowSize`, `SetNextWindowSizeConstraints` | Pre-Begin window hints |
+| `SetNextWindowContentSize`, `SetNextWindowCollapsed`, `SetNextWindowFocus` | Pre-Begin window hints (cont.) |
+| `SetNextWindowScroll`, `SetNextWindowBgAlpha` | Pre-Begin window hints (cont.) |
+| `GetScrollX/Y`, `GetScrollMaxX/Y`, `SetScrollX/Y` | Scroll get/set |
+| `SetScrollHereX/Y`, `SetScrollFromPosX/Y` | Scroll-to-position helpers |
+| `GetCursorScreenPos`, `SetCursorScreenPos` | Absolute cursor position (best-friend API) |
+| `GetCursorPos`, `GetCursorPosX/Y`, `SetCursorPos`, `SetCursorPosX/Y` | Window-local cursor |
+| `GetCursorStartPos`, `GetContentRegionAvail` | Window geometry (best-friend pair) |
+| `GetWindowPos`, `GetWindowSize`, `GetWindowWidth`, `GetWindowHeight` | Current window metrics |
+| `PushClipRect`, `PopClipRect` | Scissor / clip rect |
+| `AlignTextToFramePadding`, `SetItemDefaultFocus` | Alignment / focus |
+| `GetTextLineHeight`, `GetTextLineHeightWithSpacing` | Line metrics |
+| `GetFrameHeight`, `GetFrameHeightWithSpacing` | Frame metrics |
+| `IsItemHovered`, `IsItemActive`, `IsItemFocused`, `IsItemClicked` | Item state queries |
+| `IsItemVisible`, `IsItemEdited`, `IsItemActivated`, `IsItemDeactivated` | Item lifecycle queries |
+| `IsItemDeactivatedAfterEdit`, `IsItemToggledOpen` | Item lifecycle queries (cont.) |
+| `IsAnyItemHovered`, `IsAnyItemActive`, `IsAnyItemFocused` | Aggregate item queries |
+| `GetItemRectMin`, `GetItemRectMax`, `GetItemRectSize` | Item bounding rect |
+| `IsKeyDown`, `IsKeyPressed`, `IsKeyReleased` | Keyboard queries |
+| `IsMouseDown`, `IsMouseClicked`, `IsMouseReleased`, `IsMouseDoubleClicked` | Mouse button queries |
+| `IsMouseDragging`, `IsMouseHoveringRect` | Mouse position queries |
+| `GetMousePos`, `GetMouseDragDelta`, `ResetMouseDragDelta` | Mouse position/delta |
+| `InvisibleButton`, `ArrowButton` | Hit-test and directional buttons |
+| `CheckboxFlags` (int + unsigned int) | Bit-flag checkboxes |
+| `ColorButton` | Clickable color swatch |
+| `ShowDemoWindow`, `ShowMetricsWindow`, `ShowStyleEditor` | Built-in debug/tool windows |
+| `GetWindowDrawList`, `GetBackgroundDrawList`, `GetForegroundDrawList` | `ImDrawList*` access |
+| `OpenPopup` (string + numeric ID), `OpenPopupOnItemClick` | Open a popup |
+| `BeginPopup`, `BeginPopupModal`, `EndPopup` | Render popup / modal |
+| `CloseCurrentPopup`, `IsPopupOpen` | Popup state |
+| `BeginPopupContextItem`, `BeginPopupContextWindow`, `BeginPopupContextVoid` | Context popups |
+| `BeginMenuBar`, `EndMenuBar`, `BeginMainMenuBar`, `EndMainMenuBar` | Menu bars |
+| `BeginMenu`, `EndMenu`, `MenuItem` (×2 overloads) | Menu entries |
+| `TextUnformatted`, `TextLink`, `TextLinkOpenURL` | Raw text & clickable hyperlinks |
+| `BeginTooltip`, `EndTooltip`, `SetTooltip` | Tooltips (scoped + one-shot) |
+| `BeginItemTooltip`, `SetItemTooltip` | Hover-gated tooltips for the last item |
+| `BeginDisabled`, `EndDisabled` | Disabled (greyed/inert) scope |
+| `BeginCombo`, `EndCombo` | Custom combo (emit `Selectable` items) |
+| `BeginListBox`, `EndListBox` | Custom scrolling list region |
+| `Selectable` (value + `bool*` overloads) | Selectable rows |
+| `TreeNode`, `TreeNodeEx`, `TreePop`, `SetNextItemOpen` | Tree nodes |
+| `CollapsingHeader` (×2 overloads) | Collapsible header (optional close ✕) |
+| `BeginTabBar`, `EndTabBar`, `BeginTabItem`, `EndTabItem` | Tab bars |
+| `ProgressBar`, `PlotLines`, `PlotHistogram` | Progress bar & inline plots |
+| `ColorEdit3/4`, `ColorPicker3/4` | Color editors & pickers |
+| `ColorConvertRGBtoHSV`, `ColorConvertHSVtoRGB` | Color-space conversion |
+| `ColorConvertFloat4ToU32`, `ColorConvertU32ToFloat4` | Packed-color conversion |
+| `IsWindowAppearing`, `IsWindowCollapsed`, `IsWindowFocused`, `IsWindowHovered` | Window-state queries |
+| `CalcTextSize`, `SetKeyboardFocusHere` | Text measurement & keyboard focus |
+| `GetTime`, `GetFrameCount` | Frame/time counters |
+| `SetMouseCursor`, `GetMouseCursor` | Mouse cursor shape |
+
+> **Coverage:** `unigui::im` wraps **100% of Dear ImGui's practical public
+> surface** (201 functions). The remainder of ImGui's API is intentionally out
+> of the immediate layer (context/IO/backend plumbing, docking & viewports,
+> `va_list` `*V` overloads, generic `*Scalar` forms, the style/ID/font *stacks*
+> — use the RAII scopes in `core/scope.h` — and functions with a richer
+> retained-mode widget equivalent). Tracked by `scripts/coverage_vs_imgui.py`.
 
 ---
 
@@ -70,6 +137,7 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 |-----|--------|---------|
 | `WindowScope`, `IDScope`, `DisabledScope`, … | `core/scope.h` | Auto `End` / `Pop` |
 | `Make`, `MakeNamed` | `core/make.h` | `shared_ptr` widget helpers |
+| `Observable<T>`, `Subscription`, `Bind` | `core/observable.h` | Reactive value + RAII subscriptions |
 | `Layout::HBox`, `Layout::VBox`, `BeginHSplit` | `widgets/layout.h` | Inline layout functions |
 | `HBox`, `VBox` (RAII) | `widgets/layout.h` | Scoped horizontal/vertical groups |
 

@@ -14,15 +14,16 @@
 #include <unigui/backend/backend_types.h>
 #include <unigui/backend/platform_backend.h>
 #include <unigui/backend/renderer_backend.h>
+#include <unigui/core/api.h>
 #include <unigui/core/context.h>
 #include <unigui/core/error.h>
-#include <unigui/core/api.h>
 #include <unigui/core/format_cn.h>
 #include <unigui/core/format_num.h>
 #include <unigui/core/locale.h>
 #include <unigui/core/log.h>
 #include <unigui/core/main_thread.h>
 #include <unigui/core/make.h>
+#include <unigui/core/observable.h>
 #include <unigui/core/scope.h>
 #include <unigui/core/settings.h>
 #include <unigui/core/undo_stack.h>
@@ -111,6 +112,11 @@
 #include <unigui/trading/ohlc_series.h>
 #include <unigui/trading/order_book.h>
 #include <unigui/trading/quote.h>
+// Trading widgets (presentation layer).
+#include <unigui/trading/blotters.h>
+#include <unigui/trading/candlestick_chart.h>
+#include <unigui/trading/depth_ladder.h>
+#include <unigui/trading/order_ticket.h>
 #endif
 #include <unigui/app/app.h>
 #include <unigui/fonts/gradient_text.h>

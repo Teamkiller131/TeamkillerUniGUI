@@ -24,7 +24,6 @@ void Hyperlink::Render() {
     if (!IsVisible())
         return;
     ImGui::PushID(GetName().c_str());
-    auto col = ImGui::GetStyle().Colors[ImGuiCol_Text];
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.5f, 1.0f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));

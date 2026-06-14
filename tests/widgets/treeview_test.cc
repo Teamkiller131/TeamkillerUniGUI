@@ -29,7 +29,7 @@ TEST_F(TreeViewTest, SetRoot_Works) {
 TEST_F(TreeViewTest, RowRenderer_DoesNotCrash) {
     unigui::TreeView tv("tv");
     tv.SetRoot({"Root", {{"A", {}}, {"B", {}}}});
-    tv.SetRowRenderer([](int id, int depth, const unigui::TreeNode& node, bool sel) {
+    tv.SetRowRenderer([](int, int, const unigui::TreeNode& node, bool) {
         ImGui::Text("%s", node.label.c_str());
     });
     tv.Render();

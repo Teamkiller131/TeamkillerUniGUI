@@ -92,7 +92,8 @@ void TrayIcon::UpdateTooltip(std::string title) {
     Shell_NotifyIconW(NIM_MODIFY, &nid);
 #endif
 }
-void TrayIcon::ShowNotification(std::string title, std::string msg, NotifyType type) {
+void TrayIcon::ShowNotification([[maybe_unused]] std::string title, [[maybe_unused]] std::string msg,
+                                [[maybe_unused]] NotifyType type) {
 #ifdef _WIN32
     NOTIFYICONDATAW nid = {};
     nid.cbSize = sizeof(nid);

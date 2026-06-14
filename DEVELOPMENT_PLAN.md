@@ -49,8 +49,8 @@ Guiding principles:
 
 ## 2. Where we are today (baseline)
 
-- 84 widgets (100% PushID-safe), the `unigui::im` immediate-mode layer (≈35
-  functions ≈ ¼ of ImGui's surface), declarative DSL, CSS styling engine,
+- 84 widgets (100% PushID-safe), the `unigui::im` immediate-mode layer (**201
+  functions; A1–A6 complete** — inputs/sliders/drags, window/layout/scroll/cursor, popups/modals/menus, item & input queries, misc widgets/debug/draw-list, and the A6 remainder: tooltips, disabled scope, combo/listbox/selectable, trees/headers, tab bars, plots/progress, color editors & conversion, window-state queries — **100% of ImGui's practical surface**), declarative DSL, CSS styling engine,
   EventBus, plugin system, font manager.
 - Theme engine: Dark/Light + 13 presets, unified style/color tokens, surface
   materials (Solid/Glass/Frosted/Acrylic/Minimal), semantic colors, elevation.
@@ -86,10 +86,11 @@ Guiding principles:
   window/scroll/cursor control, generic popups/modals, item & input queries,
   draw-list access, debug tool windows, and a few misc widgets
   (`InvisibleButton`, `ArrowButton`, `CheckboxFlags`, `ColorButton`).
-- **No trading toolkit.** No candlestick/OHLC chart, no depth-of-market ladder,
-  no order ticket, no blotter/watchlist/tape templates, no general number/
-  currency/percent formatting, no OHLC aggregation model, no trading example.
-  (Strong existing building blocks to reuse — see Horizon 3.)
+- **Trading toolkit complete (Horizon 3).** B0–B6 done (formatting, models,
+  candlestick chart, DOM/depth ladder, order ticket, blotters/watchlist/tape +
+  `DataTable` freeze-pane, and the `trading_dashboard` example). Optional
+  follow-ups only: a PriceTicker marquee and in-cell mini sparkline/bar renderers
+  (the latter needs a custom-draw cell hook in `DataTable`).
 - Metal / WebGPU / Emscripten backends are non-functional stubs.
 - Theme "UI beautification" work is still in `Unreleased` — needs to land and be
   visually regression-tested.
@@ -112,9 +113,14 @@ release with tests + docs.
   GPU-capable CI runner.)_
 - **P1 · S — Coverage gate.** _Advisory landed._ Confirm the headless baseline,
   raise `COVERAGE_FLOOR` to just under it, then flip the step to a hard `exit 1`.
-- **P2 · S — Warnings-as-errors.** _Infrastructure landed._ Verify the tree is
-  warning-clean per compiler, flip `UNIGUI_WARNINGS_AS_ERRORS` on in CI, and
-  extend `unigui_set_warnings()` to the tests/examples targets.
+- ~~**P2 · S — Warnings-as-errors.**~~ **Done (GCC).** The whole tree (library +
+  tests + examples) builds **warning-clean under GCC with
+  `UNIGUI_WARNINGS_AS_ERRORS=ON`** (all tests pass), and a dedicated
+  `linux-werror` job in `build.yml` now **enforces** it on every push/PR.
+  `-Wextra`'s `missing-field-initializers` is suppressed
+  (`-Wno-missing-field-initializers`) because it conflicts with the clang-tidy
+  `readability-redundant-member-init` policy. _Remaining: confirm MSVC/Clang are
+  equally clean and add them to the gate._
 
 ### Horizon 2 — Complete the ImGui wrapper (im layer first)
 
@@ -125,24 +131,49 @@ state/validation genuinely helps. Every phase updates the `im` tables in
 `docs/API_INDEX.md` + `docs/WIDGET_API.md` and adds im-layer tests where a
 headless/GL-optional path exists.
 
-- **P1 · M — A1 · Inputs / sliders / drags completeness.** Vector `*2/3/4`,
-  `*Scalar`, and range variants for `InputFloat/Int`, `DragFloat/Int`,
-  `SliderFloat/Int`, plus `SliderAngle`, `VSliderFloat/Int`, `InputDouble`,
-  `InputTextWithHint`.
-- **P1 · M — A2 · Window / layout / scroll / cursor.** `SetNextWindow*`,
-  `BeginChild/EndChild`, scrolling (`SetScrollHereY`, `GetScrollX/Y`…),
-  `BeginGroup/EndGroup`, clip rects, cursor get/set, alignment helpers.
-- **P1 · M — A3 · Popups / modals / menus.** Generic `OpenPopup`/`BeginPopup`/
-  `BeginPopupModal`/context popups, plus menu builder helpers.
-- **P1 · M — A4 · Item & input queries.** `IsItem*`, `GetItemRect*`, and
-  keyboard/mouse query (`IsKey*`, `IsMouse*`, `GetMouse*`), layered with the
-  existing `Shortcut` widget.
-- **P2 · M — A5 · Misc widgets, debug tools, draw-list.** `InvisibleButton`,
-  `ArrowButton`, `CheckboxFlags`, `ColorButton`; `ShowDemoWindow`/`Metrics`/
-  `StyleEditor`; foreground/background draw-list access + a thin `ImDrawList`
-  facade. Land a `coverage-vs-imgui` script (runs in CI where vcpkg is
-  available) that diffs the installed `imgui.h` against `include/unigui/**` to
-  report wrapper coverage % and guard against regressions.
+- ~~**P1 · M — A1 · Inputs / sliders / drags completeness.**~~ **Done.** Vector `*2/3/4`
+  and range variants for `InputFloat/Int`, `DragFloat/Int`, `SliderFloat/Int`,
+  plus `SliderAngle`, `VSliderFloat/Int`, `InputDouble`, `InputTextWithHint`.
+  `unigui::im` count: 22 → 47. 14 new headless tests added.
+- ~~**P1 · M — A2 · Window / layout / scroll / cursor.**~~ **Done.** `SetNextWindow*`
+  (pos/size/constraints/content/collapsed/focus/scroll/bgalpha), `BeginChild/EndChild`
+  (string + numeric ID overloads), scrolling (`GetScrollX/Y`, `GetScrollMaxX/Y`,
+  `SetScrollX/Y`, `SetScrollHereX/Y`, `SetScrollFromPosX/Y`), `BeginGroup/EndGroup`,
+  `PushClipRect/PopClipRect`, cursor get/set (`GetCursor(Screen)Pos`, `SetCursor*`,
+  `GetCursorStartPos`, `GetContentRegionAvail`, `GetWindowPos/Size/Width/Height`),
+  `PushItemWidth/PopItemWidth/SetNextItemWidth/CalcItemWidth`,
+  `AlignTextToFramePadding`, line-metric getters, `SetItemDefaultFocus`.
+  14 new headless tests added.
+- ~~**P1 · M — A3 · Popups / modals / menus.**~~ **Done.** `OpenPopup` (string+numeric
+  ID), `OpenPopupOnItemClick`, `BeginPopup`, `BeginPopupModal`, `EndPopup`,
+  `CloseCurrentPopup`, `IsPopupOpen`, `BeginPopupContextItem/Window/Void`;
+  `BeginMenuBar/EndMenuBar`, `BeginMainMenuBar/EndMainMenuBar`,
+  `BeginMenu/EndMenu`, `MenuItem` (×2 overloads). 11 new headless tests added.
+- ~~**P1 · M — A4 · Item & input queries.**~~ **Done.** `IsItemHovered/Active/Focused/
+  Clicked/Visible/Edited/Activated/Deactivated/DeactivatedAfterEdit/ToggledOpen`,
+  `IsAnyItemHovered/Active/Focused`, `GetItemRectMin/Max/Size`;
+  `IsKeyDown/Pressed/Released`, `IsMouseDown/Clicked/Released/DoubleClicked/
+  Dragging/HoveringRect`, `GetMousePos`, `GetMouseDragDelta`, `ResetMouseDragDelta`.
+  9 new headless tests added.
+- ~~**P2 · M — A5 · Misc widgets, debug tools, draw-list.**~~ **Done (widgets + debug +
+  draw-list).** `InvisibleButton`, `ArrowButton`, `CheckboxFlags` (int + unsigned int),
+  `ColorButton`; `ShowDemoWindow`, `ShowMetricsWindow`, `ShowStyleEditor`;
+  `GetWindowDrawList`, `GetBackgroundDrawList`, `GetForegroundDrawList`.
+  10 new headless tests added.
+- ~~**P2 · M — A6 · Practical-surface completion + coverage tracking.**~~ **Done.**
+  The remaining commonly-needed controls now have im wrappers: `TextUnformatted`/
+  `TextLink`/`TextLinkOpenURL`, tooltips (`BeginTooltip`/`EndTooltip`/`SetTooltip`/
+  `BeginItemTooltip`/`SetItemTooltip`), `BeginDisabled`/`EndDisabled`,
+  `BeginCombo`/`EndCombo`, `BeginListBox`/`EndListBox`, `Selectable` (×2),
+  `TreeNode`/`TreeNodeEx`/`TreePop`/`SetNextItemOpen`/`CollapsingHeader` (×2),
+  tab bars (`BeginTabBar`/`BeginTabItem`/…), `ProgressBar`/`PlotLines`/
+  `PlotHistogram`, color editors/pickers/conversion, window-state queries
+  (`IsWindow*`), and misc utilities (`CalcTextSize`, `SetKeyboardFocusHere`,
+  `GetTime`, `GetFrameCount`, `Set/GetMouseCursor`). `im` count 157 → **201 =
+  100% of ImGui's practical surface**. New `scripts/coverage_vs_imgui.py`
+  computes the figure (and the curated out-of-scope list) and runs **advisory in
+  `quality.yml`** — closing the deferred `coverage-vs-imgui` CI item. 13 new
+  headless test cases.
 
 ### Horizon 3 — Trading-client toolkit
 
@@ -168,25 +199,52 @@ scroll, `FlashRow`, row/cell color, checkbox columns, groups, context menu),
   aggregation, rolling window, ImPlot column extractors), `quote.h`
   (`Quote`/`Position`/`Order`/`Trade`). Gated by `UNIGUI_MODULE_TRADING` (default
   OFF); tests in `tests/trading/`.
-- **P1 · M — B2 · Candlestick / OHLC chart.** Widget bound to `ohlc_series`,
-  wrapping ImPlot `PlotCandlestick` with an optional volume sub-panel; also
-  expose a candlestick helper in `ext/plot.h`.
-- **P1 · M — B3 · DOM / depth ladder.** Price-ladder widget bound to
-  `order_book`: bid/ask size bars, center-on-last, click-to-trade column
-  callbacks. Built on the `DataTable`/`Table` machinery + the freeze-pane
-  support added in B5.
-- **P1 · M — B4 · Order ticket.** Order-entry widget (side / qty / price / type
-  / TIF) with `strutil` validation, submit/confirm callbacks, and keyboard/
-  hotkey flow (reusing `Shortcut`); complements the existing `SliderBar`
-  position workflow.
-- **P1 · L — B5 · Blotters, watchlist, tape, ticker.** Pre-built `DataTable`
-  configurations — PositionsBlotter, OrdersBlotter, TradesTape (time & sales),
-  Watchlist/QuoteBoard, PriceTicker — plus finance cell renderers (delta arrows,
-  mini sparkline, mini bar). Adds **freeze-pane** (pinned first-N columns) to
-  `DataTable`, a measured gap both B3 and B5 need.
-- **P1 · M — B6 · Trading example + guide.** `examples/trading_dashboard`
-  assembling B0–B5 (chart + DOM + ticket + blotters + risk/status), runnable
-  headless via `--frames N`; new `docs/TRADING.md` guide.
+- ~~**P1 · M — B2 · Candlestick / OHLC chart.**~~ **Done.** `CandlestickChart` widget
+  (`trading/candlestick_chart.h`, gated by `UNIGUI_MODULE_TRADING`) bound to a
+  non-owning `OhlcSeries`: candle wicks + bodies via the plot draw-list, optional
+  volume sub-panel (linked-X subplot, bull/bear-coloured bars), OHLCV crosshair
+  tooltip, theme-aware background, date/time X axis, fluent `With*` API. The
+  reusable low-level `unigui::trading::PlotCandlesticks()` free function is
+  exposed for callers driving their own `BeginPlot/EndPlot` (kept in `trading/`
+  rather than `ext/plot.h` to avoid coupling the core to `implot_internal`).
+  11 new headless tests (`tests/trading/candlestick_chart_test.cc`).
+- ~~**P1 · M — B3 · DOM / depth ladder.**~~ **Done.** `DepthLadder` widget
+  (`trading/depth_ladder.h`, gated by `UNIGUI_MODULE_TRADING`) bound to a
+  non-owning `OrderBook`: asks highest→lowest on top, optional spread/mid divider,
+  bids highest→lowest below; per-level depth bars scaled to `OrderBook::MaxSize()`,
+  size + side-tinted price; per-side click-to-trade callback (`SetOnLevelClick`),
+  auto-/one-shot centre-on-market (`SetAutoCenter`/`CenterOnMarket`), configurable
+  geometry/colours, theme-aware background, fluent `With*` API. Drawn directly via
+  the window draw-list (no `DataTable` dependency, so the planned B5 freeze-pane is
+  not a prerequisite). 13 new headless tests
+  (`tests/trading/depth_ladder_test.cc`).
+- ~~**P1 · M — B4 · Order ticket.**~~ **Done.** `OrderTicket` widget
+  (`trading/order_ticket.h`, gated by `UNIGUI_MODULE_TRADING`) over an editable
+  `OrderDraft` (symbol / side / `OrderType` / `TimeInForce` / qty / limit / stop):
+  pure `Validate()` (→ `OrderValidation`) using `core/strutil` trim + type-
+  conditional price/stop rules, `Submit()` that tick-snaps via `format::TickAlign`
+  and fires the submit callback, an optional confirmation modal (`SetConfirm`),
+  and a Ctrl+Enter hotkey reusing `ShortcutManager`. Coloured Buy/Sell toggle,
+  type/TIF combos, disabled-when-unused price/stop inputs, inline validation
+  message, fluent `With*` API. 19 new headless tests
+  (`tests/trading/order_ticket_test.cc`).
+- ~~**P1 · L — B5 · Blotters, watchlist, tape.**~~ **Done.** `trading/blotters.h`
+  (header-only, gated by `UNIGUI_MODULE_TRADING`) ships pre-built `DataTable<T>`
+  factories — `MakePositionsBlotter`, `MakeOrdersBlotter`, `MakeTradesTape`
+  (time & sales), `MakeWatchlist` (quote board) — each wiring columns, a
+  financial cell formatter, sign-aware cell colours with ▲/▼ delta arrows, and a
+  pinned leading column. Per-row cell formatters + colour/format helpers
+  (`DeltaColor`/`SideColor`/`WithArrow`/`FormatClock`) are pure & unit-tested.
+  Adds **freeze-pane** to `DataTable` (`SetFrozenColumns`) — the measured gap.
+  13 new headless tests (`tests/trading/blotters_test.cc`). _PriceTicker marquee
+  and in-cell mini sparkline/bar renderers deferred (the latter needs a
+  custom-draw cell hook in `DataTable`, which is string-cell based today)._
+- ~~**P1 · M — B6 · Trading example + guide.**~~ **Done.**
+  `examples/trading_dashboard` assembles B0–B5 (candlestick + volume, DOM ladder,
+  order ticket, positions/orders/watchlist/time-&-sales blotters) over synthetic
+  self-animating models; runnable headless via `--frames N`, gated on
+  `UNIGUI_MODULE_WIDGETS` + `UNIGUI_MODULE_TRADING`. `docs/TRADING.md` covers the
+  whole toolkit end to end. **Horizon 3 complete.**
 
 ### Horizon 4 — Backend completeness & performance
 
@@ -198,9 +256,14 @@ Goal: turn the stub backends into real ones and make rendering measurably fast.
   web demo of `widget_gallery`.
 - **P1 · M — DPI / multi-monitor robustness.** Per-monitor DPI scaling, fractional
   scaling, runtime DPI changes across all production backends.
-- **P1 · M — Performance budget & benchmarks.** Per-frame CPU budgets for
-  `DataTable`/`VirtualList`/`Table` — and the trading DOM/blotters under high
-  update rates — at 100k+ rows; expand `tests/bench/`; track regressions in CI.
+- **P1 · M — Performance budget & benchmarks.** _In progress._ Trading-model
+  benchmarks landed (`tests/trading/bench_test.cc`): `OrderBook` under 200k
+  price deltas + 5k full-book snapshots, and `OhlcSeries` over 1M ticks +
+  per-frame column extraction — each with a regression floor. A `DataTable`
+  virtual-scroll benchmark at **100k rows** (`tests/bench/bench_test.cc`) proves
+  steady-state per-frame cost stays bounded by the visible window (joining the
+  existing `VirtualList`/CSV-import budgets). _Remaining:_ `Table` at 100k rows
+  and wiring the budgets into CI as a tracked gate.
 - **P2 · M — GPU-side text/MSAA improvements** and a shared backend capability
   query so features degrade gracefully per renderer.
 
@@ -213,13 +276,27 @@ Goal: broaden what apps can build without leaving the toolkit.
 - **P1 · M — Accessibility.** Surface the existing `AccessibleName`/`Description`
   fields through a real a11y tree / screen-reader bridge where the platform
   allows; keyboard-only navigation audit.
-- **P1 · M — Theming authoring tools.** Live theme editor example; export/import
-  theme files; hot-reload CSS from disk.
-- **P2 · L — Data binding / reactive layer.** Optional observable bindings so
-  retained widgets update from model changes without manual `Set*` calls —
-  synergizes directly with the Horizon-3 trading models.
-- **P2 · M — Internationalization.** Build out `core/locale.h` into a full
-  catalog/translation system; RTL layout support.
+- ~~**P1 · M — Theming authoring tools.**~~ **Done.** Theme export/import
+  (`ExportThemeJSON`/`ImportThemeJSON`, round-trip tested), **CSS hot-reload from
+  disk** (`styling::Engine::LoadFile()` + `ReloadIfChanged()`/`Clear()`/
+  `WatchedFile()`), and a live **`examples/theme_editor`** that ties them
+  together — switch preset/surface/font/accent live, export/import the palette as
+  JSON, and `--css <file>` to hot-edit a stylesheet while it runs (headless via
+  `--frames N`).
+- **P2 · L — Data binding / reactive layer.** _Foundation landed._ New
+  header-only `core/observable.h`: `Observable<T>` (change-detecting `Set`,
+  `ForceSet`, in-place `Mutate`, `Subscribe`/`SubscribeAndFire`) with **RAII
+  `Subscription`** handles that auto-unsubscribe and safely outlive the
+  observable (shared registry + weak ref), plus a `Bind(source, sink)` helper.
+  Move-only so observers aren't silently aliased. Fully unit-tested. _Remaining:_
+  `Computed`/derived observables and wiring bindings into the retained widgets +
+  trading models.
+- **P2 · M — Internationalization.** _Mostly done._ `core/locale.h` is now a
+  real catalog: a **fallback chain** (current → base language → fallback locale →
+  key) so partially-translated locales degrade gracefully, **positional
+  `{0}`/`{1}` argument substitution** (`Tr(key, args)`), and **RTL detection**
+  (`IsRTL()` for ar/he/fa/ur) — all unit-tested. _Remaining:_ full RTL layout
+  *mirroring* (a layout-engine concern, tracked with the Horizon-5 layout work).
 - **P2 · M — Plugin ecosystem.** Stable plugin ABI, versioned plugin interface,
   sample third-party plugins, and a plugin template repo.
 
@@ -242,9 +319,10 @@ These run in parallel with every horizon:
 
 - **Quality:** keep CI green on all presets; grow coverage; expand fuzz/bench;
   zero `clang-tidy` regressions.
-- **Wrapper-coverage tracking:** the `coverage-vs-imgui` script (Horizon 2)
-  reports the first-class-wrapped % of the ImGui surface each CI run; the trend
-  should move up, never down.
+- **Wrapper-coverage tracking:** `scripts/coverage_vs_imgui.py` (_landed_)
+  reports the first-class-wrapped % of the ImGui practical surface each CI run
+  (advisory in `quality.yml`); the trend should move up, never down. Currently
+  **100%** of the practical surface. _Next: flip to a hard `--threshold` gate._
 - **Trading module hygiene:** the library must build and pass tests with
   `UNIGUI_MODULE_TRADING=OFF`; trading widgets stay presentation-only; the
   models are header-light and unit-tested.

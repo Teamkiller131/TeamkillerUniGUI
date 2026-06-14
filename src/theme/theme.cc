@@ -25,7 +25,7 @@ static float pendingFontSize_ = 16.f;
 // to the Dark window background until the first ApplyTheme() call updates it.
 static ImVec4 backdropColor_ = ImVec4(0.10f, 0.10f, 0.12f, 1.00f);
 
-float DetectDPIScale(void* native_window) {
+float DetectDPIScale([[maybe_unused]] void* native_window) {
 #ifdef _WIN32
     HWND hwnd = (HWND) native_window;
     if (hwnd) {
@@ -51,7 +51,7 @@ float DetectDPIScale(void* native_window) {
     return 1.0f;
 }
 
-void LoadDefaultFont(float size_pixels, const char* ttf_path) {
+void LoadDefaultFont(float size_pixels, [[maybe_unused]] const char* ttf_path) {
     auto& io = ImGui::GetIO();
     io.Fonts->Clear();
 
@@ -159,7 +159,6 @@ void ApplyTheme(const ThemeConfig& config) {
     using theme::AccentHover;
     using theme::ApplyStyleTokens;
     using theme::WithAlpha;
-    auto& io = ImGui::GetIO();
     auto& style = ImGui::GetStyle();
     auto& colors = style.Colors;
 

@@ -16,8 +16,8 @@ struct Transition {
     ///         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, a);
     ///         // ... draw widget ...
     ///         ImGui::PopStyleVar();
-    static float Fade(AnimationState& state, float duration,
-                      EasingCurve curve = EasingCurve::EaseOut, float dt = 0.f) {
+    static float Fade(AnimationState& state, [[maybe_unused]] float duration,
+                      [[maybe_unused]] EasingCurve curve = EasingCurve::EaseOut, float dt = 0.f) {
         if (dt > 0.f)
             state.Update(dt);
         return state.progress;

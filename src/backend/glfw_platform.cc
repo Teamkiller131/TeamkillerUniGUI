@@ -22,7 +22,7 @@ public:
     explicit GLFWPlatform(bool needGL)
             : needGL_(needGL) {}
 
-    bool Init(void* native_window_handle = nullptr) override {
+    bool Init([[maybe_unused]] void* native_window_handle = nullptr) override {
         if (!glfwInit()) {
             UNIGUI_LOG_ERROR("glfwInit() failed");
             return false;

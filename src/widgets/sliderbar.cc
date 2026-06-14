@@ -185,7 +185,6 @@ void SliderBar::Render() {
 
         // ── 5. Handle interaction (dragging) ───────────────────────────────
         ImGuiIO& io = ImGui::GetIO();
-        bool mouseInBar = ImGui::IsItemHovered();
         ImVec2 mousePos = io.MousePos;
 
         // Start drag: find if we clicked on a handle

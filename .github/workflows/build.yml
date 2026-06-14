@@ -65,3 +65,28 @@ jobs:
       run: cmake --build build
     - name: Test
       run: ctest --test-dir build --output-on-failure || true
+
+  # Warnings-as-errors gate (GCC). The whole tree — library, tests, and
+  # examples — is warning-clean under -Werror; this job keeps it that way.
+  linux-werror:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install deps
+      run: |
+        sudo apt-get update && sudo apt-get install -y ninja-build libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+        ~/vcpkg/bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+    - name: Configure (warnings-as-errors)
+      run: |
+        cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=x64-linux -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+          -DUNIGUI_WARNINGS_AS_ERRORS=ON \
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+    - name: Build (must be warning-clean)
+      run: cmake --build build
+    - name: Test
+      run: ctest --test-dir build --output-on-failure || true  # headless GL failures expected

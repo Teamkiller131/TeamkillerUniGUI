@@ -174,6 +174,14 @@ public:
     void SetStickyHeader(bool on) { stickyHeader_ = on; }
     void ScrollToRow(int row) { scrollToRow_ = row; }
 
+    // ── Freeze-pane (pinned leading columns) ──────────────────────────────
+    // Keep the first `n` columns visible while the rest scroll horizontally —
+    // the classic blotter "pin the symbol/key columns" behaviour. Enabling it
+    // (n > 0) turns on horizontal scrolling for the table; n == 0 (default)
+    // leaves layout unchanged. Composes with the sticky header.
+    void SetFrozenColumns(int n) { freezeCols_ = n < 0 ? 0 : n; }
+    int GetFrozenColumns() const { return freezeCols_; }
+
     // ── Render ────────────────────────────────────────────────────────────
     void Render() override {
         if (!IsVisible() || !data_)
@@ -184,6 +192,7 @@ public:
                     ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit |
                     ImGuiTableFlags_NoHostExtendY |
                     (columnReorder_ ? ImGuiTableFlags_Reorderable : 0) |
+                    (freezeCols_ > 0 ? ImGuiTableFlags_ScrollX : 0) |
                     ((groups_.empty() || stickyHeader_) ? ImGuiTableFlags_Sortable : 0);
 
         float tableH = (virtualScroll_ || stickyHeader_) ? ImGui::GetContentRegionAvail().y : 0.f;
@@ -191,8 +200,8 @@ public:
         if (!ImGui::BeginTable(GetName().c_str(), (int) columns_.size(), flags, ImVec2(0, tableH)))
             return;
 
-        if (stickyHeader_)
-            ImGui::TableSetupScrollFreeze(0, 1);
+        if (stickyHeader_ || freezeCols_ > 0)
+            ImGui::TableSetupScrollFreeze(freezeCols_, stickyHeader_ ? 1 : 0);
 
         for (size_t ci = 0; ci < columns_.size(); ++ci) {
             auto& col = columns_[ci];
@@ -581,6 +590,7 @@ private:
     bool virtualScroll_ = true;
     int scrollToRow_ = -1;
     bool stickyHeader_ = false;
+    int freezeCols_ = 0;
     SelectFn onSelect_;
     DoubleClickFn onDblClick_;
     std::function<void()> onSelChanged_;

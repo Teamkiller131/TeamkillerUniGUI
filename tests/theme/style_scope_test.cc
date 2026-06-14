@@ -25,7 +25,7 @@ TEST_F(StyleScopeTest, PushColor_ModifiesColor) {
         EXPECT_FLOAT_EQ(inside.x, 1.0f);
     }
     ImVec4 after = ImGui::GetStyle().Colors[ImGuiCol_Button];
-    EXPECT_FLOAT_EQ(after.x, 0.5f);
+    EXPECT_FLOAT_EQ(after.x, before.x);
 }
 
 TEST_F(StyleScopeTest, PushVar_ModifiesStyleVar) {
@@ -50,7 +50,7 @@ TEST_F(StyleScopeTest, MoveSemantics_TransfersOwnership) {
         EXPECT_TRUE(b.active());
         EXPECT_FLOAT_EQ(ImGui::GetStyle().Colors[ImGuiCol_Button].x, 0.0f);
     }
-    EXPECT_FLOAT_EQ(ImGui::GetStyle().Colors[ImGuiCol_Button].x, 0.5f);
+    EXPECT_FLOAT_EQ(ImGui::GetStyle().Colors[ImGuiCol_Button].x, baseline.x);
 }
 
 TEST_F(StyleScopeTest, MultiplePushes_AllPopped) {
@@ -61,5 +61,5 @@ TEST_F(StyleScopeTest, MultiplePushes_AllPopped) {
         scope.PushColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
         EXPECT_FLOAT_EQ(ImGui::GetStyle().Colors[ImGuiCol_Button].y, 1.0f);
     }
-    EXPECT_FLOAT_EQ(ImGui::GetStyle().Colors[ImGuiCol_Button].x, 0.5f);
+    EXPECT_FLOAT_EQ(ImGui::GetStyle().Colors[ImGuiCol_Button].x, baseline.x);
 }
