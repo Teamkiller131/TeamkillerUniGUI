@@ -21,6 +21,7 @@
 
 #include <imgui.h>
 
+#include <cfloat>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -345,5 +346,114 @@ ImDrawList* GetWindowDrawList();
 ImDrawList* GetBackgroundDrawList();
 /// The foreground draw list (rendered on top of everything).
 ImDrawList* GetForegroundDrawList();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A6 — remaining practical surface (text/tooltips/disabled/combo/listbox/
+// selectable/trees/tabs/plots/color/window-queries/misc). Each is a thin,
+// allocation-light pass-through; string params are std::string_view and optional
+// const char* params accept an empty view as "use ImGui's default (nullptr)".
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Text (extras) ─────────────────────────────────────────────────────────────
+/// Raw text, no printf parsing — the fastest path for long/literal strings.
+void TextUnformatted(std::string_view text);
+/// Clickable text hyperlink. Returns true on the frame it is clicked.
+bool TextLink(std::string_view label);
+/// Clickable text hyperlink that opens `url` (defaults to the label) on click.
+void TextLinkOpenURL(std::string_view label, std::string_view url = {});
+
+// ── Tooltips ──────────────────────────────────────────────────────────────────
+/// Begin a tooltip window; pair with EndTooltip() when it returns true.
+bool BeginTooltip();
+void EndTooltip();
+/// One-shot tooltip with plain text (begins + sets text + ends).
+void SetTooltip(std::string_view text);
+/// Begin a tooltip only when the last item is hovered (delay-aware).
+bool BeginItemTooltip();
+/// One-shot tooltip shown only when the last item is hovered.
+void SetItemTooltip(std::string_view text);
+
+// ── Disabled block ────────────────────────────────────────────────────────────
+/// Push a disabled scope — controls grey out and stop responding. Pair with
+/// EndDisabled(). Pass false to push a no-op (keeps the stack balanced).
+void BeginDisabled(bool disabled = true);
+void EndDisabled();
+
+// ── Combo (low-level) ─────────────────────────────────────────────────────────
+/// Open a custom combo; emit Selectable() items inside, then EndCombo() when true.
+bool BeginCombo(std::string_view label, std::string_view preview, ImGuiComboFlags flags = 0);
+void EndCombo();
+
+// ── ListBox (low-level) ───────────────────────────────────────────────────────
+/// Open a scrolling list region; emit Selectable() items, then EndListBox() when true.
+bool BeginListBox(std::string_view label, const ImVec2& size = ImVec2(0, 0));
+void EndListBox();
+
+// ── Selectable ────────────────────────────────────────────────────────────────
+/// Selectable row. Returns true on click; `selected` controls the highlight.
+bool Selectable(std::string_view label, bool selected = false, ImGuiSelectableFlags flags = 0,
+                const ImVec2& size = ImVec2(0, 0));
+/// Selectable row bound to a bool toggled on click.
+bool Selectable(std::string_view label, bool* pSelected, ImGuiSelectableFlags flags = 0,
+                const ImVec2& size = ImVec2(0, 0));
+
+// ── Trees & headers ───────────────────────────────────────────────────────────
+/// Tree node; when it returns true, emit children and call TreePop().
+bool TreeNode(std::string_view label);
+bool TreeNodeEx(std::string_view label, ImGuiTreeNodeFlags flags = 0);
+void TreePop();
+/// Force the next tree node / collapsing header open/closed state.
+void SetNextItemOpen(bool isOpen, ImGuiCond cond = 0);
+/// Collapsing header (a tree node styled as a full-width header).
+bool CollapsingHeader(std::string_view label, ImGuiTreeNodeFlags flags = 0);
+/// Collapsing header with a close ✕ button (bound to `pVisible`).
+bool CollapsingHeader(std::string_view label, bool* pVisible, ImGuiTreeNodeFlags flags = 0);
+
+// ── Tab bars ──────────────────────────────────────────────────────────────────
+bool BeginTabBar(std::string_view strId, ImGuiTabBarFlags flags = 0);
+void EndTabBar();
+bool BeginTabItem(std::string_view label, bool* pOpen = nullptr, ImGuiTabItemFlags flags = 0);
+void EndTabItem();
+
+// ── Plots & progress ──────────────────────────────────────────────────────────
+/// Progress bar in [0,1]. Empty overlay shows the default percentage.
+void ProgressBar(float fraction, const ImVec2& size = ImVec2(-FLT_MIN, 0),
+                 std::string_view overlay = {});
+void PlotLines(std::string_view label, const float* values, int count, int offset = 0,
+               std::string_view overlay = {}, float scaleMin = FLT_MAX, float scaleMax = FLT_MAX,
+               const ImVec2& size = ImVec2(0, 0));
+void PlotHistogram(std::string_view label, const float* values, int count, int offset = 0,
+                   std::string_view overlay = {}, float scaleMin = FLT_MAX,
+                   float scaleMax = FLT_MAX, const ImVec2& size = ImVec2(0, 0));
+
+// ── Color editors & conversion ────────────────────────────────────────────────
+bool ColorEdit3(std::string_view label, float col[3], ImGuiColorEditFlags flags = 0);
+bool ColorEdit4(std::string_view label, float col[4], ImGuiColorEditFlags flags = 0);
+bool ColorPicker3(std::string_view label, float col[3], ImGuiColorEditFlags flags = 0);
+bool ColorPicker4(std::string_view label, float col[4], ImGuiColorEditFlags flags = 0,
+                  const float* ref = nullptr);
+void ColorConvertRGBtoHSV(float r, float g, float b, float& outH, float& outS, float& outV);
+void ColorConvertHSVtoRGB(float h, float s, float v, float& outR, float& outG, float& outB);
+ImU32 ColorConvertFloat4ToU32(const ImVec4& in);
+ImVec4 ColorConvertU32ToFloat4(ImU32 in);
+
+// ── Window-state queries ──────────────────────────────────────────────────────
+bool IsWindowAppearing();
+bool IsWindowCollapsed();
+bool IsWindowFocused(ImGuiFocusedFlags flags = 0);
+bool IsWindowHovered(ImGuiHoveredFlags flags = 0);
+
+// ── Misc utilities ────────────────────────────────────────────────────────────
+/// Measure rendered text size (respects an optional wrap width).
+ImVec2 CalcTextSize(std::string_view text, bool hideAfterDoubleHash = false,
+                    float wrapWidth = -1.0f);
+/// Focus the next (or `offset`-th following) widget for keyboard input.
+void SetKeyboardFocusHere(int offset = 0);
+/// Seconds since the ImGui context was created.
+double GetTime();
+/// Number of frames submitted so far.
+int GetFrameCount();
+void SetMouseCursor(ImGuiMouseCursor type);
+ImGuiMouseCursor GetMouseCursor();
 
 } // namespace unigui::im

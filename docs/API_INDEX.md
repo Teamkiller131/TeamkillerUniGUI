@@ -5,7 +5,7 @@ Master lookup for the **entire public surface** of TeamkillerUniGUI 3.5.0.
 | Category | Count | Primary doc |
 |----------|------:|-------------|
 | Retained widgets & helpers | **82** | [WIDGET_API.md](WIDGET_API.md), [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) |
-| `unigui::im` functions | **157** | [WIDGET_API §2](WIDGET_API.md#immediate-mode-uniguiim-vs-retained-mode) |
+| `unigui::im` functions | **201** | [WIDGET_API §2](WIDGET_API.md#immediate-mode-uniguiim-vs-retained-mode) |
 | `unigui::dsl` builders | **18** | [WIDGET_API — DSL](WIDGET_API.md#declarative-dsl-uniguidsl) |
 | App / theme / core | **15+** | Below + [GETTING_STARTED.md](GETTING_STARTED.md) |
 
@@ -88,6 +88,31 @@ Header: `im/im.h`. Complements retained widgets; same frame, no `shared_ptr`.
 | `BeginPopupContextItem`, `BeginPopupContextWindow`, `BeginPopupContextVoid` | Context popups |
 | `BeginMenuBar`, `EndMenuBar`, `BeginMainMenuBar`, `EndMainMenuBar` | Menu bars |
 | `BeginMenu`, `EndMenu`, `MenuItem` (×2 overloads) | Menu entries |
+| `TextUnformatted`, `TextLink`, `TextLinkOpenURL` | Raw text & clickable hyperlinks |
+| `BeginTooltip`, `EndTooltip`, `SetTooltip` | Tooltips (scoped + one-shot) |
+| `BeginItemTooltip`, `SetItemTooltip` | Hover-gated tooltips for the last item |
+| `BeginDisabled`, `EndDisabled` | Disabled (greyed/inert) scope |
+| `BeginCombo`, `EndCombo` | Custom combo (emit `Selectable` items) |
+| `BeginListBox`, `EndListBox` | Custom scrolling list region |
+| `Selectable` (value + `bool*` overloads) | Selectable rows |
+| `TreeNode`, `TreeNodeEx`, `TreePop`, `SetNextItemOpen` | Tree nodes |
+| `CollapsingHeader` (×2 overloads) | Collapsible header (optional close ✕) |
+| `BeginTabBar`, `EndTabBar`, `BeginTabItem`, `EndTabItem` | Tab bars |
+| `ProgressBar`, `PlotLines`, `PlotHistogram` | Progress bar & inline plots |
+| `ColorEdit3/4`, `ColorPicker3/4` | Color editors & pickers |
+| `ColorConvertRGBtoHSV`, `ColorConvertHSVtoRGB` | Color-space conversion |
+| `ColorConvertFloat4ToU32`, `ColorConvertU32ToFloat4` | Packed-color conversion |
+| `IsWindowAppearing`, `IsWindowCollapsed`, `IsWindowFocused`, `IsWindowHovered` | Window-state queries |
+| `CalcTextSize`, `SetKeyboardFocusHere` | Text measurement & keyboard focus |
+| `GetTime`, `GetFrameCount` | Frame/time counters |
+| `SetMouseCursor`, `GetMouseCursor` | Mouse cursor shape |
+
+> **Coverage:** `unigui::im` wraps **100% of Dear ImGui's practical public
+> surface** (201 functions). The remainder of ImGui's API is intentionally out
+> of the immediate layer (context/IO/backend plumbing, docking & viewports,
+> `va_list` `*V` overloads, generic `*Scalar` forms, the style/ID/font *stacks*
+> — use the RAII scopes in `core/scope.h` — and functions with a richer
+> retained-mode widget equivalent). Tracked by `scripts/coverage_vs_imgui.py`.
 
 ---
 

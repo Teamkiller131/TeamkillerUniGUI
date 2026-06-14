@@ -183,6 +183,11 @@ stateless controls; use the retained-mode widget classes (`unigui::Button`,
 `unigui::Form`, `unigui::DataTable`, …) when you need persistent state,
 validation, undo/redo or serialization. The two layers coexist.
 
+`unigui::im` wraps **100% of Dear ImGui's practical public surface** (201
+functions) — you rarely need to drop to raw `ImGui::`, though it stays fully
+supported and auto-themed when you do. The figure is tracked in CI by
+[`scripts/coverage_vs_imgui.py`](scripts/coverage_vs_imgui.py).
+
 ### RAII Scopes
 
 Move-only guards pair ImGui's `Begin*/Push*` calls with their matching

@@ -49,8 +49,8 @@ Guiding principles:
 
 ## 2. Where we are today (baseline)
 
-- 84 widgets (100% PushID-safe), the `unigui::im` immediate-mode layer (**157
-  functions; A1–A5 complete** — inputs/sliders/drags, window/layout/scroll/cursor, popups/modals/menus, item & input queries, misc widgets/debug/draw-list), declarative DSL, CSS styling engine,
+- 84 widgets (100% PushID-safe), the `unigui::im` immediate-mode layer (**201
+  functions; A1–A6 complete** — inputs/sliders/drags, window/layout/scroll/cursor, popups/modals/menus, item & input queries, misc widgets/debug/draw-list, and the A6 remainder: tooltips, disabled scope, combo/listbox/selectable, trees/headers, tab bars, plots/progress, color editors & conversion, window-state queries — **100% of ImGui's practical surface**), declarative DSL, CSS styling engine,
   EventBus, plugin system, font manager.
 - Theme engine: Dark/Light + 13 presets, unified style/color tokens, surface
   materials (Solid/Glass/Frosted/Acrylic/Minimal), semantic colors, elevation.
@@ -158,7 +158,21 @@ headless/GL-optional path exists.
   draw-list).** `InvisibleButton`, `ArrowButton`, `CheckboxFlags` (int + unsigned int),
   `ColorButton`; `ShowDemoWindow`, `ShowMetricsWindow`, `ShowStyleEditor`;
   `GetWindowDrawList`, `GetBackgroundDrawList`, `GetForegroundDrawList`.
-  10 new headless tests added. `coverage-vs-imgui` script deferred (CI infra item).
+  10 new headless tests added.
+- ~~**P2 · M — A6 · Practical-surface completion + coverage tracking.**~~ **Done.**
+  The remaining commonly-needed controls now have im wrappers: `TextUnformatted`/
+  `TextLink`/`TextLinkOpenURL`, tooltips (`BeginTooltip`/`EndTooltip`/`SetTooltip`/
+  `BeginItemTooltip`/`SetItemTooltip`), `BeginDisabled`/`EndDisabled`,
+  `BeginCombo`/`EndCombo`, `BeginListBox`/`EndListBox`, `Selectable` (×2),
+  `TreeNode`/`TreeNodeEx`/`TreePop`/`SetNextItemOpen`/`CollapsingHeader` (×2),
+  tab bars (`BeginTabBar`/`BeginTabItem`/…), `ProgressBar`/`PlotLines`/
+  `PlotHistogram`, color editors/pickers/conversion, window-state queries
+  (`IsWindow*`), and misc utilities (`CalcTextSize`, `SetKeyboardFocusHere`,
+  `GetTime`, `GetFrameCount`, `Set/GetMouseCursor`). `im` count 157 → **201 =
+  100% of ImGui's practical surface**. New `scripts/coverage_vs_imgui.py`
+  computes the figure (and the curated out-of-scope list) and runs **advisory in
+  `quality.yml`** — closing the deferred `coverage-vs-imgui` CI item. 13 new
+  headless test cases.
 
 ### Horizon 3 — Trading-client toolkit
 
@@ -285,9 +299,10 @@ These run in parallel with every horizon:
 
 - **Quality:** keep CI green on all presets; grow coverage; expand fuzz/bench;
   zero `clang-tidy` regressions.
-- **Wrapper-coverage tracking:** the `coverage-vs-imgui` script (Horizon 2)
-  reports the first-class-wrapped % of the ImGui surface each CI run; the trend
-  should move up, never down.
+- **Wrapper-coverage tracking:** `scripts/coverage_vs_imgui.py` (_landed_)
+  reports the first-class-wrapped % of the ImGui practical surface each CI run
+  (advisory in `quality.yml`); the trend should move up, never down. Currently
+  **100%** of the practical surface. _Next: flip to a hard `--threshold` gate._
 - **Trading module hygiene:** the library must build and pass tests with
   `UNIGUI_MODULE_TRADING=OFF`; trading widgets stay presentation-only; the
   models are header-light and unit-tested.

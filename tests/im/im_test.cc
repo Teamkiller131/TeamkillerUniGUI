@@ -620,3 +620,186 @@ TEST_F(ImTest, GetBackgroundAndForegroundDrawList_ReturnNonNull) {
     EXPECT_NE(unigui::im::GetBackgroundDrawList(), nullptr);
     EXPECT_NE(unigui::im::GetForegroundDrawList(), nullptr);
 }
+
+// ── A6: Text extras ───────────────────────────────────────────────────────────
+
+TEST_F(ImTest, TextExtras_DoNotCrash) {
+    ImGui::Begin("a6_text");
+    unigui::im::TextUnformatted("raw unformatted text with % signs not parsed");
+    unigui::im::TextLink("a link");
+    unigui::im::TextLinkOpenURL("homepage"); // url defaults to nullptr
+    unigui::im::TextLinkOpenURL("docs", "https://example.com");
+    ImGui::End();
+}
+
+// ── A6: Tooltips ──────────────────────────────────────────────────────────────
+
+TEST_F(ImTest, Tooltips_DoNotCrash) {
+    ImGui::Begin("a6_tip");
+    if (unigui::im::BeginTooltip()) {
+        unigui::im::Text("inside tooltip");
+        unigui::im::EndTooltip();
+    }
+    unigui::im::SetTooltip("one-shot tooltip");
+    unigui::im::Button("hover me");
+    if (unigui::im::BeginItemTooltip()) {
+        unigui::im::Text("item tooltip");
+        unigui::im::EndTooltip();
+    }
+    unigui::im::Button("hover me 2");
+    unigui::im::SetItemTooltip("item one-shot");
+    ImGui::End();
+}
+
+// ── A6: Disabled block ────────────────────────────────────────────────────────
+
+TEST_F(ImTest, Disabled_BalancesStack) {
+    ImGui::Begin("a6_disabled");
+    unigui::im::BeginDisabled(true);
+    unigui::im::Button("cannot click");
+    unigui::im::EndDisabled();
+    unigui::im::BeginDisabled(false); // no-op push, still must be popped
+    unigui::im::Button("can click");
+    unigui::im::EndDisabled();
+    ImGui::End();
+}
+
+// ── A6: Combo / ListBox / Selectable ──────────────────────────────────────────
+
+TEST_F(ImTest, BeginCombo_AndSelectable) {
+    ImGui::Begin("a6_combo");
+    if (unigui::im::BeginCombo("combo", "preview")) {
+        unigui::im::Selectable("opt A", true);
+        bool sel = false;
+        unigui::im::Selectable("opt B", &sel);
+        unigui::im::EndCombo();
+    }
+    if (unigui::im::BeginCombo("empty_preview", {})) {
+        unigui::im::EndCombo();
+    }
+    ImGui::End();
+}
+
+TEST_F(ImTest, BeginListBox_DoesNotCrash) {
+    ImGui::Begin("a6_listbox");
+    if (unigui::im::BeginListBox("list", ImVec2(120, 80))) {
+        unigui::im::Selectable("row 1");
+        unigui::im::Selectable("row 2", true);
+        unigui::im::EndListBox();
+    }
+    ImGui::End();
+}
+
+// ── A6: Trees & headers ───────────────────────────────────────────────────────
+
+TEST_F(ImTest, TreeAndHeader_DoNotCrash) {
+    ImGui::Begin("a6_tree");
+    unigui::im::SetNextItemOpen(true);
+    if (unigui::im::TreeNode("root")) {
+        unigui::im::Text("child");
+        unigui::im::TreePop();
+    }
+    if (unigui::im::TreeNodeEx("root2", ImGuiTreeNodeFlags_DefaultOpen)) {
+        unigui::im::TreePop();
+    }
+    unigui::im::CollapsingHeader("section");
+    bool visible = true;
+    unigui::im::CollapsingHeader("closable", &visible);
+    ImGui::End();
+}
+
+// ── A6: Tab bars ──────────────────────────────────────────────────────────────
+
+TEST_F(ImTest, TabBar_DoesNotCrash) {
+    ImGui::Begin("a6_tabs");
+    if (unigui::im::BeginTabBar("tabs")) {
+        if (unigui::im::BeginTabItem("Tab 1")) {
+            unigui::im::Text("tab 1 body");
+            unigui::im::EndTabItem();
+        }
+        bool open = true;
+        if (unigui::im::BeginTabItem("Tab 2", &open)) {
+            unigui::im::EndTabItem();
+        }
+        unigui::im::EndTabBar();
+    }
+    ImGui::End();
+}
+
+// ── A6: Plots & progress ──────────────────────────────────────────────────────
+
+TEST_F(ImTest, PlotsAndProgress_DoNotCrash) {
+    ImGui::Begin("a6_plots");
+    unigui::im::ProgressBar(0.5f);
+    unigui::im::ProgressBar(0.75f, ImVec2(100, 0), "75%");
+    const float values[] = {0.f, 1.f, 0.5f, 0.25f, 0.9f};
+    unigui::im::PlotLines("lines", values, 5);
+    unigui::im::PlotHistogram("hist", values, 5, 0, "hist overlay");
+    ImGui::End();
+}
+
+// ── A6: Color editors & conversion ────────────────────────────────────────────
+
+TEST_F(ImTest, ColorEditAndPicker_DoNotCrash) {
+    ImGui::Begin("a6_color");
+    float c3[3] = {1.f, 0.5f, 0.f};
+    float c4[4] = {0.2f, 0.4f, 0.6f, 1.f};
+    unigui::im::ColorEdit3("edit3", c3);
+    unigui::im::ColorEdit4("edit4", c4);
+    unigui::im::ColorPicker3("pick3", c3);
+    unigui::im::ColorPicker4("pick4", c4);
+    ImGui::End();
+}
+
+TEST_F(ImTest, ColorConvert_RoundTrips) {
+    float h = 0, s = 0, v = 0;
+    unigui::im::ColorConvertRGBtoHSV(1.f, 0.f, 0.f, h, s, v);
+    EXPECT_FLOAT_EQ(h, 0.f); // pure red → hue 0
+    EXPECT_FLOAT_EQ(s, 1.f);
+    EXPECT_FLOAT_EQ(v, 1.f);
+    float r = 0, g = 0, b = 0;
+    unigui::im::ColorConvertHSVtoRGB(h, s, v, r, g, b);
+    EXPECT_FLOAT_EQ(r, 1.f);
+    EXPECT_FLOAT_EQ(g, 0.f);
+    EXPECT_FLOAT_EQ(b, 0.f);
+
+    ImU32 packed = unigui::im::ColorConvertFloat4ToU32(ImVec4(1.f, 0.f, 0.f, 1.f));
+    ImVec4 back = unigui::im::ColorConvertU32ToFloat4(packed);
+    EXPECT_FLOAT_EQ(back.x, 1.f);
+    EXPECT_FLOAT_EQ(back.w, 1.f);
+}
+
+// ── A6: Window-state queries ──────────────────────────────────────────────────
+
+TEST_F(ImTest, WindowQueries_DoNotCrash) {
+    ImGui::Begin("a6_winq");
+    (void) unigui::im::IsWindowAppearing();
+    (void) unigui::im::IsWindowCollapsed();
+    (void) unigui::im::IsWindowFocused();
+    (void) unigui::im::IsWindowHovered();
+    ImGui::End();
+}
+
+// ── A6: Misc utilities ────────────────────────────────────────────────────────
+
+TEST_F(ImTest, CalcTextSize_PositiveWidth) {
+    ImVec2 sz = unigui::im::CalcTextSize("hello");
+    EXPECT_GT(sz.x, 0.f);
+    EXPECT_GT(sz.y, 0.f);
+    // Text hidden after "##" is excluded from the measured width.
+    ImVec2 hidden = unigui::im::CalcTextSize("hi##secret-suffix", true);
+    ImVec2 shown = unigui::im::CalcTextSize("hi");
+    EXPECT_FLOAT_EQ(hidden.x, shown.x);
+}
+
+TEST_F(ImTest, MiscUtilities_DoNotCrash) {
+    ImGui::Begin("a6_misc");
+    std::string buf = "edit me";
+    unigui::im::SetKeyboardFocusHere();
+    unigui::im::InputText("field", &buf);
+    EXPECT_GE(unigui::im::GetTime(), 0.0);
+    EXPECT_GE(unigui::im::GetFrameCount(), 1);
+    unigui::im::SetMouseCursor(ImGuiMouseCursor_Hand);
+    EXPECT_EQ(unigui::im::GetMouseCursor(), ImGuiMouseCursor_Hand);
+    ImGui::End();
+}

@@ -32,6 +32,14 @@ jobs:
       run: |
         # Lint only first-party sources; skip generated/vcpkg paths.
         find src -name '*.cc' | xargs clang-tidy -p build --config-file=.clang-tidy
+    - name: Wrapper coverage vs ImGui (advisory)
+      # Reports the first-class-wrapped %% of ImGui's practical surface (the
+      # "Wrapper coverage" success metric in DEVELOPMENT_PLAN.md). Advisory for
+      # now; the trend should move up, never down. Once stable, add
+      # `--threshold N` to turn it into a hard regression gate.
+      run: |
+        python3 scripts/coverage_vs_imgui.py \
+          --imgui build/vcpkg_installed/x64-linux/include/imgui.h --list
 
   coverage:
     runs-on: ubuntu-latest

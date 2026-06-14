@@ -677,4 +677,182 @@ ImDrawList* GetForegroundDrawList() {
     return ImGui::GetForegroundDrawList();
 }
 
+// ── A6: Text (extras) ─────────────────────────────────────────────────────────
+void TextUnformatted(std::string_view text) {
+    ImGui::TextUnformatted(text.data(), text.data() + text.size());
+}
+bool TextLink(std::string_view label) {
+    return ImGui::TextLink(Z(label).c_str());
+}
+void TextLinkOpenURL(std::string_view label, std::string_view url) {
+    std::string u(url);
+    ImGui::TextLinkOpenURL(Z(label).c_str(), url.empty() ? nullptr : u.c_str());
+}
+
+// ── A6: Tooltips ──────────────────────────────────────────────────────────────
+bool BeginTooltip() {
+    return ImGui::BeginTooltip();
+}
+void EndTooltip() {
+    ImGui::EndTooltip();
+}
+void SetTooltip(std::string_view text) {
+    ImGui::SetTooltip("%s", Z(text).c_str());
+}
+bool BeginItemTooltip() {
+    return ImGui::BeginItemTooltip();
+}
+void SetItemTooltip(std::string_view text) {
+    ImGui::SetItemTooltip("%s", Z(text).c_str());
+}
+
+// ── A6: Disabled block ────────────────────────────────────────────────────────
+void BeginDisabled(bool disabled) {
+    ImGui::BeginDisabled(disabled);
+}
+void EndDisabled() {
+    ImGui::EndDisabled();
+}
+
+// ── A6: Combo (low-level) ─────────────────────────────────────────────────────
+bool BeginCombo(std::string_view label, std::string_view preview, ImGuiComboFlags flags) {
+    std::string p(preview);
+    return ImGui::BeginCombo(Z(label).c_str(), preview.empty() ? nullptr : p.c_str(), flags);
+}
+void EndCombo() {
+    ImGui::EndCombo();
+}
+
+// ── A6: ListBox (low-level) ───────────────────────────────────────────────────
+bool BeginListBox(std::string_view label, const ImVec2& size) {
+    return ImGui::BeginListBox(Z(label).c_str(), size);
+}
+void EndListBox() {
+    ImGui::EndListBox();
+}
+
+// ── A6: Selectable ────────────────────────────────────────────────────────────
+bool Selectable(std::string_view label, bool selected, ImGuiSelectableFlags flags,
+                const ImVec2& size) {
+    return ImGui::Selectable(Z(label).c_str(), selected, flags, size);
+}
+bool Selectable(std::string_view label, bool* pSelected, ImGuiSelectableFlags flags,
+                const ImVec2& size) {
+    return ImGui::Selectable(Z(label).c_str(), pSelected, flags, size);
+}
+
+// ── A6: Trees & headers ───────────────────────────────────────────────────────
+bool TreeNode(std::string_view label) {
+    return ImGui::TreeNode(Z(label).c_str());
+}
+bool TreeNodeEx(std::string_view label, ImGuiTreeNodeFlags flags) {
+    return ImGui::TreeNodeEx(Z(label).c_str(), flags);
+}
+void TreePop() {
+    ImGui::TreePop();
+}
+void SetNextItemOpen(bool isOpen, ImGuiCond cond) {
+    ImGui::SetNextItemOpen(isOpen, cond);
+}
+bool CollapsingHeader(std::string_view label, ImGuiTreeNodeFlags flags) {
+    return ImGui::CollapsingHeader(Z(label).c_str(), flags);
+}
+bool CollapsingHeader(std::string_view label, bool* pVisible, ImGuiTreeNodeFlags flags) {
+    return ImGui::CollapsingHeader(Z(label).c_str(), pVisible, flags);
+}
+
+// ── A6: Tab bars ──────────────────────────────────────────────────────────────
+bool BeginTabBar(std::string_view strId, ImGuiTabBarFlags flags) {
+    return ImGui::BeginTabBar(Z(strId).c_str(), flags);
+}
+void EndTabBar() {
+    ImGui::EndTabBar();
+}
+bool BeginTabItem(std::string_view label, bool* pOpen, ImGuiTabItemFlags flags) {
+    return ImGui::BeginTabItem(Z(label).c_str(), pOpen, flags);
+}
+void EndTabItem() {
+    ImGui::EndTabItem();
+}
+
+// ── A6: Plots & progress ──────────────────────────────────────────────────────
+void ProgressBar(float fraction, const ImVec2& size, std::string_view overlay) {
+    std::string o(overlay);
+    ImGui::ProgressBar(fraction, size, overlay.empty() ? nullptr : o.c_str());
+}
+void PlotLines(std::string_view label, const float* values, int count, int offset,
+               std::string_view overlay, float scaleMin, float scaleMax, const ImVec2& size) {
+    std::string o(overlay);
+    ImGui::PlotLines(Z(label).c_str(), values, count, offset, overlay.empty() ? nullptr : o.c_str(),
+                     scaleMin, scaleMax, size);
+}
+void PlotHistogram(std::string_view label, const float* values, int count, int offset,
+                   std::string_view overlay, float scaleMin, float scaleMax, const ImVec2& size) {
+    std::string o(overlay);
+    ImGui::PlotHistogram(Z(label).c_str(), values, count, offset,
+                         overlay.empty() ? nullptr : o.c_str(), scaleMin, scaleMax, size);
+}
+
+// ── A6: Color editors & conversion ────────────────────────────────────────────
+bool ColorEdit3(std::string_view label, float col[3], ImGuiColorEditFlags flags) {
+    return ImGui::ColorEdit3(Z(label).c_str(), col, flags);
+}
+bool ColorEdit4(std::string_view label, float col[4], ImGuiColorEditFlags flags) {
+    return ImGui::ColorEdit4(Z(label).c_str(), col, flags);
+}
+bool ColorPicker3(std::string_view label, float col[3], ImGuiColorEditFlags flags) {
+    return ImGui::ColorPicker3(Z(label).c_str(), col, flags);
+}
+bool ColorPicker4(std::string_view label, float col[4], ImGuiColorEditFlags flags,
+                  const float* ref) {
+    return ImGui::ColorPicker4(Z(label).c_str(), col, flags, ref);
+}
+void ColorConvertRGBtoHSV(float r, float g, float b, float& outH, float& outS, float& outV) {
+    ImGui::ColorConvertRGBtoHSV(r, g, b, outH, outS, outV);
+}
+void ColorConvertHSVtoRGB(float h, float s, float v, float& outR, float& outG, float& outB) {
+    ImGui::ColorConvertHSVtoRGB(h, s, v, outR, outG, outB);
+}
+ImU32 ColorConvertFloat4ToU32(const ImVec4& in) {
+    return ImGui::ColorConvertFloat4ToU32(in);
+}
+ImVec4 ColorConvertU32ToFloat4(ImU32 in) {
+    return ImGui::ColorConvertU32ToFloat4(in);
+}
+
+// ── A6: Window-state queries ──────────────────────────────────────────────────
+bool IsWindowAppearing() {
+    return ImGui::IsWindowAppearing();
+}
+bool IsWindowCollapsed() {
+    return ImGui::IsWindowCollapsed();
+}
+bool IsWindowFocused(ImGuiFocusedFlags flags) {
+    return ImGui::IsWindowFocused(flags);
+}
+bool IsWindowHovered(ImGuiHoveredFlags flags) {
+    return ImGui::IsWindowHovered(flags);
+}
+
+// ── A6: Misc utilities ────────────────────────────────────────────────────────
+ImVec2 CalcTextSize(std::string_view text, bool hideAfterDoubleHash, float wrapWidth) {
+    return ImGui::CalcTextSize(text.data(), text.data() + text.size(), hideAfterDoubleHash,
+                               wrapWidth);
+}
+void SetKeyboardFocusHere(int offset) {
+    ImGui::SetKeyboardFocusHere(offset);
+}
+double GetTime() {
+    return ImGui::GetTime();
+}
+int GetFrameCount() {
+    return ImGui::GetFrameCount();
+}
+void SetMouseCursor(ImGuiMouseCursor type) {
+    ImGui::SetMouseCursor(type);
+}
+ImGuiMouseCursor GetMouseCursor() {
+    return ImGui::GetMouseCursor();
+}
+
 } // namespace unigui::im
