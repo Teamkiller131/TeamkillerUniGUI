@@ -18,8 +18,7 @@ public:
 private:
     bool shown_ = false;
     std::string message_;
-    float animHeight_ = 0.0f; // animate 0→48
-    float animTimer_ = 0.0f;  // 0..1 eased progress
+    float animTimer_ = 0.0f; // 0..1 eased progress
 };
 
 } // namespace unigui

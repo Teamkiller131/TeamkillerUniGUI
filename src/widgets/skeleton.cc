@@ -24,7 +24,7 @@ void SkeletonScreen::SetShimmer(bool enable, float speed) {
     }
 }
 
-SkeletonScreen SkeletonScreen::FromSize(float w, float h, int lineCount) {
+SkeletonScreen SkeletonScreen::FromSize(float w, [[maybe_unused]] float h, int lineCount) {
     SkeletonScreen s;
     s.AddBlock(w * 0.4f, 20.f, 0, 0);
     for (int i = 0; i < lineCount; ++i) {

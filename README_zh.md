@@ -5,7 +5,7 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-3.5.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-637-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-895-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-82-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20production%29-orange)]()
 
@@ -357,7 +357,7 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5（桩）
 
 ## 平台说明
 
-- **Windows**：主力平台。Visual Studio 2022 + MSVC 19.40+。DX11 为默认后端。完整测试套件（637 项）全部通过。
+- **Windows**：主力平台。Visual Studio 2022 + MSVC 19.40+。DX11 为默认后端。完整测试套件（895 项）全部通过。
 - **Linux**：GCC 14+/Clang 18+，GLFW+OpenGL3。支持 X11/Wayland。无头环境下会跳过少量依赖 GL 上下文的测试。x64-linux triplet 依赖见 [vcpkg.json](vcpkg.json)。
 - **macOS**：Apple 已弃用 OpenGL（上限 4.1），推荐通过 MoltenVK 使用 Vulkan。
 

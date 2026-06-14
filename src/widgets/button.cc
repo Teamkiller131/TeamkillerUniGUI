@@ -36,7 +36,6 @@ void Button::Render() {
 
     // ── Animated hover — push interpolated colors ─────────────────────────
     bool wantHover = ImGui::IsItemHovered() || ImGui::IsItemActive();
-    float target = wantHover ? 1.f : 0.f;
 
     if (anim_.IsPlaying() || wantHover || anim_.progress > 0.01f) {
         if (wantHover && !anim_.IsPlaying())

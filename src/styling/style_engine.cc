@@ -427,7 +427,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
     // ── Transition / animation hints (theme-driven) ────────────────────
     if (key == "transition") {
         // Format: "opacity 0.3s ease-out" or "all 0.25s ease"
-        float dur = 0.3f;
+        [[maybe_unused]] float dur = 0.3f;
         std::string curve = "ease";
         if (val.find("s") != std::string::npos) {
             auto sp = val.find(' ');
@@ -463,7 +463,7 @@ static void ApplyProp(const std::string& key, const std::string& val) {
 
         // Parse direction: "90deg" or "to bottom"
         float angle = 0.f;
-        bool horiz = true;
+        [[maybe_unused]] bool horiz = true;
         if (v.find("deg") != std::string::npos) {
             angle = ToFloatOr(v.substr(0, v.find("deg")));
             horiz = (angle < 45.f || angle > 315.f || (angle > 135.f && angle < 225.f));

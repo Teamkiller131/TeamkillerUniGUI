@@ -4,8 +4,7 @@
 #include <gtest/gtest.h>
 
 TEST(Widget, GetID_ReturnsConsistentValue) {
-    unigui::Widget* w1 = nullptr; // Widget is abstract, test via subclass
-    // Use a concrete test widget
+    // Widget is abstract; test via a concrete subclass.
     class TestWidget : public unigui::Widget {
     public:
         explicit TestWidget(std::string name)

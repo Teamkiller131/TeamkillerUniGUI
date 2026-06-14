@@ -50,10 +50,9 @@ void MultiHandleSlider::Render() {
     }
 
     // ── Tick handles ─────────────────────────────────────────────────────
-    float dragDeadzone = 4.f;
-    ImGuiID barID = ImGui::GetID(GetName().c_str());
     ImGui::SetCursorScreenPos(ImVec2(barX, barY - 16.f));
-    ImGui::InvisibleButton(GetName().c_str(), ImVec2(barW, 32.f), ImGuiButtonFlags_AllowOverlap);
+    ImGui::SetNextItemAllowOverlap();
+    ImGui::InvisibleButton(GetName().c_str(), ImVec2(barW, 32.f));
 
     bool hovered = ImGui::IsItemHovered();
     bool active = ImGui::IsItemActive();
@@ -86,7 +85,7 @@ void MultiHandleSlider::Render() {
         dl->AddCircle(ImVec2(tx, barY), 8.f, IM_COL32_WHITE, 0, 2.f);
 
         // ── Index label ──────────────────────────────────────────────
-        char label[8];
+        char label[16];
         snprintf(label, sizeof(label), "%d", i + 1);
         dl->AddText(ImVec2(tx - 4.f, barY + 10.f), IM_COL32_WHITE, label);
 

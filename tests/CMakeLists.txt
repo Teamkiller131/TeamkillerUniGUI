@@ -214,6 +214,17 @@ foreach(_t order_book ohlc_series quote)
     gtest_discover_tests(test_${_t})
 endforeach()
 
+# Trading widget tests — require the compiled module (.cc lands only when
+# UNIGUI_MODULE_TRADING is ON).
+if(UNIGUI_MODULE_TRADING)
+    foreach(_tw candlestick_chart depth_ladder order_ticket blotters)
+        add_executable(test_${_tw} trading/${_tw}_test.cc)
+        target_link_libraries(test_${_tw} PRIVATE GTest::gtest GTest::gtest_main unigui)
+        target_compile_features(test_${_tw} PRIVATE cxx_std_23)
+        gtest_discover_tests(test_${_tw})
+    endforeach()
+endif()
+
 # v2.9 benchmark tests (requires widgets for VirtualList)
 if(UNIGUI_MODULE_WIDGETS)
     add_executable(test_bench bench/bench_test.cc)
@@ -363,3 +374,14 @@ gtest_discover_tests(test_font_reload)
 
 # v3.0 effect scope tests — manual-only (needs GL context)
 # add_executable(test_effect_scope fx/effect_scope_test.cc)
+
+# ── Warnings ─────────────────────────────────────────────────────────────────
+# Apply UniGUI's base warning set (and opt-in -Werror) to every test target
+# defined above, so the test tree is held to the same standard as the library.
+get_property(_unigui_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+foreach(_tt ${_unigui_test_targets})
+    get_target_property(_tt_type ${_tt} TYPE)
+    if(_tt_type STREQUAL "EXECUTABLE")
+        unigui_set_warnings(${_tt})
+    endif()
+endforeach()

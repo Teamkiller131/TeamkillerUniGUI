@@ -5,7 +5,7 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-3.5.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-637-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-895-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-82-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
@@ -489,7 +489,7 @@ All sub-module headers are also pulled in by `<unigui/unigui.h>` for convenience
 
 ## Platform Notes
 
-- **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022. DX11 is default. Full test suite (637) passes.
+- **Windows**: Primary target. MSVC 19.40+ via Visual Studio 2022. DX11 is default. Full test suite (895) passes.
 - **Linux**: GCC 14+/Clang 18+ via GLFW+OpenGL3. X11/Wayland. A small number of GL-context tests are skipped in headless runs. See [vcpkg.json](vcpkg.json) for x64-linux triplet deps.
 - **macOS**: OpenGL deprecated by Apple (capped at 4.1). Vulkan via MoltenVK.
 

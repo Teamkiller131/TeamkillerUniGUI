@@ -275,8 +275,13 @@ if(UNIGUI_MODULE_NETWORK)
     message(STATUS "Network module enabled")
 endif()
 if(UNIGUI_MODULE_TRADING)
-    # Models (order_book/ohlc_series/quote) are header-only today; widget .cc
-    # files land in later phases. The macro exposes the headers via unigui.h.
+    # Models (order_book/ohlc_series/quote) are header-only; widgets ship as .cc
+    # files. The macro exposes the headers via unigui.h.
+    target_sources(unigui PRIVATE
+        trading/candlestick_chart.cc
+        trading/depth_ladder.cc
+        trading/order_ticket.cc
+    )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_TRADING)
     message(STATUS "Trading toolkit enabled")
 endif()

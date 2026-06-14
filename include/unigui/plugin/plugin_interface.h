@@ -20,7 +20,7 @@ public:
     virtual PluginInfo GetInfo() const = 0;
     virtual bool Init() = 0;
     virtual void Shutdown() = 0;
-    virtual void Update(float dt) {} // optional per-frame update
+    virtual void Update([[maybe_unused]] float dt) {} // optional per-frame update
     virtual void Render() {}         // optional per-frame render
 };
 

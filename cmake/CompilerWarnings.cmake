@@ -18,7 +18,14 @@ function(unigui_set_warnings target)
         set(_werror /WX)
     else()
         # GCC and Clang share this common set.
-        set(_warnings -Wall -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor)
+        #
+        # -Wno-missing-field-initializers: -Wextra enables this, but it conflicts
+        # with our clang-tidy policy (readability-redundant-member-init flags the
+        # explicit `{}` defaults it would have us add). We use idiomatic partial
+        # aggregate initialisation freely (trailing members fall back to their
+        # type's default), so suppress the warning rather than fight the linters.
+        set(_warnings -Wall -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor
+                      -Wno-missing-field-initializers)
         set(_werror -Werror)
     endif()
 
