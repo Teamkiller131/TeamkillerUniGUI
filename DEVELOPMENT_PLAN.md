@@ -158,15 +158,16 @@ scroll, `FlashRow`, row/cell color, checkbox columns, groups, context menu),
 `TimeSeriesChart`, `SliderBar`/`MultiHandleSlider`, `RiskBar`/`FuturesRiskBar`,
 `StatusLamp`, `SpinBox<T>`, `Table`, `core/locale.h`, `ext/plot.h`.
 
-- **P1 · S — B0 · Financial formatting.** New `core/format_num.h` in
-  `unigui::format` — thousands separators, currency (symbol + precision; USD/
-  EUR/JPY/…), percentage, signed delta with up/down color hint, pip/tick;
-  reusing `core/strutil.h`. Pure functions → **fully unit-testable headlessly;
-  recommended first slice.**
-- **P1 · M — B1 · Lightweight models.** `trading/order_book.h` (price levels;
-  apply snapshot/delta; best bid/ask/spread), `trading/ohlc_series.h` (rolling
-  OHLC aggregator from ticks by bar interval), `trading/quote.h` + position/
-  order/trade row types. Pure data structures → **unit-testable headlessly.**
+- ~~**P1 · S — B0 · Financial formatting.**~~ **Done.** `core/format_num.h`
+  (`unigui::format`): `Thousands`/`Fixed`/`Currency`/`Percent`/`SignedDelta`/
+  `TickAlign` + `Sign`/`Direction`. Pure, header-only, unit-tested
+  (`tests/core/format_num_test.cc`).
+- ~~**P1 · M — B1 · Lightweight models.**~~ **Done.** Header-only models under
+  `include/unigui/trading/`: `order_book.h` (`OrderBook` — snapshots/deltas, best
+  bid/ask, spread, mid, top-N, max-size), `ohlc_series.h` (`OhlcSeries` — tick→bar
+  aggregation, rolling window, ImPlot column extractors), `quote.h`
+  (`Quote`/`Position`/`Order`/`Trade`). Gated by `UNIGUI_MODULE_TRADING` (default
+  OFF); tests in `tests/trading/`.
 - **P1 · M — B2 · Candlestick / OHLC chart.** Widget bound to `ohlc_series`,
   wrapping ImPlot `PlotCandlestick` with an optional volume sub-panel; also
   expose a candlestick helper in `ext/plot.h`.

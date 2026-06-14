@@ -198,11 +198,20 @@ if(UNIGUI_MODULE_WIDGETS)
 endif()
 
 # Core tests
-foreach(_core locale settings strutil undo_stack version)
+foreach(_core locale settings strutil undo_stack version format_num)
     add_executable(test_${_core} core/${_core}_test.cc)
     target_link_libraries(test_${_core} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_core} PRIVATE cxx_std_23)
     gtest_discover_tests(test_${_core})
+endforeach()
+
+# Trading toolkit model tests — header-only models, so always built (they only
+# need the headers; no UNIGUI_MODULE_TRADING link dependency yet).
+foreach(_t order_book ohlc_series quote)
+    add_executable(test_${_t} trading/${_t}_test.cc)
+    target_link_libraries(test_${_t} PRIVATE GTest::gtest GTest::gtest_main unigui)
+    target_compile_features(test_${_t} PRIVATE cxx_std_23)
+    gtest_discover_tests(test_${_t})
 endforeach()
 
 # v2.9 benchmark tests (requires widgets for VirtualList)
