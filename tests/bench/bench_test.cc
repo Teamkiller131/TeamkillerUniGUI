@@ -93,3 +93,44 @@ TEST_F(BenchTest, CSV_Import_100kRows) {
     EXPECT_LT(ms, 500) << "CSV import of 100k rows took " << ms
                        << "ms (budget: 500ms). Consider optimizing the parser.";
 }
+
+// ── DataTable virtual-scroll benchmark: render 100k rows ────────────────────
+// Virtual scrolling must keep per-frame cost bounded by the *visible* rows, not
+// the total row count — this proves a 100k-row blotter still renders cheaply.
+TEST_F(BenchTest, DataTable_VirtualScroll_100kRows) {
+    struct Row {
+        int id;
+        double value;
+    };
+    std::vector<Row> rows;
+    rows.reserve(100000);
+    for (int i = 0; i < 100000; i++)
+        rows.push_back({i, i * 0.25});
+
+    unigui::DataTable<Row> table("bench_dt", {{"ID", 80}, {"Value", 120}});
+    table.SetDataSource(&rows);
+    table.SetCellFormatter([](int, int col, const Row& r) {
+        return col == 0 ? std::to_string(r.id) : std::to_string(r.value);
+    });
+
+    // ImGuiListClipper needs a prior frame's scroll/clip state to virtualise, so
+    // the first frame can't clip. Warm up across several frames and time the
+    // steady-state frame (the fixture already opened the first frame in SetUp,
+    // and TearDown closes the last one we leave open here).
+    long long ms = 0;
+    for (int frame = 0; frame < 5; ++frame) {
+        auto t0 = std::chrono::high_resolution_clock::now();
+        table.Render();
+        ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                 std::chrono::high_resolution_clock::now() - t0)
+                 .count();
+        ImGui::Render();   // close the current frame
+        ImGui::NewFrame(); // open the next (last one is closed by TearDown)
+    }
+
+    // Budget: once virtualised, a steady-state frame of a 100k-row table renders
+    // only the visible window — well under a 16ms (60fps) frame. Generous floor
+    // to catch a regression that makes per-frame cost scale with total rows.
+    EXPECT_LT(ms, 50) << "DataTable steady-state render of 100k rows took " << ms
+                      << "ms (budget: 50ms). Virtual scroll may have regressed.";
+}

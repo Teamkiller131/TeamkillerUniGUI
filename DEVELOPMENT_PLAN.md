@@ -259,9 +259,11 @@ Goal: turn the stub backends into real ones and make rendering measurably fast.
 - **P1 · M — Performance budget & benchmarks.** _In progress._ Trading-model
   benchmarks landed (`tests/trading/bench_test.cc`): `OrderBook` under 200k
   price deltas + 5k full-book snapshots, and `OhlcSeries` over 1M ticks +
-  per-frame column extraction — each with a regression floor. _Remaining:_
-  per-frame CPU budgets for `DataTable`/`VirtualList`/`Table` at 100k+ rows and
-  wiring the budgets into CI as a tracked gate.
+  per-frame column extraction — each with a regression floor. A `DataTable`
+  virtual-scroll benchmark at **100k rows** (`tests/bench/bench_test.cc`) proves
+  steady-state per-frame cost stays bounded by the visible window (joining the
+  existing `VirtualList`/CSV-import budgets). _Remaining:_ `Table` at 100k rows
+  and wiring the budgets into CI as a tracked gate.
 - **P2 · M — GPU-side text/MSAA improvements** and a shared backend capability
   query so features degrade gracefully per renderer.
 

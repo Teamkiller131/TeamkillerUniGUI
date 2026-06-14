@@ -15,7 +15,6 @@
 #include <vector>
 
 using namespace std::chrono;
-using unigui::trading::Bar;
 using unigui::trading::Level;
 using unigui::trading::OhlcSeries;
 using unigui::trading::OrderBook;
