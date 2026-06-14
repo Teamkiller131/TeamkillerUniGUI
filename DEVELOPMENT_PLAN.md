@@ -87,8 +87,10 @@ the public API contract explicit.
   path to capture framebuffer snapshots per theme/widget and diff them in CI.
 - **P1 · S — Coverage gate.** Wire `windows-clang-coverage` into CI and set a
   floor; track coverage per module.
-- **P1 · M — Expand fuzzing.** Beyond CSV/JSON, fuzz the CSS style engine, the
-  config (TOML/INI) parsers, and DSL input paths.
+- ~~**P1 · M — Expand fuzzing.**~~ **Mostly done.** Added `test_css_fuzz` (CSS
+  style engine) and `test_config_fuzz` (TOML/JSON/INI parsers) alongside the
+  existing CSV/JSON targets. DSL has no string-parser surface to fuzz (it is a
+  programmatic builder), so it is left to its unit tests.
 - **P2 · S — Warnings-as-errors** across all presets where compilers agree.
 
 ### Horizon 2 — Backend completeness & performance (2–4 releases out)
