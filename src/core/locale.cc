@@ -1,6 +1,7 @@
 #include <unigui/core/locale.h>
 
 #include <cerrno>
+#include <cstddef>
 #include <cstdio>
 #include <regex>
 #include <vector>
@@ -8,6 +9,7 @@
 namespace unigui {
 
 std::string Locale::current_ = "en_US";
+std::string Locale::fallback_ = "en_US";
 
 std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& Locale::Table() {
     static std::unordered_map<std::string, std::unordered_map<std::string, std::string>> table;
@@ -21,27 +23,75 @@ const std::string& Locale::GetCurrent() {
     return current_;
 }
 
+void Locale::SetFallback(const std::string& locale) {
+    fallback_ = locale;
+}
+const std::string& Locale::GetFallback() {
+    return fallback_;
+}
+
 void Locale::Set(const std::string& locale, const std::string& key, const std::string& value) {
     Table()[locale][key] = value;
 }
 
-std::string Locale::Tr(const std::string& key) {
+std::string Locale::BaseLanguage(const std::string& locale) {
+    auto sep = locale.find_first_of("_-");
+    return sep != std::string::npos ? locale.substr(0, sep) : std::string();
+}
+
+bool Locale::Lookup(const std::string& locale, const std::string& key, std::string& out) {
+    if (locale.empty())
+        return false;
     auto& table = Table();
-    auto it = table.find(current_);
-    if (it != table.end()) {
-        auto kit = it->second.find(key);
-        if (kit != it->second.end())
-            return kit->second;
-    }
+    auto it = table.find(locale);
+    if (it == table.end())
+        return false;
+    auto kit = it->second.find(key);
+    if (kit == it->second.end())
+        return false;
+    out = kit->second;
+    return true;
+}
+
+std::string Locale::Tr(const std::string& key) {
+    std::string out;
+    // current → base language of current → fallback → base language of fallback.
+    if (Lookup(current_, key, out))
+        return out;
+    if (Lookup(BaseLanguage(current_), key, out))
+        return out;
+    if (Lookup(fallback_, key, out))
+        return out;
+    if (Lookup(BaseLanguage(fallback_), key, out))
+        return out;
     return key;
 }
 
+std::string Locale::Tr(const std::string& key, const std::vector<std::string>& args) {
+    std::string s = Tr(key);
+    for (std::size_t i = 0; i < args.size(); ++i) {
+        const std::string token = "{" + std::to_string(i) + "}";
+        for (std::size_t pos = s.find(token); pos != std::string::npos;
+             pos = s.find(token, pos + args[i].size())) {
+            s.replace(pos, token.size(), args[i]);
+        }
+    }
+    return s;
+}
+
 bool Locale::Has(const std::string& key) {
-    auto& table = Table();
-    auto it = table.find(current_);
-    if (it != table.end())
-        return it->second.count(key) > 0;
-    return false;
+    std::string out;
+    return Lookup(current_, key, out);
+}
+
+bool Locale::IsRTL() {
+    return IsRTL(current_);
+}
+
+bool Locale::IsRTL(const std::string& locale) {
+    const std::string base = BaseLanguage(locale);
+    const std::string lang = base.empty() ? locale : base;
+    return lang == "ar" || lang == "he" || lang == "fa" || lang == "ur";
 }
 
 void Locale::Clear() {

@@ -286,8 +286,12 @@ Goal: broaden what apps can build without leaving the toolkit.
 - **P2 · L — Data binding / reactive layer.** Optional observable bindings so
   retained widgets update from model changes without manual `Set*` calls —
   synergizes directly with the Horizon-3 trading models.
-- **P2 · M — Internationalization.** Build out `core/locale.h` into a full
-  catalog/translation system; RTL layout support.
+- **P2 · M — Internationalization.** _Mostly done._ `core/locale.h` is now a
+  real catalog: a **fallback chain** (current → base language → fallback locale →
+  key) so partially-translated locales degrade gracefully, **positional
+  `{0}`/`{1}` argument substitution** (`Tr(key, args)`), and **RTL detection**
+  (`IsRTL()` for ar/he/fa/ur) — all unit-tested. _Remaining:_ full RTL layout
+  *mirroring* (a layout-engine concern, tracked with the Horizon-5 layout work).
 - **P2 · M — Plugin ecosystem.** Stable plugin ABI, versioned plugin interface,
   sample third-party plugins, and a plugin template repo.
 
