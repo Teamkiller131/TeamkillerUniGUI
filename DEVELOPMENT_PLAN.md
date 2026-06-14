@@ -47,15 +47,18 @@ Guiding principles:
 
 ### Known gaps / debt to address
 
-- **`src/v2/` parallel implementations** (dsl, eventbus, style_engine, config,
-  database, ipc, network, font_manager, plugin_manager) suggest an in-progress
-  migration. The dual code paths need to be reconciled and consolidated.
+- ~~**`src/v2/` parallel implementations** suggest an in-progress migration.~~
+  **Done** — the `v2/` directory was a naming holdover, not a second code path:
+  after the v2.9.0 namespace removal these were the *sole* implementations of
+  `dsl`/`styling`/`events`/`plugin`/`config`/`sqlite`/`ipc`/`network`/
+  `font_manager`. They (and their tests) have been relocated into the mirrored
+  `src/<module>/` and `tests/<module>/` layout; no duplicate paths remain.
 - Metal / WebGPU / Emscripten backends are non-functional stubs.
 - Theme "UI beautification" work is still in `Unreleased` — needs to land and be
   visually regression-tested.
 - No automated visual/screenshot regression testing yet.
-- API-stability guarantees are informal; there's no published semver contract
-  for the public headers.
+- ~~API-stability guarantees are informal.~~ **Resolved** by `docs/API_STABILITY.md`
+  (semver contract + stability tiers + deprecation lifecycle).
 
 ## 3. Roadmap by horizon
 
@@ -70,18 +73,34 @@ the public API contract explicit.
 
 - **P0 · M — Land the UI-beautification work.** Move the `Unreleased` theme/token
   changes into a tagged release; add before/after screenshots to docs.
-- **P0 · L — Reconcile `src/v2/`.** Decide per-module whether v2 replaces or
-  augments the original; delete dead paths, document the survivor, migrate tests.
-- **P0 · S — Publish an API-stability policy.** Semver contract for
-  `include/unigui/**`; mark experimental headers explicitly; add a deprecation
-  process to `RELEASE.md`.
+- ~~**P0 · L — Reconcile `src/v2/`.**~~ **Done.** No competing "original" existed
+  — the `v2/` files were the survivors. Relocated every module impl and test into
+  the mirrored `src/<module>/` / `tests/<module>/` layout and updated CMake; the
+  `v2` duplicate-path count is now 0.
+- ~~**P0 · S — Publish an API-stability policy.**~~ **Done.** `docs/API_STABILITY.md`
+  defines the semver contract for `include/unigui/**`, three stability tiers, and
+  the deprecation lifecycle. `<unigui/core/api.h>` adds `UNIGUI_DEPRECATED` /
+  `UNIGUI_EXPERIMENTAL` / `UNIGUI_INTERNAL` markers (the `ext/` headers are now
+  marked experimental); `core/version.h` gains `UNIGUI_VERSION_NUMBER` /
+  `UNIGUI_VERSION_AT_LEAST` for compile-time feature detection.
 - **P1 · M — Visual regression harness.** Use the existing `--frames N` headless
   path to capture framebuffer snapshots per theme/widget and diff them in CI.
-- **P1 · S — Coverage gate.** Wire `windows-clang-coverage` into CI and set a
-  floor; track coverage per module.
-- **P1 · M — Expand fuzzing.** Beyond CSV/JSON, fuzz the CSS style engine, the
-  config (TOML/INI) parsers, and DSL input paths.
-- **P2 · S — Warnings-as-errors** across all presets where compilers agree.
+- **P1 · S — Coverage gate.** _Mostly done._ The `quality.yml` coverage job
+  already builds instrumented + collects lcov on Linux; added an **advisory**
+  coverage-floor step (`COVERAGE_FLOOR`, currently 30%) that prints total line
+  coverage and flags drops below the floor without failing yet (mirrors the
+  clang-tidy gate). _Remaining:_ confirm the headless baseline, raise the floor
+  to just under it, and flip the step to a hard `exit 1`.
+- ~~**P1 · M — Expand fuzzing.**~~ **Mostly done.** Added `test_css_fuzz` (CSS
+  style engine) and `test_config_fuzz` (TOML/JSON/INI parsers) alongside the
+  existing CSV/JSON targets. DSL has no string-parser surface to fuzz (it is a
+  programmatic builder), so it is left to its unit tests.
+- **P2 · S — Warnings-as-errors.** _Infrastructure landed._ `cmake/CompilerWarnings.cmake`
+  applies a base warning level (`/W4` on MSVC, `-Wall -Wextra -Wpedantic -Wshadow
+  -Wnon-virtual-dtor` on GCC/Clang) to the library, with `-Werror`/`/WX` gated by
+  the opt-in `UNIGUI_WARNINGS_AS_ERRORS` option (preset: `linux-gcc-debug-werror`).
+  _Remaining:_ verify the tree is warning-clean on each compiler, then flip the
+  option on in CI and extend the helper to the tests/examples targets.
 
 ### Horizon 2 — Backend completeness & performance (2–4 releases out)
 

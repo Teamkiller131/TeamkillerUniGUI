@@ -1,4 +1,6 @@
 #pragma once
+#include <unigui/core/api.h>
+
 #include <imgui.h>
 
 #include <cstdint>
@@ -18,6 +20,9 @@ enum class PinKind { Input, Output };
 namespace unigui {
 
 /// RAII wrapper for ax::NodeEditor context and Begin/End.
+/// @experimental Node-editor groundwork; this API may change in a minor
+/// release without a deprecation cycle. See docs/API_STABILITY.md.
+UNIGUI_EXPERIMENTAL
 class NodeEditor {
 public:
     NodeEditor(std::string id);

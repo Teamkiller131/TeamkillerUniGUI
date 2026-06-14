@@ -19,6 +19,9 @@ set_target_properties(unigui PROPERTIES
     CXX_EXTENSIONS OFF
 )
 
+# Base compiler warnings (always on); -Werror/-WX gated by UNIGUI_WARNINGS_AS_ERRORS.
+unigui_set_warnings(unigui)
+
 # ── Export header ─────────────────────────────────────────────────────────────
 include(GenerateExportHeader)
 generate_export_header(unigui
@@ -227,46 +230,48 @@ if(UNIGUI_MODULE_WIDGETS)
     message(STATUS "Extended widgets enabled")
 endif()
 
-# ── v2 modules (optional) ─────────────────────────────────────────────────────
+# ── Optional modules ──────────────────────────────────────────────────────────
+# Each module's implementation lives in src/<module>/, mirroring its public
+# header under include/unigui/<module>/.
 if(UNIGUI_MODULE_DSL)
-    target_sources(unigui PRIVATE v2/dsl.cc)
+    target_sources(unigui PRIVATE dsl/dsl.cc)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DSL)
     message(STATUS "DSL module enabled")
 endif()
 if(UNIGUI_MODULE_STYLING)
-    target_sources(unigui PRIVATE v2/style_engine.cc)
+    target_sources(unigui PRIVATE styling/style_engine.cc)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_STYLING)
     message(STATUS "Styling module enabled")
 endif()
 if(UNIGUI_MODULE_FONTS)
-    target_sources(unigui PRIVATE v2/font_manager.cc)
+    target_sources(unigui PRIVATE fonts/font_manager.cc)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_FONTS)
     message(STATUS "Font manager enabled")
 endif()
 if(UNIGUI_MODULE_EVENTS)
-    target_sources(unigui PRIVATE v2/eventbus.cc)
+    target_sources(unigui PRIVATE events/eventbus.cc)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_EVENTS)
     message(STATUS "EventBus enabled")
 endif()
 if(UNIGUI_MODULE_PLUGIN)
-    target_sources(unigui PRIVATE v2/plugin_manager.cc)
+    target_sources(unigui PRIVATE plugin/plugin_manager.cc)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_PLUGIN)
     message(STATUS "Plugin system enabled")
 endif()
 if(UNIGUI_MODULE_SQLITE)
-    target_sources(unigui PRIVATE v2/database.cc)
+    target_sources(unigui PRIVATE sqlite/database.cc)
     message(STATUS "SQLite module enabled")
 endif()
 if(UNIGUI_MODULE_CONFIG)
-    target_sources(unigui PRIVATE v2/config.cc)
+    target_sources(unigui PRIVATE config/config.cc)
     message(STATUS "Config module enabled")
 endif()
 if(UNIGUI_MODULE_IPC)
-    target_sources(unigui PRIVATE v2/ipc.cc v2/shmem.cc)
+    target_sources(unigui PRIVATE ipc/ipc.cc ipc/shmem.cc)
     message(STATUS "IPC module enabled")
 endif()
 if(UNIGUI_MODULE_NETWORK)
-    target_sources(unigui PRIVATE v2/network.cc)
+    target_sources(unigui PRIVATE network/network.cc)
     message(STATUS "Network module enabled")
 endif()
 

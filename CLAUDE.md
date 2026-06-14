@@ -38,12 +38,13 @@ src/                 Implementation (.cc) mirroring the include tree
   widgets/           One .cc per widget (button.cc, table.cc, …)
   backend/           Platform + renderer backends, backend_registry.cc
   core/, theme/, fx/, im/, fonts/, app/
-  v2/                Newer/parallel implementations: dsl, eventbus, style_engine,
-                     plugin_manager, config, database, ipc, shmem, network, font_manager
+  dsl/, styling/, events/, plugin/, config/, sqlite/, ipc/, network/
+                     Optional-module impls, each mirroring include/unigui/<module>/
 examples/            hello_unigui, widget_gallery, theme_demo, form_demo,
                      plot_demo, plugin_example, v3_overview, vulkan_triangle, …
 tests/               GoogleTest suites mirroring src (widgets/, core/, theme/,
-                     backend/, fx/, im/, v2/, integration_test.cc, bench/, fuzz/)
+                     backend/, fx/, im/, dsl/, styling/, events/, plugin/, config/,
+                     sqlite/, ipc/, integration_test.cc, bench/, fuzz/)
 docs/                API_INDEX, WIDGET_API, WIDGET_EXAMPLES, GETTING_STARTED, …
 scripts/             check_env.ps1, build.ps1, helpers
 cmake/, ports/       CMake helpers and vcpkg port overlays
@@ -85,6 +86,7 @@ ctest --preset windows-msvc-debug --output-on-failure
 | AddressSanitizer | `windows-msvc-debug-asan`, `linux-gcc-debug-asan` |
 | clang-tidy lint | `windows-clang-tidy` |
 | Coverage | `windows-clang-coverage` (target `coverage`) |
+| Warnings-as-errors | `linux-gcc-debug-werror` (or `-DUNIGUI_WARNINGS_AS_ERRORS=ON`) |
 | SDL3 + Vulkan | `windows-msvc-sdl3-vulkan-{debug,release}` |
 
 ### Run an example (headless-friendly)
@@ -123,6 +125,11 @@ Examples accept `--frames N` to render N frames and exit — use this in CI/smok
 - **Modularity.** Features are gated by `UNIGUI_MODULE_*` / `UNIGUI_BACKEND_*`
   CMake options. New optional functionality should be guard-able the same way,
   and must still compile with the module switched off.
+- **API stability.** `include/unigui/**` is a semver-governed contract — see
+  `docs/API_STABILITY.md`. Don't break stable APIs in a minor/patch; deprecate
+  with `UNIGUI_DEPRECATED("…")` (from `<unigui/core/api.h>`) and remove only in a
+  major. Mark unsettled APIs `UNIGUI_EXPERIMENTAL`. Bump `core/version.h` +
+  `vcpkg.json` together.
 - **Changelog.** User-visible changes go in `CHANGELOG.md` under the
   `Unreleased` section (Added/Changed/Fixed), in the existing prose style.
 
@@ -137,9 +144,10 @@ Examples accept `--frames N` to render N frames and exit — use this in CI/smok
 | `docs/WIDGET_EXAMPLES.md` | One minimal example per widget |
 | `docs/API_INDEX.md` | Master index (widgets + `im` + DSL + core) |
 | `docs/MODULES.md` | Sub-module overview |
+| `docs/API_STABILITY.md` | **Public-API contract (semver, tiers, deprecation lifecycle)** |
 | `docs/TROUBLESHOOTING.md` | Build / CRT / CI FAQ |
 | `INTEGRATION.md` | Submodule + vcpkg embedding |
-| `RELEASE.md` | Release process |
+| `RELEASE.md` | Per-release notes |
 | `DEVELOPMENT_PLAN.md` | **Long-term roadmap (read for direction)** |
 
 When you add or change a widget/API, update the relevant docs **and** the
