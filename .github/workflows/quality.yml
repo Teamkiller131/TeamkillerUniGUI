@@ -64,6 +64,29 @@ jobs:
         lcov --remove coverage.info '/usr/*' '*/vcpkg_installed/*' '*/tests/*' \
           --output-file coverage.info --ignore-errors unused || true
         lcov --list coverage.info || true
+    - name: Coverage floor (advisory)
+      # Advisory for now (mirrors the clang-tidy gate above): prints total line
+      # coverage and compares it to a floor, but does not fail the build yet —
+      # headless CI skips GL-dependent tests, so the measured number is a lower
+      # bound. Once the headless baseline is confirmed stable, raise
+      # COVERAGE_FLOOR to just under it and replace the warning with `exit 1` to
+      # turn this into a hard regression gate.
+      env:
+        COVERAGE_FLOOR: "30"
+      run: |
+        summary="$(lcov --summary coverage.info 2>/dev/null || true)"
+        echo "$summary"
+        pct="$(printf '%s\n' "$summary" | grep -oP 'lines\.*:\s*\K[0-9.]+' | head -1)"
+        if [ -z "$pct" ]; then
+          echo "::warning::Could not determine line coverage (no data?)"
+          exit 0
+        fi
+        echo "Total line coverage: ${pct}% (floor: ${COVERAGE_FLOOR}%)"
+        if awk "BEGIN{exit !(${pct} < ${COVERAGE_FLOOR})}"; then
+          echo "::warning::Line coverage ${pct}% is below the ${COVERAGE_FLOOR}% floor (advisory — not failing the build yet)"
+        else
+          echo "Line coverage ${pct}% meets the ${COVERAGE_FLOOR}% floor."
+        fi
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v4
       with:

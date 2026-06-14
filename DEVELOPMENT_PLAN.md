@@ -85,8 +85,12 @@ the public API contract explicit.
   `UNIGUI_VERSION_AT_LEAST` for compile-time feature detection.
 - **P1 · M — Visual regression harness.** Use the existing `--frames N` headless
   path to capture framebuffer snapshots per theme/widget and diff them in CI.
-- **P1 · S — Coverage gate.** Wire `windows-clang-coverage` into CI and set a
-  floor; track coverage per module.
+- **P1 · S — Coverage gate.** _Mostly done._ The `quality.yml` coverage job
+  already builds instrumented + collects lcov on Linux; added an **advisory**
+  coverage-floor step (`COVERAGE_FLOOR`, currently 30%) that prints total line
+  coverage and flags drops below the floor without failing yet (mirrors the
+  clang-tidy gate). _Remaining:_ confirm the headless baseline, raise the floor
+  to just under it, and flip the step to a hard `exit 1`.
 - ~~**P1 · M — Expand fuzzing.**~~ **Mostly done.** Added `test_css_fuzz` (CSS
   style engine) and `test_config_fuzz` (TOML/JSON/INI parsers) alongside the
   existing CSV/JSON targets. DSL has no string-parser surface to fuzz (it is a
