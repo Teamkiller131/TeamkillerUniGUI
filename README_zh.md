@@ -47,6 +47,7 @@ ctest --test-dir build
 | [docs/EXAMPLES.md](docs/EXAMPLES.md) | 示例与常用模式 |
 | [docs/WIDGET_API.md](docs/WIDGET_API.md) | 完整 Widget API |
 | [docs/API_INDEX.md](docs/API_INDEX.md) | API 字母索引 |
+| [docs/API_STABILITY.md](docs/API_STABILITY.md) | API 契约：语义化版本、稳定性分级、弃用流程 |
 | [INTEGRATION.md](INTEGRATION.md) | 子模块集成 |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | 构建排障 FAQ |
 

@@ -1,8 +1,12 @@
 #pragma once
+#include <unigui/core/api.h>
+
 #include <implot.h>
 
 #include <string>
 #include <vector>
+// @experimental Thin pass-through wrappers over ImPlot; signatures may change in
+// a minor release as the charting surface evolves. See docs/API_STABILITY.md.
 namespace unigui {
 inline bool PlotBegin(const char* title, ImVec2 size = ImVec2(-1, 0), ImPlotFlags flags = 0) {
     return ImPlot::BeginPlot(title, size, flags);

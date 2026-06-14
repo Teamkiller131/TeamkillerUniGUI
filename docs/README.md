@@ -14,6 +14,7 @@ English | [中文索引](README_zh.md)
 | [WIDGET_API.md](WIDGET_API.md) | **Full API reference** — signatures, fluent API, TreeView & CascadingCombo inline |
 | [API_INDEX.md](API_INDEX.md) | Master index: widgets + `im` + DSL + core |
 | [MODULES.md](MODULES.md) | Optional CMake modules (DSL, SQLite, IPC, …) |
+| [API_STABILITY.md](API_STABILITY.md) | API contract: semver, stability tiers, deprecation policy |
 | [../INTEGRATION.md](../INTEGRATION.md) | Embed as **Git submodule** + vcpkg (recommended) |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Build/CRT/CI FAQ (not in README) |
 

@@ -57,8 +57,8 @@ Guiding principles:
 - Theme "UI beautification" work is still in `Unreleased` — needs to land and be
   visually regression-tested.
 - No automated visual/screenshot regression testing yet.
-- API-stability guarantees are informal; there's no published semver contract
-  for the public headers.
+- ~~API-stability guarantees are informal.~~ **Resolved** by `docs/API_STABILITY.md`
+  (semver contract + stability tiers + deprecation lifecycle).
 
 ## 3. Roadmap by horizon
 
@@ -77,9 +77,12 @@ the public API contract explicit.
   — the `v2/` files were the survivors. Relocated every module impl and test into
   the mirrored `src/<module>/` / `tests/<module>/` layout and updated CMake; the
   `v2` duplicate-path count is now 0.
-- **P0 · S — Publish an API-stability policy.** Semver contract for
-  `include/unigui/**`; mark experimental headers explicitly; add a deprecation
-  process to `RELEASE.md`.
+- ~~**P0 · S — Publish an API-stability policy.**~~ **Done.** `docs/API_STABILITY.md`
+  defines the semver contract for `include/unigui/**`, three stability tiers, and
+  the deprecation lifecycle. `<unigui/core/api.h>` adds `UNIGUI_DEPRECATED` /
+  `UNIGUI_EXPERIMENTAL` / `UNIGUI_INTERNAL` markers (the `ext/` headers are now
+  marked experimental); `core/version.h` gains `UNIGUI_VERSION_NUMBER` /
+  `UNIGUI_VERSION_AT_LEAST` for compile-time feature detection.
 - **P1 · M — Visual regression harness.** Use the existing `--frames N` headless
   path to capture framebuffer snapshots per theme/widget and diff them in CI.
 - **P1 · S — Coverage gate.** Wire `windows-clang-coverage` into CI and set a
