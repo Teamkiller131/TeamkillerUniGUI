@@ -276,12 +276,13 @@ Goal: broaden what apps can build without leaving the toolkit.
 - **P1 · M — Accessibility.** Surface the existing `AccessibleName`/`Description`
   fields through a real a11y tree / screen-reader bridge where the platform
   allows; keyboard-only navigation audit.
-- **P1 · M — Theming authoring tools.** _In progress._ Theme export/import is
-  done (`ExportThemeJSON`/`ImportThemeJSON`, round-trip tested), and **CSS
-  hot-reload from disk** landed: `styling::Engine::LoadFile()` now remembers the
-  stylesheet and `ReloadIfChanged()` re-parses it when its mtime changes
-  (plus `Clear()`/`WatchedFile()`), so an app can poll once per frame to live-edit
-  CSS. _Remaining:_ a live theme-editor example app.
+- ~~**P1 · M — Theming authoring tools.**~~ **Done.** Theme export/import
+  (`ExportThemeJSON`/`ImportThemeJSON`, round-trip tested), **CSS hot-reload from
+  disk** (`styling::Engine::LoadFile()` + `ReloadIfChanged()`/`Clear()`/
+  `WatchedFile()`), and a live **`examples/theme_editor`** that ties them
+  together — switch preset/surface/font/accent live, export/import the palette as
+  JSON, and `--css <file>` to hot-edit a stylesheet while it runs (headless via
+  `--frames N`).
 - **P2 · L — Data binding / reactive layer.** Optional observable bindings so
   retained widgets update from model changes without manual `Set*` calls —
   synergizes directly with the Horizon-3 trading models.
