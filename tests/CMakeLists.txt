@@ -214,6 +214,13 @@ foreach(_t order_book ohlc_series quote)
     gtest_discover_tests(test_${_t})
 endforeach()
 
+# Trading-model performance benchmarks (header-only models; unique target name
+# to avoid colliding with the widget benchmark `test_bench` below).
+add_executable(test_trading_bench trading/bench_test.cc)
+target_link_libraries(test_trading_bench PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_trading_bench PRIVATE cxx_std_23)
+gtest_discover_tests(test_trading_bench)
+
 # Trading widget tests — require the compiled module (.cc lands only when
 # UNIGUI_MODULE_TRADING is ON).
 if(UNIGUI_MODULE_TRADING)

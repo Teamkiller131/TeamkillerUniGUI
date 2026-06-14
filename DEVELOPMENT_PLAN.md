@@ -256,9 +256,12 @@ Goal: turn the stub backends into real ones and make rendering measurably fast.
   web demo of `widget_gallery`.
 - **P1 · M — DPI / multi-monitor robustness.** Per-monitor DPI scaling, fractional
   scaling, runtime DPI changes across all production backends.
-- **P1 · M — Performance budget & benchmarks.** Per-frame CPU budgets for
-  `DataTable`/`VirtualList`/`Table` — and the trading DOM/blotters under high
-  update rates — at 100k+ rows; expand `tests/bench/`; track regressions in CI.
+- **P1 · M — Performance budget & benchmarks.** _In progress._ Trading-model
+  benchmarks landed (`tests/trading/bench_test.cc`): `OrderBook` under 200k
+  price deltas + 5k full-book snapshots, and `OhlcSeries` over 1M ticks +
+  per-frame column extraction — each with a regression floor. _Remaining:_
+  per-frame CPU budgets for `DataTable`/`VirtualList`/`Table` at 100k+ rows and
+  wiring the budgets into CI as a tracked gate.
 - **P2 · M — GPU-side text/MSAA improvements** and a shared backend capability
   query so features degrade gracefully per renderer.
 
