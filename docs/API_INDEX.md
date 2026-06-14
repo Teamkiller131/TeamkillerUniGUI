@@ -137,6 +137,7 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 |-----|--------|---------|
 | `WindowScope`, `IDScope`, `DisabledScope`, … | `core/scope.h` | Auto `End` / `Pop` |
 | `Make`, `MakeNamed` | `core/make.h` | `shared_ptr` widget helpers |
+| `Observable<T>`, `Subscription`, `Bind` | `core/observable.h` | Reactive value + RAII subscriptions |
 | `Layout::HBox`, `Layout::VBox`, `BeginHSplit` | `widgets/layout.h` | Inline layout functions |
 | `HBox`, `VBox` (RAII) | `widgets/layout.h` | Scoped horizontal/vertical groups |
 
