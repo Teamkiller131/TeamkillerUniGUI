@@ -7,12 +7,104 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <regex>
 #include <sstream>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 
 namespace unigui::styling {
+
+// ── Hand-written CSS scanning helpers ────────────────────────────────────────
+// These intentionally avoid std::regex. MSVC's std::regex enforces a
+// backtracking-complexity governor (libstdc++/libc++ do not), so the greedy
+// patterns this parser used to rely on — e.g. ([^{]+)\s*\{([^}]*)\} — threw
+// std::regex_error(error_complexity) on long/pathological input. That broke the
+// engine's "parsing never throws" contract on Windows. The scanners below are
+// linear and allocation-light, so malformed CSS is handled without throwing.
+namespace {
+
+// CSS identifier char class — mirrors the old key pattern [\w-].
+constexpr bool IsKeyChar(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+           c == '_' || c == '-';
+}
+
+// Strip leading/trailing ASCII spaces and tabs in place (matches the previous
+// parser, which trimmed only ' ' and '\t').
+void TrimAsciiSpace(std::string& s) {
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t'))
+        s.pop_back();
+    std::size_t i = 0;
+    while (i < s.size() && (s[i] == ' ' || s[i] == '\t'))
+        ++i;
+    s.erase(0, i);
+}
+
+// Parse a declaration body ("key: value; key2: value2 …") into `props`,
+// resolving leading-$ variable references via `vars`. Equivalent to the old
+// std::regex property scanner ([\w-]+\s*:\s*([^;]+)) but without backtracking.
+void ParsePropsInto(std::unordered_map<std::string, std::string>& props, std::string_view body,
+                    const std::unordered_map<std::string, std::string>& vars) {
+    std::size_t i = 0;
+    while (i < body.size()) {
+        const std::size_t semi = body.find(';', i);
+        const std::size_t end = (semi == std::string_view::npos) ? body.size() : semi;
+        std::string_view decl = body.substr(i, end - i);
+        i = (semi == std::string_view::npos) ? body.size() : semi + 1;
+
+        // A declaration is "<key> : <value>"; the key is the identifier run that
+        // ends just before the first ':'. No ':' or no key → skip the segment.
+        const std::size_t colon = decl.find(':');
+        if (colon == std::string_view::npos)
+            continue;
+        std::size_t ke = colon;
+        while (ke > 0 && (decl[ke - 1] == ' ' || decl[ke - 1] == '\t'))
+            --ke;
+        std::size_t ks = ke;
+        while (ks > 0 && IsKeyChar(decl[ks - 1]))
+            --ks;
+        if (ks == ke)
+            continue; // empty key
+
+        std::string val(decl.substr(colon + 1));
+        TrimAsciiSpace(val);
+        if (val.empty())
+            continue; // matches old [^;]+ (value required)
+        if (val[0] == '$') {
+            auto vi = vars.find(val.substr(1));
+            if (vi != vars.end())
+                val = vi->second;
+        }
+        props[std::string(decl.substr(ks, ke - ks))] = std::move(val);
+    }
+}
+
+// Iterate "<selector> { <body> }" blocks in `s`. On each call, advance `pos`
+// past the next block and return its full text (selector through closing brace)
+// in `full`. Returns false when no further block exists. Mirrors the old
+// ([^{]+)\s*\{([^}]*)\} regex: a block needs a non-empty selector run (at least
+// one non-'{' char) before the brace and a closing '}'.
+bool NextBlock(const std::string& s, std::size_t& pos, std::string& full) {
+    while (true) {
+        const std::size_t open = s.find('{', pos);
+        if (open == std::string::npos)
+            return false;
+        if (open == pos) {
+            // No selector before this brace — the regex could not match here;
+            // skip the stray '{' and look for the next candidate.
+            pos = open + 1;
+            continue;
+        }
+        const std::size_t close = s.find('}', open + 1);
+        if (close == std::string::npos)
+            return false; // unterminated block — old regex required a '}'
+        full = s.substr(pos, close - pos + 1);
+        pos = close + 1;
+        return true;
+    }
+}
+
+} // namespace
 
 Engine& Engine::Instance() {
     static Engine se;
@@ -84,24 +176,7 @@ void Engine::ParseRule(const std::string& block) {
     ParseSelector(rule, sel);
 
     // Parse properties: "bg: #1a1e; rounding: 6;"
-    std::regex propRe(R"(([\w-]+)\s*:\s*([^;]+)\s*;?)");
-    std::smatch m;
-    auto start = props.cbegin();
-    while (std::regex_search(start, props.cend(), m, propRe)) {
-        std::string val = m[2].str();
-        while (!val.empty() && val.back() == ' ')
-            val.pop_back();
-        while (!val.empty() && val.front() == ' ')
-            val.erase(0, 1);
-        // Resolve CSS variables: $var
-        if (!val.empty() && val[0] == '$') {
-            auto vi = vars_.find(val.substr(1));
-            if (vi != vars_.end())
-                val = vi->second;
-        }
-        rule.props[m[1].str()] = val;
-        start = m.suffix().first;
-    }
+    ParsePropsInto(rule.props, props, vars_);
 
     rules_.push_back(std::move(rule));
 }
@@ -110,12 +185,9 @@ int Engine::Parse(const std::string& css) {
     int count = 0;
 
     // Find all rule blocks: "@media (cond) { Rule { ... } }" or "Selector { ... }"
-    std::regex ruleRe(R"(([^{]+)\s*\{([^}]*)\})");
-    std::smatch m;
-    auto start = css.cbegin();
-    while (std::regex_search(start, css.cend(), m, ruleRe)) {
-        std::string full = m[0].str();
-
+    std::string full;
+    std::size_t scan = 0;
+    while (NextBlock(css, scan, full)) {
         // @media blocks
         auto mediaPos = full.find("@media");
         if (mediaPos != std::string::npos) {
@@ -132,25 +204,23 @@ int Engine::Parse(const std::string& css) {
                 auto innerEnd = full.rfind('}');
                 if (innerStart != std::string::npos && innerEnd != std::string::npos) {
                     std::string inner = full.substr(innerStart + 1, innerEnd - innerStart - 1);
-                    std::regex innerRe(R"(([^{]+)\s*\{([^}]*)\})");
-                    std::smatch im;
-                    auto is = inner.cbegin();
-                    while (std::regex_search(is, inner.cend(), im, innerRe)) {
+                    std::string innerBlock;
+                    std::size_t innerScan = 0;
+                    while (NextBlock(inner, innerScan, innerBlock)) {
+                        const auto innerBrace = innerBlock.find('{');
+                        const auto innerClose = innerBlock.find('}');
+                        if (innerBrace == std::string::npos || innerClose == std::string::npos)
+                            continue;
+                        std::string sel = innerBlock.substr(0, innerBrace);
+                        TrimAsciiSpace(sel);
                         StyleRule rule;
-                        ParseSelector(rule, im[1].str());
-                        // Parse properties
-                        std::regex propRe(R"(([\w-]+)\s*:\s*([^;]+)\s*;?)");
-                        std::smatch pm;
-                        auto ps = im[2].str().cbegin();
-                        while (std::regex_search(ps, im[2].str().cend(), pm, propRe)) {
-                            std::string val = pm[2].str();
-                            if (!val.empty() && val[0] == '$')
-                                val = GetVar(val.substr(1));
-                            rule.props[pm[1].str()] = val;
-                            ps = pm.suffix().first;
-                        }
+                        ParseSelector(rule, sel);
+                        ParsePropsInto(
+                            rule.props,
+                            std::string_view(innerBlock).substr(innerBrace + 1,
+                                                                innerClose - innerBrace - 1),
+                            vars_);
                         mr.rules.push_back(std::move(rule));
-                        is = im.suffix().first;
                     }
                 }
                 mediaRules_.push_back(std::move(mr));
@@ -160,7 +230,6 @@ int Engine::Parse(const std::string& css) {
             ParseRule(full);
             count++;
         }
-        start = m.suffix().first;
     }
 
     UNIGUI_LOG_INFO("CSS: {} rules parsed, {} @media blocks", count, (int) mediaRules_.size());
