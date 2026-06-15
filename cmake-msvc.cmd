@@ -61,6 +61,27 @@ rem Preserve a user-provided VCPKG_ROOT if they exported VCPKG_ROOT_SAVED before
 rem invoking the wrapper (vcvars may otherwise point it at the VS-bundled vcpkg).
 if defined VCPKG_ROOT_SAVED set "VCPKG_ROOT=%VCPKG_ROOT_SAVED%"
 
+rem --- 2b. Ensure VCPKG_ROOT is set so the CMake presets resolve the toolchain --
+rem The presets reference $env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake. If the
+rem user never set it, discover a vcpkg automatically so a fresh clone configures
+rem with no manual setup: prefer one on PATH, then the copy bundled with Visual
+rem Studio. An explicit VCPKG_ROOT always wins.
+if not defined VCPKG_ROOT (
+    for /f "usebackq tokens=*" %%v in (`where vcpkg 2^>nul`) do (
+        if not defined VCPKG_ROOT set "VCPKG_ROOT=%%~dpv"
+    )
+)
+if defined VCPKG_ROOT if "%VCPKG_ROOT:~-1%"=="\" set "VCPKG_ROOT=%VCPKG_ROOT:~0,-1%"
+if not defined VCPKG_ROOT if exist "%VSINSTALL%\VC\vcpkg\scripts\buildsystems\vcpkg.cmake" set "VCPKG_ROOT=%VSINSTALL%\VC\vcpkg"
+if defined VCPKG_ROOT (
+    echo [cmake-msvc] VCPKG_ROOT=%VCPKG_ROOT%
+) else (
+    echo [cmake-msvc] WARNING: VCPKG_ROOT is not set and no vcpkg was discovered.
+    echo              Preset configures will fail to find the vcpkg toolchain file.
+    echo              Set VCPKG_ROOT to your vcpkg checkout, or install the vcpkg
+    echo              component via the Visual Studio Installer.
+)
+
 rem --- 3. Sanity-check that the core tools are now resolvable ------------------
 where cl >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
