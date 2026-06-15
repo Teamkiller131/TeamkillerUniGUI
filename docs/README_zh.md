@@ -22,7 +22,7 @@
 2. [EXAMPLES.md](EXAMPLES.md) 场景示例  
 3. 查单个控件 → [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) 或 [API_INDEX.md](API_INDEX.md) → [WIDGET_API.md](WIDGET_API.md)  
 
-**「82 widgets」** 指 `widgets/` 下保留式组件；另有 **22** 个 `unigui::im` 函数与 **18** 个 DSL 构建器，见 [API_INDEX.md](API_INDEX.md)。
+**「86 widgets」** 指 `widgets/` 下保留式组件；另有 **22** 个 `unigui::im` 函数与 **18** 个 DSL 构建器，见 [API_INDEX.md](API_INDEX.md)。
 
 ## 仓库
 

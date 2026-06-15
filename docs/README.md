@@ -21,7 +21,7 @@ English | [中文索引](README_zh.md)
 
 Redirects (content merged into WIDGET_API): [TREEVIEW.md](TREEVIEW.md), [CASCADINGCOMBO.md](CASCADINGCOMBO.md).
 
-## API surface (what “82 widgets” means)
+## API surface (what “86 widgets” means)
 
 | Layer | Location | Count |
 |-------|----------|------:|

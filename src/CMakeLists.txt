@@ -225,6 +225,10 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/cascadingcombo.cc
         widgets/sliderbar.cc
         widgets/futuresriskbar.cc
+        widgets/sparkline.cc
+        widgets/gauge.cc
+        widgets/segmentedcontrol.cc
+        widgets/priceticker.cc
     )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)
     message(STATUS "Extended widgets enabled")

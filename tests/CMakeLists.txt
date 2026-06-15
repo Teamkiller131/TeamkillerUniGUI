@@ -189,7 +189,7 @@ endforeach()
 
 # Extended widget tests — only when UNIGUI_MODULE_WIDGETS=ON
 if(UNIGUI_MODULE_WIDGETS)
-    foreach(_widget treeview listview table slider colorpicker coloredit listbox filepath dirpath toggleswitch inputint inputfloat inputtext splitter multisplitter tooltip datepicker image loadingindicator notification hyperlink tag breadcrumb multiline iconbutton space contextmenu shortcut richtext imagebutton markdown virtuallist multicombo propertygrid searchbox toast passwordinput wizard dragfloat dragint statuslamp cascadingcombo sliderbar futuresriskbar)
+    foreach(_widget treeview listview table slider colorpicker coloredit listbox filepath dirpath toggleswitch inputint inputfloat inputtext splitter multisplitter tooltip datepicker image loadingindicator notification hyperlink tag breadcrumb multiline iconbutton space contextmenu shortcut richtext imagebutton markdown virtuallist multicombo propertygrid searchbox toast passwordinput wizard dragfloat dragint statuslamp cascadingcombo sliderbar futuresriskbar sparkline gauge segmentedcontrol priceticker)
         add_executable(test_${_widget} widgets/${_widget}_test.cc)
         target_link_libraries(test_${_widget} PRIVATE GTest::gtest GTest::gtest_main unigui)
         target_compile_features(test_${_widget} PRIVATE cxx_std_23)

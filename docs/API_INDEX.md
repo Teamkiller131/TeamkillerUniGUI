@@ -9,7 +9,7 @@ Master lookup for the **entire public surface** of TeamkillerUniGUI 3.5.0.
 | `unigui::dsl` builders | **18** | [WIDGET_API — DSL](WIDGET_API.md#declarative-dsl-uniguidsl) |
 | App / theme / core | **15+** | Below + [GETTING_STARTED.md](GETTING_STARTED.md) |
 
-> README badge **「82 widgets」** counts retained components under `include/unigui/widgets/` (81 headers + layout RAII). It does **not** include `im::`, DSL, theme, or optional modules — those add **40+** additional APIs.
+> README badge **「86 widgets」** counts retained components under `include/unigui/widgets/` (81 headers + layout RAII). It does **not** include `im::`, DSL, theme, or optional modules — those add **40+** additional APIs.
 
 ---
 
