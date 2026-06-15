@@ -1,6 +1,6 @@
 # Widget Examples Catalog
 
-> **82** catalog entries (81 widget headers + layout RAII). Construct once, `Render()` each frame.
+> **86** catalog entries (85 widget headers + layout RAII). Construct once, `Render()` each frame.
 
 - **Cookbook** (composition, DSL, themes): [EXAMPLES.md](EXAMPLES.md)
 - **API signatures**: [WIDGET_API.md](WIDGET_API.md)
@@ -1054,6 +1054,61 @@ win->Render();
 static unigui::Wizard wiz("wiz");
 wiz.AddStep("Step 1", []{ ImGui::Text("One"); });
 wiz.Render();
+```
+
+---
+
+<!-- New in v3.6.0 — appended to keep existing entry numbers stable. -->
+
+## 83. Gauge
+
+**Header:** `#include <unigui/widgets/gauge.h>` · **API:** [WIDGET_API.md#gauge](WIDGET_API.md#gauge)
+
+```cpp
+#include <unigui/widgets/gauge.h>
+static unigui::Gauge cpu("cpu");
+cpu.WithRange(0.f, 100.f).WithValue(63.f).WithSweepDegrees(270.f).WithCenterLabel("CPU");
+cpu.Render();
+```
+
+---
+
+## 84. PriceTicker
+
+**Header:** `#include <unigui/widgets/priceticker.h>` · **API:** [WIDGET_API.md#priceticker](WIDGET_API.md#priceticker)
+
+```cpp
+#include <unigui/widgets/priceticker.h>
+static unigui::PriceTicker tape("tape", {
+    {"AAPL", "192.30", +1.2f}, {"MSFT", "410.10", -0.8f}, {"BTC", "64,200", +3.1f}});
+tape.WithSpeed(60.f).Render();   // scrolls left, green/red ▲▼ by sign
+```
+
+---
+
+## 85. SegmentedControl
+
+**Header:** `#include <unigui/widgets/segmentedcontrol.h>` · **API:** [WIDGET_API.md#segmentedcontrol](WIDGET_API.md#segmentedcontrol)
+
+```cpp
+#include <unigui/widgets/segmentedcontrol.h>
+static unigui::SegmentedControl tf("timeframe", {"1D", "1W", "1M", "1Y"});
+tf.WithSelected(0).WithOnChange([](int i, const std::string& label){ /* reload */ });
+tf.Render();
+```
+
+---
+
+## 86. Sparkline
+
+**Header:** `#include <unigui/widgets/sparkline.h>` · **API:** [WIDGET_API.md#sparkline](WIDGET_API.md#sparkline)
+
+```cpp
+#include <unigui/widgets/sparkline.h>
+static unigui::Sparkline spark("px");
+spark.WithSize(80.f, 20.f).WithColorByTrend().WithShowLastDot()
+     .WithData({11.2f, 11.5f, 11.1f, 11.8f, 12.0f, 11.7f});
+spark.Render();        // green if last >= first, else red
 ```
 
 ---

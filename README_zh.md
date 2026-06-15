@@ -4,8 +4,8 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.5.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-895-brightgreen)]()
+[![Version](https://img.shields.io/badge/version-3.6.0-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-933-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-86-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20production%29-orange)]()
 
@@ -58,7 +58,7 @@ ctest --test-dir build
     ↓
 unigui:: API
     ├── 主题引擎 (明暗主题 + 13 套预设，统一样式/颜色令牌，毛玻璃材质，立体阴影，StyleScope RAII)
-    ├── 组件库 (82 个组件，100% PushID 安全，表单校验/撤销重做/序列化)
+    ├── 组件库 (86 个组件，100% PushID 安全，表单校验/撤销重做/序列化)
     ├── 声明式 DSL (unigui::dsl — Window, VBox/HBox, Button, CheckBox, SliderFloat, InputText, If/For)
     ├── 事件总线 (unigui::events::Bus — 发布/订阅，支持通配符)
     ├── CSS 样式引擎 (unigui::styling::Engine — 选择器引擎 + 变量)
@@ -179,7 +179,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 
 可选 vcpkg feature：`sqlite`、`config`、`ipc`、`network`
 
-## 组件列表（82 个）
+## 组件列表（86 个）
 
 > 详尽的组件 API 与示例请参阅 **[docs/WIDGET_API.md](docs/WIDGET_API.md)**；
 > 专题指南：**[TreeView 树形控件](docs/TREEVIEW.md)**、**[CascadingCombo 级联下拉](docs/CASCADINGCOMBO.md)**。
@@ -222,6 +222,8 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | Markdown | `SetMarkdown()`，支持 # ** * - [链接] |
 | | Image | `SetTexture(texID)`，多种缩放模式 |
 | | ProgressBar | `SetFraction()`，状态颜色 + 动画填充 |
+| | Gauge | 环形/径向进度表盘，`SetSweepDegrees()`，中心标签 (v3.6) |
+| | Sparkline | 内联折线/面积/柱状趋势图，`PushValue()`，趋势着色 (v3.6) |
 | | StatusLamp | 多状态指示灯 + 辉光（`SetGlowEnabled`） |
 | | RiskBar | 阈值着色的动画风险条 |
 | | FuturesRiskBar | 实际/预估/隔夜多标记风险条 |
@@ -253,6 +255,8 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | ToggleSwitch | `SetOn(bool)`，带动画过渡 |
 | 其他 | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
 | | TimeSeriesChart | 实时时序图、滑动窗口 |
+| | PriceTicker | 滚动行情跑马灯，▲/▼ 涨跌着色，`SetSpeed()` (v3.6) |
+| | SegmentedControl | 单选分段按钮组（1日/1周/1月），`SetOnChange()` (v3.6) |
 | | SliderBar | 期货/价格档位条，含确认/回滚 |
 | | ShortcutManager | `Register()`，全局快捷键 |
 | | Notification | `Show()`，待处理计数 |
@@ -264,7 +268,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 
 ## ID 安全
 
-所有 82 个组件均通过 `PushID`/`PopID` 自动管理 ImGui ID 栈，无需手动处理 ID 冲突。
+所有 86 个组件均通过 `PushID`/`PopID` 自动管理 ImGui ID 栈，无需手动处理 ID 冲突。
 
 ```cpp
 auto btn1 = std::make_shared<unigui::Button>("ok", "确定");

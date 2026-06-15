@@ -1,3 +1,60 @@
+# TeamkillerUniGUI v3.6.0 Release Notes
+
+**Release Date:** 2026-06-15 | **Version:** 3.6.0 | **Widgets:** 86 | **Tests:** 933
+
+---
+
+## Highlights
+
+### Four new dashboard / data widgets
+
+All four are `FluentWidget`-based, `PushID`-safe, draw-list rendered, and fully headless-tested (40 new test cases). Gated by `UNIGUI_MODULE_WIDGETS`.
+
+- **Sparkline** — compact axis-less trend chart (Line / Area / Bar) for inline use in tables, watchlists, and KPI cards. Auto- or fixed-range, trend colouring (green up / red down), last-point dot, and a rolling `PushValue()` / `SetMaxPoints()` streaming mode. No ImPlot dependency.
+- **Gauge** — circular / radial progress dial (full ring or open-bottom speedometer arc) with a theme-accent fill and centre percent / custom label. Complements the linear `ProgressBar`.
+- **SegmentedControl** — compact single-select button group sharing one rounded frame (the `1D / 1W / 1M` selector) with accent highlight, optional fill-width, and an `onChange` callback.
+- **PriceTicker** — horizontally scrolling symbol / price / Δ marquee with green/red ▲/▼ tinting, adjustable speed, and pause — the classic trading header strip.
+
+These close the two deferred widget follow-ups from Horizon 3 (in-cell sparkline and the price-ticker marquee).
+
+### Windows / MSVC hardening
+
+- **CSS, theme, and locale parsers no longer throw on MSVC.** MSVC's `std::regex` enforces a backtracking-complexity governor (libstdc++/libc++ do not), so the CSS engine, `ImportThemeJSON()`, and `Locale::LoadFromFile()` could throw `std::regex_error(error_complexity)` on large/malformed input — `LoadFromFile` reads untrusted files, making it an unguarded crash path. All three were rewritten as linear hand-written scanners (no throw, and the CSS fuzz targets drop from ~36s-and-failing to <0.1s). The project now upholds its "parsing never throws" guarantee on every compiler.
+- **`Table` numeric sort is non-throwing** — `std::stod`-in-`try/catch` (one exception per non-numeric cell, every sort) replaced with `std::from_chars`.
+- **`cmake-msvc.cmd` auto-discovers vcpkg** when `VCPKG_ROOT` is unset (vcpkg on `PATH`, then the VS-bundled copy), so a fresh clone configures with the Ninja presets out of the box.
+
+---
+
+## Upgrade Guide
+
+### From v3.5.x
+
+1. **Pull latest**: `git pull origin master`
+2. **Rebuild** with your usual preset (e.g. `cmake-msvc.cmd --build --preset windows-msvc-release`).
+3. **No breaking changes** — existing code compiles unchanged. The four new widgets are available via `<unigui/unigui.h>` (or their individual headers) when `UNIGUI_MODULE_WIDGETS` is on.
+
+### New APIs at a glance
+
+```cpp
+// Sparkline — inline trend chart
+unigui::Sparkline px("px");
+px.WithSize(80, 20).WithColorByTrend().WithData({11.2f, 11.5f, 11.1f, 11.8f, 12.0f});
+
+// Gauge — radial KPI dial
+unigui::Gauge cpu("cpu");
+cpu.WithRange(0, 100).WithValue(63).WithSweepDegrees(270).WithCenterLabel("CPU");
+
+// SegmentedControl — timeframe selector
+unigui::SegmentedControl tf("tf", {"1D", "1W", "1M", "1Y"});
+tf.WithSelected(0).WithOnChange([](int i, const std::string& l){ /* reload */ });
+
+// PriceTicker — scrolling marquee
+unigui::PriceTicker tape("tape", {{"AAPL","192.30",+1.2f}, {"MSFT","410.10",-0.8f}});
+tape.WithSpeed(60.f);
+```
+
+---
+
 # TeamkillerUniGUI v3.5.0 Release Notes
 
 **Release Date:** 2026-06-02 | **Version:** 3.5.0 | **Widgets:** 82 | **Tests:** 637

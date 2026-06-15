@@ -141,7 +141,7 @@ Examples accept `--frames N` to render N frames and exit — use this in CI/smok
 | `README.md` / `README_zh.md` | Overview, quick start, full widget table |
 | `docs/README.md` | Documentation hub / index |
 | `docs/GETTING_STARTED.md` | Build + first app |
-| `docs/WIDGET_API.md` | Full widget API reference (all 82) |
+| `docs/WIDGET_API.md` | Full widget API reference (all 86) |
 | `docs/WIDGET_EXAMPLES.md` | One minimal example per widget |
 | `docs/API_INDEX.md` | Master index (widgets + `im` + DSL + core) |
 | `docs/MODULES.md` | Sub-module overview |

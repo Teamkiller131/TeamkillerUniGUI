@@ -1,10 +1,10 @@
 # API Index
 
-Master lookup for the **entire public surface** of TeamkillerUniGUI 3.5.0.
+Master lookup for the **entire public surface** of TeamkillerUniGUI 3.6.0.
 
 | Category | Count | Primary doc |
 |----------|------:|-------------|
-| Retained widgets & helpers | **82** | [WIDGET_API.md](WIDGET_API.md), [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) |
+| Retained widgets & helpers | **86** | [WIDGET_API.md](WIDGET_API.md), [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) |
 | `unigui::im` functions | **201** | [WIDGET_API §2](WIDGET_API.md#immediate-mode-uniguiim-vs-retained-mode) |
 | `unigui::dsl` builders | **18** | [WIDGET_API — DSL](WIDGET_API.md#declarative-dsl-uniguidsl) |
 | App / theme / core | **15+** | Below + [GETTING_STARTED.md](GETTING_STARTED.md) |
@@ -189,6 +189,7 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | FilePath | `filepath.h` | File picker | [§8](WIDGET_API.md#filepath--dirpath) | [§23](WIDGET_EXAMPLES.md#23-filepath) |
 | Form | `form.h` | Validated form | [§12](WIDGET_API.md#form) | [§24](WIDGET_EXAMPLES.md#24-form) |
 | FuturesRiskBar | `futuresriskbar.h` | Futures margin bar | [§13](WIDGET_API.md#futuresriskbar) | [§25](WIDGET_EXAMPLES.md#25-futuresriskbar) |
+| Gauge | `gauge.h` | Radial progress dial | [§4](WIDGET_API.md#gauge) | [§83](WIDGET_EXAMPLES.md#83-gauge) |
 | GroupBox | `groupbox.h` | Titled group | [§3](WIDGET_API.md#groupbox) | [§26](WIDGET_EXAMPLES.md#26-groupbox) |
 | HeroSection | `herosection.h` | Banner hero | [§13](WIDGET_API.md#herosection) | [§27](WIDGET_EXAMPLES.md#27-herosection) |
 | Hyperlink | `hyperlink.h` | Clickable link | [§5](WIDGET_API.md#hyperlink) | [§28](WIDGET_EXAMPLES.md#28-hyperlink) |
@@ -213,6 +214,7 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | Panel | `panel.h` | Dock panel | [§3](WIDGET_API.md#panel) | [§48](WIDGET_EXAMPLES.md#48-panel) |
 | PanelBox | `panelbox.h` | Titled dark panel | [§3](WIDGET_API.md#panelbox) | [§49](WIDGET_EXAMPLES.md#49-panelbox) |
 | PasswordInput | `passwordinput.h` | Password + strength | [§6](WIDGET_API.md#passwordinput) | [§50](WIDGET_EXAMPLES.md#50-passwordinput) |
+| PriceTicker | `priceticker.h` | Scrolling price marquee | [§13](WIDGET_API.md#priceticker) | [§84](WIDGET_EXAMPLES.md#84-priceticker) |
 | ProgressBar | `progressbar.h` | Progress fraction | [§4](WIDGET_API.md#progressbar) | [§51](WIDGET_EXAMPLES.md#51-progressbar) |
 | PropertyGrid | `propertygrid.h` | Key/value grid | [§12](WIDGET_API.md#propertygrid) | [§52](WIDGET_EXAMPLES.md#52-propertygrid) |
 | RadioGroup | `radiogroup.h` | Radio set | [§5](WIDGET_API.md#radiogroup) | [§53](WIDGET_EXAMPLES.md#53-radiogroup) |
@@ -220,6 +222,7 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | RiskBar | `riskbar.h` | Usage ratio bar | [§13](WIDGET_API.md#riskbar) | [§55](WIDGET_EXAMPLES.md#55-riskbar) |
 | ScrollArea | `scrollarea.h` | Scroll region | [§3](WIDGET_API.md#scrollarea) | [§56](WIDGET_EXAMPLES.md#56-scrollarea) |
 | SearchBox | `searchbox.h` | Filterable search | [§6](WIDGET_API.md#searchbox) | [§57](WIDGET_EXAMPLES.md#57-searchbox) |
+| SegmentedControl | `segmentedcontrol.h` | Single-select button group | [§5](WIDGET_API.md#segmentedcontrol) | [§85](WIDGET_EXAMPLES.md#85-segmentedcontrol) |
 | Selectable | `selectable.h` | Selectable row | [§8](WIDGET_API.md#selectable) | [§58](WIDGET_EXAMPLES.md#58-selectable) |
 | Separator | `separator.h` | Divider | [§3](WIDGET_API.md#separator--space) | [§59](WIDGET_EXAMPLES.md#59-separator) |
 | Shimmer | `shimmer.h` | Loading shimmer | [§14](WIDGET_API.md#shimmer) | [§60](WIDGET_EXAMPLES.md#60-shimmer) |
@@ -228,6 +231,7 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | Slider\<T\> | `slider.h` | Value slider | [§7](WIDGET_API.md#slidert) | [§63](WIDGET_EXAMPLES.md#63-slider) |
 | SliderBar | `sliderbar.h` | Price/lot bar | [§13](WIDGET_API.md#sliderbar) | [§64](WIDGET_EXAMPLES.md#64-sliderbar) |
 | Space / DockSpace | `space.h` | Spacing / dock | [§3](WIDGET_API.md#dockspace-spaceh) | [§65](WIDGET_EXAMPLES.md#65-space--dockspace) |
+| Sparkline | `sparkline.h` | Inline trend chart | [§13](WIDGET_API.md#sparkline) | [§86](WIDGET_EXAMPLES.md#86-sparkline) |
 | SpinBox\<T\> | `spinbox.h` | Spin control | [§7](WIDGET_API.md#spinboxt) | [§66](WIDGET_EXAMPLES.md#66-spinbox) |
 | Splitter | `splitter.h` | Two-pane split | [§3](WIDGET_API.md#splitter) | [§67](WIDGET_EXAMPLES.md#67-splitter) |
 | StatusBar | `statusbar.h` | Bottom status | [§4](WIDGET_API.md#statusbar) | [§68](WIDGET_EXAMPLES.md#68-statusbar) |

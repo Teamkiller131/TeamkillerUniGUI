@@ -1,6 +1,6 @@
 # UniGUI Widget API Reference
 
-> **Version**: 3.5.0 (C++23) · **Widgets**: 82 · **Backend**: Dear ImGui (docking + multi-viewport)
+> **Version**: 3.6.0 (C++23) · **Widgets**: 86 · **Backend**: Dear ImGui (docking + multi-viewport)
 >
 > **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Cookbook**: [EXAMPLES.md](EXAMPLES.md) · **Per-widget examples**: [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)
 >
@@ -462,6 +462,23 @@ void SetTooltip(std::string); void SetRadius(float); void SetColor(ImU32 rgba);
 void SetGlowEnabled(bool on);
 ```
 
+### Gauge
+
+Circular/radial progress dial — a ring or speedometer arc with a centre label.
+Complements the linear `ProgressBar` for dashboards/KPI tiles.
+
+```cpp
+Gauge(std::string name, float value = 0.f);
+void SetValue(float); float GetValue() const;
+void SetRange(float min, float max); float GetFraction() const; // clamped 0..1
+void SetRadius(float); void SetThickness(float);
+void SetSweepDegrees(float deg);     // 360 = full ring, 270 = open-bottom dial
+void SetTrackColor(ImU32); void SetFillColor(ImU32);
+void SetShowPercent(bool); void SetCenterLabel(std::string);
+// Fluent: WithValue/WithRange/WithRadius/WithThickness/WithSweepDegrees/
+//         WithTrackColor/WithFillColor/WithShowPercent/WithCenterLabel
+```
+
 ---
 
 ## 5. Buttons & Actions
@@ -542,6 +559,21 @@ void SetOnChange(std::function<void(int)> callback);
 ```cpp
 ToolBar(std::string name);
 void SetItems(std::vector<ToolBarItem> items);
+```
+
+### SegmentedControl
+
+Compact single-select button group sharing one rounded frame (the iOS-style
+`1D / 1W / 1M` selector). More compact than a `TabWidget`; the selection is
+accent-highlighted and clicks fire `onChange`.
+
+```cpp
+SegmentedControl(std::string name, std::vector<std::string> segments = {});
+void SetSegments(std::vector<std::string>); void AddSegment(std::string); void Clear();
+void SetSelected(int); int GetSelected() const; std::string GetSelectedLabel() const;
+void SetOnChange(std::function<void(int, const std::string&)>);
+void SetSegmentPadding(float); void SetFillWidth(bool);
+// Fluent: WithSegments/WithSelected/WithOnChange/WithSegmentPadding/WithFillWidth
 ```
 
 ---
@@ -1228,6 +1260,40 @@ HeroSection(std::string name, std::string title = "", std::string subtitle = "")
 void SetTitle(std::string); void SetSubtitle(std::string);
 void SetBackground(ImU32 topColor, ImU32 bottomColor);
 void SetActionButton(std::string label, std::function<void()> callback); void SetHeight(float h);
+```
+
+### Sparkline
+
+Compact axis-less trend chart (Line/Area/Bar) for inline use in tables,
+watchlists, and KPI cards. Auto- or fixed-range; no ImPlot dependency.
+
+```cpp
+Sparkline(std::string name, Mode mode = Mode::Line);
+enum class Mode { Line, Area, Bar };
+void SetData(std::vector<float>); void PushValue(float); void Clear();
+void SetMaxPoints(std::size_t);            // rolling cap for PushValue (0 = unbounded)
+void SetMode(Mode); void SetSize(float w, float h);
+void SetLineColor(ImU32); void SetFillColor(ImU32); void SetLineThickness(float);
+void SetShowLastDot(bool); void SetColorByTrend(bool);   // green up / red down
+void SetRange(float min, float max); void SetAutoRange();
+// Fluent: WithData/WithMode/WithSize/WithLineColor/WithFillColor/
+//         WithLineThickness/WithShowLastDot/WithColorByTrend/WithRange
+```
+
+### PriceTicker
+
+Horizontally scrolling symbol/price/Δ marquee with green/red ▲/▼ tinting — the
+classic trading header strip. Adjustable speed and pause.
+
+```cpp
+PriceTicker(std::string name, std::vector<Item> items = {});
+struct Item { std::string symbol; std::string price; float change = 0.f; };
+void SetItems(std::vector<Item>); void AddItem(Item); void Clear();
+void SetSpeed(float pxPerSec); void SetPaused(bool);
+void SetHeight(float); void SetWidth(float);            // width 0 = full available
+void SetUpColor(ImU32); void SetDownColor(ImU32);
+float GetScrollOffset() const;
+// Fluent: WithItems/WithSpeed/WithPaused/WithHeight/WithWidth
 ```
 
 ---

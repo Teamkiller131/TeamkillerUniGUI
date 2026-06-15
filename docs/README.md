@@ -1,6 +1,6 @@
 # TeamkillerUniGUI Documentation
 
-> **Version 3.5.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
+> **Version 3.6.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
 
 English | [中文索引](README_zh.md)
 
@@ -10,7 +10,7 @@ English | [中文索引](README_zh.md)
 |----------|-------------|
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Install, build, first app (`RunApp`), backends |
 | [EXAMPLES.md](EXAMPLES.md) | Cookbook: composition, theme, tables, charts, threading, DSL |
-| [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) | **One minimal example per widget** (82 entries) |
+| [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) | **One minimal example per widget** (86 entries) |
 | [WIDGET_API.md](WIDGET_API.md) | **Full API reference** — signatures, fluent API, TreeView & CascadingCombo inline |
 | [API_INDEX.md](API_INDEX.md) | Master index: widgets + `im` + DSL + core |
 | [MODULES.md](MODULES.md) | Optional CMake modules (DSL, SQLite, IPC, …) |
@@ -25,7 +25,7 @@ Redirects (content merged into WIDGET_API): [TREEVIEW.md](TREEVIEW.md), [CASCADI
 
 | Layer | Location | Count |
 |-------|----------|------:|
-| Retained widgets + layout | `include/unigui/widgets/` | **82** catalog entries |
+| Retained widgets + layout | `include/unigui/widgets/` | **86** catalog entries |
 | Immediate mode | `unigui::im` in `im/im.h` | **22** functions |
 | Declarative DSL (optional) | `unigui::dsl` in `dsl/dsl.h` | **18** builders |
 | App / theme / scopes | `app/`, `theme/`, `core/` | **15+** |

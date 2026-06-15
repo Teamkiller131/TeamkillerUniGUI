@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [3.6.0] - 2026-06-15
+
 ### Added
 - **Four new dashboard/data widgets** (extended widgets, `UNIGUI_MODULE_WIDGETS`): all `FluentWidget`-based, `PushID`-safe, draw-list rendered, and headless-tested (40 new test cases).
   - **`Sparkline`** (`widgets/sparkline.h`): compact axis-less trend chart (Line/Area/Bar) for inline use in tables, watchlists, and KPI cards — auto-ranging or fixed range, optional trend colouring (green up / red down), last-point dot, and a rolling `PushValue()`/`SetMaxPoints()` streaming mode. No ImPlot dependency. Closes the roadmap's deferred "in-cell mini sparkline" follow-up (standalone form).

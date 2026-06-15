@@ -4,7 +4,7 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.5.0-blueviolet)]()
+[![Version](https://img.shields.io/badge/version-3.6.0-blueviolet)]()
 [![Tests](https://img.shields.io/badge/tests-933-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-86-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
@@ -62,7 +62,7 @@ ctest --test-dir build
 | **[docs/README.md](docs/README.md)** | **Documentation hub** (index) |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Build & first app |
 | [docs/EXAMPLES.md](docs/EXAMPLES.md) | Cookbook (composition, theme, DSL, threading) |
-| [docs/WIDGET_EXAMPLES.md](docs/WIDGET_EXAMPLES.md) | One minimal example per widget (82 entries) |
+| [docs/WIDGET_EXAMPLES.md](docs/WIDGET_EXAMPLES.md) | One minimal example per widget (86 entries) |
 | [docs/WIDGET_API.md](docs/WIDGET_API.md) | Full API (widgets + inline TreeView / CascadingCombo) |
 | [docs/API_INDEX.md](docs/API_INDEX.md) | Master index (widgets + `im` + DSL + core) |
 | [docs/API_STABILITY.md](docs/API_STABILITY.md) | API contract: semver, stability tiers, deprecation policy |
@@ -311,7 +311,7 @@ auto btn1 = std::make_shared<unigui::Button>("ok", "OK");
 auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label, no conflict!
 ```
 
-## Widgets (82 total)
+## Widgets (86 total)
 
 > **Docs hub**: [docs/README.md](docs/README.md) · API: [WIDGET_API.md](docs/WIDGET_API.md) · Per-widget: [WIDGET_EXAMPLES.md](docs/WIDGET_EXAMPLES.md) · Index: [API_INDEX.md](docs/API_INDEX.md) (TreeView & CascadingCombo merged in WIDGET_API)
 
@@ -351,6 +351,8 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | Markdown | `SetMarkdown()`, supports # ** * - [links] |
 | | Image | `SetTexture(texID)`, scale modes |
 | | ProgressBar | `SetFraction()`, state colors |
+| | Gauge | radial/ring progress dial, `SetSweepDegrees()`, centre label |
+| | Sparkline | inline Line/Area/Bar trend, `PushValue()`, trend colour |
 | | StatusLamp | named states + glow (`SetGlowEnabled`) |
 | | RiskBar | thresholds, animated ratio bar |
 | | FuturesRiskBar | actual/estimated/overnight markers |
@@ -365,6 +367,7 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | TreeView | `SetRoot()`, `TextSpan`/`spans`, `SetRowRenderer()` ([API](docs/WIDGET_API.md#treeview)) |
 | Selection | Selectable | `SetLabel()`, `SetSelected()`, `SetOnClick()` (v3.3) |
 | | ListBox | `SetItems()`, `GetSelectedIndex()`, `SetOnChange()` (v3.3) |
+| | SegmentedControl | single-select button group (1D/1W/1M), `SetOnChange()` (v3.6) |
 | Layout | Splitter | `SetOrientation()`, drag to resize |
 | | ScrollArea | `SetContentCallback(fn)` |
 | | Separator | horizontal/vertical dividers |
@@ -385,6 +388,7 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | ToggleSwitch | `SetOn(bool)`, toggle with label |
 | Misc | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
 | | TimeSeriesChart | real-time implot chart, sliding window |
+| | PriceTicker | scrolling symbol/price marquee, ▲/▼ tint, `SetSpeed()` (v3.6) |
 | | SliderBar | futures/price tick bar with confirm/rollback |
 | | ShortcutManager | `Register()`, global shortcuts |
 | | Notification | `Show()`, pending count |
