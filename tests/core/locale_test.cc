@@ -2,6 +2,10 @@
 #include <unigui/unigui.h>
 
 #include <gtest/gtest.h>
+
+#include <filesystem>
+#include <fstream>
+#include <string>
 class LocaleTest : public ::testing::Test {
 protected:
     void TearDown() override {
@@ -97,4 +101,43 @@ TEST_F(LocaleTest, LoadBuiltin_JapaneseFallsBackForMissingKeys) {
     EXPECT_EQ(unigui::Locale::Tr("menu.file"), "\343\203\225\343\202\241\343\202\244\343\203\253");
     // ja_JP lacks btn.apply in the builtin catalog → falls back to en_US.
     EXPECT_EQ(unigui::Locale::Tr("btn.apply"), "Apply");
+}
+
+// ── LoadFromFile JSON parsing (regex-free scanner) ──────────────────────────
+
+namespace {
+std::filesystem::path WriteLocaleJson(const std::string& stem, const std::string& body) {
+    const std::filesystem::path p = std::filesystem::temp_directory_path() / (stem + ".json");
+    std::ofstream(p) << body;
+    return p;
+}
+} // namespace
+
+TEST_F(LocaleTest, LoadFromFile_ParsesKeyValuePairs) {
+    const auto p = WriteLocaleJson("fr_FR", R"({"btn.ok":"Valider","menu.file":"Fichier"})");
+    EXPECT_TRUE(unigui::Locale::LoadFromFile(p.string()));
+    unigui::Locale::SetCurrent("fr_FR");
+    EXPECT_EQ(unigui::Locale::Tr("btn.ok"), "Valider");
+    EXPECT_EQ(unigui::Locale::Tr("menu.file"), "Fichier");
+    std::filesystem::remove(p);
+}
+
+TEST_F(LocaleTest, LoadFromFile_HandlesWhitespaceAndEmptyValue) {
+    const auto p = WriteLocaleJson("de_DE", "{ \"a\" : \"x\" , \"b\": \"\" }");
+    EXPECT_TRUE(unigui::Locale::LoadFromFile(p.string()));
+    unigui::Locale::SetCurrent("de_DE");
+    EXPECT_EQ(unigui::Locale::Tr("a"), "x");
+    EXPECT_EQ(unigui::Locale::Tr("b"), ""); // empty value is stored
+    std::filesystem::remove(p);
+}
+
+// Long unterminated input is the shape that made MSVC's std::regex throw
+// error_complexity; the hand-written scanner must load without throwing.
+TEST_F(LocaleTest, LoadFromFile_LongPathologicalInput_DoesNotThrow) {
+    const auto p = WriteLocaleJson("xx_XX", "{\"k\":\"" + std::string(100000, 'a'));
+    EXPECT_NO_THROW({ (void) unigui::Locale::LoadFromFile(p.string()); });
+    std::filesystem::remove(p);
+    const auto p2 = WriteLocaleJson("yy_YY", std::string(100000, '"'));
+    EXPECT_NO_THROW({ (void) unigui::Locale::LoadFromFile(p2.string()); });
+    std::filesystem::remove(p2);
 }

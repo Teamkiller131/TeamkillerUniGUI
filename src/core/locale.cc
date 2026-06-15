@@ -3,7 +3,7 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
-#include <regex>
+#include <string_view>
 #include <vector>
 
 namespace unigui {
@@ -121,14 +121,52 @@ bool Locale::LoadFromFile(const std::string& path) {
     if (dot != std::string::npos)
         locale = base.substr(0, dot);
 
-    // Parse JSON {"key":"value","key2":"value2"}
-    std::regex re("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"");
-    std::smatch m;
-    auto start = json.cbegin();
-    auto end = json.cend();
-    while (std::regex_search(start, end, m, re)) {
-        Set(locale, m[1].str(), m[2].str());
-        start = m.suffix().first;
+    // Parse JSON {"key":"value","key2":"value2"}.
+    //
+    // Hand-written scanner rather than std::regex: MSVC's std::regex enforces a
+    // backtracking-complexity governor (libstdc++/libc++ do not), so a large or
+    // malformed locale file made the old pattern throw std::regex_error and the
+    // load crash on Windows. This linear scan never throws on bad input — it
+    // simply stops once no further "key":"value" pair is found.
+    std::string_view sv(json);
+    std::size_t p = 0;
+    while (true) {
+        // Opening quote of the key.
+        const std::size_t kq = sv.find('"', p);
+        if (kq == std::string_view::npos)
+            break;
+        const std::size_t ke = sv.find('"', kq + 1);
+        if (ke == std::string_view::npos)
+            break;
+        std::string_view k = sv.substr(kq + 1, ke - kq - 1);
+
+        // ':' separator (allow surrounding spaces/tabs).
+        std::size_t c = ke + 1;
+        while (c < sv.size() && (sv[c] == ' ' || sv[c] == '\t' || sv[c] == '\n' || sv[c] == '\r'))
+            ++c;
+        if (c >= sv.size() || sv[c] != ':') {
+            // Not a "key":… pair — resume scanning after the key's close quote.
+            p = ke + 1;
+            continue;
+        }
+        ++c;
+        while (c < sv.size() && (sv[c] == ' ' || sv[c] == '\t' || sv[c] == '\n' || sv[c] == '\r'))
+            ++c;
+        // Opening quote of the value.
+        if (c >= sv.size() || sv[c] != '"') {
+            p = ke + 1;
+            continue;
+        }
+        const std::size_t vq = c;
+        const std::size_t ve = sv.find('"', vq + 1);
+        if (ve == std::string_view::npos)
+            break;
+        std::string_view v = sv.substr(vq + 1, ve - vq - 1);
+
+        // A key must be non-empty to match the old ([^"]+) class.
+        if (!k.empty())
+            Set(locale, std::string(k), std::string(v));
+        p = ve + 1;
     }
     return true;
 }

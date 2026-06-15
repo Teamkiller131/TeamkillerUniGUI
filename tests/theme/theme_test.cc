@@ -149,3 +149,24 @@ TEST_F(ThemeTest, ImportThemeJSON_PartialArray_UsesDefaults) {
     std::string partial = R"({"Text": [0.5, 0.6]})";
     EXPECT_NO_THROW(unigui::ImportThemeJSON(partial));
 }
+
+// Export → Import round-trips real colour values (guards the regex-free parser).
+TEST_F(ThemeTest, ImportThemeJSON_RoundTripPreservesColors) {
+    auto& colors = ImGui::GetStyle().Colors;
+    colors[ImGuiCol_WindowBg] = ImVec4(0.12f, 0.34f, 0.56f, 0.78f);
+    const std::string json = unigui::ExportThemeJSON();
+    colors[ImGuiCol_WindowBg] = ImVec4(0.f, 0.f, 0.f, 0.f); // clobber
+    EXPECT_TRUE(unigui::ImportThemeJSON(json));
+    const ImVec4& c = colors[ImGuiCol_WindowBg];
+    EXPECT_NEAR(c.x, 0.12f, 1e-4f);
+    EXPECT_NEAR(c.y, 0.34f, 1e-4f);
+    EXPECT_NEAR(c.z, 0.56f, 1e-4f);
+    EXPECT_NEAR(c.w, 0.78f, 1e-4f);
+}
+
+// Long input with an unterminated array is the exact shape that made MSVC's
+// std::regex throw error_complexity; the hand-written scanner must not throw.
+TEST_F(ThemeTest, ImportThemeJSON_LongPathologicalInput_DoesNotThrow) {
+    EXPECT_NO_THROW(unigui::ImportThemeJSON("{\"WindowBg\":[" + std::string(100000, '9')));
+    EXPECT_NO_THROW(unigui::ImportThemeJSON("{\"WindowBg\":" + std::string(100000, 'x')));
+}

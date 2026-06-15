@@ -2,7 +2,6 @@
 
 #include <imgui.h>
 
-#include <regex>
 #include <sstream>
 
 namespace unigui {
