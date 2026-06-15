@@ -131,3 +131,28 @@ TEST_F(TableTest, ApplySort_UsesConfiguredUnitForRawNumbers) {
     EXPECT_EQ(tbl.CellText(0, 0), "702");
     EXPECT_EQ(tbl.CellText(1, 0), "8");
 }
+
+// Signed values must order numerically (from_chars accepts '-' and a leading
+// '+'), not lexically.
+TEST_F(TableTest, ApplySort_OrdersSignedNumbers) {
+    unigui::Table tbl("tbl", {"PnL"});
+    tbl.AddRow({"+3.5"});
+    tbl.AddRow({"-10"});
+    tbl.AddRow({"2"});
+    tbl.SortByColumn(0, true); // ascending: -10, 2, +3.5
+    EXPECT_EQ(tbl.CellText(0, 0), "-10");
+    EXPECT_EQ(tbl.CellText(1, 0), "2");
+    EXPECT_EQ(tbl.CellText(2, 0), "+3.5");
+}
+
+// Non-numeric cells mixed with numbers must not crash the sort (the parser is
+// non-throwing) and must still sort cleanly.
+TEST_F(TableTest, ApplySort_MixedNumericAndTextDoesNotCrash) {
+    unigui::Table tbl("tbl", {"Col"});
+    tbl.AddRow({"banana"});
+    tbl.AddRow({"42"});
+    tbl.AddRow({"apple"});
+    tbl.AddRow({"7"});
+    EXPECT_NO_THROW(tbl.SortByColumn(0, true));
+    EXPECT_NO_THROW(tbl.SortByColumn(0, false));
+}

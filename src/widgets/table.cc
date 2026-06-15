@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <sstream>
 #include <string_view>
 
@@ -38,16 +39,23 @@ bool ParseNumericCell(std::string_view text, std::string_view unit, double& out)
     std::string trimmed = Trim(text);
     if (trimmed.empty())
         return false;
-    try {
-        size_t pos = 0;
-        out = std::stod(trimmed, &pos);
-        std::string rest = Trim(std::string_view(trimmed).substr(pos));
-        if (!unit.empty()) {
-            return rest.empty() || rest == unit;
-        }
-        return std::none_of(rest.begin(), rest.end(),
-                            [](unsigned char ch) { return std::isdigit(ch); });
-    } catch (...) { return false; }
+    // std::from_chars is non-throwing — unlike std::stod it never allocates an
+    // exception per non-numeric cell, which matters because this runs once per
+    // row on every sort. (It also keeps the parser within the project's
+    // "no throwing parsers" rule.) from_chars accepts a leading '-' but not '+',
+    // so honour an explicit positive sign the way stod did.
+    const char* begin = trimmed.data();
+    const char* end = begin + trimmed.size();
+    const char* numStart = (begin < end && *begin == '+') ? begin + 1 : begin;
+    auto [ptr, ec] = std::from_chars(numStart, end, out);
+    if (ec != std::errc{})
+        return false; // not a number
+    std::string rest = Trim(std::string_view(trimmed).substr(ptr - begin));
+    if (!unit.empty()) {
+        return rest.empty() || rest == unit;
+    }
+    return std::none_of(rest.begin(), rest.end(),
+                        [](unsigned char ch) { return std::isdigit(ch); });
 }
 
 float AlignedOffset(float availableWidth, float contentWidth, Table::Alignment alignment) {
