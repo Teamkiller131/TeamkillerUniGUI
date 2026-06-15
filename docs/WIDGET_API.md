@@ -1,6 +1,6 @@
 # UniGUI Widget API Reference
 
-> **Version**: 3.6.0 (C++23) · **Widgets**: 86 · **Backend**: Dear ImGui (docking + multi-viewport)
+> **Version**: 3.7.0 (C++23) · **Widgets**: 93 · **Backend**: Dear ImGui (docking + multi-viewport)
 >
 > **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Cookbook**: [EXAMPLES.md](EXAMPLES.md) · **Per-widget examples**: [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)
 >
@@ -576,6 +576,32 @@ void SetSegmentPadding(float); void SetFillWidth(bool);
 // Fluent: WithSegments/WithSelected/WithOnChange/WithSegmentPadding/WithFillWidth
 ```
 
+### ToggleButton
+
+Bistate action button (Start ⇄ Stop) — flips label + semantic colour by state,
+with an enabled-predicate + disabled tooltip and an on-toggle callback. Distinct
+from the boolean `ToggleSwitch`.
+
+```cpp
+ToggleButton(std::string name, std::string offLabel = "Start", std::string onLabel = "Stop");
+bool IsOn() const; void SetOn(bool); bool WasToggled() const;
+// Fluent: WithLabels(off,on)/WithColors(theme::Semantic off,on)/WithOnToggle(cb)/
+//         WithEnabledPredicate(p)/WithDisabledTooltip(t)/WithButtonSize(w,h)
+```
+
+### ButtonGroup
+
+Horizontal button cluster with Left / Right / Fill alignment — owns the
+"measure + right-align N buttons" math; composes inside `MetricCard` headers.
+
+```cpp
+ButtonGroup(std::string name);
+enum class Align { Left, Right, Fill };
+ButtonGroup& AddButton(std::string label, std::function<void()> onClick);
+ButtonGroup& AddTintedButton(std::string label, std::function<void()> onClick, theme::Semantic);
+ButtonGroup& WithAlign(Align); ButtonGroup& WithButtonWidth(float); ButtonGroup& WithSpacing(float);
+```
+
 ---
 
 ## 6. Text Input
@@ -932,6 +958,56 @@ void SetCellEditable(int col, bool); void SetOnCellCommit(CellCommitFn);
 void SetCellCheckbox(int col, CellCheckboxFn);        // inline checkbox column
 void SetFilterText(const std::string&); const std::string& GetFilterText() const; void SetFilterFn(FilterFn);
 void SetVirtualScroll(bool); void SetStickyHeader(bool); void ScrollToRow(int row);
+void SetFrozenColumns(int); int GetFrozenColumns() const;     // pinned leading cols
+void SetEmptyText(std::string);                                // empty-state row
+void SetCellCheckboxValue(int col, get, set);                  // non-UB checkbox (get/set)
+void SetCellRenderer(int col, std::function<void(int row, const T&)>); // arbitrary cell (im:: editors)
+```
+
+### EditableDataGrid\<T>
+
+A `DataTable<T>` with typed per-column **cell editors** rendered through the
+stateless `unigui::im` layer — so per-row editors need **no `static std::map`
+widget cache**. A `SetRowReadOnly` predicate freezes a row's editors to text.
+
+```cpp
+EditableDataGrid(std::string name, std::vector<DataTable<T>::ColumnDef> columns);
+EditableDataGrid& SetComboColumn(int col, itemsFn, getSel, onChange);
+EditableDataGrid& SetIntColumn(int col, getVal, onChange, int step = 1);
+EditableDataGrid& SetFloatColumn(int col, getVal, onChange, const char* fmt = "%.2f");
+EditableDataGrid& SetButtonColumn(int col, labelFn, onClick);
+EditableDataGrid& SetRowReadOnly(std::function<bool(int,const T&)>);   // frozen-when-running
+```
+
+### BasketTicket\<T>
+
+Editable basket / program-trading grid: a toolbar (Add / Remove / Import /
+Submit) over an owned `EditableDataGrid<T>`, with validator-driven invalid-row
+highlighting and **deferred** removal. Host owns CSV/XLSX parsing.
+
+```cpp
+BasketTicket(std::string name, std::vector<DataTable<T>::ColumnDef> columns);
+EditableDataGrid<T>& Grid();
+void SetRows(std::vector<T>); const std::vector<T>& Rows() const; void AddRow(T); void RemoveRow(int);
+std::size_t RowCount() const; std::size_t ValidCount() const; bool AllValid() const;
+BasketTicket& SetRowFactory(std::function<T()>); BasketTicket& SetValidator(std::function<bool(const T&)>);
+BasketTicket& SetOnImportRequested(std::function<void()>);            // host owns the dialog
+BasketTicket& SetOnSubmit(std::function<void(const std::vector<T>&)>);
+```
+
+### GroupedRiskTree
+
+Hierarchical account/group risk view on `TreeView`: each node shows a
+threshold-coloured utilisation bar, and parent rows roll children up via
+Worst / Mean / Sum.
+
+```cpp
+GroupedRiskTree(std::string name);
+enum class Rollup { Worst, Mean, Sum };
+struct RiskNode { std::string label; double ratio = 0.0; std::vector<RiskNode> children; };
+void SetData(RiskNode root); void SetRollup(Rollup); void SetThresholds(double warn, double danger);
+void SetHideRoot(bool);
+static double ComputeRatio(const RiskNode&, Rollup);   // pure, unit-tested
 ```
 
 ### TreeView
@@ -1294,6 +1370,32 @@ void SetHeight(float); void SetWidth(float);            // width 0 = full availa
 void SetUpColor(ImU32); void SetDownColor(ImU32);
 float GetScrollOffset() const;
 // Fluent: WithItems/WithSpeed/WithPaused/WithHeight/WithWidth
+```
+
+### MetricCard
+
+Bordered KPI/status tile — optional accent rail, a header (status dot + accent
+title + right-aligned action slot), and a value/delta/subtext body or a custom
+draw callback. The delta is sign-coloured via the active `Up`/`Down` polarity.
+
+```cpp
+MetricCard(std::string name);
+// Fluent: WithTitle/WithStatusDot(theme::Semantic)/WithHeaderActions(fn)/
+//         WithValue/WithDelta(value, display)/WithSubtext/WithBody(fn)/
+//         WithSize(w,h)/WithAccentRail(bool)
+```
+
+### ConnectionStatusBar
+
+Link-health strip composing `StatusLamp` + `Sparkline` with an adaptive,
+threshold-graded latency readout (`format::Latency`), FPS, and a reconnect
+countdown. RTT averaging / reconnect FSM stay in the caller.
+
+```cpp
+ConnectionStatusBar(std::string name);
+void PushLatencySample(double us);   // feeds the embedded sparkline
+// Fluent: WithConnected(bool)/WithCaption/WithLatencyUs(cur, avg)/
+//         WithLatencyThresholds(warnUs, critUs)/WithFps(f)/WithReconnectIn(s)/WithSparkline(bool)
 ```
 
 ---

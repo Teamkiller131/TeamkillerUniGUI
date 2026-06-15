@@ -1,15 +1,15 @@
 # API Index
 
-Master lookup for the **entire public surface** of TeamkillerUniGUI 3.6.0.
+Master lookup for the **entire public surface** of TeamkillerUniGUI 3.7.0.
 
 | Category | Count | Primary doc |
 |----------|------:|-------------|
-| Retained widgets & helpers | **86** | [WIDGET_API.md](WIDGET_API.md), [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) |
+| Retained widgets & helpers | **93** | [WIDGET_API.md](WIDGET_API.md), [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) |
 | `unigui::im` functions | **201** | [WIDGET_API §2](WIDGET_API.md#immediate-mode-uniguiim-vs-retained-mode) |
 | `unigui::dsl` builders | **18** | [WIDGET_API — DSL](WIDGET_API.md#declarative-dsl-uniguidsl) |
 | App / theme / core | **15+** | Below + [GETTING_STARTED.md](GETTING_STARTED.md) |
 
-> README badge **「86 widgets」** counts retained components under `include/unigui/widgets/` (81 headers + layout RAII). It does **not** include `im::`, DSL, theme, or optional modules — those add **40+** additional APIs.
+> README badge **「93 widgets」** counts retained components under `include/unigui/widgets/` (81 headers + layout RAII). It does **not** include `im::`, DSL, theme, or optional modules — those add **40+** additional APIs.
 
 ---
 
@@ -168,8 +168,10 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | AlertBar | `alertbar.h` | Banner message | [§11](WIDGET_API.md#alertbar) | [§1](WIDGET_EXAMPLES.md#1-alertbar) |
 | Animate | `animate.h` | Fade/slide helpers | [§15](WIDGET_API.md#animate-uniguianimate) | [§2](WIDGET_EXAMPLES.md#2-animate) |
 | Badge | `badge.h` | Count/dot badge | [§4](WIDGET_API.md#badge--tag) | [§3](WIDGET_EXAMPLES.md#3-badge) |
+| BasketTicket<T> | `basketticket.h` | Basket/program editor | [§9](WIDGET_API.md#basketticket-t) | [§88](WIDGET_EXAMPLES.md#88-basketticket) |
 | Breadcrumb | `breadcrumb.h` | Path navigation | [§10](WIDGET_API.md#breadcrumb) | [§4](WIDGET_EXAMPLES.md#4-breadcrumb) |
 | Button | `button.h` | Primary actions | [§5](WIDGET_API.md#button) | [§5](WIDGET_EXAMPLES.md#5-button) |
+| ButtonGroup | `buttongroup.h` | Aligned button cluster | [§5](WIDGET_API.md#buttongroup) | [§93](WIDGET_EXAMPLES.md#93-buttongroup) |
 | Card | `card.h` | Elevated surface | [§3](WIDGET_API.md#card) | [§6](WIDGET_EXAMPLES.md#6-card) |
 | CascadingCombo | `cascadingcombo.h` | Multi-level combo | [§9](WIDGET_API.md#cascadingcombo) | [§7](WIDGET_EXAMPLES.md#7-cascadingcombo) |
 | CheckBox | `checkbox.h` | Boolean toggle | [§5](WIDGET_API.md#checkbox) | [§8](WIDGET_EXAMPLES.md#8-checkbox) |
@@ -179,6 +181,7 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | ColorPicker | `colorpicker.h` | Color dialog | [§8](WIDGET_API.md#coloredit--colorpicker) | [§12](WIDGET_EXAMPLES.md#12-colorpicker) |
 | ComboBox | `combobox.h` | Dropdown list | [§8](WIDGET_API.md#combobox) | [§13](WIDGET_EXAMPLES.md#13-combobox) |
 | ConfirmDialog | `confirmdialog.h` | Yes/no modal | [§11](WIDGET_API.md#confirmdialog) | [§14](WIDGET_EXAMPLES.md#14-confirmdialog) |
+| ConnectionStatusBar | `connection_status.h` | Link-health strip | [§13](WIDGET_API.md#connectionstatusbar) | [§91](WIDGET_EXAMPLES.md#91-connectionstatusbar) |
 | ContextMenu | `contextmenu.h` | Right-click menu | [§11](WIDGET_API.md#tooltip--contextmenu) | [§15](WIDGET_EXAMPLES.md#15-contextmenu) |
 | DataTable\<T\> | `datatable.h` | Virtual table | [§9](WIDGET_API.md#datatablet) | [§16](WIDGET_EXAMPLES.md#16-datatable) |
 | DatePicker | `datepicker.h` | Date selection | [§8](WIDGET_API.md#datepicker) | [§17](WIDGET_EXAMPLES.md#17-datepicker) |
@@ -186,11 +189,13 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | DirPath | `dirpath.h` | Folder picker | [§8](WIDGET_API.md#filepath--dirpath) | [§19](WIDGET_EXAMPLES.md#19-dirpath) |
 | DragDrop | `dragdrop.h` | Drag source/target | [§15](WIDGET_API.md#dragdrop-uniguidragdrop) | [§20](WIDGET_EXAMPLES.md#20-dragdrop) |
 | DragFloat / DragInt | `dragfloat.h`, `dragint.h` | Drag numeric | [§7](WIDGET_API.md#dragfloatt--dragintt) | [§21–22](WIDGET_EXAMPLES.md#21-dragfloat) |
+| EditableDataGrid<T> | `editabledatagrid.h` | Typed cell editors | [§9](WIDGET_API.md#editabledatagridt) | [§87](WIDGET_EXAMPLES.md#87-editabledatagrid) |
 | FilePath | `filepath.h` | File picker | [§8](WIDGET_API.md#filepath--dirpath) | [§23](WIDGET_EXAMPLES.md#23-filepath) |
 | Form | `form.h` | Validated form | [§12](WIDGET_API.md#form) | [§24](WIDGET_EXAMPLES.md#24-form) |
 | FuturesRiskBar | `futuresriskbar.h` | Futures margin bar | [§13](WIDGET_API.md#futuresriskbar) | [§25](WIDGET_EXAMPLES.md#25-futuresriskbar) |
 | Gauge | `gauge.h` | Radial progress dial | [§4](WIDGET_API.md#gauge) | [§83](WIDGET_EXAMPLES.md#83-gauge) |
 | GroupBox | `groupbox.h` | Titled group | [§3](WIDGET_API.md#groupbox) | [§26](WIDGET_EXAMPLES.md#26-groupbox) |
+| GroupedRiskTree | `groupedrisktree.h` | Risk rollup tree | [§9](WIDGET_API.md#groupedrisktree) | [§89](WIDGET_EXAMPLES.md#89-groupedrisktree) |
 | HeroSection | `herosection.h` | Banner hero | [§13](WIDGET_API.md#herosection) | [§27](WIDGET_EXAMPLES.md#27-herosection) |
 | Hyperlink | `hyperlink.h` | Clickable link | [§5](WIDGET_API.md#hyperlink) | [§28](WIDGET_EXAMPLES.md#28-hyperlink) |
 | IconButton | `iconbutton.h` | Icon-only button | [§5](WIDGET_API.md#iconbutton) | [§29](WIDGET_EXAMPLES.md#29-iconbutton) |
@@ -206,6 +211,7 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | LoadingIndicator | `loadingindicator.h` | Spinner | [§14](WIDGET_API.md#loadingindicator) | [§40](WIDGET_EXAMPLES.md#40-loadingindicator) |
 | Markdown | `markdown.h` | Markdown render | [§4](WIDGET_API.md#markdown) | [§41](WIDGET_EXAMPLES.md#41-markdown) |
 | MenuBar | `menubar.h` | Top menu | [§10](WIDGET_API.md#menubar) | [§42](WIDGET_EXAMPLES.md#42-menubar) |
+| MetricCard | `metriccard.h` | KPI/pod tile | [§13](WIDGET_API.md#metriccard) | [§90](WIDGET_EXAMPLES.md#90-metriccard) |
 | MultiCombo | `multicombo.h` | Multi-select combo | [§8](WIDGET_API.md#multicombo) | [§43](WIDGET_EXAMPLES.md#43-multicombo) |
 | MultiHandleSlider | `multihandleslider.h` | Multi-thumb slider | [§7](WIDGET_API.md#multihandleslider) | [§44](WIDGET_EXAMPLES.md#44-multihandleslider) |
 | MultiLine | `multiline.h` | Multi-line text | [§6](WIDGET_API.md#multiline) | [§45](WIDGET_EXAMPLES.md#45-multiline) |
@@ -241,6 +247,7 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | Tag | `tag.h` | Removable tag | [§4](WIDGET_API.md#badge--tag) | [§72](WIDGET_EXAMPLES.md#72-tag) |
 | TimeSeriesChart | `timeseries_chart.h` | implot chart | [§13](WIDGET_API.md#timeserieschart) | [§73](WIDGET_EXAMPLES.md#73-timeserieschart) |
 | Toast | `toast.h` | Popup toast | [§11](WIDGET_API.md#toast) | [§74](WIDGET_EXAMPLES.md#74-toast) |
+| ToggleButton | `togglebutton.h` | Bistate run/stop | [§5](WIDGET_API.md#togglebutton) | [§92](WIDGET_EXAMPLES.md#92-togglebutton) |
 | ToggleSwitch | `toggleswitch.h` | iOS-style switch | [§5](WIDGET_API.md#toggleswitch) | [§75](WIDGET_EXAMPLES.md#75-toggleswitch) |
 | ToolBar | `toolbar.h` | Toolbar buttons | [§5](WIDGET_API.md#toolbar) | [§76](WIDGET_EXAMPLES.md#76-toolbar) |
 | Tooltip | `tooltip.h` | Hover tip | [§11](WIDGET_API.md#tooltip--contextmenu) | [§77](WIDGET_EXAMPLES.md#77-tooltip) |

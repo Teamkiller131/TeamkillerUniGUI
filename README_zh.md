@@ -4,9 +4,9 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.6.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-933-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-86-blue)]()
+[![Version](https://img.shields.io/badge/version-3.7.0-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-996-brightgreen)]()
+[![Widgets](https://img.shields.io/badge/widgets-93-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20production%29-orange)]()
 
 C++23 Dear ImGui 封装库——提供统一的明暗主题引擎、高层组件、声明式 DSL、CSS 样式引擎、插件系统与 EventBus。支持 7 种渲染后端：GLFW+OpenGL3、SDL3+Vulkan、DX11、DX12、Metal、WebGPU 和 Emscripten。
@@ -58,7 +58,7 @@ ctest --test-dir build
     ↓
 unigui:: API
     ├── 主题引擎 (明暗主题 + 13 套预设，统一样式/颜色令牌，毛玻璃材质，立体阴影，StyleScope RAII)
-    ├── 组件库 (86 个组件，100% PushID 安全，表单校验/撤销重做/序列化)
+    ├── 组件库 (93 个组件，100% PushID 安全，表单校验/撤销重做/序列化)
     ├── 声明式 DSL (unigui::dsl — Window, VBox/HBox, Button, CheckBox, SliderFloat, InputText, If/For)
     ├── 事件总线 (unigui::events::Bus — 发布/订阅，支持通配符)
     ├── CSS 样式引擎 (unigui::styling::Engine — 选择器引擎 + 变量)
@@ -179,7 +179,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 
 可选 vcpkg feature：`sqlite`、`config`、`ipc`、`network`
 
-## 组件列表（86 个）
+## 组件列表（93 个）
 
 > 详尽的组件 API 与示例请参阅 **[docs/WIDGET_API.md](docs/WIDGET_API.md)**；
 > 专题指南：**[TreeView 树形控件](docs/TREEVIEW.md)**、**[CascadingCombo 级联下拉](docs/CASCADINGCOMBO.md)**。
@@ -224,12 +224,18 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | ProgressBar | `SetFraction()`，状态颜色 + 动画填充 |
 | | Gauge | 环形/径向进度表盘，`SetSweepDegrees()`，中心标签 (v3.6) |
 | | Sparkline | 内联折线/面积/柱状趋势图，`PushValue()`，趋势着色 (v3.6) |
+| | MetricCard | KPI/持仓卡片：强调条 + 状态点 + 数值/涨跌/正文 (v3.7) |
+| | ToggleButton | 启停双态按钮，可用谓词 + 禁用提示 (v3.7) |
+| | ButtonGroup | 左/右/填充对齐的按钮组 (v3.7) |
 | | StatusLamp | 多状态指示灯 + 辉光（`SetGlowEnabled`） |
 | | RiskBar | 阈值着色的动画风险条 |
 | | FuturesRiskBar | 实际/预估/隔夜多标记风险条 |
 | | LoadingIndicator | `SetActive(bool)`，旋转动画 |
 | | GradientText | `Render(text, leftColor, rightColor)` (v3.0) |
 | 列表 | VirtualList | `SetItemCount(n)`, `SetItemGetter(fn)` — 10 万+ |
+| | EditableDataGrid<T> | 列级单元格编辑器（无逐行缓存），运行时冻结 (v3.7) |
+| | BasketTicket<T> | 可编辑篮子网格：增/删/导入/校验/提交 (v3.7) |
+| | GroupedRiskTree | 风险树，最差/均值/求和上卷 + 阈值着色 (v3.7) |
 | | DataTable\<T\> | 虚拟滚动、排序、分组行、行着色、内联编辑、复选框列、过滤 |
 | | MultiSplitter | N面板可拖拽横/纵向布局 |
 | | ListView | `SetItems()`, `SetOnSelect()` |
@@ -254,6 +260,8 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 | | RadioGroup | `SetSelected()`，单选项组 |
 | | ToggleSwitch | `SetOn(bool)`，带动画过渡 |
 | 其他 | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
+| | ConnectionStatusBar | 连接状态条：指示灯 + 延迟 + 走势 + 重连 (v3.7) |
+| | PnlText / TagList | 极性感知盈亏文本 + 内联标签 (v3.7) |
 | | TimeSeriesChart | 实时时序图、滑动窗口 |
 | | PriceTicker | 滚动行情跑马灯，▲/▼ 涨跌着色，`SetSpeed()` (v3.6) |
 | | SegmentedControl | 单选分段按钮组（1日/1周/1月），`SetOnChange()` (v3.6) |
@@ -268,7 +276,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 
 ## ID 安全
 
-所有 86 个组件均通过 `PushID`/`PopID` 自动管理 ImGui ID 栈，无需手动处理 ID 冲突。
+所有 93 个组件均通过 `PushID`/`PopID` 自动管理 ImGui ID 栈，无需手动处理 ID 冲突。
 
 ```cpp
 auto btn1 = std::make_shared<unigui::Button>("ok", "确定");

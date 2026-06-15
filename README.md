@@ -4,9 +4,9 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.6.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-933-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-86-blue)]()
+[![Version](https://img.shields.io/badge/version-3.7.0-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-996-brightgreen)]()
+[![Widgets](https://img.shields.io/badge/widgets-93-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
 A C++23 Dear ImGui wrapper providing a unified dark+light theme engine, high-level widget components, declarative DSL, CSS styling, plugin system, and EventBus. Supports 7 backends: GLFW+OpenGL3, SDL3+Vulkan, DX11, DX12, Metal, WebGPU, and Emscripten.
@@ -62,7 +62,7 @@ ctest --test-dir build
 | **[docs/README.md](docs/README.md)** | **Documentation hub** (index) |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Build & first app |
 | [docs/EXAMPLES.md](docs/EXAMPLES.md) | Cookbook (composition, theme, DSL, threading) |
-| [docs/WIDGET_EXAMPLES.md](docs/WIDGET_EXAMPLES.md) | One minimal example per widget (86 entries) |
+| [docs/WIDGET_EXAMPLES.md](docs/WIDGET_EXAMPLES.md) | One minimal example per widget (93 entries) |
 | [docs/WIDGET_API.md](docs/WIDGET_API.md) | Full API (widgets + inline TreeView / CascadingCombo) |
 | [docs/API_INDEX.md](docs/API_INDEX.md) | Master index (widgets + `im` + DSL + core) |
 | [docs/API_STABILITY.md](docs/API_STABILITY.md) | API contract: semver, stability tiers, deprecation policy |
@@ -77,7 +77,7 @@ User Code
     ↓
 unigui:: API
     ├── Theme Engine (dark + light + 13 presets, unified style/color tokens, glass surfaces, elevation, StyleScope RAII)
-    ├── Widget Library (86 widgets (100% PushID-safe), form validation, undo/redo, serialization)
+    ├── Widget Library (93 widgets (100% PushID-safe), form validation, undo/redo, serialization)
     ├── Declarative DSL (unigui::dsl — Window, VBox/HBox, Button, CheckBox, SliderFloat, InputText, If/For)
     ├── EventBus (unigui::events::Bus — publish/subscribe with wildcards)
     ├── CSS Styling (unigui::styling::Engine — selector engine + variables)
@@ -304,7 +304,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 
 ## ID Safety
 
-All 86 widgets automatically scope their ImGui IDs via `PushID(name)/PopID()`.
+All 93 widgets automatically scope their ImGui IDs via `PushID(name)/PopID()`.
 No manual ID management needed — just give each widget instance a unique name:
 ```cpp
 auto btn1 = std::make_shared<unigui::Button>("ok", "OK");
@@ -353,6 +353,10 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | ProgressBar | `SetFraction()`, state colors |
 | | Gauge | radial/ring progress dial, `SetSweepDegrees()`, centre label |
 | | Sparkline | inline Line/Area/Bar trend, `PushValue()`, trend colour |
+| | MetricCard | KPI/pod tile: accent rail + status dot + value/delta/body (v3.7) |
+| | ToggleButton | bistate run/stop button, enabled-predicate + tooltip (v3.7) |
+| | ButtonGroup | aligned (Left/Right/Fill) button cluster (v3.7) |
+| | PnlText / TagList | polarity-aware P&L text + inline flag chips (v3.7) |
 | | StatusLamp | named states + glow (`SetGlowEnabled`) |
 | | RiskBar | thresholds, animated ratio bar |
 | | FuturesRiskBar | actual/estimated/overnight markers |
@@ -361,6 +365,9 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | LoadingIndicator | `SetActive(bool)`, spinner animation |
 | Lists | VirtualList | `SetItemCount(n)`, `SetItemGetter(fn)` — 100k+ |
 | | DataTable\<T\> | virtual scroll, sort, row color, group rows, inline edit, checkbox columns, filter |
+| | EditableDataGrid\<T\> | typed per-column cell editors (no per-row cache), frozen-when-running (v3.7) |
+| | BasketTicket\<T\> | editable basket grid: add/remove/import/validate/submit (v3.7) |
+| | GroupedRiskTree | risk tree with Worst/Mean/Sum rollup + threshold colour (v3.7) |
 | | MultiSplitter | N-panel H/V resizable layout (v3.2) |
 | | ListView | `SetItems()`, `SetOnSelect()` |
 | | Table | `AddRow()`, sortable, cell embedding, `ExportCSV()`/`ImportCSV()` |
@@ -386,7 +393,8 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | CheckBox | `SetChecked()`, `OnChange()` |
 | | RadioGroup | `SetSelected()`, option groups |
 | | ToggleSwitch | `SetOn(bool)`, toggle with label |
-| Misc | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
+| Misc | ConnectionStatusBar | link-health strip: lamp + latency + sparkline + reconnect (v3.7) |
+| | DragDrop | `BeginDragSource<T>()`, `AcceptDragDrop<T>()` |
 | | TimeSeriesChart | real-time implot chart, sliding window |
 | | PriceTicker | scrolling symbol/price marquee, ▲/▼ tint, `SetSpeed()` (v3.6) |
 | | SliderBar | futures/price tick bar with confirm/rollback |

@@ -8,7 +8,7 @@ that aren't obvious from any single file.
 
 **TeamkillerUniGUI** is a C++23 [Dear ImGui](https://github.com/ocornut/imgui)
 wrapper (v3.5.0). It layers a unified dark+light theme engine, a high-level
-retained-mode widget library (86 widgets), an immediate-mode helper layer
+retained-mode widget library (93 widgets), an immediate-mode helper layer
 (`unigui::im`), a declarative DSL, CSS-like styling, an EventBus, a plugin
 system, and optional sub-modules (SQLite, config, IPC, networking) on top of
 ImGui. It targets Windows, Linux, macOS, and Web via a pluggable backend
@@ -141,7 +141,7 @@ Examples accept `--frames N` to render N frames and exit — use this in CI/smok
 | `README.md` / `README_zh.md` | Overview, quick start, full widget table |
 | `docs/README.md` | Documentation hub / index |
 | `docs/GETTING_STARTED.md` | Build + first app |
-| `docs/WIDGET_API.md` | Full widget API reference (all 86) |
+| `docs/WIDGET_API.md` | Full widget API reference (all 93) |
 | `docs/WIDGET_EXAMPLES.md` | One minimal example per widget |
 | `docs/API_INDEX.md` | Master index (widgets + `im` + DSL + core) |
 | `docs/MODULES.md` | Sub-module overview |

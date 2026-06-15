@@ -1,3 +1,64 @@
+# TeamkillerUniGUI v3.7.0 Release Notes
+
+**Release Date:** 2026-06-15 | **Version:** 3.7.0 | **Widgets:** 93 | **Tests:** 996
+
+---
+
+## Highlights
+
+### Trading-client fit — widgets to retire hand-rolled ImGui
+
+This release implements the UniGUI side of the **`jzdz_client_suite` fit plan** (`docs/jzdz-fit-plan.md`): a batch of widgets and helpers built to replace the patterns a real multi-strategy trading client kept hand-rolling. All are `FluentWidget`/`PushID`-safe where applicable and headless-tested.
+
+**New widgets / helpers**
+
+- **`EditableDataGrid<T>`** + `DataTable::SetCellRenderer` — typed per-column cell editors (`SetComboColumn`/`SetIntColumn`/`SetFloatColumn`/`SetButtonColumn`) with a `SetRowReadOnly` "frozen-when-running" predicate, rendered through the **stateless `unigui::im` layer** so there is **no per-row widget cache**. Retires the `static std::map<int,Widget>` grids.
+- **`BasketTicket<T>`** — editable basket / program-trading grid (toolbar + validator highlight + deferred row removal + submit-when-valid); host owns CSV/XLSX parsing via an import callback.
+- **`GroupedRiskTree`** — hierarchical risk view on `TreeView` with `Worst`/`Mean`/`Sum` parent rollup and warn/danger threshold colouring (pure, unit-tested rollup).
+- **`MetricCard`** — KPI/pod tile (accent rail + status dot + value/delta/subtext or custom body).
+- **`ConnectionStatusBar`** + `format::Latency` — link-health strip composing `StatusLamp` + `Sparkline` with adaptive µs/ms latency, FPS, and a reconnect countdown.
+- **`SessionAxis`** — pure, header-only gap-collapsing intraday time axis (lunch/pre-post gaps removed) + `HH:MM` formatter; `AShareFutures()` ships the CN day session.
+- **`ToggleButton`** (run/stop), **`ButtonGroup`** (aligned cluster), **`WidgetPool<T>`** (keyed retained-widget cache).
+- **`PnlText`/`StatusText`/`GradedText`** + theme **`Up`/`Down`** semantic tokens and **`Polarity`** (CN red-up default) — centralised, market-correct P&L colouring.
+- **`TagList`** — inline wrapping chip container for limit-up/down / status flags.
+
+**Enhancements**
+
+`DataTable` `SetEmptyText` + non-UB `SetCellCheckboxValue`; `ComboBox` placeholder + allow-empty (`-1`); `StatusLamp::SetCaption`; `ConfirmDialog::Open(onConfirm)`; `MultiSplitter::Configure` (idempotent) + per-panel min-px; `TimeSeriesChart::AppendSample`; `WeakInvokeOnMainThread` + `LifetimeToken`; trading blotters honour `theme::Polarity`.
+
+**Fix:** a stale version smoke test (was pinned to minor 5).
+
+---
+
+## Upgrade Guide
+
+### From v3.6.x
+
+1. **Pull latest**, then **rebuild cleanly** — several widgets gained struct members, so a stale *incremental* build can misbehave. Delete the build dir and reconfigure (`cmake-msvc.cmd --preset windows-msvc-debug`).
+2. **No breaking changes** — existing code compiles unchanged; the new widgets are available via `<unigui/unigui.h>`.
+3. **For Chinese-market UIs**, set the colour convention once at startup:
+   ```cpp
+   unigui::theme::SetPolarity(unigui::theme::Polarity::RedUp); // a rise is red
+   ```
+
+### New APIs at a glance
+
+```cpp
+// EditableDataGrid — typed cell editors, no per-row cache
+unigui::EditableDataGrid<Pod> grid("pods", columns);
+grid.SetComboColumn(1, itemsFn, getSel, onChange)
+    .SetRowReadOnly([](int, const Pod& p){ return p.running; });
+
+// MetricCard + ConnectionStatusBar
+unigui::MetricCard("acct").WithTitle("账户A").WithValue("1,234,567").WithDelta(1.2, "+1.20%");
+unigui::ConnectionStatusBar("link").WithConnected(true).WithLatencyUs(850, 1200).WithFps(60);
+
+// PnlText (polarity-aware)
+unigui::PnlText(pnl, unigui::format::SignedDelta(pnl));
+```
+
+---
+
 # TeamkillerUniGUI v3.6.0 Release Notes
 
 **Release Date:** 2026-06-15 | **Version:** 3.6.0 | **Widgets:** 86 | **Tests:** 933

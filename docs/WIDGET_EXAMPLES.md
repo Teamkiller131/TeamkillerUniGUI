@@ -1,6 +1,6 @@
 # Widget Examples Catalog
 
-> **86** catalog entries (85 widget headers + layout RAII). Construct once, `Render()` each frame.
+> **93** catalog entries (92 widget headers + layout RAII). Construct once, `Render()` each frame.
 
 - **Cookbook** (composition, DSL, themes): [EXAMPLES.md](EXAMPLES.md)
 - **API signatures**: [WIDGET_API.md](WIDGET_API.md)
@@ -1109,6 +1109,112 @@ static unigui::Sparkline spark("px");
 spark.WithSize(80.f, 20.f).WithColorByTrend().WithShowLastDot()
      .WithData({11.2f, 11.5f, 11.1f, 11.8f, 12.0f, 11.7f});
 spark.Render();        // green if last >= first, else red
+```
+
+---
+
+<!-- New in v3.7.0 — appended to keep existing entry numbers stable. -->
+
+## 87. EditableDataGrid
+
+**Header:** `#include <unigui/widgets/editabledatagrid.h>` · **API:** [WIDGET_API.md#editabledatagridt](WIDGET_API.md#editabledatagridt)
+
+```cpp
+#include <unigui/widgets/editabledatagrid.h>
+struct Pod { std::string sym; int mode; int lots; bool running; };
+static std::vector<Pod> rows{{"IF2506", 0, 2, false}};
+static unigui::EditableDataGrid<Pod> grid("pods", {{"Sym", 90}, {"Mode", 90}, {"Lots", 70}});
+grid.SetDataSource(&rows);
+grid.SetComboColumn(1, [](int,const Pod&){ return std::vector<std::string>{"Open","Close"}; },
+                    [](int,const Pod& p){ return p.mode; }, [&](int r,int v){ rows[r].mode = v; })
+    .SetRowReadOnly([](int,const Pod& p){ return p.running; });  // frozen while running
+grid.Render();
+```
+
+---
+
+## 88. BasketTicket
+
+**Header:** `#include <unigui/widgets/basketticket.h>` · **API:** [WIDGET_API.md#basketticktett](WIDGET_API.md#basketticket-t)
+
+```cpp
+#include <unigui/widgets/basketticket.h>
+struct Leg { std::string sym; int lots; };
+static unigui::BasketTicket<Leg> ticket("basket", {{"Symbol", 100}, {"Lots", 70}});
+ticket.SetRowFactory([]{ return Leg{"", 1}; })
+      .SetValidator([](const Leg& l){ return !l.sym.empty() && l.lots > 0; })
+      .SetOnImportRequested([]{ /* host opens file dialog → ticket.SetRows(parsed) */ });
+ticket.Render();
+```
+
+---
+
+## 89. GroupedRiskTree
+
+**Header:** `#include <unigui/widgets/groupedrisktree.h>` · **API:** [WIDGET_API.md#groupedrisktree](WIDGET_API.md#groupedrisktree)
+
+```cpp
+#include <unigui/widgets/groupedrisktree.h>
+static unigui::GroupedRiskTree risk("risk");
+risk.SetThresholds(0.7, 0.85);
+risk.SetData({"Accounts", 0.0, {{"GroupA", 0.0, {{"Acct1", 0.65, {}}, {"Acct2", 0.92, {}}}}}});
+risk.Render();   // parent rows roll children up via Worst (default)
+```
+
+---
+
+## 90. MetricCard
+
+**Header:** `#include <unigui/widgets/metriccard.h>` · **API:** [WIDGET_API.md#metriccard](WIDGET_API.md#metriccard)
+
+```cpp
+#include <unigui/widgets/metriccard.h>
+static unigui::MetricCard card("acct");
+card.WithTitle("账户A").WithStatusDot(unigui::theme::Semantic::Success)
+    .WithValue("1,234,567").WithDelta(1.2, "+1.20%").WithSubtext("可用 50万");
+card.Render();
+```
+
+---
+
+## 91. ConnectionStatusBar
+
+**Header:** `#include <unigui/widgets/connection_status.h>` · **API:** [WIDGET_API.md#connectionstatusbar](WIDGET_API.md#connectionstatusbar)
+
+```cpp
+#include <unigui/widgets/connection_status.h>
+static unigui::ConnectionStatusBar bar("link");
+bar.PushLatencySample(rttUs);   // each frame
+bar.WithConnected(true).WithCaption("Relay 192.168.1.240")
+   .WithLatencyUs(rttUs, avgUs).WithFps(60.f).WithSparkline(true);
+bar.Render();
+```
+
+---
+
+## 92. ToggleButton
+
+**Header:** `#include <unigui/widgets/togglebutton.h>` · **API:** [WIDGET_API.md#togglebutton](WIDGET_API.md#togglebutton)
+
+```cpp
+#include <unigui/widgets/togglebutton.h>
+static unigui::ToggleButton run("pod_run", "Start", "Stop");
+run.WithOnToggle([](bool on){ if (on) startPod(); else stopPod(); });
+run.Render();
+```
+
+---
+
+## 93. ButtonGroup
+
+**Header:** `#include <unigui/widgets/buttongroup.h>` · **API:** [WIDGET_API.md#buttongroup](WIDGET_API.md#buttongroup)
+
+```cpp
+#include <unigui/widgets/buttongroup.h>
+static unigui::ButtonGroup acts("acts");
+acts.AddButton("Edit", []{}).AddTintedButton("Delete", []{}, unigui::theme::Semantic::Danger)
+    .WithAlign(unigui::ButtonGroup::Align::Right);
+acts.Render();
 ```
 
 ---

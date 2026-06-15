@@ -4,7 +4,7 @@ Runnable demo: [`examples/hello_unigui/main.cc`](../examples/hello_unigui/main.c
 
 All retained widgets: construct **once**, call **`Render()` every frame**.
 
-**Per-widget minimal snippets (all 86 entries):** [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)  
+**Per-widget minimal snippets (all 93 entries):** [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)  
 **Full API + merged TreeView / CascadingCombo:** [WIDGET_API.md](WIDGET_API.md)  
 **Alphabetical index:** [API_INDEX.md](API_INDEX.md)
 

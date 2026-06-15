@@ -1,6 +1,6 @@
 # TeamkillerUniGUI 文档索引
 
-> **3.6.0** · C++23 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
+> **3.7.0** · C++23 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
 
 ## 入门
 
@@ -8,7 +8,7 @@
 |------|------|
 | [GETTING_STARTED.md](GETTING_STARTED.md) | 安装、编译、首个 `RunApp` 程序 |
 | [EXAMPLES.md](EXAMPLES.md) | 场景食谱（组合、主题、表格、DSL、线程） |
-| [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) | **每个 Widget 一条最小示例**（86 条） |
+| [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) | **每个 Widget 一条最小示例**（93 条） |
 | [WIDGET_API.md](WIDGET_API.md) | **完整 API**（含 TreeView / CascadingCombo 正文） |
 | [API_INDEX.md](API_INDEX.md) | 总索引：Widget + `im` + DSL + 核心 API |
 | [TREEVIEW.md](TREEVIEW.md) / [CASCADINGCOMBO.md](CASCADINGCOMBO.md) | 已合并至 WIDGET_API，此处为跳转 |
@@ -22,7 +22,7 @@
 2. [EXAMPLES.md](EXAMPLES.md) 场景示例  
 3. 查单个控件 → [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) 或 [API_INDEX.md](API_INDEX.md) → [WIDGET_API.md](WIDGET_API.md)  
 
-**「86 widgets」** 指 `widgets/` 下保留式组件；另有 **22** 个 `unigui::im` 函数与 **18** 个 DSL 构建器，见 [API_INDEX.md](API_INDEX.md)。
+**「93 widgets」** 指 `widgets/` 下保留式组件；另有 **22** 个 `unigui::im` 函数与 **18** 个 DSL 构建器，见 [API_INDEX.md](API_INDEX.md)。
 
 ## 仓库
 

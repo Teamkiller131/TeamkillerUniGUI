@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [3.7.0] - 2026-06-15
+
 ### Added
 - **Trading-client fit, Horizon 1** (driven by the `jzdz_client_suite` audit — see `docs/jzdz-fit-plan.md`):
   - **Theme `Up`/`Down` semantic tokens + `Polarity`**: `theme::Semantic` gains `Up`/`Down`, resolved through a process-wide `theme::SetPolarity()` (`RedUp` = Chinese markets, the default; `GreenUp` = Western). `GetSemanticColor(Up/Down)` and `GetDirectionColor(value)` give correct rise/fall colours per market with no call-site change.
