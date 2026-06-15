@@ -23,6 +23,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include <unigui/core/format_num.h>
+#include <unigui/theme/color_tokens.h>
 #include <unigui/trading/quote.h>
 #include <unigui/widgets/datatable.h>
 
@@ -35,20 +36,33 @@ namespace unigui::trading {
 
 // ── Shared colour helpers (pure; alpha 0 == "no override") ───────────────────
 
-inline ImU32 DeltaColor(double v, double eps = 0.0) {
+// Up/down colour by sign. `pol` selects the market convention: GreenUp (Western,
+// the default — preserves existing behaviour) or RedUp (Chinese: a rise is red).
+inline ImU32 DeltaColor(double v, double eps = 0.0,
+                        theme::Polarity pol = theme::Polarity::GreenUp) {
+    constexpr ImU32 kGreen = IM_COL32(38, 166, 91, 255);
+    constexpr ImU32 kRed = IM_COL32(217, 60, 60, 255);
+    const ImU32 up = (pol == theme::Polarity::GreenUp) ? kGreen : kRed;
+    const ImU32 down = (pol == theme::Polarity::GreenUp) ? kRed : kGreen;
     switch (format::Sign(v, eps)) {
     case format::Direction::Up:
-        return IM_COL32(38, 166, 91, 255); // green
+        return up;
     case format::Direction::Down:
-        return IM_COL32(217, 60, 60, 255); // red
+        return down;
     case format::Direction::Flat:
         return 0; // no override
     }
     return 0;
 }
 
-inline ImU32 SideColor(Side s) {
-    return s == Side::Buy ? IM_COL32(38, 166, 91, 255) : IM_COL32(217, 60, 60, 255);
+// Buy/sell colour. Follows the same polarity: under RedUp, Buy is red and Sell
+// green (the CN convention), matching limit-up/down colouring.
+inline ImU32 SideColor(Side s, theme::Polarity pol = theme::Polarity::GreenUp) {
+    constexpr ImU32 kGreen = IM_COL32(38, 166, 91, 255);
+    constexpr ImU32 kRed = IM_COL32(217, 60, 60, 255);
+    const ImU32 buy = (pol == theme::Polarity::GreenUp) ? kGreen : kRed;
+    const ImU32 sell = (pol == theme::Polarity::GreenUp) ? kRed : kGreen;
+    return s == Side::Buy ? buy : sell;
 }
 
 /// Prefix a formatted delta with an up/down arrow glyph (▲/▼), flat → none.
@@ -99,7 +113,8 @@ inline std::string PositionCell(int col, const Position& p) {
     }
 }
 
-inline DataTable<Position> MakePositionsBlotter(std::string name) {
+inline DataTable<Position> MakePositionsBlotter(std::string name,
+                                                theme::Polarity pol = theme::Polarity::GreenUp) {
     DataTable<Position> t(std::move(name), {{"Symbol", 90.f},
                                             {"Qty", 70.f},
                                             {"Avg", 80.f},
@@ -107,11 +122,11 @@ inline DataTable<Position> MakePositionsBlotter(std::string name) {
                                             {"Mkt Val", 100.f},
                                             {"uPnL", 100.f}});
     t.SetCellFormatter([](int, int col, const Position& p) { return PositionCell(col, p); });
-    t.SetCellColor([](int, int col, const Position& p) -> ImU32 {
+    t.SetCellColor([pol](int, int col, const Position& p) -> ImU32 {
         if (col == 5)
-            return DeltaColor(p.UnrealizedPnL());
+            return DeltaColor(p.UnrealizedPnL(), 0.0, pol);
         if (col == 1)
-            return DeltaColor(static_cast<double>(p.qty));
+            return DeltaColor(static_cast<double>(p.qty), 0.0, pol);
         return 0;
     });
     t.SetFrozenColumns(1);
@@ -141,7 +156,8 @@ inline std::string OrderCell(int col, const Order& o) {
     }
 }
 
-inline DataTable<Order> MakeOrdersBlotter(std::string name) {
+inline DataTable<Order> MakeOrdersBlotter(std::string name,
+                                          theme::Polarity pol = theme::Polarity::GreenUp) {
     DataTable<Order> t(std::move(name), {{"ID", 80.f},
                                          {"Symbol", 90.f},
                                          {"Side", 60.f},
@@ -150,9 +166,9 @@ inline DataTable<Order> MakeOrdersBlotter(std::string name) {
                                          {"Filled", 70.f},
                                          {"Status", 110.f}});
     t.SetCellFormatter([](int, int col, const Order& o) { return OrderCell(col, o); });
-    t.SetCellColor([](int, int col, const Order& o) -> ImU32 {
+    t.SetCellColor([pol](int, int col, const Order& o) -> ImU32 {
         if (col == 2)
-            return SideColor(o.side);
+            return SideColor(o.side, pol);
         return 0;
     });
     t.SetFrozenColumns(2);
@@ -180,7 +196,8 @@ inline std::string TradeCell(int col, const Trade& tr) {
     }
 }
 
-inline DataTable<Trade> MakeTradesTape(std::string name) {
+inline DataTable<Trade> MakeTradesTape(std::string name,
+                                       theme::Polarity pol = theme::Polarity::GreenUp) {
     DataTable<Trade> t(std::move(name), {{"Time", 90.f},
                                          {"Symbol", 90.f},
                                          {"Side", 60.f},
@@ -188,9 +205,9 @@ inline DataTable<Trade> MakeTradesTape(std::string name) {
                                          {"Qty", 70.f},
                                          {"Notional", 110.f}});
     t.SetCellFormatter([](int, int col, const Trade& tr) { return TradeCell(col, tr); });
-    t.SetCellColor([](int, int col, const Trade& tr) -> ImU32 {
+    t.SetCellColor([pol](int, int col, const Trade& tr) -> ImU32 {
         if (col == 2 || col == 3)
-            return SideColor(tr.side);
+            return SideColor(tr.side, pol);
         return 0;
     });
     t.SetFrozenColumns(1);
@@ -220,7 +237,8 @@ inline std::string QuoteCell(int col, const Quote& q) {
     }
 }
 
-inline DataTable<Quote> MakeWatchlist(std::string name) {
+inline DataTable<Quote> MakeWatchlist(std::string name,
+                                      theme::Polarity pol = theme::Polarity::GreenUp) {
     DataTable<Quote> t(std::move(name), {{"Symbol", 90.f},
                                          {"Last", 80.f},
                                          {"Chg", 90.f},
@@ -229,9 +247,9 @@ inline DataTable<Quote> MakeWatchlist(std::string name) {
                                          {"Ask", 80.f},
                                          {"Volume", 100.f}});
     t.SetCellFormatter([](int, int col, const Quote& q) { return QuoteCell(col, q); });
-    t.SetCellColor([](int, int col, const Quote& q) -> ImU32 {
+    t.SetCellColor([pol](int, int col, const Quote& q) -> ImU32 {
         if (col == 2 || col == 3)
-            return DeltaColor(q.Change());
+            return DeltaColor(q.Change(), 0.0, pol);
         return 0;
     });
     t.SetFrozenColumns(1);

@@ -27,6 +27,14 @@ public:
     void SetFillWidth(bool on) { fillWidth_ = on; }
     /// Set a fixed pixel width. Ignored when fillWidth_ is true. 0 = auto.
     void SetWidth(float px) { fixedWidth_ = px; }
+    /// Placeholder shown when nothing is selected (index < 0). Pairs with
+    /// SetAllowEmpty so optional dropdowns pass the real item list and read back
+    /// a real index or -1, instead of prepending an empty sentinel item.
+    void SetPlaceholder(std::string text) { placeholder_ = std::move(text); }
+    /// Allow an empty selection: adds a clear "(none)" row and lets the selected
+    /// index be -1.
+    void SetAllowEmpty(bool on) { allowEmpty_ = on; }
+    bool GetAllowEmpty() const { return allowEmpty_; }
 
 private:
     std::string label_;
@@ -39,5 +47,7 @@ private:
     std::function<void(int)> on_change_;
     bool fillWidth_ = false;
     float fixedWidth_ = 0.0f;
+    std::string placeholder_;
+    bool allowEmpty_ = false;
 };
 } // namespace unigui

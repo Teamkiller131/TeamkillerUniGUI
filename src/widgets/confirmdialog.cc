@@ -13,6 +13,11 @@ void ConfirmDialog::Open() {
     justOpened_ = true;
 }
 
+void ConfirmDialog::Open(std::function<void()> onConfirm) {
+    onConfirm_ = std::move(onConfirm);
+    Open();
+}
+
 bool ConfirmDialog::WasConfirmed() const {
     return confirmed_;
 }
@@ -61,6 +66,11 @@ void ConfirmDialog::Render() {
         if (ImGui::Button(confirmLabel_.c_str(), ImVec2(80, 0))) {
             confirmed_ = true;
             open_ = false;
+            if (onConfirm_) {
+                auto cb = onConfirm_; // fire once; clear first so re-entrancy is safe
+                onConfirm_ = nullptr;
+                cb();
+            }
         }
         ImGui::PopStyleColor(2);
         ImGui::EndPopup();

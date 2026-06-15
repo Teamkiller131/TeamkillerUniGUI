@@ -156,3 +156,38 @@ TEST_F(TableTest, ApplySort_MixedNumericAndTextDoesNotCrash) {
     EXPECT_NO_THROW(tbl.SortByColumn(0, true));
     EXPECT_NO_THROW(tbl.SortByColumn(0, false));
 }
+
+// ── DataTable enhancements (jzdz-fit) ────────────────────────────────────────
+
+namespace {
+struct DtRow {
+    std::string name;
+    double pnl = 0.0;
+    unsigned char enabled = 0; // flag stored as uint8_t (the UB-prone case)
+};
+} // namespace
+
+TEST_F(TableTest, DataTable_EmptyText_RendersWithoutCrash) {
+    std::vector<DtRow> rows; // empty
+    unigui::DataTable<DtRow> dt("dt", {{"Name", 100}, {"PnL", 80}});
+    dt.SetDataSource(&rows);
+    dt.SetEmptyText("no data");
+    dt.SetCellFormatter([](int, int c, const DtRow& r) {
+        return c == 0 ? r.name : std::to_string(r.pnl);
+    });
+    EXPECT_NO_THROW(dt.Render());
+}
+
+TEST_F(TableTest, DataTable_CheckboxValue_GetSetNoUB) {
+    std::vector<DtRow> rows = {{"a", 1.0, 0}, {"b", -2.0, 1}};
+    unigui::DataTable<DtRow> dt("dt2", {{"On", 40}, {"Name", 100}});
+    dt.SetDataSource(&rows);
+    // Read via getter, write via setter — no reinterpret_cast<bool*> over uint8_t.
+    dt.SetCellCheckboxValue(
+        0, [&](int row, const DtRow& r) { return r.enabled != 0; },
+        [&](int row, bool v) { rows[row].enabled = v ? 1 : 0; });
+    dt.SetCellFormatter([](int, int, const DtRow& r) { return r.name; });
+    EXPECT_NO_THROW(dt.Render());
+    // The getter/setter wiring compiles and runs against uint8_t-backed storage.
+    EXPECT_EQ(rows[1].enabled, 1);
+}

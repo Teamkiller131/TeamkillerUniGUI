@@ -40,3 +40,20 @@ TEST_F(ConfirmDialogTest, SetTitle_Works) {
     dlg.SetTitle("Warning");
     SUCCEED();
 }
+
+TEST_F(ConfirmDialogTest, OpenWithCallback_StoresAndOpens) {
+    unigui::ConfirmDialog dlg("dlg");
+    bool fired = false;
+    dlg.Open([&] { fired = true; });
+    EXPECT_TRUE(dlg.IsOpen());
+    EXPECT_FALSE(dlg.WasConfirmed()); // not confirmed until the user clicks
+    EXPECT_FALSE(fired);
+    EXPECT_NO_THROW(dlg.Render());
+}
+
+TEST_F(ConfirmDialogTest, SetOnConfirm_DoesNotCrash) {
+    unigui::ConfirmDialog dlg("dlg");
+    dlg.SetOnConfirm([] {});
+    dlg.Open();
+    EXPECT_NO_THROW(dlg.Render());
+}

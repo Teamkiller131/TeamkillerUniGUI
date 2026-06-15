@@ -168,3 +168,12 @@ TEST_F(StatusLampTest, StateTransitions_RenderStable) {
     lamp.SetState(unigui::StatusLamp::Off);
     lamp.Render();
 }
+
+// 19. Caption: lamp + adjacent label in one widget
+TEST_F(StatusLampTest, SetCaption_StoresAndRenders) {
+    unigui::StatusLamp lamp("lamp19", unigui::StatusLamp::Running);
+    EXPECT_TRUE(lamp.GetCaption().empty());
+    lamp.SetCaption("已连接");
+    EXPECT_EQ(lamp.GetCaption(), "已连接");
+    EXPECT_NO_THROW(lamp.Render());
+}

@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 
+#include <functional>
 #include <string>
 
 namespace unigui {
@@ -16,7 +17,12 @@ public:
     void Render() override;
 
     void Open();
+    /// Open carrying an on-confirm callback fired (once) when the user confirms,
+    /// so callers stop maintaining a parallel pending-action id + OnTick switch.
+    void Open(std::function<void()> onConfirm);
     bool WasConfirmed() const;
+    /// Persistent on-confirm callback (alternative to the Open(cb) overload).
+    void SetOnConfirm(std::function<void()> cb) { onConfirm_ = std::move(cb); }
 
     void SetTitle(std::string title) { title_ = std::move(title); }
     void SetMessage(std::string msg) { message_ = std::move(msg); }
@@ -41,6 +47,7 @@ private:
     std::string cancelLabel_ = "Cancel";
     ImU32 confirmColor_ = 0xff4560e9; // RGBA (red #e94560)
     bool dangerStyle_ = false;
+    std::function<void()> onConfirm_;
 };
 
 } // namespace unigui

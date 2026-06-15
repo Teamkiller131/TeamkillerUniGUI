@@ -87,6 +87,16 @@ public:
     using FilterFn = std::function<bool(int row, const T&)>;
     /// Checkbox column: returns pointer to bool for the given row+item
     using CellCheckboxFn = std::function<bool*(int row, const T&)>;
+    /// Non-UB checkbox column: read via a getter and write via a setter, so models
+    /// that store flags as e.g. std::vector<uint8_t> don't reinterpret_cast a
+    /// uint8_t* to bool*. Prefer this over SetCellCheckbox(bool*).
+    using CellCheckboxGetFn = std::function<bool(int row, const T&)>;
+    using CellCheckboxSetFn = std::function<void(int row, bool value)>;
+    /// Custom cell renderer: draw arbitrary content (incl. stateless `unigui::im`
+    /// editors — Combo/InputInt/InputFloat/Button) inside the cell. Called within
+    /// the row's PushID and the column's cell, so per-row editors need no
+    /// hand-rolled `static std::map` widget cache. Backs EditableDataGrid.
+    using CellRenderFn = std::function<void(int row, const T&)>;
 
     DataTable(std::string name, std::vector<ColumnDef> columns)
             : Widget(std::move(name))
@@ -161,6 +171,21 @@ public:
     // ── Checkbox column ───────────────────────────────────────────────
     /// Make a column render as Checkbox. fn returns pointer to bool for (row, item).
     void SetCellCheckbox(int col, CellCheckboxFn fn) { checkboxCols_[col] = std::move(fn); }
+    /// Make a column render as Checkbox driven by a get/set pair (no bool* / no
+    /// reinterpret_cast). The setter receives the new value on toggle.
+    void SetCellCheckboxValue(int col, CellCheckboxGetFn get, CellCheckboxSetFn set) {
+        checkboxValueCols_[col] = {std::move(get), std::move(set)};
+    }
+
+    /// Render a column's cell with a custom callback (e.g. a stateless
+    /// `unigui::im` editor bound to the row). Called inside the row's PushID and
+    /// the cell, so per-row editors need no hand-rolled widget cache. Backs
+    /// EditableDataGrid.
+    void SetCellRenderer(int col, CellRenderFn fn) { cellRenderers_[col] = std::move(fn); }
+
+    /// Text shown (disabled, in the first column) when there are no visible rows,
+    /// replacing the manual "TableNextRow; TextDisabled(...)" empty-state idiom.
+    void SetEmptyText(std::string text) { emptyText_ = std::move(text); }
 
     // ── Filtering (text search) ──────────────────────────────────────────
     /// Set text filter string — rows not matching are hidden.
@@ -313,12 +338,32 @@ public:
             // The selectable (row-click) is rendered on the first non-checkbox
             // column so rows stay selectable even when column 0 is a checkbox.
             int firstSelCol = 0;
-            while (firstSelCol < (int) columns_.size() && checkboxCols_.count(firstSelCol))
+            while (firstSelCol < (int) columns_.size() &&
+                   (checkboxCols_.count(firstSelCol) || checkboxValueCols_.count(firstSelCol) ||
+                    cellRenderers_.count(firstSelCol)))
                 ++firstSelCol;
             if (firstSelCol >= (int) columns_.size())
                 firstSelCol = 0;
             for (int col = 0; col < (int) columns_.size(); ++col) {
                 ImGui::TableSetColumnIndex(col);
+
+                // ── Custom cell renderer (e.g. an im:: editor) ───
+                auto crIt = cellRenderers_.find(col);
+                if (crIt != cellRenderers_.end() && crIt->second) {
+                    crIt->second(idx, (*data_)[idx]);
+                    continue;
+                }
+
+                // ── Checkbox column (get/set, no bool*) ──────────
+                auto cbvIt = checkboxValueCols_.find(col);
+                if (cbvIt != checkboxValueCols_.end()) {
+                    bool v = cbvIt->second.first ? cbvIt->second.first(idx, (*data_)[idx]) : false;
+                    char cbLabel[32];
+                    snprintf(cbLabel, sizeof(cbLabel), "##cbv_%d_%d", idx, col);
+                    if (ImGui::Checkbox(cbLabel, &v) && cbvIt->second.second)
+                        cbvIt->second.second(idx, v);
+                    continue;
+                }
 
                 // ── Checkbox column ──────────────────────────────
                 auto cbIt = checkboxCols_.find(col);
@@ -432,6 +477,12 @@ public:
                 int idx = mapRow(row);
                 if (rowPasses(idx))
                     displayRows.push_back(idx);
+            }
+
+            if (displayRows.empty() && !emptyText_.empty()) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextDisabled("%s", emptyText_.c_str());
             }
 
             if (virtualScroll_ && !stickyHeader_) {
@@ -615,6 +666,9 @@ private:
     std::unordered_map<int, float> minWidths_;
     std::unordered_map<int, float> stretches_;
     std::unordered_map<int, CellCheckboxFn> checkboxCols_;
+    std::unordered_map<int, std::pair<CellCheckboxGetFn, CellCheckboxSetFn>> checkboxValueCols_;
+    std::unordered_map<int, CellRenderFn> cellRenderers_;
+    std::string emptyText_;
 };
 
 } // namespace unigui

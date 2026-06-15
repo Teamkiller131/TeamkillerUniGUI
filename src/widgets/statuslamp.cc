@@ -136,6 +136,13 @@ void StatusLamp::Render() {
         ImGui::SetTooltip("%s", tooltip_.c_str());
     }
 
+    // Optional caption to the right of the lamp.
+    if (!caption_.empty()) {
+        ImGui::SameLine();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(caption_.c_str());
+    }
+
     ImGui::PopID();
 }
 

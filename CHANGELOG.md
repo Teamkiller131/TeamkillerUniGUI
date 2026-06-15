@@ -1,5 +1,36 @@
 ## Unreleased
 
+### Added
+- **Trading-client fit, Horizon 1** (driven by the `jzdz_client_suite` audit — see `docs/jzdz-fit-plan.md`):
+  - **Theme `Up`/`Down` semantic tokens + `Polarity`**: `theme::Semantic` gains `Up`/`Down`, resolved through a process-wide `theme::SetPolarity()` (`RedUp` = Chinese markets, the default; `GreenUp` = Western). `GetSemanticColor(Up/Down)` and `GetDirectionColor(value)` give correct rise/fall colours per market with no call-site change.
+  - **`PnlText`** (`widgets/pnltext.h`): polarity-aware sign-coloured value text (`PnlText`/`StatusText`/`GradedText`) — centralises the most-repeated `TextColored(v>=0?up:down, fmt(v))` idiom. Pure `PnlRole`/`GradedRole` mappings are unit-tested without a frame. Named `PnlText` to avoid colliding with the existing `ValueWidget`.
+  - **`TagList`** (`widgets/taglist.h`): inline, wrapping 0..N coloured chip container (semantic role or explicit RGBA) for limit-up/down / status flags — replaces the hand-rolled `SameLine` + per-tag `PushStyleColor` idiom.
+  - **`WeakInvokeOnMainThread`** + `LifetimeToken` (`core/main_thread.h`): teardown-safe cross-thread posting; a queued task is silently dropped once its owner token is destroyed — replacing the hand-rolled `shared_ptr<atomic<bool>> alive_` guard.
+- **Trading-client fit, Horizon 2 — the editable-grid lever**:
+  - **`EditableDataGrid<T>`** (`widgets/editabledatagrid.h`): a `DataTable<T>` with typed per-column cell editors (`SetComboColumn`/`SetIntColumn`/`SetFloatColumn`/`SetButtonColumn`) and a `SetRowReadOnly` predicate that collapses a row's editors to static text ("frozen-when-running"). Editors render through the **stateless `unigui::im` layer** inside the table's per-row `PushID`, so there is **no per-row widget cache** — directly retiring the hand-rolled `static std::map<int,Widget>` grids the audit found across FSA/FAT/CO/AA. Presentation-only (values flow via getter/on-change callbacks).
+  - **`DataTable<T>::SetCellRenderer(col, fn)`**: render an arbitrary cell (incl. `im::` editors) inside the row's `PushID` — the hook `EditableDataGrid` is built on; usable directly too.
+  - **`WidgetPool<T>`** (`core/widget_pool.h`): keyed cache of retained widget instances for cells that genuinely need stateful widgets (animated `RiskBar`/`Gauge`). Key by stable id; `BeginFrame`/`EndFrame` evicts widgets for rows that disappeared (no leak, no index-reuse bug). Header-only, ImGui-free, unit-tested.
+- **Trading-client fit, Horizon 3 (started)**:
+  - **`MetricCard`** (`widgets/metriccard.h`): bordered KPI/status tile — optional accent rail, header row (status dot + accent title + right-aligned action slot), and a value/delta/subtext body or a custom draw callback. Delta is sign-coloured via the active `Up`/`Down` polarity. Replaces the hand-rolled "BeginChild + accent bar + status dot + measured button cluster" pod/account card across AA/FAT/CO and the fund panels.
+  - **`SessionAxis`** (`core/session_axis.h`): pure, header-only gap-collapsing intraday time axis — maps wall-clock seconds-of-day onto a continuous session axis (lunch break / pre-post gaps collapsed) and back, with an `HH:MM` tick formatter. `SessionAxis::AShareFutures()` ships the CN day session. Pairs with `TimeSeriesChart`'s X formatter so charts have no dead time. Fully unit-tested (round-trip, gap, clamp, format).
+  - **`ToggleButton`** (`widgets/togglebutton.h`): bistate action button (Start ⇄ Stop) with per-state label + semantic colour, an enabled-predicate + disabled tooltip, and an on-toggle callback — the run/stop control in all four strategies. Distinct from the boolean `ToggleSwitch`.
+  - **`ButtonGroup`** (`widgets/buttongroup.h`): horizontal button cluster with Left/Right/Fill alignment, owning the "measure each button, right-align the cluster" math; composes inside `MetricCard`'s header action slot.
+  - **`ConnectionStatusBar`** (`widgets/connection_status.h`): link-health strip composing `StatusLamp` + `Sparkline` with an adaptive, colour-graded latency readout, FPS, and a reconnect countdown — RTT averaging / reconnect FSM stay in the caller.
+  - **`format::Latency(µs)`** (`core/format_num.h`): adaptive `µs`/`ms`/`s` latency string — centralises the duplicated connection-readout formatting.
+  - **`GroupedRiskTree`** (`widgets/groupedrisktree.h`): a hierarchical account/group risk view built on `TreeView` — each node shows a utilisation bar coloured by warn/danger thresholds, and parent rows roll their children up via `Worst`/`Mean`/`Sum` (the static `ComputeRatio` rollup is pure and unit-tested). Caller supplies leaf ratios + labels; no unit/scaling baked in.
+  - **`BasketTicket<T>`** (`widgets/basketticket.h`): an editable basket / program-trading grid — a toolbar (Add / Remove / Import / Submit) over an owned `EditableDataGrid<T>`, with validator-driven invalid-row highlighting, **deferred** row removal (no mid-iteration mutation), and Submit gated on all-valid. Host-driven by design: the embedder owns CSV/XLSX parsing + the file dialog (Import fires a callback; the host calls `SetRows`), and order routing stays in the controller (`onSubmit` hands back the rows). Composes the `EditableDataGrid` lever.
+- New headless test files/cases (`pnltext`, `taglist`, `main_thread`, `widget_pool`, `editabledatagrid`, `metriccard`, `session_axis`, plus enhancement cases on combobox/statuslamp/confirmdialog/multisplitter/table).
+
+### Changed
+- **Widget enhancements for data-dense/trading UIs**:
+  - `DataTable<T>`: `SetEmptyText()` (empty-state row) and `SetCellCheckboxValue(col, get, set)` — a non-UB checkbox column driven by a get/set pair instead of a `bool*` (no `reinterpret_cast` over `uint8_t` flag storage).
+  - `ComboBox`: `SetPlaceholder()` + `SetAllowEmpty()` — optional dropdowns now pass the real item list and read back a real index or `-1`, instead of prepending an empty sentinel and doing `+1/-1` arithmetic. (`GetSelectedValue()` is now bounds-safe for an empty selection.)
+  - `StatusLamp::SetCaption()` — render the lamp with an adjacent label in one widget.
+  - `ConfirmDialog::Open(onConfirm)` / `SetOnConfirm()` — fire a callback on confirm, retiring the parallel pending-action-id state machines.
+  - `MultiSplitter::Configure(defs)` (idempotent by panel count) + per-panel `minPx` — removes the `static bool` first-frame guards and ratio-only sizing workarounds.
+  - `TimeSeriesChart::AppendSample(id, time, value)` — time-first overload that avoids transposing `AppendPoint`'s value/timestamp arguments.
+  - **Trading blotters honour up/down `Polarity`** (`trading/blotters.h`): `DeltaColor`/`SideColor` and the `MakePositionsBlotter`/`MakeOrdersBlotter`/`MakeTradesTape`/`MakeWatchlist` factories take an optional `theme::Polarity` (default `GreenUp` — unchanged Western behaviour; `RedUp` flips to the CN convention where a rise/Buy is red). Verified with `UNIGUI_MODULE_TRADING=ON`.
+
 ## [3.6.0] - 2026-06-15
 
 ### Added

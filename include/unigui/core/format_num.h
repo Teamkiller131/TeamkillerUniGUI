@@ -112,4 +112,20 @@ inline double TickAlign(double price, double tickSize) {
     return std::round(price / tickSize) * tickSize;
 }
 
+/// Adaptive latency string from a microsecond value: < 1000µs -> "NNNµs",
+/// < 1s -> "N.NNms", else "N.NNs". (µ = U+00B5, UTF-8.) Centralises the
+/// duplicated "<10 ? µs : ms" formatting in connection/latency readouts.
+inline std::string Latency(double microseconds) {
+    if (microseconds < 0.0)
+        microseconds = 0.0;
+    char buf[32];
+    if (microseconds < 1000.0)
+        std::snprintf(buf, sizeof(buf), "%.0f\xC2\xB5s", microseconds);
+    else if (microseconds < 1.0e6)
+        std::snprintf(buf, sizeof(buf), "%.2fms", microseconds / 1000.0);
+    else
+        std::snprintf(buf, sizeof(buf), "%.2fs", microseconds / 1.0e6);
+    return buf;
+}
+
 } // namespace unigui::format

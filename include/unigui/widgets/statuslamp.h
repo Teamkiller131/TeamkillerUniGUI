@@ -28,6 +28,10 @@ public:
     /// When true, the lamp is horizontally centered within the available column width.
     void SetCenterInCell(bool on) { centerInCell_ = on; }
     bool GetCenterInCell() const { return centerInCell_; }
+    /// Optional caption rendered to the right of the lamp (lamp + label in one
+    /// widget), so callers stop pairing the lamp with a manual SameLine + Text.
+    void SetCaption(std::string text) { caption_ = std::move(text); }
+    const std::string& GetCaption() const { return caption_; }
 
     State GetState() const { return state_; }
     float GetRadius() const { return radius_; }
@@ -41,6 +45,7 @@ private:
     ImU32 customColor_ = 0;
     bool glow_ = true;
     bool centerInCell_ = false;
+    std::string caption_;
 };
 
 } // namespace unigui

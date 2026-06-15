@@ -32,7 +32,8 @@ void ComboBox::Render() {
     const bool disabled = !IsEnabled();
     if (disabled)
         ImGui::BeginDisabled();
-    const char* preview = selected_ < (int) items_.size() ? items_[selected_].c_str() : "";
+    const bool hasSel = selected_ >= 0 && selected_ < (int) items_.size();
+    const char* preview = hasSel ? items_[selected_].c_str() : placeholder_.c_str();
     if (searchable_) {
         ImGui::InputText("##search", search_buf_, sizeof(search_buf_));
         ImGui::SameLine();
@@ -45,6 +46,14 @@ void ComboBox::Render() {
         ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
     // NoArrowButton：去掉右侧那个突兀的下拉三角，整个预览框仍可点击展开
     if (ImGui::BeginCombo(label_.c_str(), preview, ImGuiComboFlags_NoArrowButton)) {
+        if (allowEmpty_) {
+            const char* none = placeholder_.empty() ? "(none)" : placeholder_.c_str();
+            if (ImGui::Selectable(none, !hasSel)) {
+                selected_ = -1;
+                if (on_change_)
+                    on_change_(-1);
+            }
+        }
         for (int i = 0; i < (int) items_.size(); i++) {
             if (searchable_ && search_buf_[0]) {
                 if (items_[i].find(search_buf_) == std::string::npos)
@@ -90,7 +99,7 @@ void ComboBox::SetSelectedIndex(int idx) {
 }
 const std::string& ComboBox::GetSelectedValue() const {
     static std::string empty;
-    return selected_ < (int) items_.size() ? items_[selected_] : empty;
+    return (selected_ >= 0 && selected_ < (int) items_.size()) ? items_[selected_] : empty;
 }
 const std::vector<std::string>& ComboBox::GetItems() const {
     return items_;

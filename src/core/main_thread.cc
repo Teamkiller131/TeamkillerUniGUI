@@ -32,4 +32,11 @@ size_t PendingMainThreadTasks() {
     return g_pendingTasks.size();
 }
 
+void WeakInvokeOnMainThread(std::weak_ptr<void> alive, std::function<void()> fn) {
+    InvokeOnMainThread([alive = std::move(alive), fn = std::move(fn)]() {
+        if (!alive.expired())
+            fn();
+    });
+}
+
 } // namespace unigui

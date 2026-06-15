@@ -50,3 +50,16 @@ TEST_F(ComboBoxTest, Render_LongPreviewDoesNotClipArrowWidthCalculation) {
     cb.Render();
     SUCCEED();
 }
+
+TEST_F(ComboBoxTest, AllowEmpty_SupportsNegativeSelection) {
+    unigui::ComboBox cb("cb", "Optional", {"A", "B"});
+    cb.SetAllowEmpty(true);
+    cb.SetPlaceholder("(choose)");
+    EXPECT_TRUE(cb.GetAllowEmpty());
+    cb.SetSelectedIndex(-1);
+    EXPECT_EQ(cb.GetSelectedIndex(), -1);
+    // No out-of-range access for an empty selection.
+    EXPECT_EQ(cb.GetSelectedValue(), "");
+    cb.Render(); // renders the placeholder preview without crashing
+    SUCCEED();
+}

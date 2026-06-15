@@ -38,6 +38,16 @@ enum class Semantic {
     Warning, ///< Caution (amber).
     Danger,  ///< Error / destructive (red).
     Info,    ///< Informational (follows the accent).
+    Up,      ///< Price/PnL up — colour depends on the active Polarity.
+    Down,    ///< Price/PnL down — colour depends on the active Polarity.
+};
+
+/// Up/down colour convention. Western markets paint a rise green; Chinese (and
+/// some other) markets paint a rise red. `Up`/`Down` semantic colours resolve
+/// through the active polarity so financial widgets render correctly per market.
+enum class Polarity {
+    GreenUp, ///< Western: up = green (success hue), down = red (danger hue).
+    RedUp,   ///< Chinese: up = red (danger hue), down = green (success hue).
 };
 
 /// A theme's full interactive colour palette, derived from one base accent.
@@ -90,12 +100,34 @@ inline const char* SemanticName(Semantic s) {
         return "Danger";
     case Semantic::Info:
         return "Info";
+    case Semantic::Up:
+        return "Up";
+    case Semantic::Down:
+        return "Down";
     }
     return "Accent";
 }
 
-/// Pick a semantic colour out of a token set.
-inline ImVec4 SemanticColor(const ColorTokens& t, Semantic s) {
+namespace detail {
+/// Last-applied tokens, so widgets can query the active semantic palette without
+/// threading it through every call. `inline` gives a single instance across TUs.
+inline ColorTokens g_active_color_tokens =
+    DeriveColorTokens(ImVec4(0.40f, 0.58f, 0.93f, 1.00f), /*dark=*/true);
+/// Active up/down colour convention. Defaults to RedUp (the CN market default,
+/// the driving consumer); call SetPolarity(Polarity::GreenUp) for Western UIs.
+inline Polarity g_polarity = Polarity::RedUp;
+} // namespace detail
+
+/// Set/get the active up/down colour convention (process-wide).
+inline void SetPolarity(Polarity p) {
+    detail::g_polarity = p;
+}
+inline Polarity GetPolarity() {
+    return detail::g_polarity;
+}
+
+/// Pick a semantic colour out of a token set, resolving Up/Down via `pol`.
+inline ImVec4 SemanticColor(const ColorTokens& t, Semantic s, Polarity pol) {
     switch (s) {
     case Semantic::Accent:
         return t.accent;
@@ -107,16 +139,18 @@ inline ImVec4 SemanticColor(const ColorTokens& t, Semantic s) {
         return t.danger;
     case Semantic::Info:
         return t.info;
+    case Semantic::Up:
+        return pol == Polarity::GreenUp ? t.success : t.danger;
+    case Semantic::Down:
+        return pol == Polarity::GreenUp ? t.danger : t.success;
     }
     return t.accent;
 }
 
-namespace detail {
-/// Last-applied tokens, so widgets can query the active semantic palette without
-/// threading it through every call. `inline` gives a single instance across TUs.
-inline ColorTokens g_active_color_tokens =
-    DeriveColorTokens(ImVec4(0.40f, 0.58f, 0.93f, 1.00f), /*dark=*/true);
-} // namespace detail
+/// Pick a semantic colour, resolving Up/Down via the active polarity.
+inline ImVec4 SemanticColor(const ColorTokens& t, Semantic s) {
+    return SemanticColor(t, s, detail::g_polarity);
+}
 
 /// The colour tokens from the most recent ApplyColorTokens() call.
 inline const ColorTokens& ActiveColorTokens() {
@@ -125,7 +159,18 @@ inline const ColorTokens& ActiveColorTokens() {
 
 /// Active semantic colour by role (updated on every ApplyColorTokens()).
 inline ImVec4 GetSemanticColor(Semantic s) {
-    return SemanticColor(detail::g_active_color_tokens, s);
+    return SemanticColor(detail::g_active_color_tokens, s, detail::g_polarity);
+}
+
+/// Active semantic colour for a signed value's direction (Up/Down/Flat). Flat
+/// returns the normal text colour so neutral values aren't tinted.
+inline ImVec4 GetDirectionColor(double value, ImVec4 flat = ImVec4(0.85f, 0.85f, 0.85f, 1.f),
+                                double eps = 0.0) {
+    if (value > eps)
+        return GetSemanticColor(Semantic::Up);
+    if (value < -eps)
+        return GetSemanticColor(Semantic::Down);
+    return flat;
 }
 
 /// Apply the accent relationship to the accent-driven ImGui slots so every theme

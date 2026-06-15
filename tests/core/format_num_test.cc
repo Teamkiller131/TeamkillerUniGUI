@@ -63,3 +63,12 @@ TEST(FormatNum, TickAlign) {
     EXPECT_NEAR(TickAlign(100.13, 0.05), 100.15, 1e-9);
     EXPECT_NEAR(TickAlign(100.123, 0.0), 100.123, 1e-9); // no-op for invalid tick
 }
+
+TEST(FormatNum, Latency) {
+    EXPECT_EQ(Latency(0.0), "0\xC2\xB5s");        // 0µs
+    EXPECT_EQ(Latency(850.0), "850\xC2\xB5s");    // 850µs
+    EXPECT_EQ(Latency(1500.0), "1.50ms");          // → ms
+    EXPECT_EQ(Latency(12300.0), "12.30ms");
+    EXPECT_EQ(Latency(2500000.0), "2.50s");        // → s
+    EXPECT_EQ(Latency(-5.0), "0\xC2\xB5s");        // clamps negatives
+}

@@ -189,7 +189,7 @@ endforeach()
 
 # Extended widget tests — only when UNIGUI_MODULE_WIDGETS=ON
 if(UNIGUI_MODULE_WIDGETS)
-    foreach(_widget treeview listview table slider colorpicker coloredit listbox filepath dirpath toggleswitch inputint inputfloat inputtext splitter multisplitter tooltip datepicker image loadingindicator notification hyperlink tag breadcrumb multiline iconbutton space contextmenu shortcut richtext imagebutton markdown virtuallist multicombo propertygrid searchbox toast passwordinput wizard dragfloat dragint statuslamp cascadingcombo sliderbar futuresriskbar sparkline gauge segmentedcontrol priceticker)
+    foreach(_widget treeview listview table slider colorpicker coloredit listbox filepath dirpath toggleswitch inputint inputfloat inputtext splitter multisplitter tooltip datepicker image loadingindicator notification hyperlink tag breadcrumb multiline iconbutton space contextmenu shortcut richtext imagebutton markdown virtuallist multicombo propertygrid searchbox toast passwordinput wizard dragfloat dragint statuslamp cascadingcombo sliderbar futuresriskbar sparkline gauge segmentedcontrol priceticker pnltext taglist editabledatagrid metriccard togglebutton buttongroup connection_status groupedrisktree basketticket)
         add_executable(test_${_widget} widgets/${_widget}_test.cc)
         target_link_libraries(test_${_widget} PRIVATE GTest::gtest GTest::gtest_main unigui)
         target_compile_features(test_${_widget} PRIVATE cxx_std_23)
@@ -198,7 +198,7 @@ if(UNIGUI_MODULE_WIDGETS)
 endif()
 
 # Core tests
-foreach(_core locale settings strutil undo_stack version format_num observable)
+foreach(_core locale settings strutil undo_stack version format_num observable main_thread widget_pool session_axis)
     add_executable(test_${_core} core/${_core}_test.cc)
     target_link_libraries(test_${_core} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_core} PRIVATE cxx_std_23)

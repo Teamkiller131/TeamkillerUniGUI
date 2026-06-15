@@ -229,6 +229,13 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/gauge.cc
         widgets/segmentedcontrol.cc
         widgets/priceticker.cc
+        widgets/pnltext.cc
+        widgets/taglist.cc
+        widgets/metriccard.cc
+        widgets/togglebutton.cc
+        widgets/buttongroup.cc
+        widgets/connection_status.cc
+        widgets/groupedrisktree.cc
     )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)
     message(STATUS "Extended widgets enabled")

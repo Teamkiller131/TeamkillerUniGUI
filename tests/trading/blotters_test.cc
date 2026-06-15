@@ -33,8 +33,29 @@ TEST_F(BlottersTest, DeltaColor_SignAware) {
     EXPECT_NE(DeltaColor(1.0), DeltaColor(-1.0));
 }
 
+TEST_F(BlottersTest, DeltaColor_PolarityFlipsUpDown) {
+    namespace th = unigui::theme;
+    // Default is Western (GreenUp). RedUp swaps the up/down colours, so a rise
+    // under RedUp matches a fall under GreenUp (and vice-versa).
+    EXPECT_EQ(DeltaColor(1.0, 0.0, th::Polarity::RedUp),
+              DeltaColor(-1.0, 0.0, th::Polarity::GreenUp));
+    EXPECT_EQ(DeltaColor(-1.0, 0.0, th::Polarity::RedUp),
+              DeltaColor(1.0, 0.0, th::Polarity::GreenUp));
+    EXPECT_NE(DeltaColor(1.0, 0.0, th::Polarity::RedUp),
+              DeltaColor(1.0, 0.0, th::Polarity::GreenUp));
+}
+
 TEST_F(BlottersTest, SideColor_DistinguishesSides) {
     EXPECT_NE(SideColor(Side::Buy), SideColor(Side::Sell));
+}
+
+TEST_F(BlottersTest, SideColor_PolarityFlips) {
+    namespace th = unigui::theme;
+    // Under RedUp, Buy is red (== Sell under GreenUp) and Sell is green.
+    EXPECT_EQ(SideColor(Side::Buy, th::Polarity::RedUp),
+              SideColor(Side::Sell, th::Polarity::GreenUp));
+    EXPECT_NE(SideColor(Side::Buy, th::Polarity::RedUp),
+              SideColor(Side::Buy, th::Polarity::GreenUp));
 }
 
 TEST_F(BlottersTest, WithArrow_PrefixesGlyph) {

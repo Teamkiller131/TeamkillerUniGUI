@@ -34,6 +34,13 @@ public:
     /// If timestamp < 0, uses internal frame counter.
     void AppendPoint(int seriesId, float value, double timestamp = -1.0);
 
+    /// Time-first append — reads naturally as (when, what) and avoids transposing
+    /// the value/timestamp arguments of AppendPoint. Equivalent to
+    /// AppendPoint(seriesId, value, timestamp).
+    void AppendSample(int seriesId, double timestamp, float value) {
+        AppendPoint(seriesId, value, timestamp);
+    }
+
     /// Replace a series' entire point set in one shot (x = timestamps, y = values).
     /// Use this when the caller owns a complete, possibly out-of-order history buffer
     /// (e.g. live ticks + late multi-packet backfill): the points are sorted by X and

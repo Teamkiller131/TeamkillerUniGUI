@@ -16,7 +16,26 @@ void MultiSplitter::AddPanel(float ratio, std::function<void()> content) {
     // AddPanel would compare against rescaled values and the intended
     // proportions would drift. Normalization is done lazily in GetRatios() and
     // at the top of Render().
-    panels_.push_back({std::max(0.0f, ratio), std::move(content)});
+    panels_.push_back({std::max(0.0f, ratio), std::move(content), 0.0f});
+}
+
+void MultiSplitter::AddPanel(float ratio, std::function<void()> content, float minPx) {
+    panels_.push_back({std::max(0.0f, ratio), std::move(content), std::max(0.0f, minPx)});
+}
+
+void MultiSplitter::Configure(std::vector<PanelDef> defs) {
+    // Idempotent: only (re)build when the panel count changes, so a per-frame
+    // call is a no-op after the first frame (mirrors the old static-bool guard).
+    if (panels_.size() == defs.size())
+        return;
+    panels_.clear();
+    designRatios_.clear();
+    panels_.reserve(defs.size());
+    designRatios_.reserve(defs.size());
+    for (auto& d : defs) {
+        panels_.push_back({std::max(0.0f, d.ratio), std::move(d.content), std::max(0.0f, d.minPx)});
+        designRatios_.push_back(std::max(0.0f, d.ratio));
+    }
 }
 
 std::vector<float> MultiSplitter::GetRatios() const {
@@ -95,6 +114,10 @@ void MultiSplitter::Render() {
     for (int i = 0; i < (int) panels_.size(); ++i) {
         float panelLen =
             (i == (int) panels_.size() - 1) ? remainingLen : panelSpace * panels_[i].ratio;
+        // Enforce a per-panel minimum size along the split axis (non-last panels;
+        // bounded by what's left so we never overrun the available space).
+        if (i != (int) panels_.size() - 1 && panels_[i].minPx > 0.0f)
+            panelLen = std::max(panelLen, std::min(panels_[i].minPx, remainingLen));
         remainingLen = std::max(0.0f, remainingLen - panelLen);
 
         ImGui::PushID(i);
