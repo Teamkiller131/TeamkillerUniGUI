@@ -30,7 +30,7 @@
 namespace unigui::im {
 
 // ── Button color variants (mirror unigui::Button::ColorVariant) ──────────────
-enum class ButtonVariant { Default, Primary, Danger, Success };
+enum class ButtonVariant { Default, Primary, Danger, Success, Warning };
 
 // ── Buttons ──────────────────────────────────────────────────────────────────
 /// Themed button. Returns true on the frame it is clicked.

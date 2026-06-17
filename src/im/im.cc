@@ -31,6 +31,8 @@ ImVec4 VariantColor(ButtonVariant v, const ImVec4& fallback) {
         return ImVec4(0.80f, 0.16f, 0.20f, 1.0f);
     case ButtonVariant::Success:
         return ImVec4(0.18f, 0.60f, 0.28f, 1.0f);
+    case ButtonVariant::Warning:
+        return ImVec4(0.85f, 0.55f, 0.13f, 1.0f);  // amber — e.g. an exhausted/triggered-out action
     default:
         return fallback;
     }

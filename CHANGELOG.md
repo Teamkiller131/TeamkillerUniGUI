@@ -1,6 +1,16 @@
 ## Unreleased
 
+### Added
+- **`im::ButtonVariant::Warning`** — an amber (`0.85, 0.55, 0.13`) button color variant for actions
+  that are neither destructive (`Danger`) nor a fresh start (`Success`): e.g. a pod whose trigger
+  count is exhausted offering a "Done / re-draft" action. `VariantColor` maps it; all `im::Button`
+  call sites accept it.
+
 ### Fixed
+- **Chart code broken against implot 1.0.** `CandlestickChart::DrawVolumePanel` used the obsoleted
+  `ImPlot::SetNextFillStyle`, and `TimeSeriesChart::Render` used the removed `ImPlotCol_Line`
+  push/pop — neither compiles after the implot 1.0 bump. Both now pass per-call style via
+  `ImPlotSpec` (`FillColor` / `LineColor`) to the `PlotBars` / `PlotInfLines` calls.
 - `im::Combo` (the `std::vector<std::string>` overload): returned an **empty popup** when the item
   list started with an empty string `""`. It packed items into a `\0`-separated buffer for
   `ImGui::Combo(const char* items_separated_by_zeros)`, whose item counter
