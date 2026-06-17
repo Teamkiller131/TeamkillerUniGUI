@@ -1,6 +1,7 @@
 #include <unigui/im/im.h>
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include <algorithm>
 #include <cstring>
@@ -225,6 +226,30 @@ bool InputDouble(std::string_view label, double* value, double step, double step
 }
 
 // ── Text inputs ───────────────────────────────────────────────────────────────
+// ImGui 1.92 draws the input caret as a 1px line scaled by `(int)style._MainScale`, so at
+// fractional DPI (e.g. 1.5x -> (int)1.5 == 1) it stays 1px and is nearly invisible
+// (imgui #7031 "FIXME-DPI: Cursor thickness"). Overlay a thicker, font-scaled caret at the
+// position ImGui already computed for the IME (`PlatformImeData`), matching ImGui's blink
+// so it still feels native. Call immediately after an ImGui::InputText* on the same item.
+void DrawActiveInputCaret() {
+    if (!ImGui::IsItemActive())
+        return;
+    ImGuiContext& g = *ImGui::GetCurrentContext();
+    const ImGuiPlatformImeData& ime = g.PlatformImeData;
+    if (!ime.WantVisible)  // ImGui only sets this for the active, editable input
+        return;
+    const float anim = g.InputTextState.CursorAnim;
+    const bool blinkOn = !g.IO.ConfigInputTextCursorBlink || anim <= 0.0f
+                         || ImFmod(anim, 1.20f) <= 0.80f;
+    if (!blinkOn)
+        return;
+    const float h = ime.InputLineHeight > 0.0f ? ime.InputLineHeight : g.FontSize;
+    const ImVec2 top(ime.InputPos.x + 1.0f, ime.InputPos.y);
+    const ImVec2 bottom(top.x, top.y + h);
+    const float thickness = ImMax(2.0f, g.FontSize * 0.09f);  // ~2-3px, scales with font/DPI
+    ImGui::GetWindowDrawList()->AddLine(top, bottom, ImGui::GetColorU32(ImGuiCol_Text), thickness);
+}
+
 namespace {
 // Edit a std::string through a temporary, NUL-terminated character buffer.
 // Avoids a hard dependency on imgui_stdlib while keeping the std::string API.
@@ -239,6 +264,7 @@ bool EditString(const char* id, std::string* value, std::size_t maxLength, bool 
     const bool changed = multiline
                              ? ImGui::InputTextMultiline(id, buf.data(), buf.size(), size, flags)
                              : ImGui::InputText(id, buf.data(), buf.size(), flags);
+    DrawActiveInputCaret();
     if (changed)
         value->assign(buf.data());
     return changed;
@@ -263,6 +289,7 @@ bool InputTextWithHint(std::string_view label, std::string_view hint, std::strin
     buf[copy] = '\0';
     const bool changed =
         ImGui::InputTextWithHint(Z(label).c_str(), Z(hint).c_str(), buf.data(), buf.size(), flags);
+    DrawActiveInputCaret();
     if (changed)
         value->assign(buf.data());
     return changed;

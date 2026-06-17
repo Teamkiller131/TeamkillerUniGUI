@@ -1,5 +1,6 @@
 #include <unigui/widgets/lineedit.h>
 
+#include <unigui/im/im.h>
 #include <imgui.h>
 
 #include <algorithm>
@@ -44,6 +45,7 @@ void LineEdit::Render() {
         changed =
             ImGui::InputTextWithHint(label_.c_str(), hint ? hint : "", buffer_, max_length_, flags);
     }
+    im::DrawActiveInputCaret();
     if (changed) {
         value_ = buffer_;
         has_error_ = false;

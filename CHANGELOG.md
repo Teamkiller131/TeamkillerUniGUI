@@ -8,6 +8,11 @@
   caller that prepends `""` as a blank/clear option got a blank dropdown. Now drives the popup with
   `BeginCombo`/`Selectable`/`EndCombo`, which renders empty/blank items correctly and stays stable
   across ImGui versions.
+- **Input text caret nearly invisible at fractional DPI.** ImGui draws the caret as a 1px line
+  scaled by `(int)style._MainScale`, so at e.g. 1.5× DPI it truncates to 1px (imgui #7031). Added
+  `im::DrawActiveInputCaret()`, which overlays a thicker, font-scaled caret (matching ImGui's blink)
+  at the active input's IME position; the `im::InputText*` helpers and the `LineEdit` widget now
+  call it automatically.
 
 ## [3.7.0] - 2026-06-15
 

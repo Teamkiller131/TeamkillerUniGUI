@@ -126,6 +126,11 @@ bool InputTextWithHint(std::string_view label, std::string_view hint, std::strin
 bool InputTextMultiline(std::string_view label, std::string* value,
                         const ImVec2& size = ImVec2(0, 0), std::size_t maxLength = 4096,
                         ImGuiInputTextFlags flags = 0);
+/// Overlay a thicker, font-scaled text caret on the *currently active* input, matching
+/// ImGui's blink. Works around imgui #7031 (the built-in 1px caret truncates to 1px at
+/// fractional DPI and is nearly invisible). The `im::InputText*` helpers call this
+/// automatically; call it yourself right after a raw `ImGui::InputText*` on the same item.
+void DrawActiveInputCaret();
 
 // ── Combo ─────────────────────────────────────────────────────────────────────
 /// Dropdown bound to an index into @p items. Returns true when the selection

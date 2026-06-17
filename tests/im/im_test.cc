@@ -118,6 +118,18 @@ TEST_F(ImTest, Combo_ClampsOutOfRangeIndex) {
     EXPECT_LT(idx, static_cast<int>(items.size()));
 }
 
+TEST_F(ImTest, DrawActiveInputCaret_NoActiveInputIsNoOp) {
+    // Must be safe with no active input item (IsItemActive()==false -> early return).
+    unigui::im::DrawActiveInputCaret();
+    SUCCEED();
+}
+
+TEST_F(ImTest, DrawActiveInputCaret_AfterInputDoesNotCrash) {
+    std::string v = "abc";
+    unigui::im::InputText("field", &v);   // calls DrawActiveInputCaret() internally
+    SUCCEED();
+}
+
 TEST_F(ImTest, Layout_HelpersDoNotCrash) {
     unigui::im::Text("a");
     unigui::im::SameLine();
