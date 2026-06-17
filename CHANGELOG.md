@@ -1,5 +1,14 @@
 ## Unreleased
 
+### Fixed
+- `im::Combo` (the `std::vector<std::string>` overload): returned an **empty popup** when the item
+  list started with an empty string `""`. It packed items into a `\0`-separated buffer for
+  `ImGui::Combo(const char* items_separated_by_zeros)`, whose item counter
+  (`while (*p) p += strlen(p)+1;`) stops on the leading `\0` and reports **zero** items — so any
+  caller that prepends `""` as a blank/clear option got a blank dropdown. Now drives the popup with
+  `BeginCombo`/`Selectable`/`EndCombo`, which renders empty/blank items correctly and stays stable
+  across ImGui versions.
+
 ## [3.7.0] - 2026-06-15
 
 ### Added
