@@ -279,15 +279,34 @@ bool InputTextMultiline(std::string_view label, std::string* value, const ImVec2
 bool Combo(std::string_view label, int* current, const std::vector<std::string>& items) {
     if (!current)
         return false;
-    // Build the stable "a\0b\0c\0\0" item buffer — this Combo overload has a
-    // fixed signature across ImGui versions (unlike the getter-callback one).
-    std::string packed;
-    for (const auto& it : items) {
-        packed.append(it);
-        packed.push_back('\0');
+    // Do NOT use ImGui::Combo(const char* items_separated_by_zeros): it counts items
+    // with `while (*p) p += strlen(p)+1;`, so a LEADING EMPTY item ("") makes the
+    // first byte '\0' and it reports ZERO items -> an empty popup. Many call sites
+    // prepend "" as a blank/clear option, so drive the popup manually with
+    // BeginCombo/EndCombo. This also stays stable across ImGui versions (the
+    // getter-callback overload's signature has churned).
+    const int n = static_cast<int>(items.size());
+    if (n > 0 && (*current < 0 || *current >= n))
+        *current = 0;
+    const char* preview = (*current >= 0 && *current < n) ? items[*current].c_str() : "";
+    bool changed = false;
+    if (ImGui::BeginCombo(Z(label).c_str(), preview)) {
+        for (int i = 0; i < n; ++i) {
+            ImGui::PushID(i);
+            const bool selected = (i == *current);
+            // Empty labels still need a clickable row; a single space gives it height.
+            const char* item = items[i].empty() ? " " : items[i].c_str();
+            if (ImGui::Selectable(item, selected)) {
+                *current = i;
+                changed = true;
+            }
+            if (selected)
+                ImGui::SetItemDefaultFocus();
+            ImGui::PopID();
+        }
+        ImGui::EndCombo();
     }
-    packed.push_back('\0'); // terminating empty string
-    return ImGui::Combo(Z(label).c_str(), current, packed.c_str());
+    return changed;
 }
 
 // ── Layout helpers ────────────────────────────────────────────────────────────

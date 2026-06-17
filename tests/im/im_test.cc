@@ -99,6 +99,25 @@ TEST_F(ImTest, Combo_NullPointerReturnsFalse) {
     EXPECT_FALSE(unigui::im::Combo("pick", nullptr, items));
 }
 
+TEST_F(ImTest, Combo_LeadingEmptyItemBindsIndex) {
+    // Regression: a leading "" (blank/clear option many callers prepend) must NOT
+    // collapse the list to zero items. The old packed-zero-string impl fed
+    // ImGui::Combo(const char*) whose `while (*p)` counter stopped on the leading
+    // '\0' and reported 0 items -> empty popup.
+    int idx = 2;
+    std::vector<std::string> items = {"", "IH", "IF", "IC"};
+    unigui::im::Combo("pick", &idx, items);
+    EXPECT_EQ(idx, 2);  // in-range index preserved, no crash
+}
+
+TEST_F(ImTest, Combo_ClampsOutOfRangeIndex) {
+    int idx = 99;
+    std::vector<std::string> items = {"", "A"};
+    unigui::im::Combo("pick", &idx, items);
+    EXPECT_GE(idx, 0);
+    EXPECT_LT(idx, static_cast<int>(items.size()));
+}
+
 TEST_F(ImTest, Layout_HelpersDoNotCrash) {
     unigui::im::Text("a");
     unigui::im::SameLine();
