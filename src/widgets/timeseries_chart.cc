@@ -206,9 +206,11 @@ void TimeSeriesChart::Render() {
 
         for (auto& line : refLines_) {
             ImPlot::SetAxis(ImAxis_Y1);
-            ImPlot::PushStyleColor(ImPlotCol_Line, ImGui::ColorConvertU32ToFloat4(line.color));
-            ImPlot::PlotInfLines(line.label.c_str(), &line.value, 1);
-            ImPlot::PopStyleColor();
+            // implot 1.0 removed ImPlotCol_Line / SetNextLineStyle; set the item's
+            // line colour via the per-call ImPlotSpec instead.
+            ImPlotSpec spec;
+            spec.LineColor = ImGui::ColorConvertU32ToFloat4(line.color);
+            ImPlot::PlotInfLines(line.label.c_str(), &line.value, 1, spec);
         }
 
         plotHovered = ImPlot::IsPlotHovered();

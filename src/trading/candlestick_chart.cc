@@ -152,14 +152,17 @@ void CandlestickChart::DrawVolumePanel() {
             }
         }
         if (!bullX.empty()) {
-            ImPlot::SetNextFillStyle(ImGui::ColorConvertU32ToFloat4(bull_));
+            // implot 1.0 obsoleted SetNextFillStyle; pass the fill colour via ImPlotSpec.
+            ImPlotSpec spec;
+            spec.FillColor = ImGui::ColorConvertU32ToFloat4(bull_);
             ImPlot::PlotBars("##volBull", bullX.data(), bullV.data(),
-                             static_cast<int>(bullX.size()), barWidth);
+                             static_cast<int>(bullX.size()), barWidth, spec);
         }
         if (!bearX.empty()) {
-            ImPlot::SetNextFillStyle(ImGui::ColorConvertU32ToFloat4(bear_));
+            ImPlotSpec spec;
+            spec.FillColor = ImGui::ColorConvertU32ToFloat4(bear_);
             ImPlot::PlotBars("##volBear", bearX.data(), bearV.data(),
-                             static_cast<int>(bearX.size()), barWidth);
+                             static_cast<int>(bearX.size()), barWidth, spec);
         }
     }
 
