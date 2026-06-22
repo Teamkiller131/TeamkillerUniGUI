@@ -71,6 +71,13 @@ void CandlestickChart::SetVolumePanelRatio(float ratio) {
 
 void CandlestickChart::PushThemeColors(int& pushed) const {
     pushed = 0;
+    // Semi-transparent legend panel (independent of themeBackground_): a slightly
+    // darker, translucent version of the child background so the legend floats over
+    // the candles without fully occluding them.
+    ImVec4 lbg = ImGui::GetStyleColorVec4(ImGuiCol_ChildBg);
+    ImPlot::PushStyleColor(ImPlotCol_LegendBg,
+                           ImVec4(lbg.x * 0.85f, lbg.y * 0.85f, lbg.z * 0.85f, 0.60f));
+    ++pushed;
     if (!themeBackground_)
         return;
     ImVec4 bg = ImGui::GetStyleColorVec4(ImGuiCol_ChildBg);
@@ -80,7 +87,7 @@ void CandlestickChart::PushThemeColors(int& pushed) const {
     ImPlot::PushStyleColor(ImPlotCol_PlotBg, bg);
     ImPlot::PushStyleColor(ImPlotCol_PlotBorder, border);
     ImPlot::PushStyleColor(ImPlotCol_AxisGrid, grid);
-    pushed = 3;
+    pushed += 3;
 }
 
 void CandlestickChart::DrawPricePanel() {
@@ -104,7 +111,7 @@ void CandlestickChart::DrawPricePanel() {
     ImPlot::SetupAxis(ImAxis_Y1, yLabel_.empty() ? nullptr : yLabel_.c_str(),
                       ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
     if (legend_)
-        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_None);
+        ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
 
     if (n > 0) {
         const double interval = series_->Interval();

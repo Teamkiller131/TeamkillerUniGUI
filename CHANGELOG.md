@@ -6,6 +6,15 @@
   count is exhausted offering a "Done / re-draft" action. `VariantColor` maps it; all `im::Button`
   call sites accept it.
 
+### Changed
+- **Chart legends now default to the top-right corner with a semi-transparent panel.**
+  `TimeSeriesChart` and `CandlestickChart` previously seated the in-plot legend at the top-left
+  (`ImPlotLocation_NorthWest`) over an opaque background. They now default to the top-right
+  (`ImPlotLocation_NorthEast`) and push a translucent `ImPlotCol_LegendBg` (a slightly darker,
+  60%-opacity tint of the chart background) so the legend floats over the series without hiding
+  them. Legends remain draggable out of the box — the user can still click-drag the box to any
+  corner.
+
 ### Fixed
 - **Chart code broken against implot 1.0.** `CandlestickChart::DrawVolumePanel` used the obsoleted
   `ImPlot::SetNextFillStyle`, and `TimeSeriesChart::Render` used the removed `ImPlotCol_Line`

@@ -127,6 +127,10 @@ void TimeSeriesChart::Render() {
     ImPlot::PushStyleColor(ImPlotCol_PlotBg, bgCol);
     ImPlot::PushStyleColor(ImPlotCol_PlotBorder, borderCol);
     ImPlot::PushStyleColor(ImPlotCol_AxisGrid, gridCol);
+    // Semi-transparent legend panel: a slightly darker, translucent version of the
+    // plot background so the legend floats over the series without fully hiding them.
+    ImPlot::PushStyleColor(ImPlotCol_LegendBg,
+                           ImVec4(bgCol.x * 0.85f, bgCol.y * 0.85f, bgCol.z * 0.85f, 0.60f));
 
     bool plotHovered = false;
     if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, -1), plotFlags)) {
@@ -175,8 +179,9 @@ void TimeSeriesChart::Render() {
         // Use ImPlot's built-in in-plot legend. ImPlot legends are draggable
         // out of the box: the user can click-drag the legend box to reposition
         // it anywhere inside the plot (it snaps to the nearest edge/corner).
+        // Default to the top-right corner.
         if (legend_)
-            ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_None);
+            ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
 
         // ── Plot each series ──────────────────────────────────────────
         for (auto& s : series_) {
@@ -216,7 +221,7 @@ void TimeSeriesChart::Render() {
         plotHovered = ImPlot::IsPlotHovered();
         ImPlot::EndPlot();
     }
-    ImPlot::PopStyleColor(3);
+    ImPlot::PopStyleColor(4);
 
     // ImPlotFlags_Crosshairs draws the guide lines but also sets the OS cursor to
     // None (hiding it). Restore the arrow while hovering so the user keeps both the
