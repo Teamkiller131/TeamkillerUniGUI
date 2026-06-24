@@ -51,8 +51,18 @@ public:
     /// Clear all series data.
     void ClearAll();
 
+    /// Number of points currently stored for a series (after sliding-window trim
+    /// and any render-point decimation); -1 if the series id is unknown.
+    int GetSeriesPointCount(int seriesId) const;
+
     /// Set sliding window size (number of points).
     void SetSlidingWindow(int maxPoints);
+
+    /// Cap the number of points actually stored/plotted per series. When a series
+    /// set via SetSeriesData exceeds this, it is LTTB-decimated (shape-preserving)
+    /// down to ~`n` points — so a 100k-tick series renders fast without visual
+    /// loss. `0` (default) disables decimation. Applied after the sliding window.
+    void SetMaxRenderPoints(int n);
 
     /// Auto-fit Y axis range.
     void SetYAxisAutoFit(bool on);
@@ -117,6 +127,7 @@ private:
     int nextId_ = 1;
     int nextRefId_ = 1;
     int slidingWindow_ = 500;
+    int maxRenderPoints_ = 0; // 0 = no decimation
     bool yAutoFit_ = true;
     bool yRangeFit_ = true;
     double yMin_ = 0, yMax_ = 100;

@@ -1,5 +1,22 @@
 ## Unreleased
 
+## [3.8.1] - 2026-06-24
+
+> **Roadmap series 3.8.x — Horizon 10 (data density at scale).**
+
+### Added
+- **`DataTable<T>` row-accessor data source** — `SetDataSource(count, index→const T&)`
+  alongside the `const std::vector<T>*` source, so models exposing `Count()`/`GetAt(i)`
+  feed the table without copying into a temporary vector every frame.
+- **`DataTable<T>::SetCellSignColor(col, valueOf)`** — financial sign colouring: a
+  column's text is coloured via the active theme `Up`/`Down` tokens (CN red-up by
+  default) by the sign of a per-row value; flat (== 0) stays default. Replaces
+  hand-written P&L `SetCellColor` lambdas.
+- **`TimeSeriesChart::SetMaxRenderPoints(n)`** — caps stored/plotted points per
+  series; oversized series are LTTB-decimated (shape-preserving) to ~`n`, so a
+  100k-tick series renders fast without visual loss (uses `core/decimate.h`).
+  Adds `GetSeriesPointCount(id)`.
+
 ## [3.8.0] - 2026-06-24
 
 > **Roadmap series 3.8.x — Horizon 6 (platform reach & HiDPI), kickoff.** See `ROADMAP.md`.

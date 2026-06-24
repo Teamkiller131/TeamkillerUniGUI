@@ -1,3 +1,4 @@
+#include <unigui/core/decimate.h>
 #include <unigui/fx/effect_scope.h>
 #include <unigui/widgets/timeseries_chart.h>
 
@@ -93,8 +94,36 @@ void TimeSeriesChart::SetSeriesData(int seriesId, const std::vector<double>& xs,
         s.points.clear();
         for (size_t i = start; i < pts.size(); ++i)
             s.points.push_back({pts[i].first, (float) pts[i].second});
+
+        // Decimate for rendering when a cap is set and exceeded (shape-preserving
+        // LTTB) — a huge tick/spread series plots fast without visual loss.
+        if (maxRenderPoints_ > 0 && (int) s.points.size() > maxRenderPoints_) {
+            std::vector<double> dx(s.points.size()), dy(s.points.size());
+            for (size_t i = 0; i < s.points.size(); ++i) {
+                dx[i] = s.points[i].first;
+                dy[i] = (double) s.points[i].second;
+            }
+            const auto idx =
+                LttbIndices(dx.data(), dy.data(), dx.size(), (size_t) maxRenderPoints_);
+            auto kept = s.points;
+            kept.clear();
+            for (size_t i : idx)
+                kept.push_back(s.points[i]);
+            s.points.swap(kept);
+        }
         return;
     }
+}
+
+void TimeSeriesChart::SetMaxRenderPoints(int n) {
+    maxRenderPoints_ = n < 0 ? 0 : n;
+}
+
+int TimeSeriesChart::GetSeriesPointCount(int seriesId) const {
+    for (const auto& s : series_)
+        if (s.id == seriesId)
+            return (int) s.points.size();
+    return -1;
 }
 
 void TimeSeriesChart::Render() {

@@ -1,4 +1,5 @@
 #pragma once
+#include <unigui/theme/color_tokens.h>
 #include <unigui/widgets/widget_base.h>
 
 #include <imgui.h>
@@ -106,6 +107,19 @@ public:
     void SetDataSource(const std::vector<T>* data) { data_ = data; }
     const std::vector<T>* GetDataSource() const { return data_; }
 
+    /// Index→element accessor for the count-based data source.
+    using RowAccessor = std::function<const T&(std::size_t row)>;
+    /// Accessor-based data source: bind a row count + an `index → const T&`
+    /// accessor instead of a contiguous `std::vector<T>*`. Lets models that
+    /// expose `Count()`/`GetAt(i)` feed the table without copying into a
+    /// temporary vector every frame. (Mutually exclusive with the pointer
+    /// source — the most recent `SetDataSource` wins.)
+    void SetDataSource(std::size_t count, RowAccessor accessor) {
+        accessorCount_ = count;
+        accessor_ = std::move(accessor);
+        data_ = nullptr;
+    }
+
     // ── Cell rendering ────────────────────────────────────────────────────
     void SetCellFormatter(CellFormatter fmt) { cellFmt_ = std::move(fmt); }
 
@@ -113,6 +127,14 @@ public:
     void SetRowColor(RowColorFn fn) { rowColorFn_ = std::move(fn); }
     void SetCellColor(CellColorFn fn) { cellColorFn_ = std::move(fn); }
     void SetCellBold(CellBoldFn fn) { cellBoldFn_ = std::move(fn); }
+    /// Financial sign colouring for a column: `valueOf` returns the row's signed
+    /// value; the cell text is coloured via the active theme `Up`/`Down` tokens
+    /// (CN red-up by default), with flat (== 0) values left the default colour.
+    /// Replaces hand-written P&L `SetCellColor` lambdas. Takes precedence over
+    /// `SetCellColor` for that column.
+    void SetCellSignColor(int col, std::function<double(int row, const T&)> valueOf) {
+        signColorCols_[col] = std::move(valueOf);
+    }
 
     // ── Sorting ───────────────────────────────────────────────────────────
     void SetSortCompare(int col, SortCompare cmp) { sortComps_[col] = std::move(cmp); }
@@ -209,7 +231,7 @@ public:
 
     // ── Render ────────────────────────────────────────────────────────────
     void Render() override {
-        if (!IsVisible() || !data_)
+        if (!IsVisible() || (!data_ && !accessor_))
             return;
 
         // ── Header ──────────────────────────────────────────────────────
@@ -260,22 +282,22 @@ public:
                 sortColumn_ = sortSpecs->Specs->ColumnUserID;
                 sortAscending_ = sortSpecs->Specs->SortDirection == ImGuiSortDirection_Ascending;
                 if (sortComps_.count(sortColumn_)) {
-                    std::vector<int> indices(data_->size());
-                    for (size_t i = 0; i < data_->size(); ++i)
+                    std::vector<int> indices(srcSize());
+                    for (size_t i = 0; i < srcSize(); ++i)
                         indices[i] = (int) i;
                     std::sort(indices.begin(), indices.end(), [&](int a, int b) {
-                        return sortAscending_ ? sortComps_[sortColumn_]((*data_)[a], (*data_)[b])
-                                              : sortComps_[sortColumn_]((*data_)[b], (*data_)[a]);
+                        return sortAscending_ ? sortComps_[sortColumn_](srcAt(a), srcAt(b))
+                                              : sortComps_[sortColumn_](srcAt(b), srcAt(a));
                     });
                     sortIndices_ = std::move(indices);
                 } else if (cellFmt_) {
                     // Default sort: numeric-aware when cells look like "100手"/"1.2万".
-                    std::vector<int> indices(data_->size());
-                    for (size_t i = 0; i < data_->size(); ++i)
+                    std::vector<int> indices(srcSize());
+                    for (size_t i = 0; i < srcSize(); ++i)
                         indices[i] = (int) i;
                     std::sort(indices.begin(), indices.end(), [&](int a, int b) {
-                        const std::string sa = cellFmt_(a, sortColumn_, (*data_)[a]);
-                        const std::string sb = cellFmt_(b, sortColumn_, (*data_)[b]);
+                        const std::string sa = cellFmt_(a, sortColumn_, srcAt(a));
+                        const std::string sb = cellFmt_(b, sortColumn_, srcAt(b));
                         return detail::CompareSortCells(sa, sb, sortAscending_) < 0;
                     });
                     sortIndices_ = std::move(indices);
@@ -285,7 +307,7 @@ public:
         }
         // Sort direction indicator uses column flags set in TableSetupColumn
 
-        int totalRows = (int) data_->size();
+        int totalRows = (int) srcSize();
 
         // ── Scroll-to-row gesture ────────────────────────────────────────
         if (scrollToRow_ >= 0 && scrollToRow_ < totalRows) {
@@ -296,7 +318,7 @@ public:
 
         // ── Text filter ─────────────────────────────────────────────────
         auto rowPasses = [&](int idx) -> bool {
-            const T& item = (*data_)[idx];
+            const T& item = srcAt(idx);
             if (filterFn_ && !filterFn_(idx, item))
                 return false;
             if (!filterText_.empty() && cellFmt_) {
@@ -326,7 +348,7 @@ public:
 
             ImGui::TableNextRow();
             if (rowColorFn_) {
-                ImU32 bg = rowColorFn_(idx, (*data_)[idx]);
+                ImU32 bg = rowColorFn_(idx, srcAt(idx));
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, bg);
             }
             if (selectedRow_ == idx) {
@@ -350,14 +372,14 @@ public:
                 // ── Custom cell renderer (e.g. an im:: editor) ───
                 auto crIt = cellRenderers_.find(col);
                 if (crIt != cellRenderers_.end() && crIt->second) {
-                    crIt->second(idx, (*data_)[idx]);
+                    crIt->second(idx, srcAt(idx));
                     continue;
                 }
 
                 // ── Checkbox column (get/set, no bool*) ──────────
                 auto cbvIt = checkboxValueCols_.find(col);
                 if (cbvIt != checkboxValueCols_.end()) {
-                    bool v = cbvIt->second.first ? cbvIt->second.first(idx, (*data_)[idx]) : false;
+                    bool v = cbvIt->second.first ? cbvIt->second.first(idx, srcAt(idx)) : false;
                     char cbLabel[32];
                     snprintf(cbLabel, sizeof(cbLabel), "##cbv_%d_%d", idx, col);
                     if (ImGui::Checkbox(cbLabel, &v) && cbvIt->second.second)
@@ -368,7 +390,7 @@ public:
                 // ── Checkbox column ──────────────────────────────
                 auto cbIt = checkboxCols_.find(col);
                 if (cbIt != checkboxCols_.end() && cbIt->second) {
-                    bool* pb = cbIt->second(idx, (*data_)[idx]);
+                    bool* pb = cbIt->second(idx, srcAt(idx));
                     if (pb) {
                         char cbLabel[32];
                         snprintf(cbLabel, sizeof(cbLabel), "##cb_%d_%d", idx, col);
@@ -378,7 +400,7 @@ public:
                 }
 
                 std::string text =
-                    cellFmt_ ? cellFmt_(idx, col, (*data_)[idx]) : std::to_string(idx);
+                    cellFmt_ ? cellFmt_(idx, col, srcAt(idx)) : std::to_string(idx);
 
                 bool isEditing = (editRow_ == idx && editCol_ == col);
                 if (isEditing) {
@@ -439,16 +461,25 @@ public:
                     // "no override" — keep the default text color instead of
                     // pushing a fully-transparent (invisible) text colour.
                     bool hasCellColor = false;
-                    if (cellColorFn_) {
-                        ImU32 c = cellColorFn_(idx, col, (*data_)[idx]);
-                        if ((c >> 24) != 0) {
-                            ImGui::PushStyleColor(ImGuiCol_Text,
-                                                  IM_COL32(c & 0xFF, (c >> 8) & 0xFF,
-                                                           (c >> 16) & 0xFF, (c >> 24) & 0xFF));
-                            hasCellColor = true;
-                        }
+                    ImU32 c = 0;
+                    // Financial sign colour: non-zero values get the theme Up/Down
+                    // colour (per active Polarity); zero/flat keeps the default.
+                    auto scIt = signColorCols_.find(col);
+                    if (scIt != signColorCols_.end() && scIt->second) {
+                        const double v = scIt->second(idx, srcAt(idx));
+                        if (v != 0.0)
+                            c = ImGui::GetColorU32(theme::GetSemanticColor(
+                                v > 0.0 ? theme::Semantic::Up : theme::Semantic::Down));
+                    } else if (cellColorFn_) {
+                        c = cellColorFn_(idx, col, srcAt(idx));
                     }
-                    bool isBold = cellBoldFn_ && cellBoldFn_(idx, col, (*data_)[idx]);
+                    if ((c >> 24) != 0) {
+                        ImGui::PushStyleColor(ImGuiCol_Text,
+                                              IM_COL32(c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF,
+                                                       (c >> 24) & 0xFF));
+                        hasCellColor = true;
+                    }
+                    bool isBold = cellBoldFn_ && cellBoldFn_(idx, col, srcAt(idx));
                     if (isBold)
                         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
                     ImGui::TextUnformatted(text.c_str());
@@ -466,13 +497,13 @@ public:
         // ── Render rows ──────────────────────────────────────────────────
         if (groups_.empty()) {
             auto mapRow = [&](int row) -> int {
-                if (sortColumn_ >= 0 && sortIndices_.size() == data_->size())
+                if (sortColumn_ >= 0 && sortIndices_.size() == srcSize())
                     return sortIndices_[row];
                 return row;
             };
 
             std::vector<int> displayRows;
-            displayRows.reserve(data_->size());
+            displayRows.reserve(srcSize());
             for (int row = 0; row < totalRows; ++row) {
                 int idx = mapRow(row);
                 if (rowPasses(idx))
@@ -512,8 +543,8 @@ public:
                 ImGui::TableSetColumnIndex(0);
                 char hdr[256];
                 int childCount = g.endRow < 0
-                                     ? (int) data_->size() - g.startRow
-                                     : std::min((int) data_->size(), g.endRow) - g.startRow;
+                                     ? (int) srcSize() - g.startRow
+                                     : std::min((int) srcSize(), g.endRow) - g.startRow;
                 snprintf(hdr, sizeof(hdr), "%s  %s  (%d rows)", g.expanded ? "▼" : "▶",
                          g.label.c_str(), childCount);
                 if (ImGui::Selectable(hdr, false, ImGuiSelectableFlags_SpanAllColumns))
@@ -537,8 +568,8 @@ public:
                         if (ImGui::Selectable(slabel, false,
                                               ImGuiSelectableFlags_AllowDoubleClick)) {
                             int gStart = std::max(0, g.startRow);
-                            int gEnd = g.endRow < 0 ? (int) data_->size()
-                                                    : std::min((int) data_->size(), g.endRow);
+                            int gEnd = g.endRow < 0 ? (int) srcSize()
+                                                    : std::min((int) srcSize(), g.endRow);
                             if (cellFmt_) {
                                 // 3-state: none→asc→desc→none
                                 if (g.sortCol != c) {
@@ -554,7 +585,7 @@ public:
                                 if (g.sortCol >= 0) {
                                     std::vector<std::pair<std::string, int>> sv;
                                     for (int r = gStart; r < gEnd; ++r)
-                                        sv.push_back({cellFmt_(r, g.sortCol, (*data_)[r]), r});
+                                        sv.push_back({cellFmt_(r, g.sortCol, srcAt(r)), r});
                                     if (g.sortAsc)
                                         std::sort(sv.begin(), sv.end(), [](auto& a, auto& b) {
                                             return detail::CompareSortCells(a.first, b.first,
@@ -583,7 +614,7 @@ public:
                 // ── Child rows (sorted if group sort active) ─────────
                 int groupStart = std::max(0, g.startRow);
                 int groupEnd =
-                    g.endRow < 0 ? (int) data_->size() : std::min((int) data_->size(), g.endRow);
+                    g.endRow < 0 ? (int) srcSize() : std::min((int) srcSize(), g.endRow);
                 trailingRow = std::max(trailingRow, groupEnd);
 
                 if (!g.expanded)
@@ -630,6 +661,12 @@ public:
 private:
     std::vector<ColumnDef> columns_;
     const std::vector<T>* data_ = nullptr;
+    RowAccessor accessor_;
+    std::size_t accessorCount_ = 0;
+    std::unordered_map<int, std::function<double(int, const T&)>> signColorCols_;
+    // Row source dispatch: contiguous vector pointer or count+accessor.
+    std::size_t srcSize() const { return data_ ? data_->size() : accessorCount_; }
+    const T& srcAt(std::size_t i) const { return data_ ? (*data_)[i] : accessor_(i); }
     CellFormatter cellFmt_;
     RowColorFn rowColorFn_;
     CellColorFn cellColorFn_;

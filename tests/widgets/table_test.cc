@@ -191,3 +191,30 @@ TEST_F(TableTest, DataTable_CheckboxValue_GetSetNoUB) {
     // The getter/setter wiring compiles and runs against uint8_t-backed storage.
     EXPECT_EQ(rows[1].enabled, 1);
 }
+
+// ── Row-accessor data source (no per-frame vector copy) ──────────────────────
+TEST_F(TableTest, DataTable_RowAccessorSource_Renders) {
+    // A model exposing Count()/GetAt(i) instead of a contiguous vector.
+    std::vector<DtRow> backing = {{"x", 1.0, 0}, {"y", 2.0, 0}, {"z", 3.0, 0}};
+    unigui::DataTable<DtRow> dt("dt_acc", {{"Name", 100}, {"PnL", 80}});
+    dt.SetDataSource(backing.size(), [&](std::size_t i) -> const DtRow& { return backing[i]; });
+    int formatted = 0;
+    dt.SetCellFormatter([&](int, int c, const DtRow& r) {
+        ++formatted;
+        return c == 0 ? r.name : std::to_string(r.pnl);
+    });
+    EXPECT_NO_THROW(dt.Render());
+    EXPECT_GT(formatted, 0); // the accessor source was iterated
+}
+
+TEST_F(TableTest, DataTable_SignColorColumn_Renders) {
+    std::vector<DtRow> rows = {{"up", 5.0, 0}, {"flat", 0.0, 0}, {"down", -3.0, 0}};
+    unigui::DataTable<DtRow> dt("dt_sign", {{"Name", 100}, {"PnL", 80}});
+    dt.SetDataSource(&rows);
+    dt.SetCellFormatter([](int, int c, const DtRow& r) {
+        return c == 0 ? r.name : std::to_string(r.pnl);
+    });
+    // Column 1 coloured by the sign of pnl via theme Up/Down tokens.
+    dt.SetCellSignColor(1, [](int, const DtRow& r) { return r.pnl; });
+    EXPECT_NO_THROW(dt.Render());
+}
