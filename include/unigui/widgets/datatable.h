@@ -399,8 +399,7 @@ public:
                     continue;
                 }
 
-                std::string text =
-                    cellFmt_ ? cellFmt_(idx, col, srcAt(idx)) : std::to_string(idx);
+                std::string text = cellFmt_ ? cellFmt_(idx, col, srcAt(idx)) : std::to_string(idx);
 
                 bool isEditing = (editRow_ == idx && editCol_ == col);
                 if (isEditing) {
@@ -445,8 +444,11 @@ public:
                             if (editableCols_.count(col)) {
                                 editRow_ = idx;
                                 editCol_ = col;
-                                strncpy(editBuf_, text.c_str(), sizeof(editBuf_) - 1);
-                                editBuf_[sizeof(editBuf_) - 1] = 0;
+                                // Portable bounded copy (no deprecated strncpy):
+                                // std::string::copy writes min(n, size()) chars and
+                                // does not NUL-terminate, so we terminate explicitly.
+                                const std::size_t n = text.copy(editBuf_, sizeof(editBuf_) - 1);
+                                editBuf_[n] = 0;
                             }
                             if (onDblClick_)
                                 onDblClick_(idx);
@@ -542,9 +544,8 @@ public:
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, groupBg);
                 ImGui::TableSetColumnIndex(0);
                 char hdr[256];
-                int childCount = g.endRow < 0
-                                     ? (int) srcSize() - g.startRow
-                                     : std::min((int) srcSize(), g.endRow) - g.startRow;
+                int childCount = g.endRow < 0 ? (int) srcSize() - g.startRow
+                                              : std::min((int) srcSize(), g.endRow) - g.startRow;
                 snprintf(hdr, sizeof(hdr), "%s  %s  (%d rows)", g.expanded ? "▼" : "▶",
                          g.label.c_str(), childCount);
                 if (ImGui::Selectable(hdr, false, ImGuiSelectableFlags_SpanAllColumns))
@@ -613,8 +614,7 @@ public:
 
                 // ── Child rows (sorted if group sort active) ─────────
                 int groupStart = std::max(0, g.startRow);
-                int groupEnd =
-                    g.endRow < 0 ? (int) srcSize() : std::min((int) srcSize(), g.endRow);
+                int groupEnd = g.endRow < 0 ? (int) srcSize() : std::min((int) srcSize(), g.endRow);
                 trailingRow = std::max(trailingRow, groupEnd);
 
                 if (!g.expanded)

@@ -172,9 +172,8 @@ TEST_F(TableTest, DataTable_EmptyText_RendersWithoutCrash) {
     unigui::DataTable<DtRow> dt("dt", {{"Name", 100}, {"PnL", 80}});
     dt.SetDataSource(&rows);
     dt.SetEmptyText("no data");
-    dt.SetCellFormatter([](int, int c, const DtRow& r) {
-        return c == 0 ? r.name : std::to_string(r.pnl);
-    });
+    dt.SetCellFormatter(
+        [](int, int c, const DtRow& r) { return c == 0 ? r.name : std::to_string(r.pnl); });
     EXPECT_NO_THROW(dt.Render());
 }
 
@@ -184,7 +183,7 @@ TEST_F(TableTest, DataTable_CheckboxValue_GetSetNoUB) {
     dt.SetDataSource(&rows);
     // Read via getter, write via setter — no reinterpret_cast<bool*> over uint8_t.
     dt.SetCellCheckboxValue(
-        0, [&](int row, const DtRow& r) { return r.enabled != 0; },
+        0, [&](int /*row*/, const DtRow& r) { return r.enabled != 0; },
         [&](int row, bool v) { rows[row].enabled = v ? 1 : 0; });
     dt.SetCellFormatter([](int, int, const DtRow& r) { return r.name; });
     EXPECT_NO_THROW(dt.Render());
@@ -211,9 +210,8 @@ TEST_F(TableTest, DataTable_SignColorColumn_Renders) {
     std::vector<DtRow> rows = {{"up", 5.0, 0}, {"flat", 0.0, 0}, {"down", -3.0, 0}};
     unigui::DataTable<DtRow> dt("dt_sign", {{"Name", 100}, {"PnL", 80}});
     dt.SetDataSource(&rows);
-    dt.SetCellFormatter([](int, int c, const DtRow& r) {
-        return c == 0 ? r.name : std::to_string(r.pnl);
-    });
+    dt.SetCellFormatter(
+        [](int, int c, const DtRow& r) { return c == 0 ? r.name : std::to_string(r.pnl); });
     // Column 1 coloured by the sign of pnl via theme Up/Down tokens.
     dt.SetCellSignColor(1, [](int, const DtRow& r) { return r.pnl; });
     EXPECT_NO_THROW(dt.Render());

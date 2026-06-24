@@ -1,5 +1,28 @@
 ## Unreleased
 
+## [3.8.4] - 2026-06-24
+
+> **Roadmap series 3.8.x — Horizon 7 (quality gates).**
+
+### Added
+- **MSVC warnings-as-errors gate** — new `windows-msvc-debug-werror` CMake preset
+  (`/W4 /WX`) and a matching `windows-werror` CI job, mirroring the existing GCC
+  `linux-werror` gate on the other major compiler. The whole tree — library, tests,
+  and examples — is now verified warning-clean under `/WX` on both MSVC and GCC.
+
+### Changed
+- **MSVC builds define `_CRT_SECURE_NO_WARNINGS`** (PRIVATE, in `unigui_set_warnings`)
+  so MSVC's C4996 nag on portable Standard C functions (`fopen`, `sscanf`, `_wfopen`)
+  no longer fires for our own translation units. PRIVATE — it never leaks to
+  downstream consumers, who keep their own warning policy.
+
+### Fixed
+- **`DataTable<T>` inline-edit copy** now uses `std::string::copy` instead of the
+  deprecated `strncpy`, so consumer builds that include `datatable.h` under `/W4`
+  stay warning-clean without relying on `_CRT_SECURE_NO_WARNINGS`. Behaviour is
+  unchanged (bounded copy + explicit NUL terminate).
+- **Unreferenced-parameter warning** in `table_test.cc` (a checkbox getter lambda).
+
 ## [3.8.3] - 2026-06-24
 
 > **Roadmap series 3.8.x — Horizon 9 (accessibility foundation).**

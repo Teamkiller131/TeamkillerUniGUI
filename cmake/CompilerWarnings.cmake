@@ -16,6 +16,13 @@ function(unigui_set_warnings target)
     if(MSVC)
         set(_warnings /W4)
         set(_werror /WX)
+        # MSVC's C4996 deprecates portable Standard C functions (fopen, sscanf,
+        # _wfopen, …) in favour of its non-portable *_s variants. We use the
+        # Standard forms deliberately for cross-platform parity, so silence the
+        # nag for our own TUs (PRIVATE — never leaks to downstream consumers).
+        # Public headers avoid the deprecated calls outright so consumer builds
+        # stay clean without relying on this define.
+        target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
     else()
         # GCC and Clang share this common set.
         #
