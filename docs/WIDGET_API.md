@@ -1,6 +1,6 @@
 # UniGUI Widget API Reference
 
-> **Version**: 3.8.8 (C++23) · **Widgets**: 95 · **Backend**: Dear ImGui (docking + multi-viewport)
+> **Version**: 3.8.9 (C++23) · **Widgets**: 95 · **Backend**: Dear ImGui (docking + multi-viewport)
 >
 > **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Cookbook**: [EXAMPLES.md](EXAMPLES.md) · **Per-widget examples**: [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)
 >
@@ -1334,7 +1334,13 @@ Real-time implot plot with a sliding window, auto-fit Y, crosshair, reference li
 TimeSeriesChart(std::string name);
 int AddSeries(TimeSeriesDef def); void RemoveSeries(int id);
 void AppendPoint(int seriesId, float value, double timestamp = -1.0); void ClearAll();
+void AppendSample(int seriesId, double timestamp, float value);  // (when, what) order
+void UpsertPoint(int seriesId, float value, double timestamp);   // update-by-ts else append (live bar)
+void SetSeriesData(int seriesId, const std::vector<double>& xs, const std::vector<double>& ys);
 void SetSlidingWindow(int maxPoints);
+void SetMaxRenderPoints(int n);                 // LTTB-decimate huge series to ~n
+int GetSeriesPointCount(int seriesId) const;
+void SetSessionAxis(SessionAxis axis);          // gap-free intraday X axis, HH:MM labels
 void SetYAxisAutoFit(bool on); void SetYAxisRange(double min, double max);
 void SetXAxisLabel(const std::string&); void SetYAxisLabel(const std::string&);
 void SetCrosshairEnabled(bool); void SetLegendEnabled(bool);

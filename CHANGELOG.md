@@ -1,5 +1,24 @@
 ## Unreleased
 
+## [3.8.9] - 2026-06-24
+
+> **Roadmap series 3.8.x — Horizon 10 (data density at scale): the two deferred chart items.**
+
+### Added
+- **`TimeSeriesChart::UpsertPoint(seriesId, value, timestamp)`** — update-or-append
+  keyed by timestamp: if a point already exists at exactly `timestamp` its value is
+  replaced in place, otherwise the point is appended (with the usual sliding-window
+  trim). This is the live forming-bar/tick pattern — the latest sample updates
+  repeatedly at a fixed timestamp before a new one starts — without growing the
+  series by one point per frame. (Deferred item from `docs/jzdz-fit-plan.md`.)
+- **`TimeSeriesChart::SetSessionAxis(SessionAxis)`** — convenience that installs the
+  matching inverse tick formatter so intraday X labels read as wall-clock `HH:MM`
+  while the axis stays gap-free (lunch/overnight breaks collapsed). Plot
+  `SessionAxis::ToAxis(secOfDay)` coordinates and the labels follow. Wires the
+  existing pure `SessionAxis` transform into the chart's X formatter — the second
+  deferred chart item. No new per-instance state (the axis is captured by value in
+  the formatter).
+
 ## [3.8.8] - 2026-06-24
 
 > **Roadmap series 3.8.x — Horizon 6 (HiDPI content-scale).**

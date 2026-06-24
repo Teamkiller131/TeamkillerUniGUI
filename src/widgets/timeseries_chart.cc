@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 
 namespace unigui {
 
@@ -73,6 +74,33 @@ void TimeSeriesChart::AppendPoint(int seriesId, float value, double timestamp) {
             s.points.pop_front();
         return;
     }
+}
+
+void TimeSeriesChart::UpsertPoint(int seriesId, float value, double timestamp) {
+    for (auto& s : series_) {
+        if (s.id != seriesId)
+            continue;
+        const double ts = (timestamp < 0) ? frameCounter_ : timestamp;
+        // Update in place if a point with this exact timestamp key exists.
+        for (auto& p : s.points) {
+            if (p.first == ts) {
+                p.second = value;
+                return;
+            }
+        }
+        // Otherwise behave like AppendPoint (append + sliding-window trim).
+        s.points.push_back({ts, value});
+        while ((int) s.points.size() > slidingWindow_)
+            s.points.pop_front();
+        return;
+    }
+}
+
+void TimeSeriesChart::SetSessionAxis(SessionAxis axis) {
+    xAxisFmt_ = [axis = std::move(axis)](double value, char* buf, int size, void*) -> int {
+        const std::string label = axis.FormatAxis(value);
+        return std::snprintf(buf, static_cast<size_t>(size), "%s", label.c_str());
+    };
 }
 
 void TimeSeriesChart::SetSeriesData(int seriesId, const std::vector<double>& xs,
@@ -210,8 +238,8 @@ void TimeSeriesChart::Render() {
             if (lo <= hi && (hi - lo) < minYSpan_) {
                 double mid = 0.5 * (lo + hi);
                 ImPlot::SetupAxis(ImAxis_Y1, yLabel);
-                ImPlot::SetupAxisLimits(ImAxis_Y1, mid - minYSpan_ * 0.5,
-                                        mid + minYSpan_ * 0.5, ImPlotCond_Always);
+                ImPlot::SetupAxisLimits(ImAxis_Y1, mid - minYSpan_ * 0.5, mid + minYSpan_ * 0.5,
+                                        ImPlotCond_Always);
                 minSpanApplied = true;
             }
         }

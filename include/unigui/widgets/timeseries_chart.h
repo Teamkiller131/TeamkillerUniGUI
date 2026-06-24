@@ -1,4 +1,5 @@
 #pragma once
+#include <unigui/core/session_axis.h>
 #include <unigui/widgets/widget_base.h>
 
 #include <imgui.h>
@@ -40,6 +41,13 @@ public:
     void AppendSample(int seriesId, double timestamp, float value) {
         AppendPoint(seriesId, value, timestamp);
     }
+
+    /// Update-or-append a point keyed by timestamp: if the series already has a
+    /// point at exactly `timestamp`, its value is replaced in place; otherwise the
+    /// point is appended (like AppendPoint). This is the "live forming bar/tick"
+    /// pattern — the latest sample updates repeatedly at a fixed timestamp before a
+    /// new one starts — without growing the series by one point per frame.
+    void UpsertPoint(int seriesId, float value, double timestamp);
 
     /// Replace a series' entire point set in one shot (x = timestamps, y = values).
     /// Use this when the caller owns a complete, possibly out-of-order history buffer
@@ -106,6 +114,13 @@ public:
     void SetXAxisFormatter(std::function<int(double, char*, int, void*)> fn) {
         xAxisFmt_ = std::move(fn);
     }
+    /// Convenience: format the X axis with a `SessionAxis`, so intraday tick
+    /// labels read as wall-clock "HH:MM" while the axis itself stays gap-free
+    /// (lunch/overnight breaks collapsed). The X values you plot must already be
+    /// session-axis coordinates (`SessionAxis::ToAxis(secOfDay)`); this installs
+    /// the matching inverse tick formatter. Equivalent to building the lambda by
+    /// hand and calling SetXAxisFormatter.
+    void SetSessionAxis(SessionAxis axis);
     void SetRubberBandZoom(bool on) { rubberBandZoom_ = on; }
     int AddRefLine(std::string label, double value, ImU32 color);
     void RemoveRefLine(int id);
@@ -131,9 +146,9 @@ private:
     bool yAutoFit_ = true;
     bool yRangeFit_ = true;
     double yMin_ = 0, yMax_ = 100;
-    double minYSpan_ = 0.0;          // 0 = disabled; else Y-axis height floor (auto-fit only)
-    double lastXMin_ = -1e300;       // visible X window cached from the previous frame,
-    double lastXMax_ = 1e300;        // used to scope the min-span Y fit (see Render)
+    double minYSpan_ = 0.0;    // 0 = disabled; else Y-axis height floor (auto-fit only)
+    double lastXMin_ = -1e300; // visible X window cached from the previous frame,
+    double lastXMax_ = 1e300;  // used to scope the min-span Y fit (see Render)
     bool xRangeSet_ = false;
     double xMin_ = 0, xMax_ = 1;
     std::string xLabel_, yLabel_;
