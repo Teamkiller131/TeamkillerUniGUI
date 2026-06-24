@@ -18,6 +18,7 @@
 #include <unigui/core/api.h>
 #include <unigui/core/context.h>
 #include <unigui/core/decimate.h>
+#include <unigui/core/dpi.h>
 #include <unigui/core/error.h>
 #include <unigui/core/format_cn.h>
 #include <unigui/core/format_num.h>

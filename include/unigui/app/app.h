@@ -60,5 +60,10 @@ void* GetNativeWindowHandle();
 void SetContentScale(float scale);
 /// Current content scale (`ImGuiStyle::FontScaleDpi`); 1.0 if no context.
 float GetContentScale();
+/// Apply a content scale derived from a raw platform value (e.g. GLFW's
+/// `glfwGetWindowContentScale`). When `snap` is true (default) the value is run
+/// through `dpi::NormalizeContentScale` first — clamped and snapped to a crisp
+/// 0.25 step — so a fractional platform scale (1.4583) becomes a sharp 1.5.
+void SetContentScaleFromMonitor(float rawScale, bool snap = true);
 
 } // namespace unigui

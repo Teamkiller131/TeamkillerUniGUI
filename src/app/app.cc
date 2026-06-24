@@ -1,5 +1,6 @@
 #include <unigui/app/app.h>
 #include <unigui/backend/backend_factory.h>
+#include <unigui/core/dpi.h>
 #include <unigui/core/main_thread.h>
 #include <unigui/theme/presets/registry.h>
 #include <unigui/theme/theme.h>
@@ -355,6 +356,9 @@ void SetContentScale(float scale) {
 }
 float GetContentScale() {
     return ImGui::GetCurrentContext() ? ImGui::GetStyle().FontScaleDpi : 1.0f;
+}
+void SetContentScaleFromMonitor(float rawScale, bool snap) {
+    SetContentScale(snap ? dpi::NormalizeContentScale(rawScale) : rawScale);
 }
 void Run(const std::function<void()>& cb, int maxFrames) {
     int frame = 0;

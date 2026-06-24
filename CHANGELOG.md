@@ -1,5 +1,22 @@
 ## Unreleased
 
+## [3.8.8] - 2026-06-24
+
+> **Roadmap series 3.8.x — Horizon 6 (HiDPI content-scale).**
+
+### Added
+- **`core/dpi.h` — HiDPI content-scale helpers** (pure, header-only). Dear ImGui
+  ≥1.92 re-rasterises fonts from `ImGuiStyle::FontScaleDpi` (see `SetContentScale`),
+  but platforms report DPI in inconsistent, often fractional forms (GLFW hands back
+  `1.4583` on a "150%" monitor) which gives soft glyphs. `DpiToScale(dpi, base=96)`
+  maps a raw DPI to a baseline-relative scale; `NormalizeContentScale(raw, min, max,
+  step)` clamps and snaps a raw scale to a crisp step (so `1.4583 → 1.5`), guarding
+  NaN / non-positive / reversed-bounds inputs. Fully unit-tested.
+- **`App::SetContentScaleFromMonitor(rawScale, snap = true)`** — apply a content
+  scale taken from a raw platform value (e.g. `glfwGetWindowContentScale`), running
+  it through `NormalizeContentScale` first so fractional monitor scales render
+  sharply. The crisp-CJK-on-4K path the trading client needs.
+
 ## [3.8.7] - 2026-06-24
 
 > **Roadmap series 3.8.x — Horizon 11 (distribution: consumable packaging).**
