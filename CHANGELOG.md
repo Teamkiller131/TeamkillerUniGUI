@@ -1,6 +1,24 @@
 ## Unreleased
 
+## [3.8.0] - 2026-06-24
+
+> **Roadmap series 3.8.x — Horizon 6 (platform reach & HiDPI), kickoff.** See `ROADMAP.md`.
+
 ### Added
+- **Toolchain modernization → Dear ImGui 1.92.8 + ImPlot 1.0** (`vcpkg.json` overrides). Picks up
+  the 1.92 **dynamic font system** (on-demand glyphs, `style.FontScaleDpi`) — the foundation for
+  crisp CJK + HiDPI text — and ImPlot 1.0's `ImPlotSpec` per-call styling. The unused
+  `imgui-node-editor` dependency was dropped (it has no imgui-1.92-compatible version in vcpkg and
+  was never linked). The whole tree builds + tests clean against the new deps (1000/1000).
+- **HiDPI content scale (Horizon 6)** — `App::SetContentScale(float)` / `GetContentScale()` drive
+  `ImGuiStyle::FontScaleDpi` so fonts re-rasterise crisply at any scale via the dynamic font system
+  (no glyph-range pre-building), and `AppConfig::dpiScaleFonts` opts into Dear ImGui's automatic
+  per-monitor font DPI scaling (`io.ConfigDpiScaleFonts`).
+- **Series decimation core** — `core/decimate.h` (`LttbIndices`/`Decimate` and `MinMaxBuckets`):
+  pure, header-only downsampling for data-dense charts. LTTB preserves visual shape (peaks/troughs);
+  MinMaxBuckets guarantees extremes survive (for volatile price/OHLC data). Unit-tested; the
+  reusable basis for chart render-point capping (Horizon 10). Addresses ImPlot's large-series
+  slowdown without changing the stored data.
 - **`im::ButtonVariant::Warning`** — an amber (`0.85, 0.55, 0.13`) button color variant for actions
   that are neither destructive (`Danger`) nor a fresh start (`Success`): e.g. a pod whose trigger
   count is exhausted offering a "Done / re-draft" action. `VariantColor` maps it; all `im::Button`

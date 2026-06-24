@@ -1,6 +1,6 @@
 # UniGUI Widget API Reference
 
-> **Version**: 3.7.0 (C++23) · **Widgets**: 93 · **Backend**: Dear ImGui (docking + multi-viewport)
+> **Version**: 3.8.0 (C++23) · **Widgets**: 93 · **Backend**: Dear ImGui (docking + multi-viewport)
 >
 > **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Cookbook**: [EXAMPLES.md](EXAMPLES.md) · **Per-widget examples**: [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)
 >

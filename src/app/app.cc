@@ -210,6 +210,9 @@ bool Init(const AppConfig& config) {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    // HiDPI: opt into Dear ImGui's dynamic per-monitor font DPI scaling (≥1.92).
+    if (config.dpiScaleFonts)
+        ImGui::GetIO().ConfigDpiScaleFonts = true;
     unigui::theme::RegisterAllThemes();
 
     // Try the requested backend; if a hardware backend (DX11/DX12/Vulkan/Metal)
@@ -345,6 +348,13 @@ bool ShouldClose() {
 }
 void* GetNativeWindowHandle() {
     return g_platform ? g_platform->GetNativeWindowHandle() : nullptr;
+}
+void SetContentScale(float scale) {
+    if (ImGui::GetCurrentContext())
+        ImGui::GetStyle().FontScaleDpi = scale > 0.f ? scale : 1.0f;
+}
+float GetContentScale() {
+    return ImGui::GetCurrentContext() ? ImGui::GetStyle().FontScaleDpi : 1.0f;
 }
 void Run(const std::function<void()>& cb, int maxFrames) {
     int frame = 0;

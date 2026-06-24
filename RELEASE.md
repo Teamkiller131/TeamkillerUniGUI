@@ -1,3 +1,58 @@
+# TeamkillerUniGUI v3.8.0 Release Notes
+
+**Release Date:** 2026-06-24 | **Version:** 3.8.0 | **Widgets:** 93 | **Tests:** 1000+
+
+> First release of the **3.8.x roadmap series** (see `ROADMAP.md`). Kicks off
+> **Horizon 6 — platform reach & HiDPI** with the toolchain jump to Dear ImGui
+> 1.92 + ImPlot 1.0, and lands the Horizon-10 decimation core.
+
+---
+
+## Highlights
+
+### Toolchain modernization: Dear ImGui 1.92.8 + ImPlot 1.0
+
+The vendored deps move to **Dear ImGui 1.92.8** and **ImPlot 1.0** (via `vcpkg.json`
+overrides). This brings ImGui's new **dynamic font system** (on-demand glyph
+rasterization, `style.FontScaleDpi`) — the foundation for crisp CJK + HiDPI text
+without pre-built glyph ranges — and ImPlot 1.0's `ImPlotSpec` per-call styling.
+The unused `imgui-node-editor` dependency was removed (no imgui-1.92-compatible
+version exists in vcpkg, and it was never linked). The entire tree builds and
+tests clean against the new deps.
+
+### HiDPI content scale (Horizon 6)
+
+- `App::SetContentScale(float)` / `GetContentScale()` — drive `ImGuiStyle::FontScaleDpi`
+  so fonts re-rasterise crisply at any scale (1.0/1.5/2.0×) via the dynamic font
+  system. No glyph-range pre-building.
+- `AppConfig::dpiScaleFonts` — opt into Dear ImGui's automatic per-monitor font
+  DPI scaling (`io.ConfigDpiScaleFonts`).
+
+### Series decimation (Horizon 10 foundation)
+
+`core/decimate.h` — pure, header-only downsampling for data-dense charts:
+- `LttbIndices` / `Decimate` (Largest-Triangle-Three-Buckets) preserve visual shape.
+- `MinMaxBuckets` guarantee per-bucket extremes survive (volatile price/OHLC data).
+
+Unit-tested; the reusable basis for chart render-point capping, addressing ImPlot's
+large-series slowdown without mutating the stored series.
+
+---
+
+## Upgrade Guide
+
+### From v3.7.x
+
+1. **Pull + re-resolve vcpkg.** The `vcpkg.json` now pins imgui 1.92.8 + implot 1.0
+   via `overrides`; reconfigure to rebuild those deps. **Clean-rebuild** the affected
+   preset (`cmake-msvc.cmd --preset windows-msvc-debug`).
+2. **No source breaks** — imgui 1.92 keeps the obsolete enum aliases UniGUI used
+   (`ImGuiCol_NavHighlight`, `TabActive`, …); no call-site changes required.
+3. **For HiDPI / multi-monitor:** set `cfg.dpiScaleFonts = true`, or call
+   `unigui::SetContentScale(scale)` at runtime.
+
+---
+
 # TeamkillerUniGUI v3.7.0 Release Notes
 
 **Release Date:** 2026-06-15 | **Version:** 3.7.0 | **Widgets:** 93 | **Tests:** 996

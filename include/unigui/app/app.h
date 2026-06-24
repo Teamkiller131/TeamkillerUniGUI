@@ -17,6 +17,11 @@ struct AppConfig {
 #else
     BackendType backend = BackendType::GLFW_GL3;
 #endif
+    /// HiDPI: let Dear ImGui (≥1.92) re-rasterise fonts on the fly as the monitor
+    /// content scale changes (sets `io.ConfigDpiScaleFonts`). With the dynamic
+    /// font system this keeps text crisp across DPIs without pre-building glyph
+    /// sizes — recommended for multi-monitor / fractional-DPI setups.
+    bool dpiScaleFonts = false;
 };
 
 bool Init(const AppConfig& config);
@@ -46,5 +51,14 @@ int RunApp(const AppConfig& config, const std::function<void()>& callback, int m
 
 /// v1.9: Get native window handle. Returns HWND on Windows, GLFWwindow* elsewhere.
 void* GetNativeWindowHandle();
+
+/// HiDPI content scale. Sets the per-viewport font DPI factor
+/// (`ImGuiStyle::FontScaleDpi`, Dear ImGui ≥1.92), so fonts re-rasterise crisply
+/// at the given scale (1.0 = 100%, 1.5 = 150%, …) using the dynamic font system —
+/// no glyph-range pre-building. Requires a live ImGui context. Pairs with
+/// `AppConfig::dpiScaleFonts` for automatic per-monitor scaling.
+void SetContentScale(float scale);
+/// Current content scale (`ImGuiStyle::FontScaleDpi`); 1.0 if no context.
+float GetContentScale();
 
 } // namespace unigui
