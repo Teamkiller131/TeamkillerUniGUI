@@ -67,6 +67,8 @@ void Button::Render() {
         clicked_ = ImGui::Button(label_.c_str());
     if (clicked_ && onClick_)
         onClick_();
+    if (ImGui::IsItemFocused())
+        AnnounceAccessible(a11y::Role::Button, label_);
     ImGui::PopID();
 
     ImGui::PopStyleColor(3);

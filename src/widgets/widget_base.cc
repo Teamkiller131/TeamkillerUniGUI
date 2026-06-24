@@ -48,6 +48,12 @@ void Widget::SetAccessibleName(std::string name) {
 void Widget::SetAccessibleDescription(std::string desc) {
     accessibleDesc_ = std::move(desc);
 }
+void Widget::AnnounceAccessible(a11y::Role role, const std::string& value) {
+    if (!a11y::IsEnabled())
+        return; // zero cost when a11y is off
+    a11y::SetFocused(
+        {accessibleName_.empty() ? name_ : accessibleName_, accessibleDesc_, value, role});
+}
 void Widget::SetMinSize(float w, float h) {
     minSize_ = ImVec2(w, h);
 }

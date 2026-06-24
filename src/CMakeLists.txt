@@ -138,6 +138,7 @@ target_sources(unigui PRIVATE
     core/strutil.cc
     core/log.cc
     core/main_thread.cc
+    core/accessibility.cc
     backend/glfw_platform.cc
     backend/opengl3_renderer.cc
     backend/backend_registry.cc

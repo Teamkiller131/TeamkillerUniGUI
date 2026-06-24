@@ -1,5 +1,22 @@
 ## Unreleased
 
+## [3.8.3] - 2026-06-24
+
+> **Roadmap series 3.8.x — Horizon 9 (accessibility foundation).**
+
+### Added
+- **Accessibility seam** (`core/accessibility.h`, `namespace unigui::a11y`) — Dear ImGui
+  draws its own widgets, so assistive technology has no native a11y tree to read. This
+  module is the missing seam: a small semantic descriptor (`Node{name, description, value,
+  Role}`) that widgets report when focused, plus a process-wide focus tracker that fires a
+  change event (`SetOnFocusChanged`). A platform bridge (e.g. Windows UI Automation) can
+  subscribe and announce the focused element; the model + event stream here is pure and
+  headless-testable. Disabled by default (`SetEnabled(false)`) for zero per-frame cost.
+- **`Widget::AnnounceAccessible(role, value="")`** — a base-class helper that reports the
+  widget to the a11y tracker using its accessible name (falling back to the widget id) and
+  description. A no-op unless a11y is enabled. `Button` is the first adopter (announces on
+  `ImGui::IsItemFocused()`); other widgets can opt in the same one-line way.
+
 ## [3.8.2] - 2026-06-24
 
 > **Roadmap series 3.8.x — Horizon 8 (app-shell parity: layout persistence).**

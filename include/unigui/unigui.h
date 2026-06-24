@@ -14,6 +14,7 @@
 #include <unigui/backend/backend_types.h>
 #include <unigui/backend/platform_backend.h>
 #include <unigui/backend/renderer_backend.h>
+#include <unigui/core/accessibility.h>
 #include <unigui/core/api.h>
 #include <unigui/core/context.h>
 #include <unigui/core/decimate.h>

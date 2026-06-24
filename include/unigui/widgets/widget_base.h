@@ -1,4 +1,6 @@
 #pragma once
+#include <unigui/core/accessibility.h>
+
 #include <imgui.h>
 
 #include <string>
@@ -35,6 +37,11 @@ public:
     static void SetNextFocused();
     void SetAccessibleName(std::string n);
     void SetAccessibleDescription(std::string d);
+    /// Report this widget to the accessibility focus tracker (a no-op unless
+    /// a11y is enabled). Call inside Render() when the widget has focus, e.g.
+    /// `if (ImGui::IsItemFocused()) AnnounceAccessible(a11y::Role::Button);`.
+    /// Uses the accessible name (falling back to the widget id) + description.
+    void AnnounceAccessible(a11y::Role role, const std::string& value = "");
     virtual void SetMinSize(float w, float h);
     virtual void SetMaxSize(float w, float h);
     ImVec2 GetMinSize() const { return minSize_; }

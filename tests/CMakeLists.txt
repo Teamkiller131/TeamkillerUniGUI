@@ -198,7 +198,7 @@ if(UNIGUI_MODULE_WIDGETS)
 endif()
 
 # Core tests
-foreach(_core locale settings strutil undo_stack version format_num observable main_thread widget_pool session_axis decimate layout_store)
+foreach(_core locale settings strutil undo_stack version format_num observable main_thread widget_pool session_axis decimate layout_store accessibility)
     add_executable(test_${_core} core/${_core}_test.cc)
     target_link_libraries(test_${_core} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_core} PRIVATE cxx_std_23)
