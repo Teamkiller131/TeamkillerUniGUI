@@ -138,6 +138,7 @@
 #include <unigui/widgets/card.h>
 #include <unigui/widgets/cascadingcombo.h>
 #include <unigui/widgets/clipboard.h>
+#include <unigui/widgets/commandpalette.h>
 #include <unigui/widgets/confirmdialog.h>
 #include <unigui/widgets/connection_status.h>
 #include <unigui/widgets/datatable.h>

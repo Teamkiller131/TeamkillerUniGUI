@@ -1218,3 +1218,23 @@ acts.Render();
 ```
 
 ---
+
+<!-- New in v3.8.5 -->
+
+## 94. CommandPalette
+
+**Header:** `#include <unigui/widgets/commandpalette.h>` · **API:** [WIDGET_API.md#commandpalette](WIDGET_API.md#commandpalette)
+
+```cpp
+#include <unigui/widgets/commandpalette.h>
+static unigui::CommandPalette palette;
+palette.AddCommand("file.open", "Open File", []{ openFile(); });
+palette.AddCommand("file.save", "Save File", []{ saveFile(); });
+palette.AddCommand({"view.theme", "Toggle Theme", "View", "Ctrl+T", []{ toggleTheme(); }});
+
+// Bind a hotkey somewhere in your frame:
+if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_P)) palette.Open();
+palette.Render();   // filters/ranks as you type; Enter runs, Esc dismisses
+```
+
+---

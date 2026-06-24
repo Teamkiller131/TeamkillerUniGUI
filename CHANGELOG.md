@@ -1,5 +1,22 @@
 ## Unreleased
 
+## [3.8.5] - 2026-06-24
+
+> **Roadmap series 3.8.x — Horizon 11 (distribution: add-on widgets).**
+
+### Added
+- **`CommandPalette` widget** (widget #94) — a VS-Code-style (Ctrl+P) fuzzy-searchable
+  command launcher rendered as a centred modal popup. Register commands once
+  (`AddCommand(id, title, action)`, with optional `category`/`shortcut`/`enabled`);
+  the palette filters and ranks them as the user types, runs the chosen command on
+  Enter/click, and closes. Up/Down navigate, Esc dismisses. The query → ranked-results
+  → execute pipeline (`SetQuery`/`Matches`/`Execute`) is exposed directly so the
+  ordering behaviour is testable without a GL context.
+- **`detail::FuzzyMatch(pattern, text, &score)`** — the reusable subsequence fuzzy
+  matcher behind the palette: case-insensitive, with relevance scoring (prefix /
+  word-boundary / contiguous-run bonuses, leading-gap penalty). Pure and
+  allocation-free; usable anywhere a "type to filter" list is wanted.
+
 ## [3.8.4] - 2026-06-24
 
 > **Roadmap series 3.8.x — Horizon 7 (quality gates).**

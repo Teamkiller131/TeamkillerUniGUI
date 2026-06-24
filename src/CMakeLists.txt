@@ -237,6 +237,7 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/buttongroup.cc
         widgets/connection_status.cc
         widgets/groupedrisktree.cc
+        widgets/commandpalette.cc
     )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)
     message(STATUS "Extended widgets enabled")

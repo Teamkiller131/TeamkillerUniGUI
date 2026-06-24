@@ -1,6 +1,6 @@
 # UniGUI Widget API Reference
 
-> **Version**: 3.8.4 (C++23) · **Widgets**: 93 · **Backend**: Dear ImGui (docking + multi-viewport)
+> **Version**: 3.8.5 (C++23) · **Widgets**: 94 · **Backend**: Dear ImGui (docking + multi-viewport)
 >
 > **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Cookbook**: [EXAMPLES.md](EXAMPLES.md) · **Per-widget examples**: [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)
 >
@@ -659,6 +659,31 @@ void SetItems(std::vector<std::string> items);
 const std::string& GetQuery() const; std::vector<std::string> GetMatches() const;
 void SetOnSelect(std::function<void(const std::string&)> fn);
 void SetOnChange(std::function<void(const std::string&)> fn);
+```
+
+### CommandPalette
+
+VS-Code-style (Ctrl+P) fuzzy-searchable command launcher, rendered as a centred
+modal popup. Register commands once; the palette filters/ranks them as the user
+types, runs the chosen command on Enter/click, then closes. Up/Down navigate,
+Esc dismisses. The query → results → execute pipeline is exposed directly so it
+is testable without a GL context.
+
+```cpp
+CommandPalette(std::string name = "command_palette");
+struct Command { std::string id, title, category, shortcut; std::function<void()> action; bool enabled = true; };
+CommandPalette& AddCommand(Command cmd);
+CommandPalette& AddCommand(std::string id, std::string title, std::function<void()> action);
+bool RemoveCommand(const std::string& id); void ClearCommands();
+std::size_t CommandCount() const; bool HasCommand(const std::string& id) const;
+void Open(); void Close(); void Toggle(); bool IsOpen() const;
+CommandPalette& SetPlaceholder(std::string s); CommandPalette& SetMaxResults(int n);
+void SetQuery(const std::string& q); const std::string& GetQuery() const;
+std::vector<std::string> Matches() const;   // ranked ids, best first
+bool Execute(const std::string& id);          // run + close; returns true if a command ran
+
+// Reusable pure matcher behind the ranking:
+namespace detail { bool FuzzyMatch(std::string_view pattern, std::string_view text, int& outScore); }
 ```
 
 ---

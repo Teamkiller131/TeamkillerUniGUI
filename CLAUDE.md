@@ -7,8 +7,8 @@ that aren't obvious from any single file.
 ## Project at a glance
 
 **TeamkillerUniGUI** is a C++23 [Dear ImGui](https://github.com/ocornut/imgui)
-wrapper (v3.5.0). It layers a unified dark+light theme engine, a high-level
-retained-mode widget library (93 widgets), an immediate-mode helper layer
+wrapper (v3.8.x). It layers a unified dark+light theme engine, a high-level
+retained-mode widget library (94 widgets), an immediate-mode helper layer
 (`unigui::im`), a declarative DSL, CSS-like styling, an EventBus, a plugin
 system, and optional sub-modules (SQLite, config, IPC, networking) on top of
 ImGui. It targets Windows, Linux, macOS, and Web via a pluggable backend
