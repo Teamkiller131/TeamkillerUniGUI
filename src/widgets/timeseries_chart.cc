@@ -165,14 +165,37 @@ void TimeSeriesChart::Render() {
         //  • auto-fit only: Y fits the entire dataset regardless of X zoom.
         //  • manual: honor the user-supplied [yMin_, yMax_] (set once, still zoomable).
         const char* yLabel = yLabel_.empty() ? nullptr : yLabel_.c_str();
-        if (yAutoFit_) {
-            ImPlotAxisFlags yFlags = ImPlotAxisFlags_AutoFit;
-            if (yRangeFit_)
-                yFlags |= ImPlotAxisFlags_RangeFit;
-            ImPlot::SetupAxis(ImAxis_Y1, yLabel, yFlags);
-        } else {
-            ImPlot::SetupAxis(ImAxis_Y1, yLabel);
-            ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_, ImPlotCond_Once);
+        // Min-span floor: if auto-fitting and the data inside the visible X window
+        // (cached from the previous frame) spans less than minYSpan_, pin the Y axis
+        // to exactly minYSpan_ centered on the data so a near-flat series isn't blown
+        // up into full-height noise. Otherwise fall back to normal auto-fit.
+        bool minSpanApplied = false;
+        if (yAutoFit_ && minYSpan_ > 0.0) {
+            double lo = 1e300, hi = -1e300;
+            for (auto& s : series_)
+                for (auto& [ts, v] : s.points)
+                    if (ts >= lastXMin_ && ts <= lastXMax_) {
+                        lo = std::min(lo, (double) v);
+                        hi = std::max(hi, (double) v);
+                    }
+            if (lo <= hi && (hi - lo) < minYSpan_) {
+                double mid = 0.5 * (lo + hi);
+                ImPlot::SetupAxis(ImAxis_Y1, yLabel);
+                ImPlot::SetupAxisLimits(ImAxis_Y1, mid - minYSpan_ * 0.5,
+                                        mid + minYSpan_ * 0.5, ImPlotCond_Always);
+                minSpanApplied = true;
+            }
+        }
+        if (!minSpanApplied) {
+            if (yAutoFit_) {
+                ImPlotAxisFlags yFlags = ImPlotAxisFlags_AutoFit;
+                if (yRangeFit_)
+                    yFlags |= ImPlotAxisFlags_RangeFit;
+                ImPlot::SetupAxis(ImAxis_Y1, yLabel, yFlags);
+            } else {
+                ImPlot::SetupAxis(ImAxis_Y1, yLabel);
+                ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_, ImPlotCond_Once);
+            }
         }
 
         // ── Legend ────────────────────────────────────────────────────
@@ -219,6 +242,11 @@ void TimeSeriesChart::Render() {
         }
 
         plotHovered = ImPlot::IsPlotHovered();
+        // Cache the current visible X window so next frame's min-span Y fit only
+        // considers points the user can actually see (honors pan/zoom).
+        ImPlotRect lim = ImPlot::GetPlotLimits(ImAxis_X1, ImAxis_Y1);
+        lastXMin_ = lim.X.Min;
+        lastXMax_ = lim.X.Max;
         ImPlot::EndPlot();
     }
     ImPlot::PopStyleColor(4);

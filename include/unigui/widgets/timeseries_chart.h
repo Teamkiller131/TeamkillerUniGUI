@@ -61,6 +61,12 @@ public:
     /// zooming/panning the X axis rescales Y to the visible window instead of the
     /// full dataset. When false, Y auto-fits to the entire dataset.
     void SetYRangeFit(bool on);
+    /// Minimum Y-axis span (height) enforced while auto-fitting. 0 (default)
+    /// disables the floor. When the data inside the visible X window spans less
+    /// than `span`, the Y axis is held at exactly `span` (centered on the data)
+    /// instead of zooming in tighter — so a near-flat series doesn't render its
+    /// micro-noise as full-height swings. Has no effect when auto-fit is off.
+    void SetYAxisMinSpan(double span) { minYSpan_ = span; }
     /// Manual Y axis range (takes effect only when auto-fit is off).
     void SetYAxisRange(double min, double max);
     /// Fixed X axis range. When set, the X axis always shows [min, max] even with no data.
@@ -114,6 +120,9 @@ private:
     bool yAutoFit_ = true;
     bool yRangeFit_ = true;
     double yMin_ = 0, yMax_ = 100;
+    double minYSpan_ = 0.0;          // 0 = disabled; else Y-axis height floor (auto-fit only)
+    double lastXMin_ = -1e300;       // visible X window cached from the previous frame,
+    double lastXMax_ = 1e300;        // used to scope the min-span Y fit (see Render)
     bool xRangeSet_ = false;
     double xMin_ = 0, xMax_ = 1;
     std::string xLabel_, yLabel_;

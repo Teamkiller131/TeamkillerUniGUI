@@ -5,6 +5,11 @@
   that are neither destructive (`Danger`) nor a fresh start (`Success`): e.g. a pod whose trigger
   count is exhausted offering a "Done / re-draft" action. `VariantColor` maps it; all `im::Button`
   call sites accept it.
+- **`TimeSeriesChart::SetYAxisMinSpan(double)`** — floors the auto-fit Y-axis height. When the data
+  inside the visible X window spans less than the given value, the Y axis is held at exactly that
+  span (centered on the data) instead of zooming tighter, so a near-flat series no longer renders
+  its micro-noise as full-height swings. `0` (default) disables the floor; no effect when auto-fit
+  is off. The visible X window is read via `GetPlotLimits` and cached for the next frame's fit.
 
 ### Changed
 - **Chart legends now default to the top-right corner with a semi-transparent panel.**
