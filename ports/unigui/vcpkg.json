@@ -1,7 +1,7 @@
 {
   "name": "unigui",
-  "version": "3.5.0",
-  "description": "Modern Dear ImGui C++ wrapper — SDL3+Vulkan + GLFW+OpenGL3 backends, theme engine, 82-widget library",
+  "version": "3.8.7",
+  "description": "Modern Dear ImGui C++ wrapper — SDL3+Vulkan + GLFW+OpenGL3 backends, theme engine, 95-widget library",
   "homepage": "https://github.com/Teamkiller131/TeamkillerUniGUI",
   "license": "MIT",
   "dependencies": [
@@ -26,9 +26,7 @@
     },
     { "name": "glfw3" },
     { "name": "glad", "features": ["loader"] },
-    { "name": "gtest" },
     { "name": "implot" },
-    { "name": "imgui-node-editor" },
     { "name": "spdlog" }
   ],
   "features": {

@@ -1,7 +1,19 @@
 cmake_minimum_required(VERSION 3.26)
 
+# ── Version (single source of truth: include/unigui/core/version.h) ────────────
+# Derive the project version from version.h so the package config-version file,
+# vcpkg port, and the C++ macros can never drift apart.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/include/unigui/core/version.h" _unigui_version_h)
+string(REGEX MATCH "#define UNIGUI_VERSION_MAJOR ([0-9]+)" _ "${_unigui_version_h}")
+set(_unigui_vmajor "${CMAKE_MATCH_1}")
+string(REGEX MATCH "#define UNIGUI_VERSION_MINOR ([0-9]+)" _ "${_unigui_version_h}")
+set(_unigui_vminor "${CMAKE_MATCH_1}")
+string(REGEX MATCH "#define UNIGUI_VERSION_PATCH ([0-9]+)" _ "${_unigui_version_h}")
+set(_unigui_vpatch "${CMAKE_MATCH_1}")
+unset(_unigui_version_h)
+
 project(unigui
-    VERSION 3.8.2
+    VERSION ${_unigui_vmajor}.${_unigui_vminor}.${_unigui_vpatch}
     DESCRIPTION "Modular Dear ImGui C++ wrapper — core + backends + optional modules"
     HOMEPAGE_URL "https://github.com/Teamkiller131/TeamkillerUniGUI"
     LANGUAGES CXX
@@ -72,6 +84,44 @@ include(CMakePackageConfigHelpers)
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+# Emit find_dependency() calls into the installed package config so that
+# `find_package(unigui)` re-resolves the public dependencies referenced by the
+# exported target's INTERFACE_LINK_LIBRARIES. Without this, a downstream
+# consumer fails at generate time with "target links to imgui::imgui that does
+# not exist". The set mirrors src/CMakeLists.txt's find_package() calls exactly
+# (same names + CONFIG/module mode), gated by the same options.
+set(UNIGUI_DEP_CALLS "")
+macro(_unigui_add_dep)
+    string(REPLACE ";" " " _unigui_dep_args "${ARGN}")
+    string(APPEND UNIGUI_DEP_CALLS "find_dependency(${_unigui_dep_args})\n")
+endmacro()
+_unigui_add_dep(imgui CONFIG)
+_unigui_add_dep(glfw3 CONFIG)
+_unigui_add_dep(glad CONFIG)
+_unigui_add_dep(Freetype)
+_unigui_add_dep(implot CONFIG)
+_unigui_add_dep(spdlog CONFIG)
+if(UNIGUI_MODULE_SQLITE)
+    _unigui_add_dep(SQLite3)
+endif()
+if(UNIGUI_MODULE_CONFIG)
+    _unigui_add_dep(cpptoml CONFIG)
+    _unigui_add_dep(nlohmann_json CONFIG)
+endif()
+if(UNIGUI_MODULE_IPC)
+    _unigui_add_dep(ZeroMQ CONFIG)
+endif()
+if(UNIGUI_MODULE_NETWORK)
+    _unigui_add_dep(httplib CONFIG)
+    _unigui_add_dep(ixwebsocket CONFIG)
+endif()
+if(UNIGUI_BACKEND_VULKAN OR UNIGUI_BACKEND_SDL3)
+    _unigui_add_dep(Vulkan)
+endif()
+if(UNIGUI_BACKEND_SDL3)
+    _unigui_add_dep(SDL3 CONFIG)
+endif()
 
 configure_package_config_file(
     cmake/unigui-config.cmake.in

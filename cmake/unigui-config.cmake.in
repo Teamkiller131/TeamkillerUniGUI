@@ -1,4 +1,8 @@
 @PACKAGE_INIT@
 
+# Re-resolve the public dependencies referenced by unigui's exported target
+# (generated from the options this build was configured with).
+include(CMakeFindDependencyMacro)
+@UNIGUI_DEP_CALLS@
 include("${CMAKE_CURRENT_LIST_DIR}/unigui-targets.cmake")
 check_required_components(unigui)

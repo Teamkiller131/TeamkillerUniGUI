@@ -160,3 +160,28 @@ void on_market_data(const MarketData& data) {
 | `UNIGUI_BACKEND_DX12` | OFF | DX12 后端 |
 | `UNIGUI_BUILD_TESTS` | ON | 测试套件 |
 | `UNIGUI_BUILD_EXAMPLES` | ON | 示例程序 |
+
+---
+
+## 安装并通过 `find_package(unigui)` 消费（v3.8.7+）
+
+除了 submodule / `add_subdirectory()`，UniGUI 现在也支持**先安装、再以已安装包消费**：
+
+```bash
+# 1) 在 UniGUI 仓库内构建并安装到一个前缀
+cmake --build build
+cmake --install build --prefix /path/to/stage
+
+# 2) 在消费方项目中
+#    CMAKE_PREFIX_PATH 同时指向上面的 stage 目录与 vcpkg 安装树
+find_package(unigui CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE unigui::unigui)
+```
+
+安装的 `unigui-config.cmake` 会自动 `find_dependency()` 公开依赖
+（imgui / glfw3 / glad / Freetype / implot / spdlog，以及启用了相应 option 时的
+模块 / Vulkan / SDL3 依赖），因此消费方无需手动 `find_package` 这些库。包版本
+由 `core/version.h` 派生，`find_package(unigui 3.8.x)` 的版本检查可正常工作。
+
+> **CRT 一致仍是前提**：消费方必须用与安装时相同的 triplet / CRT（见上文）。
+> 已安装包并不能绕过 CRT 一致性要求，只是把依赖查找写进了包配置里。

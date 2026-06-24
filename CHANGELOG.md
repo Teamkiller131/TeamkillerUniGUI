@@ -1,5 +1,32 @@
 ## Unreleased
 
+## [3.8.7] - 2026-06-24
+
+> **Roadmap series 3.8.x — Horizon 11 (distribution: consumable packaging).**
+
+### Fixed
+- **`find_package(unigui)` now works for downstream consumers.** The installed
+  `unigui-config.cmake` previously did not re-resolve the public dependencies
+  referenced by the exported target's `INTERFACE_LINK_LIBRARIES`, so any consumer
+  doing `find_package(unigui CONFIG)` failed at generate time with *"target links
+  to imgui::imgui that does not exist"*. The config now emits `find_dependency()`
+  calls for every public dependency, generated to mirror `src/CMakeLists.txt`'s
+  `find_package()` set exactly (imgui / glfw3 / glad / Freetype / implot / spdlog,
+  plus the module + Vulkan/SDL3 deps when those options are on). Verified end to
+  end: a standalone project installs, `find_package`-es, links `unigui::unigui`,
+  builds, and runs.
+- **Package version no longer drifts.** `project(VERSION …)` was hard-coded at
+  `3.8.2` while the library had moved to `3.8.6`, so the installed
+  `unigui-config-version.cmake` reported the wrong version (breaking consumer
+  version checks). The project version is now derived from
+  `include/unigui/core/version.h` at configure time — a single source of truth.
+
+### Changed
+- **vcpkg port (`ports/unigui/vcpkg.json`) brought up to date** — version
+  `3.5.0 → 3.8.7`, description fixed (82 → 95 widgets), and the stale
+  `imgui-node-editor` / test-only `gtest` dependencies removed (they are not
+  needed to consume the library).
+
 ## [3.8.6] - 2026-06-24
 
 > **Roadmap series 3.8.x — Horizon 11 (distribution: add-on widgets).**
