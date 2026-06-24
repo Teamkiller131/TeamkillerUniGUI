@@ -3,6 +3,9 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
 
 namespace unigui {
 
@@ -78,6 +81,41 @@ void MultiSplitter::SetRatios(const std::vector<float>& ratios) {
 void MultiSplitter::ResetToDesign() {
     if (!designRatios_.empty())
         SetRatios(designRatios_);
+}
+
+std::string MultiSplitter::SerializeLayout() const {
+    const auto ratios = GetRatios();
+    std::string out;
+    char buf[32];
+    for (std::size_t i = 0; i < ratios.size(); ++i) {
+        if (i)
+            out.push_back(',');
+        std::snprintf(buf, sizeof(buf), "%.4f", ratios[i]);
+        out += buf;
+    }
+    return out;
+}
+
+bool MultiSplitter::RestoreLayout(const std::string& s) {
+    // Parse comma-separated floats without throwing (project rule).
+    std::vector<float> r;
+    std::size_t i = 0;
+    while (i < s.size()) {
+        std::size_t comma = s.find(',', i);
+        const std::string tok = s.substr(i, comma == std::string::npos ? std::string::npos : comma - i);
+        const char* b = tok.c_str();
+        char* e = nullptr;
+        const float v = std::strtof(b, &e);
+        if (e != b)
+            r.push_back(v);
+        if (comma == std::string::npos)
+            break;
+        i = comma + 1;
+    }
+    if (r.empty() || r.size() != panels_.size())
+        return false; // wrong count → ignore (stale/foreign layout)
+    SetRatios(r);
+    return true;
 }
 
 void MultiSplitter::Render() {

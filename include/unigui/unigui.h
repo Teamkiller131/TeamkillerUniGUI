@@ -20,6 +20,7 @@
 #include <unigui/core/error.h>
 #include <unigui/core/format_cn.h>
 #include <unigui/core/format_num.h>
+#include <unigui/core/layout_store.h>
 #include <unigui/core/locale.h>
 #include <unigui/core/log.h>
 #include <unigui/core/main_thread.h>

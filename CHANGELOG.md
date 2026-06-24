@@ -1,5 +1,21 @@
 ## Unreleased
 
+## [3.8.2] - 2026-06-24
+
+> **Roadmap series 3.8.x — Horizon 8 (app-shell parity: layout persistence).**
+
+### Added
+- **`MultiSplitter::SerializeLayout()` / `RestoreLayout(s)`** — persist and restore
+  split ratios as a compact string (e.g. `"0.28,0.44,0.28"`). `RestoreLayout`
+  applies only when the value count matches the current panel count (so a
+  stale/foreign layout is ignored) and is non-throwing on malformed input. Fills
+  the gap where `imgui.ini` doesn't capture `MultiSplitter` internal ratios.
+- **`LayoutStore`** (`core/layout_store.h`) — a tiny named string-value store for
+  persisting layout/preference state across runs (split layouts, theme-preset
+  name, locale tag, content scale). Plain `name=value` lines; loading skips
+  malformed lines (no throw); a missing file is a benign first-run `false`.
+  Header-only, unit-tested against a temp file.
+
 ## [3.8.1] - 2026-06-24
 
 > **Roadmap series 3.8.x — Horizon 10 (data density at scale).**

@@ -2,6 +2,7 @@
 #include <unigui/widgets/widget_base.h>
 
 #include <functional>
+#include <string>
 #include <vector>
 
 namespace unigui {
@@ -40,6 +41,15 @@ public:
     const std::vector<float>& GetDesignRatios() const { return designRatios_; }
     /// Reset current runtime ratios back to the stored design ratios.
     void ResetToDesign();
+
+    /// Serialize the current normalized ratios to a compact string (e.g.
+    /// "0.30,0.44,0.26") for layout persistence — pair with a LayoutStore.
+    std::string SerializeLayout() const;
+    /// Restore ratios from a string produced by SerializeLayout(). Applies only
+    /// when the value count matches the current panel count (so a stale/short
+    /// layout for a different splitter is ignored). Returns true if applied.
+    /// Non-throwing on malformed input.
+    bool RestoreLayout(const std::string& s);
 
 private:
     Orientation ori_;
