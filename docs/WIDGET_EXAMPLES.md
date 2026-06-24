@@ -1238,3 +1238,21 @@ palette.Render();   // filters/ranks as you type; Enter runs, Esc dismisses
 ```
 
 ---
+
+## 95. FileDialog
+
+**Header:** `#include <unigui/widgets/filedialog.h>` · **API:** [WIDGET_API.md#filedialog](WIDGET_API.md#filedialog)
+
+```cpp
+#include <unigui/widgets/filedialog.h>
+static unigui::FileDialog fd;
+fd.SetMode(unigui::FileDialog::Mode::OpenFile)
+  .SetFilters({".csv", ".txt"})
+  .SetTitle("Import basket");
+fd.SetOnConfirm([](const std::string& path){ loadBasket(path); });
+
+if (importClicked) fd.Open();
+fd.Render();   // navigate dirs, filter by extension, OK/Cancel
+```
+
+---

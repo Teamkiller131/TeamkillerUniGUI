@@ -4,9 +4,9 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.8.5-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-1037-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-94-blue)]()
+[![Version](https://img.shields.io/badge/version-3.8.6-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-1048-brightgreen)]()
+[![Widgets](https://img.shields.io/badge/widgets-95-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
 A C++23 Dear ImGui wrapper providing a unified dark+light theme engine, high-level widget components, declarative DSL, CSS styling, plugin system, and EventBus. Supports 7 backends: GLFW+OpenGL3, SDL3+Vulkan, DX11, DX12, Metal, WebGPU, and Emscripten.
@@ -77,7 +77,7 @@ User Code
     ↓
 unigui:: API
     ├── Theme Engine (dark + light + 13 presets, unified style/color tokens, glass surfaces, elevation, StyleScope RAII)
-    ├── Widget Library (94 widgets (100% PushID-safe), form validation, undo/redo, serialization)
+    ├── Widget Library (95 widgets (100% PushID-safe), form validation, undo/redo, serialization)
     ├── Declarative DSL (unigui::dsl — Window, VBox/HBox, Button, CheckBox, SliderFloat, InputText, If/For)
     ├── EventBus (unigui::events::Bus — publish/subscribe with wildcards)
     ├── CSS Styling (unigui::styling::Engine — selector engine + variables)
@@ -304,7 +304,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 
 ## ID Safety
 
-All 94 widgets automatically scope their ImGui IDs via `PushID(name)/PopID()`.
+All 95 widgets automatically scope their ImGui IDs via `PushID(name)/PopID()`.
 No manual ID management needed — just give each widget instance a unique name:
 ```cpp
 auto btn1 = std::make_shared<unigui::Button>("ok", "OK");
@@ -333,6 +333,7 @@ auto btn2 = std::make_shared<unigui::Button>("cancel", "Cancel"); // same label,
 | | CascadingCombo | N-level linked dropdowns, H/V layout + width ([API](docs/WIDGET_API.md#cascadingcombo)) |
 | | SearchBox | `SetItems(v)`, `GetQuery()`, `SetOnSelect(fn)` |
 | | CommandPalette | Ctrl+P fuzzy command launcher, `AddCommand()`, `Matches()`, `Execute()` (v3.8.5) |
+| | FileDialog | in-ImGui open/save/folder picker, `NavigateInto()`, `ResolvedPath()`, `Confirm()` (v3.8.6) |
 | | Slider\<T\> | `SetMin()`, `SetMax()`, `SetValue()` |
 | | MultiHandleSlider | multi-draggable tick handles (v3.2) |
 | | InputInt/InputFloat | `GetValue()`, `SetValue()` |

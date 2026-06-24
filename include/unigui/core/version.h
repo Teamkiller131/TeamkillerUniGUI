@@ -2,9 +2,9 @@
 
 #define UNIGUI_VERSION_MAJOR 3
 #define UNIGUI_VERSION_MINOR 8
-#define UNIGUI_VERSION_PATCH 5
+#define UNIGUI_VERSION_PATCH 6
 
-#define UNIGUI_VERSION_STRING "3.8.5"
+#define UNIGUI_VERSION_STRING "3.8.6"
 
 // Single integer encoding the version as major*10000 + minor*100 + patch, so
 // downstream code can compare versions numerically:

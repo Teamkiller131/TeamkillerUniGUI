@@ -1,6 +1,6 @@
 # UniGUI Widget API Reference
 
-> **Version**: 3.8.5 (C++23) · **Widgets**: 94 · **Backend**: Dear ImGui (docking + multi-viewport)
+> **Version**: 3.8.6 (C++23) · **Widgets**: 95 · **Backend**: Dear ImGui (docking + multi-viewport)
 >
 > **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Cookbook**: [EXAMPLES.md](EXAMPLES.md) · **Per-widget examples**: [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)
 >
@@ -684,6 +684,40 @@ bool Execute(const std::string& id);          // run + close; returns true if a 
 
 // Reusable pure matcher behind the ranking:
 namespace detail { bool FuzzyMatch(std::string_view pattern, std::string_view text, int& outScore); }
+```
+
+### FileDialog
+
+In-ImGui file / folder picker (Dear ImGui ships no native dialog). Three modes,
+rendered as a themed modal; navigation + path resolution are plain methods so
+they are testable without a GL context.
+
+```cpp
+FileDialog(std::string name = "file_dialog");
+enum class Mode { OpenFile, SaveFile, SelectFolder };
+FileDialog& SetMode(Mode m); Mode GetMode() const;
+FileDialog& SetDirectory(const std::string& dir); const std::string& GetDirectory() const;
+FileDialog& SetFilters(std::vector<std::string> exts);   // {".csv",".txt"}; empty = all
+FileDialog& SetFilename(const std::string& name);         // SaveFile field
+FileDialog& SetTitle(std::string t); FileDialog& SetShowHidden(bool on);
+void Open(); void Close(); bool IsOpen() const;
+void SetOnConfirm(std::function<void(const std::string& path)> fn);
+void SetOnCancel(std::function<void()> fn);
+const std::string& GetSelectedPath() const;
+// Headless-testable navigation/state:
+std::vector<detail::DirEntry> Entries() const;
+bool NavigateInto(const std::string& dirName); bool NavigateUp();
+void SelectFile(const std::string& name); bool MatchesFilter(const std::string& filename) const;
+std::string ResolvedPath() const;   // path Confirm() would produce ("" if incomplete)
+std::string Confirm();              // record + fire onConfirm + close
+
+// Reusable non-throwing filesystem core:
+namespace detail {
+  struct DirEntry { std::string name; bool isDir; std::uintmax_t size; };
+  bool ExtensionMatches(const std::string& filename, const std::vector<std::string>& exts);
+  bool ListDirectory(const std::string& dir, const std::vector<std::string>& exts,
+                     bool showHidden, std::vector<DirEntry>& out);
+}
 ```
 
 ---

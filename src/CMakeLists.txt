@@ -238,6 +238,7 @@ if(UNIGUI_MODULE_WIDGETS)
         widgets/connection_status.cc
         widgets/groupedrisktree.cc
         widgets/commandpalette.cc
+        widgets/filedialog.cc
     )
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WIDGETS)
     message(STATUS "Extended widgets enabled")

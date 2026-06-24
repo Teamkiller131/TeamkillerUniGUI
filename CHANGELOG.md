@@ -1,5 +1,24 @@
 ## Unreleased
 
+## [3.8.6] - 2026-06-24
+
+> **Roadmap series 3.8.x — Horizon 11 (distribution: add-on widgets).**
+
+### Added
+- **`FileDialog` widget** (widget #95) — an in-ImGui file / folder picker, since
+  Dear ImGui ships no native dialog. Three modes (`OpenFile`, `SaveFile`,
+  `SelectFolder`) rendered as a themed modal: navigate directories (enter sub-dir,
+  go up), extension filtering, a filename field for saves, and confirm/cancel
+  callbacks. Navigation and path resolution (`SetDirectory`/`NavigateInto`/
+  `NavigateUp`/`Entries`/`ResolvedPath`/`Confirm`) are exposed as plain methods so
+  the behaviour is unit-tested against a real temp directory without a GL context.
+  Pairs with `BasketTicket`'s `SetOnImportRequested` host hook.
+- **`detail::ListDirectory` / `detail::ExtensionMatches`** — the reusable,
+  non-throwing filesystem-listing core behind the dialog (directories-first sort,
+  case-insensitive extension filter, dotfile gating; uses `std::error_code`
+  overloads so a permission error or missing path returns `false` rather than
+  throwing).
+
 ## [3.8.5] - 2026-06-24
 
 > **Roadmap series 3.8.x — Horizon 11 (distribution: add-on widgets).**

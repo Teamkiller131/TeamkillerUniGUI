@@ -143,6 +143,7 @@
 #include <unigui/widgets/connection_status.h>
 #include <unigui/widgets/datatable.h>
 #include <unigui/widgets/editabledatagrid.h>
+#include <unigui/widgets/filedialog.h>
 #include <unigui/widgets/futuresriskbar.h>
 #include <unigui/widgets/gauge.h>
 #include <unigui/widgets/groupedrisktree.h>

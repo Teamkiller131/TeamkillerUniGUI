@@ -4,9 +4,9 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-3.8.5-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-1037-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-94-blue)]()
+[![Version](https://img.shields.io/badge/version-3.8.6-blueviolet)]()
+[![Tests](https://img.shields.io/badge/tests-1048-brightgreen)]()
+[![Widgets](https://img.shields.io/badge/widgets-95-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20production%29-orange)]()
 
 C++23 Dear ImGui 封装库——提供统一的明暗主题引擎、高层组件、声明式 DSL、CSS 样式引擎、插件系统与 EventBus。支持 7 种渲染后端：GLFW+OpenGL3、SDL3+Vulkan、DX11、DX12、Metal、WebGPU 和 Emscripten。
