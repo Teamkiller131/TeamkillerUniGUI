@@ -76,6 +76,24 @@ the platform/quality gaps the Bundle has and UniGUI doesn't.
 
 Effort **S/M/L**, priority **P0/P1/P2**. Each item names the gap it closes.
 
+### Status — shipped in the 3.8.x series
+
+The 3.8.0–3.8.9 releases worked through every horizon below. Summary of what
+landed (✅) and what remains deferred (⏳, with rationale):
+
+| H | Shipped (version) | Deferred |
+|---|-------------------|----------|
+| **H6** | ✅ Dear ImGui 1.92 + ImPlot 1.0 toolchain, dynamic fonts, `App::SetContentScale` (3.8.0); ✅ `core/dpi.h` content-scale normalization + `SetContentScaleFromMonitor` (3.8.8) | ⏳ Functional Emscripten/WebGPU + Metal backends — runtime needs a GPU/browser, not headless-verifiable; remain stubs |
+| **H7** | ✅ MSVC `/W4 /WX` warnings-as-errors gate + CI job, whole tree warning-clean on MSVC **and** GCC (3.8.4) | ⏳ `imgui_test_engine` + visual-regression (need a GL context/capture); hard coverage gate (headless coverage is a lower bound — kept advisory with a documented "flip when stable" path) |
+| **H8** | ✅ `MultiSplitter::SerializeLayout`/`RestoreLayout` + `core/layout_store.h` (3.8.2) | ⏳ Asset/font embedding & one-call deploy; theme/locale persistence helpers |
+| **H9** | ✅ `core/accessibility.h` focus-tracker seam + `Widget::AnnounceAccessible`, Button adopter (3.8.3) | ⏳ Platform UIA provider (Windows-specific runtime); keyboard-nav audit |
+| **H10** | ✅ `core/decimate.h` LTTB/min-max (3.8.0); ✅ `DataTable` row-accessor source + sign-color + `TimeSeriesChart::SetMaxRenderPoints` (3.8.1); ✅ `TimeSeriesChart::UpsertPoint` + `SetSessionAxis` (3.8.9) | ⏳ `CandlestickChart` decimation wiring; ImPlot3D |
+| **H11** | ✅ `CommandPalette` widget #94 (3.8.5); ✅ `FileDialog` widget #95 (3.8.6); ✅ consumable `find_package(unigui)` + version-drift fix + vcpkg port refresh (3.8.7) | ⏳ Conan recipe & Python bindings (no toolchain available here to verify; Python is a stretch goal); ImGuizmo/node-editor wrappers |
+
+Deferred items are the ones that require hardware, a browser, or a toolchain not
+available to headless CI — they are intentionally left rather than shipped
+unverified. The originally-planned scope follows.
+
 ### Horizon 6 — Platform reach: Web + HiDPI fonts (G1, G2) — _flagship_
 
 - **P0 · L — Functional Emscripten/WebGPU backend.** Promote the WebGPU renderer
