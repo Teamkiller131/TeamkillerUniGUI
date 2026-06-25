@@ -46,7 +46,9 @@ ctest --preset windows-msvc-release
 cmake --preset windows-msvc-sdl3-vulkan-release
 cmake --build --preset windows-msvc-sdl3-vulkan-release
 
-# Run demo
+# Run demo (comprehensive showcase: ~60 widgets, zero raw ImGui calls)
+./build/windows-msvc-release/examples/unigui_showcase/unigui_showcase.exe --frames 10
+# or the minimal hello world:
 ./build/windows-msvc-release/examples/hello_unigui/hello_unigui.exe --frames 10
 
 # Linux (Fedora 43 / Rocky 9, GCC 14+, CMake 3.26+)
