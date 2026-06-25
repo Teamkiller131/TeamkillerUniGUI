@@ -17,9 +17,9 @@
 
 ### Added
 - **`examples/unigui_showcase`** — a comprehensive, runnable demo that exercises
-  ~60 widgets across seven tabbed sections (Buttons, Inputs, Display, Data,
-  Layout, Charts & Trading, Overlays), the full `unigui::im` immediate layer,
-  the `WindowScope`/`TabBarScope` RAII guards, and live theme/surface switching.
+  **all 95 widgets** (plus the `PnlText`/`TagList` immediate helpers) across 11
+  tabbed sections, the full `unigui::im` immediate layer, the
+  `WindowScope`/`TabBarScope` RAII guards, and live theme/surface switching.
   Written entirely against the UniGUI public API — **zero raw `ImGui::` calls** —
   to demonstrate the wrapper end to end. Headless-friendly (`--frames N`).
 
