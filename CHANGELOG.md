@@ -1,5 +1,16 @@
 ## Unreleased
 
+### Docs
+- **`docs/WIDGET_EXAMPLES.md` refreshed against the real headers.** An audit of all
+  95 snippets found **65 were stale** — they showed old pointer-binding constructors
+  (`make_shared<Slider>("sl", &v, …)` → the value-owning `(name, label, value, min,
+  max)`), renamed/removed methods (`SetChild` → `SetContentCallback`, `SetUsage` →
+  `SetRatio`, `AddColumn` → columns-in-ctor, `SetLeft/SetRight` →
+  `SetContentA/SetContentB`), non-existent enums (`StatusLamp::State::Ok` →
+  `Running`; `AlertBar::Severity` removed), and `void`-returning setters wrongly
+  chained off `.Render()`. Every snippet now matches the current API; the entry
+  count is corrected from 93 to 95 (adds `CommandPalette`, `FileDialog`).
+
 ### Added
 - **`examples/unigui_showcase`** — a comprehensive, runnable demo that exercises
   ~60 widgets across seven tabbed sections (Buttons, Inputs, Display, Data,

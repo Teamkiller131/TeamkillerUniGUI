@@ -1,6 +1,7 @@
 # Widget Examples Catalog
 
-> **93** catalog entries (92 widget headers + layout RAII). Construct once, `Render()` each frame.
+> **95** catalog entries (94 widget headers + layout RAII). Construct once, `Render()` each frame.
+> Snippets are verified against the current headers (constructors, methods, enums).
 
 - **Cookbook** (composition, DSL, themes): [EXAMPLES.md](EXAMPLES.md)
 - **API signatures**: [WIDGET_API.md](WIDGET_API.md)
@@ -14,8 +15,9 @@
 
 ```cpp
 #include <unigui/widgets/alertbar.h>
-auto bar = std::make_shared<unigui::AlertBar>("net", "Relay disconnected");
-bar->WithSeverity(unigui::AlertBar::Severity::Warning).Render();
+auto bar = std::make_shared<unigui::AlertBar>("net");
+bar->Show("Relay disconnected");
+bar->Render();
 ```
 
 ---
@@ -41,7 +43,8 @@ ImGui::PopStyleVar();
 ```cpp
 #include <unigui/widgets/badge.h>
 unigui::Badge badge("new");
-badge.SetVariant(unigui::Badge::Count).SetCount(3);
+badge.SetVariant(unigui::Badge::Count);
+badge.SetCount(3);
 ImGui::Button("Inbox");
 badge.Render();  // after parent
 ```
@@ -55,7 +58,8 @@ badge.Render();  // after parent
 ```cpp
 #include <unigui/widgets/breadcrumb.h>
 auto bc = std::make_shared<unigui::Breadcrumb>("nav");
-bc->SetItems({{"Home", []{}}, {"Settings", []{}}});
+bc->SetItems({"Home", "Settings"});
+bc->SetOnSelect([](int i){ /* navigate */ });
 bc->Render();
 ```
 
@@ -81,7 +85,7 @@ if (btn->WasClicked()) { /* ... */ }
 ```cpp
 #include <unigui/widgets/card.h>
 auto card = std::make_shared<unigui::Card>("card");
-card->SetChild([]{ ImGui::Text("Content"); });
+card->SetContent([]{ ImGui::Text("Content"); });
 card->Render();
 ```
 
@@ -119,8 +123,8 @@ cb->Render();
 
 ```cpp
 #include <unigui/widgets/clipboard.h>
-unigui::Clipboard::SetText("copy me");
-std::string s = unigui::Clipboard::GetText();
+unigui::Clipboard::Copy("copy me");
+std::string s = unigui::Clipboard::Paste();
 ```
 
 ---
@@ -132,7 +136,7 @@ std::string s = unigui::Clipboard::GetText();
 ```cpp
 #include <unigui/widgets/collapsingheader.h>
 auto h = std::make_shared<unigui::CollapsingHeader>("adv", "Advanced");
-h->SetChild([]{ ImGui::Text("Details"); });
+h->SetContentCallback([]{ ImGui::Text("Details"); });
 h->Render();
 ```
 
@@ -144,9 +148,9 @@ h->Render();
 
 ```cpp
 #include <unigui/widgets/coloredit.h>
-static ImVec4 col{1, 0, 0, 1};
-auto ce = std::make_shared<unigui::ColorEdit>("c", &col);
+auto ce = std::make_shared<unigui::ColorEdit>("c", "Color", 1.0f, 0.0f, 0.0f, 1.0f);
 ce->Render();
+ImVec4 col = ce->GetColor();
 ```
 
 ---
@@ -157,9 +161,9 @@ ce->Render();
 
 ```cpp
 #include <unigui/widgets/colorpicker.h>
-static ImVec4 col{0.2f, 0.5f, 0.9f, 1};
-auto cp = std::make_shared<unigui::ColorPicker>("pick", &col);
+auto cp = std::make_shared<unigui::ColorPicker>("pick", "Pick", std::array<float, 3>{0.2f, 0.5f, 0.9f});
 cp->Render();
+std::array<float, 3> col = cp->GetColor();
 ```
 
 ---
@@ -170,7 +174,7 @@ cp->Render();
 
 ```cpp
 #include <unigui/widgets/combobox.h>
-auto box = std::make_shared<unigui::ComboBox>("sym", std::vector<std::string>{"IF", "IC"});
+auto box = std::make_shared<unigui::ComboBox>("sym", "Symbol", std::vector<std::string>{"IF", "IC"});
 box->Render();
 ```
 
@@ -182,7 +186,11 @@ box->Render();
 
 ```cpp
 #include <unigui/widgets/confirmdialog.h>
-unigui::ConfirmDialog::Show("Delete?", "Cannot undo", []{ erase(); });
+static unigui::ConfirmDialog dlg("confirm");
+dlg.SetTitle("Delete?");
+dlg.SetMessage("Cannot undo");
+dlg.Open([]{ erase(); });
+dlg.Render();
 ```
 
 ---
@@ -193,9 +201,9 @@ unigui::ConfirmDialog::Show("Delete?", "Cannot undo", []{ erase(); });
 
 ```cpp
 #include <unigui/widgets/contextmenu.h>
-static unigui::ContextMenu menu("ctx");
-menu.AddItem("Copy", []{ /* ... */ });
-menu.Render();
+unigui::ContextMenu::Show("ctx", {
+    {"Copy", []{ /* ... */ }},
+});
 ```
 
 ---
@@ -221,8 +229,8 @@ t.Render();
 
 ```cpp
 #include <unigui/widgets/datepicker.h>
-static int y = 2026, m = 6, d = 4;
-auto dp = std::make_shared<unigui::DatePicker>("d", &y, &m, &d);
+auto dp = std::make_shared<unigui::DatePicker>("d", "Date");
+dp->SetDate(2026, 6, 4);
 dp->Render();
 ```
 
@@ -234,9 +242,9 @@ dp->Render();
 
 ```cpp
 #include <unigui/widgets/dialog.h>
-static unigui::Dialog dlg("dlg", "Title");
-dlg.SetContent([]{ ImGui::Text("Body"); });
-dlg.SetOpen(true);
+static unigui::Dialog dlg("dlg", "Title", "Body");
+dlg.SetButtons("OK", "Cancel");
+dlg.Open();
 dlg.Render();
 ```
 
@@ -248,8 +256,7 @@ dlg.Render();
 
 ```cpp
 #include <unigui/widgets/dirpath.h>
-static std::string path;
-auto p = std::make_shared<unigui::DirPath>("out", &path);
+auto p = std::make_shared<unigui::DirPath>("out", "Output");
 p->Render();
 ```
 
@@ -261,8 +268,9 @@ p->Render();
 
 ```cpp
 #include <unigui/widgets/dragdrop.h>
-unigui::DragDrop::Source("payload", []{ return std::vector<uint8_t>{1, 2, 3}; });
-unigui::DragDrop::Target("payload", [](auto& bytes){ /* ... */ });
+int payload = 42;
+if (unigui::BeginDragSource("payload", payload)) { /* dragging */ }
+if (const int* p = unigui::AcceptDragDrop<int>("payload")) { /* dropped *p */ }
 ```
 
 ---
@@ -273,8 +281,7 @@ unigui::DragDrop::Target("payload", [](auto& bytes){ /* ... */ });
 
 ```cpp
 #include <unigui/widgets/dragfloat.h>
-static float v = 1.f;
-auto d = std::make_shared<unigui::DragFloat>("df", &v, 0.1f, 0.f, 10.f);
+auto d = std::make_shared<unigui::DragFloat>("df", "Value", 1.f, 0.1f, 0.f, 10.f);
 d->Render();
 ```
 
@@ -286,8 +293,7 @@ d->Render();
 
 ```cpp
 #include <unigui/widgets/dragint.h>
-static int v = 5;
-auto d = std::make_shared<unigui::DragInt>("di", &v, 1, 0, 100);
+auto d = std::make_shared<unigui::DragInt>("di", "Count", 5, 1.f, 0, 100);
 d->Render();
 ```
 
@@ -299,8 +305,7 @@ d->Render();
 
 ```cpp
 #include <unigui/widgets/filepath.h>
-static std::string file;
-auto fp = std::make_shared<unigui::FilePath>("in", &file);
+auto fp = std::make_shared<unigui::FilePath>("in", "Input");
 fp->Render();
 ```
 
@@ -312,8 +317,8 @@ fp->Render();
 
 ```cpp
 #include <unigui/widgets/form.h>
-static unigui::Form form("login");
-form.AddField("user", []{ /* InputText */ });
+static unigui::Form form("login", "Login");
+form.AddTextField("user", "User", /*required=*/true);
 form.Render();
 ```
 
@@ -326,7 +331,8 @@ form.Render();
 ```cpp
 #include <unigui/widgets/futuresriskbar.h>
 auto bar = std::make_shared<unigui::FuturesRiskBar>("risk");
-bar->SetRatio(0.72f).Render();
+bar->SetActualRatio(0.72);
+bar->Render();
 ```
 
 ---
@@ -338,7 +344,7 @@ bar->SetRatio(0.72f).Render();
 ```cpp
 #include <unigui/widgets/groupbox.h>
 auto g = std::make_shared<unigui::GroupBox>("g", "Group");
-g->SetChild([]{ ImGui::Text("Inside"); });
+g->SetContentCallback([]{ ImGui::Text("Inside"); });
 g->Render();
 ```
 
@@ -351,7 +357,9 @@ g->Render();
 ```cpp
 #include <unigui/widgets/herosection.h>
 auto hero = std::make_shared<unigui::HeroSection>("hero");
-hero->SetTitle("UniGUI").SetSubtitle("C++23 UI").Render();
+hero->SetTitle("UniGUI");
+hero->SetSubtitle("C++23 UI");
+hero->Render();
 ```
 
 ---
@@ -363,7 +371,8 @@ hero->SetTitle("UniGUI").SetSubtitle("C++23 UI").Render();
 ```cpp
 #include <unigui/widgets/hyperlink.h>
 auto link = std::make_shared<unigui::Hyperlink>("docs", "Documentation");
-link->SetURL("https://github.com/Teamkiller131/TeamkillerUniGUI").Render();
+link->SetURL("https://github.com/Teamkiller131/TeamkillerUniGUI");
+link->Render();
 ```
 
 ---
@@ -386,8 +395,10 @@ ib->Render();
 
 ```cpp
 #include <unigui/widgets/image.h>
+void* myTex = nullptr;
 auto img = std::make_shared<unigui::Image>("logo");
-img->SetTexture(myTexId, ImVec2(128, 128)).Render();
+img->SetTexture(myTex, 128, 128);
+img->Render();
 ```
 
 ---
@@ -398,7 +409,9 @@ img->SetTexture(myTexId, ImVec2(128, 128)).Render();
 
 ```cpp
 #include <unigui/widgets/imagebutton.h>
-auto ib = std::make_shared<unigui::ImageButton>("ib", myTexId, ImVec2(32, 32));
+ImTextureID myTex = (ImTextureID) 0;
+auto ib = std::make_shared<unigui::ImageButton>("ib");
+ib->SetImage(myTex, 32, 32);
 ib->Render();
 ```
 
@@ -410,8 +423,7 @@ ib->Render();
 
 ```cpp
 #include <unigui/widgets/inputfloat.h>
-static float v = 0;
-auto in = std::make_shared<unigui::InputFloat>("f", &v);
+auto in = std::make_shared<unigui::InputFloat>("f", "Float");
 in->Render();
 ```
 
@@ -423,8 +435,7 @@ in->Render();
 
 ```cpp
 #include <unigui/widgets/inputint.h>
-static int v = 0;
-auto in = std::make_shared<unigui::InputInt>("i", &v);
+auto in = std::make_shared<unigui::InputInt>("i", "Int");
 in->Render();
 ```
 
@@ -436,8 +447,7 @@ in->Render();
 
 ```cpp
 #include <unigui/widgets/inputtext.h>
-static std::string s;
-auto t = std::make_shared<unigui::InputText>("name", &s);
+auto t = std::make_shared<unigui::InputText>("name", "Name");
 t->Render();
 ```
 
@@ -475,9 +485,8 @@ lbl->Render();
 
 ```cpp
 #include <unigui/widgets/lineedit.h>
-static std::string s;
-auto le = std::make_shared<unigui::LineEdit>("le", &s);
-le->WithUndoRedo().Render();
+auto le = std::make_shared<unigui::LineEdit>("le", "Name", "hello");
+le->Render(); // undo/redo is built-in (le->Undo()/le->Redo())
 ```
 
 ---
@@ -488,8 +497,7 @@ le->WithUndoRedo().Render();
 
 ```cpp
 #include <unigui/widgets/listbox.h>
-static int sel = 0;
-auto lb = std::make_shared<unigui::ListBox>("lb", std::vector<std::string>{"A", "B"}, &sel);
+auto lb = std::make_shared<unigui::ListBox>("lb", "Items", std::vector<std::string>{"A", "B"}, 0);
 lb->Render();
 ```
 
@@ -527,7 +535,8 @@ sp->Render();
 ```cpp
 #include <unigui/widgets/markdown.h>
 auto md = std::make_shared<unigui::Markdown>("md");
-md->SetText("# Title\n- item").Render();
+md->SetMarkdown("# Title\n- item");
+md->Render();
 ```
 
 ---
@@ -539,7 +548,7 @@ md->SetText("# Title\n- item").Render();
 ```cpp
 #include <unigui/widgets/menubar.h>
 static unigui::MenuBar bar("mb");
-bar.AddMenu("File", {{"Quit", []{ std::exit(0); }}});
+bar.SetMenus({{"File", {{"Quit", []{ std::exit(0); }}}}});
 bar.Render();
 ```
 
@@ -551,8 +560,8 @@ bar.Render();
 
 ```cpp
 #include <unigui/widgets/multicombo.h>
-static std::vector<bool> sel{true, false};
-auto mc = std::make_shared<unigui::MultiCombo>("mc", std::vector<std::string>{"A", "B"}, &sel);
+auto mc = std::make_shared<unigui::MultiCombo>("mc", "Items", std::vector<std::string>{"A", "B"});
+mc->SetSelected(0, true);
 mc->Render();
 ```
 
@@ -564,8 +573,9 @@ mc->Render();
 
 ```cpp
 #include <unigui/widgets/multihandleslider.h>
-static std::vector<float> pts{0.2f, 0.8f};
-auto mh = std::make_shared<unigui::MultiHandleSlider>("mh", &pts, 0.f, 1.f);
+auto mh = std::make_shared<unigui::MultiHandleSlider>("mh");
+mh->SetRange(0.f, 1.f);
+mh->SetTicks({{0, 0.2f}, {1, 0.8f}});
 mh->Render();
 ```
 
@@ -577,9 +587,8 @@ mh->Render();
 
 ```cpp
 #include <unigui/widgets/multiline.h>
-static std::string text;
-auto ml = std::make_shared<unigui::MultiLine>("ml", &text);
-ml->Render();
+auto ml = std::make_shared<unigui::MultiLine>("ml", "initial text");
+ml->Render(); // ml->GetText() retrieves the edited value
 ```
 
 ---
@@ -604,8 +613,9 @@ sp.Render();
 
 ```cpp
 #include <unigui/widgets/notification.h>
-unigui::Notification::Push("Info", "Connected");
-unigui::Notification::RenderAll();
+static unigui::Notification notif("notif");
+notif.Show("Info", "Connected");
+notif.Render();
 ```
 
 ---
@@ -616,8 +626,8 @@ unigui::Notification::RenderAll();
 
 ```cpp
 #include <unigui/widgets/panel.h>
-auto p = std::make_shared<unigui::Panel>("dock");
-p->SetContent([]{ ImGui::Text("Panel"); });
+auto p = std::make_shared<unigui::Panel>("dock", "Panel");
+p->SetContentCallback([]{ ImGui::Text("Panel"); });
 p->Render();
 ```
 
@@ -630,7 +640,7 @@ p->Render();
 ```cpp
 #include <unigui/widgets/panelbox.h>
 auto pb = std::make_shared<unigui::PanelBox>("pb", "Account");
-pb->SetChild([]{ ImGui::Text("Body"); });
+pb->SetContentCallback([]{ ImGui::Text("Body"); });
 pb->Render();
 ```
 
@@ -642,8 +652,7 @@ pb->Render();
 
 ```cpp
 #include <unigui/widgets/passwordinput.h>
-static std::string pwd;
-auto pw = std::make_shared<unigui::PasswordInput>("pw", &pwd);
+auto pw = std::make_shared<unigui::PasswordInput>("pw", "Password", "");
 pw->Render();
 ```
 
@@ -668,7 +677,7 @@ pb->Render();
 ```cpp
 #include <unigui/widgets/propertygrid.h>
 static unigui::PropertyGrid grid("props");
-grid.AddBool("Enabled", &flag);
+grid.AddProperty({.name = "enabled", .label = "Enabled", .type = unigui::PropType::Bool, .value = true});
 grid.Render();
 ```
 
@@ -680,8 +689,7 @@ grid.Render();
 
 ```cpp
 #include <unigui/widgets/radiogroup.h>
-static int choice = 0;
-auto rg = std::make_shared<unigui::RadioGroup>("rg", std::vector<std::string>{"A", "B"}, &choice);
+auto rg = std::make_shared<unigui::RadioGroup>("rg", std::vector<std::string>{"A", "B"}, 0);
 rg->Render();
 ```
 
@@ -694,8 +702,8 @@ rg->Render();
 ```cpp
 #include <unigui/widgets/richtext.h>
 auto rt = std::make_shared<unigui::RichText>("rt");
-rt->AddSpan("Profit ", IM_COL32(255, 255, 255, 255));
-rt->AddSpan("+12%", IM_COL32(46, 209, 94, 255));
+rt->AddSpan("Profit ", ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+rt->AddSpan("+12%", ImVec4(0.18f, 0.82f, 0.37f, 1.0f));
 rt->Render();
 ```
 
@@ -708,7 +716,8 @@ rt->Render();
 ```cpp
 #include <unigui/widgets/riskbar.h>
 auto rb = std::make_shared<unigui::RiskBar>("rb");
-rb->SetUsage(0.55f).Render();
+rb->SetRatio(0.55);
+rb->Render();
 ```
 
 ---
@@ -720,7 +729,7 @@ rb->SetUsage(0.55f).Render();
 ```cpp
 #include <unigui/widgets/scrollarea.h>
 auto sa = std::make_shared<unigui::ScrollArea>("scroll");
-sa->SetChild([]{ for (int i = 0; i < 100; ++i) ImGui::Text("Line %d", i); });
+sa->SetContentCallback([]{ for (int i = 0; i < 100; ++i) ImGui::Text("Line %d", i); });
 sa->Render();
 ```
 
@@ -732,9 +741,9 @@ sa->Render();
 
 ```cpp
 #include <unigui/widgets/searchbox.h>
-static std::string q;
-auto sb = std::make_shared<unigui::SearchBox>("q", &q);
+auto sb = std::make_shared<unigui::SearchBox>("q", "Search...");
 sb->Render();
+const std::string& q = sb->GetQuery();
 ```
 
 ---
@@ -745,8 +754,7 @@ sb->Render();
 
 ```cpp
 #include <unigui/widgets/selectable.h>
-static bool sel = false;
-auto s = std::make_shared<unigui::Selectable>("row", "Item", &sel);
+auto s = std::make_shared<unigui::Selectable>("row", "Item", false);
 s->Render();
 ```
 
@@ -770,7 +778,8 @@ std::make_shared<unigui::Separator>("sep")->Render();
 ```cpp
 #include <unigui/widgets/shimmer.h>
 unigui::Shimmer shim;
-shim.SetSize(ImVec2(200, 24));
+shim.AddBlock(200.0f, 24.0f);
+shim.Start();
 shim.Render();
 ```
 
@@ -782,8 +791,9 @@ shim.Render();
 
 ```cpp
 #include <unigui/widgets/shortcut.h>
-unigui::Shortcut::Register("Save", ImGuiMod_Ctrl | ImGuiKey_S, []{ save(); });
-unigui::Shortcut::Process();
+static unigui::ShortcutManager mgr;
+mgr.Register(ImGuiKey_S, /*ctrl=*/true, []{ /* save() */ }, "Save");
+mgr.Process();
 ```
 
 ---
@@ -795,7 +805,8 @@ unigui::Shortcut::Process();
 ```cpp
 #include <unigui/widgets/skeleton.h>
 auto sk = unigui::SkeletonScreen::FromSize(240, 120, 4);
-sk.SetShimmer(true).Render();
+sk.SetShimmer(true);
+sk.Render();
 ```
 
 ---
@@ -806,8 +817,7 @@ sk.SetShimmer(true).Render();
 
 ```cpp
 #include <unigui/widgets/slider.h>
-static float v = 0.5f;
-auto sl = std::make_shared<unigui::Slider<float>>("sl", &v, 0.f, 1.f);
+auto sl = std::make_shared<unigui::Slider<float>>("sl", "Value", 0.5f, 0.f, 1.f);
 sl->Render();
 ```
 
@@ -820,7 +830,9 @@ sl->Render();
 ```cpp
 #include <unigui/widgets/sliderbar.h>
 auto sb = std::make_shared<unigui::SliderBar>("sb");
-sb->SetRange(100, 200).SetValue(150).Render();
+sb->SetMaxValue(200);
+sb->SetCurrentLots(150);
+sb->Render();
 ```
 
 ---
@@ -831,8 +843,9 @@ sb->SetRange(100, 200).SetValue(150).Render();
 
 ```cpp
 #include <unigui/widgets/space.h>
-std::make_shared<unigui::Space>("gap")->SetHeight(12.f)->Render();
-// or: unigui::DockSpace::RenderMainDockSpace();
+auto dock = std::make_shared<unigui::DockSpace>("gap");
+dock->Render();
+// DockSpace::RenderMainDockSpace() does not exist.
 ```
 
 ---
@@ -843,8 +856,7 @@ std::make_shared<unigui::Space>("gap")->SetHeight(12.f)->Render();
 
 ```cpp
 #include <unigui/widgets/spinbox.h>
-static int v = 10;
-auto sp = std::make_shared<unigui::SpinBox<int>>("sp", &v, 0, 100);
+auto sp = std::make_shared<unigui::SpinBox<int>>("sp", "Count", 10, 0, 100);
 sp->Render();
 ```
 
@@ -857,8 +869,8 @@ sp->Render();
 ```cpp
 #include <unigui/widgets/splitter.h>
 static unigui::Splitter split("split");
-split.SetLeft([]{ ImGui::Text("L"); });
-split.SetRight([]{ ImGui::Text("R"); });
+split.SetContentA([]{ ImGui::Text("L"); });
+split.SetContentB([]{ ImGui::Text("R"); });
 split.Render();
 ```
 
@@ -871,7 +883,8 @@ split.Render();
 ```cpp
 #include <unigui/widgets/statusbar.h>
 static unigui::StatusBar bar("status");
-bar.SetLeft("Ready").SetRight("v3.5").Render();
+bar.SetText("Ready");
+bar.Render();
 ```
 
 ---
@@ -883,7 +896,9 @@ bar.SetLeft("Ready").SetRight("v3.5").Render();
 ```cpp
 #include <unigui/widgets/statuslamp.h>
 auto lamp = std::make_shared<unigui::StatusLamp>("conn");
-lamp->SetState(unigui::StatusLamp::State::Ok).SetGlowEnabled(true).Render();
+lamp->SetState(unigui::StatusLamp::State::Running);
+lamp->SetGlowEnabled(true);
+lamp->Render();
 ```
 
 ---
@@ -894,8 +909,7 @@ lamp->SetState(unigui::StatusLamp::State::Ok).SetGlowEnabled(true).Render();
 
 ```cpp
 #include <unigui/widgets/table.h>
-static unigui::Table tbl("tbl");
-tbl.AddColumn("Name", 120);
+static unigui::Table tbl("tbl", {"Name"});
 tbl.AddRow({"Alice"});
 tbl.Render();
 ```
@@ -922,7 +936,8 @@ tabs.Render();
 ```cpp
 #include <unigui/widgets/tag.h>
 auto tag = std::make_shared<unigui::Tag>("t", "Beta");
-tag->SetRemovable(true).Render();
+tag->SetRemovable(true);
+tag->Render();
 ```
 
 ---
@@ -959,9 +974,9 @@ unigui::Toast::Instance().Render();
 
 ```cpp
 #include <unigui/widgets/toggleswitch.h>
-static bool on = true;
-auto sw = std::make_shared<unigui::ToggleSwitch>("sw", &on);
+auto sw = std::make_shared<unigui::ToggleSwitch>("sw", "Enabled", true);
 sw->Render();
+bool on = sw->IsOn();
 ```
 
 ---
@@ -973,7 +988,7 @@ sw->Render();
 ```cpp
 #include <unigui/widgets/toolbar.h>
 static unigui::ToolBar tb("tb");
-tb.AddButton("save", "Save", []{});
+tb.SetItems({{"Save", []{}}});
 tb.Render();
 ```
 
@@ -1001,7 +1016,8 @@ if (ImGui::IsItemHovered())
 unigui::TreeNode root{"Root", {{"Child", {}}}};
 auto tv = std::make_shared<unigui::TreeView>("tree");
 tv->SetRoot(std::move(root));
-tv->SetHideRoot(true).Render();
+tv->SetHideRoot(true);
+tv->Render();
 ```
 
 ---
@@ -1012,8 +1028,9 @@ tv->SetHideRoot(true).Render();
 
 ```cpp
 #include <unigui/widgets/trayicon.h>
-unigui::TrayIcon::Show("UniGUI", iconPath);
-unigui::TrayIcon::SetOnClick([]{ /* restore window */ });
+unigui::TrayIcon tray("tray", "UniGUI");
+tray.Show();
+tray.SetOnExit([]{ /* restore window */ });
 ```
 
 ---
@@ -1026,7 +1043,7 @@ unigui::TrayIcon::SetOnClick([]{ /* restore window */ });
 #include <unigui/widgets/virtuallist.h>
 static unigui::VirtualList vl("vl");
 vl.SetItemCount(100000);
-vl.SetItemRenderer([](int i){ ImGui::Text("Row %d", i); });
+vl.SetItemGetter([](int i){ return "Row " + std::to_string(i); });
 vl.Render();
 ```
 
@@ -1039,7 +1056,9 @@ vl.Render();
 ```cpp
 #include <unigui/widgets/window.h>
 auto win = std::make_shared<unigui::Window>("w", "My Window");
-win->SetContent([]{ ImGui::Text("Content"); });
+auto body = std::make_shared<unigui::Panel>("body", "Body");
+body->SetContentCallback([]{ ImGui::Text("Content"); });
+win->AddPanel(body);
 win->Render();
 ```
 
@@ -1052,7 +1071,7 @@ win->Render();
 ```cpp
 #include <unigui/widgets/wizard.h>
 static unigui::Wizard wiz("wiz");
-wiz.AddStep("Step 1", []{ ImGui::Text("One"); });
+wiz.AddStep("s1", "Step 1", []{ ImGui::Text("One"); });
 wiz.Render();
 ```
 
