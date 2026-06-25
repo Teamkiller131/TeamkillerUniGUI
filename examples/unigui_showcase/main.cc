@@ -69,14 +69,25 @@ static void TabButtons() {
     run.Render();
 
     static SegmentedControl tf("sc_tf", {"1D", "1W", "1M", "1Y"});
-    tf.WithSelected(0).WithOnChange([](int, const std::string& label) { Toast::Info(label); });
+    static bool tfInit = [] {
+        // Configure ONCE — calling WithSelected() every frame would force the
+        // selection back to 0 and the control would never appear to switch.
+        tf.WithSelected(0).WithOnChange([](int, const std::string& label) { Toast::Info(label); });
+        return true;
+    }();
+    (void) tfInit;
     tf.Render();
 
     static ButtonGroup acts("sc_acts");
-    acts.AddButton("Edit", [] {})
-        .AddTintedButton(
-            "Delete", [] { Toast::Error("deleted"); }, theme::Semantic::Danger)
-        .WithAlign(ButtonGroup::Align::Right);
+    static bool actsInit = [] {
+        // AddButton appends — do it once, not every frame (else it grows forever).
+        acts.AddButton("Edit", [] {})
+            .AddTintedButton(
+                "Delete", [] { Toast::Error("deleted"); }, theme::Semantic::Danger)
+            .WithAlign(ButtonGroup::Align::Right);
+        return true;
+    }();
+    (void) actsInit;
     acts.Render();
 
     Section("IconButton · Hyperlink · im arrow/small");
@@ -110,8 +121,13 @@ static void TabInputs() {
     static Slider<float> sl("sc_sl", "Gain", 0.5f, 0.f, 1.f);
     sl.Render();
     static SliderBar bar("sc_bar");
-    bar.SetMaxValue(100);
-    bar.SetCurrentLots(40);
+    static bool barInit = [] {
+        // Set the initial lots ONCE, otherwise every frame resets your drag.
+        bar.SetMaxValue(100);
+        bar.SetCurrentLots(40);
+        return true;
+    }();
+    (void) barInit;
     bar.Render();
     static SpinBox<int> spin("sc_spin", "Quantity", 10, 0, 100);
     spin.Render();
