@@ -15,7 +15,23 @@
 
 class BackendTest : public ::testing::Test {
 protected:
-    void SetUp() override { glfw_init_ok_ = glfwInit(); }
+    void SetUp() override {
+        glfw_init_ok_ = glfwInit();
+        if (!glfw_init_ok_)
+            GTEST_SKIP() << "GLFW could not initialize (headless CI without a display)";
+        // Probe whether a real OpenGL 3.3 core context is obtainable. GPU-less CI
+        // runners expose only a generic GL 1.1 driver, so a 3.3-core window fails
+        // to create — skip the GL-dependent suite there instead of hard-failing
+        // (mirrors render_integration_test.cc's headless skip).
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        GLFWwindow* probe = glfwCreateWindow(64, 48, "probe", nullptr, nullptr);
+        if (!probe)
+            GTEST_SKIP() << "No OpenGL 3.3 core context available (headless / GPU-less CI)";
+        glfwDestroyWindow(probe);
+    }
     void TearDown() override {
         if (glfw_init_ok_)
             glfwTerminate();

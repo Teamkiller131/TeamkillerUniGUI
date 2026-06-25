@@ -4,7 +4,7 @@
 
 #include <algorithm>
 #include <cctype>
-#include <charconv>
+#include <cstdlib>
 #include <sstream>
 #include <string_view>
 
@@ -39,18 +39,20 @@ bool ParseNumericCell(std::string_view text, std::string_view unit, double& out)
     std::string trimmed = Trim(text);
     if (trimmed.empty())
         return false;
-    // std::from_chars is non-throwing — unlike std::stod it never allocates an
+    // std::strtod is non-throwing — unlike std::stod it never allocates an
     // exception per non-numeric cell, which matters because this runs once per
-    // row on every sort. (It also keeps the parser within the project's
-    // "no throwing parsers" rule.) from_chars accepts a leading '-' but not '+',
-    // so honour an explicit positive sign the way stod did.
-    const char* begin = trimmed.data();
-    const char* end = begin + trimmed.size();
-    const char* numStart = (begin < end && *begin == '+') ? begin + 1 : begin;
-    auto [ptr, ec] = std::from_chars(numStart, end, out);
-    if (ec != std::errc{})
+    // row on every sort (and keeps the parser within the project's "no throwing
+    // parsers" rule). We use strtod rather than std::from_chars because libc++
+    // (macOS) does not implement the floating-point from_chars overload — it is
+    // a deleted function there. strtod accepts a leading '+'/'-' and whitespace,
+    // and reports the first unparsed character via its end pointer, which we use
+    // to validate the trailing unit. `trimmed` is NUL-terminated (std::string).
+    const char* begin = trimmed.c_str();
+    char* parseEnd = nullptr;
+    out = std::strtod(begin, &parseEnd);
+    if (parseEnd == begin)
         return false; // not a number
-    std::string rest = Trim(std::string_view(trimmed).substr(ptr - begin));
+    std::string rest = Trim(std::string_view(parseEnd));
     if (!unit.empty()) {
         return rest.empty() || rest == unit;
     }

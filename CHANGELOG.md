@@ -1,5 +1,35 @@
 ## Unreleased
 
+## [3.8.10] - 2026-06-25
+
+> **Cross-platform CI hardening — Linux GCC `-Werror`, macOS libc++, headless Windows.**
+> The MSVC `/W4 /WX` gate (3.8.4) can't see these: GCC diagnoses unused
+> parameters in *uninstantiated* template methods (MSVC doesn't), and libc++
+> deletes floating-point `from_chars`.
+
+### Fixed
+- **macOS / libc++ build** — `Table` numeric-cell parsing used
+  `std::from_chars` with a `double`, which libc++ **deletes** (hard error).
+  Switched to portable `std::strtod` (non-throwing, end-pointer validated),
+  matching the project's existing `strutil` idiom. Behaviour preserved.
+- **Linux GCC `-Werror` build** — `EditableDataGrid`'s four cell-renderer
+  lambdas captured `this` implicitly via `[=]` (deprecated in C++20,
+  `-Wdeprecated`); now `[=, this]`.
+- **Linux GCC `-Werror` build** — `DataTable::SetCellEditable(col, editable)`
+  ignored its `editable` argument (always inserted the column), which both
+  tripped `-Wunused-parameter` and was a latent bug. It now honours the flag
+  (insert when `true`, erase when `false`).
+- **Headless Windows CI** — the GLFW/OpenGL `BackendTest` suite hard-`ASSERT`ed
+  on GLFW init + a GL 3.3 core context; on GPU-less runners (generic GL 1.1
+  driver) all 8 tests failed. They now probe for a real GL 3.3 context in
+  `SetUp` and `GTEST_SKIP` the suite when unavailable (mirrors
+  `render_integration_test.cc`), so the suite runs on real GPUs and skips
+  cleanly in headless CI.
+
+### Removed
+- Dead private fields `MultiSplitter::dragIndex_` and `Form::submitted_`
+  (never read or written; flagged by Clang `-Wunused-private-field`).
+
 ## [3.8.9] - 2026-06-24
 
 > **Roadmap series 3.8.x — Horizon 10 (data density at scale): the two deferred chart items.**

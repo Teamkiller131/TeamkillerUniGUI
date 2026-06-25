@@ -59,7 +59,6 @@ private:
         float minPx = 0.f;
     };
     std::vector<Panel> panels_;
-    int dragIndex_ = -1;
     std::vector<float> designRatios_;
 };
 

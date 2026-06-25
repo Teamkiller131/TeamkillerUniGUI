@@ -47,7 +47,7 @@ public:
     /// A dropdown column: `items`/`getSel` read the row, `onChange(row, sel)` writes.
     EditableDataGrid& SetComboColumn(int col, ItemsFn items, GetIntFn getSel, SetIntFn onChange) {
         const std::string id = "##egc" + std::to_string(col);
-        this->SetCellRenderer(col, [=](int row, const T& item) {
+        this->SetCellRenderer(col, [=, this](int row, const T& item) {
             const std::vector<std::string> opts = items(row, item);
             int sel = getSel(row, item);
             if (IsFrozen(row, item)) {
@@ -65,7 +65,7 @@ public:
     /// An integer input column.
     EditableDataGrid& SetIntColumn(int col, GetIntFn getVal, SetIntFn onChange, int step = 1) {
         const std::string id = "##egi" + std::to_string(col);
-        this->SetCellRenderer(col, [=](int row, const T& item) {
+        this->SetCellRenderer(col, [=, this](int row, const T& item) {
             int v = getVal(row, item);
             if (IsFrozen(row, item)) {
                 ImGui::Text("%d", v);
@@ -83,7 +83,7 @@ public:
                                      const char* fmt = "%.2f") {
         const std::string id = "##egf" + std::to_string(col);
         const std::string fmtStr = fmt;
-        this->SetCellRenderer(col, [=](int row, const T& item) {
+        this->SetCellRenderer(col, [=, this](int row, const T& item) {
             float v = getVal(row, item);
             if (IsFrozen(row, item)) {
                 char buf[64];
@@ -102,7 +102,7 @@ public:
     /// Frozen rows render the label as disabled text.
     EditableDataGrid& SetButtonColumn(int col, LabelFn label, ClickFn onClick) {
         const std::string id = "##egb" + std::to_string(col);
-        this->SetCellRenderer(col, [=](int row, const T& item) {
+        this->SetCellRenderer(col, [=, this](int row, const T& item) {
             const std::string text = label(row, item);
             if (IsFrozen(row, item)) {
                 ImGui::TextDisabled("%s", text.c_str());

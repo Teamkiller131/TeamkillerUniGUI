@@ -66,7 +66,6 @@ private:
     std::vector<FormField> fields_;
     std::function<void()> on_submit_;
     std::vector<FormError> last_errors_;
-    bool submitted_ = false;
     std::unordered_map<std::string, FieldValidator> validators_;
 };
 

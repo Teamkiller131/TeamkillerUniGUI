@@ -186,8 +186,13 @@ public:
     }
 
     // ── Inline editing ───────────────────────────────────────────────────
-    /// Enable inline editing on a column. Double-click to edit.
-    void SetCellEditable(int col, bool editable) { editableCols_.insert(col); }
+    /// Enable (or disable) inline editing on a column. Double-click to edit.
+    void SetCellEditable(int col, bool editable) {
+        if (editable)
+            editableCols_.insert(col);
+        else
+            editableCols_.erase(col);
+    }
     void SetOnCellCommit(CellCommitFn fn) { onCellCommit_ = std::move(fn); }
 
     // ── Checkbox column ───────────────────────────────────────────────
