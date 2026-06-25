@@ -1,5 +1,24 @@
 ## Unreleased
 
+## [3.8.12] - 2026-06-25
+
+> CI clang-tidy job + a latent trading-module compile break surfaced by it.
+
+### Fixed
+- **Trading module failed to compile under Dear ImGui 1.92.** `DepthLadder` and
+  `OrderTicket` used `ImGuiChildFlags_Border`, which 1.92 renamed to
+  `ImGuiChildFlags_Borders`. The module is off by default (`UNIGUI_MODULE_TRADING`)
+  so neither the default build nor MSVC caught it — clang-tidy did. Renamed both
+  call sites; verified by building with `-DUNIGUI_MODULE_TRADING=ON`.
+- **clang-tidy CI job (advisory) was failing on spurious errors.** The step linted
+  *every* `src/*.cc`, including sources whose module/backend is off in the Linux
+  config (config/network/ipc/dx11/dx12/sdl3/vulkan/trading) and a generated font
+  header that hadn't been built — producing `file not found` `clang-diagnostic-error`s
+  that turned the job red. It now builds first (so generated headers exist) and
+  lints only the TUs actually present in `compile_commands.json`, so the job
+  reflects real findings on the compiled surface. (Style findings remain advisory
+  per `WarningsAsErrors: ''`.)
+
 ## [3.8.11] - 2026-06-25
 
 > Closes the last open item from the Round-2 safety-hardening review.

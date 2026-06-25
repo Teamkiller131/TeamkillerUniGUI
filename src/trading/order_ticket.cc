@@ -141,7 +141,7 @@ void OrderTicket::Render() {
     ImGui::PushID(GetName().c_str());
 
     if (ImGui::BeginChild("##ticket", size_,
-                          ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY)) {
+                          ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY)) {
         // Symbol.
         char symBuf[32];
         std::snprintf(symBuf, sizeof(symBuf), "%s", draft_.symbol.c_str());

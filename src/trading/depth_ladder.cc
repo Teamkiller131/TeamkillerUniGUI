@@ -137,7 +137,7 @@ void DepthLadder::Render() {
         pushedColors = 1;
     }
 
-    const ImGuiChildFlags childFlags = border_ ? ImGuiChildFlags_Border : ImGuiChildFlags_None;
+    const ImGuiChildFlags childFlags = border_ ? ImGuiChildFlags_Borders : ImGuiChildFlags_None;
     if (ImGui::BeginChild("##ladder", size_, childFlags)) {
         const float totalW = ImGui::GetContentRegionAvail().x;
 

@@ -28,10 +28,21 @@ jobs:
           -DVCPKG_TARGET_TRIPLET=x64-linux -DCMAKE_BUILD_TYPE=Debug \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
           -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+    - name: Build (generates the embedded-font header; populates compile DB)
+      # clang-tidy needs generated headers (e.g. the embedded JetBrains Mono font
+      # consumed by theme.cc) to exist, so build the library first.
+      run: cmake --build build --target unigui
     - name: Run clang-tidy
       run: |
-        # Lint only first-party sources; skip generated/vcpkg paths.
-        find src -name '*.cc' | xargs clang-tidy -p build --config-file=.clang-tidy
+        # Lint only the library TUs that are actually compiled in *this*
+        # configuration, read from compile_commands.json. This excludes
+        # off-module / off-backend sources (config, network, ipc, dx11/dx12,
+        # sdl3, vulkan, trading, …) whose third-party headers aren't installed
+        # here — linting those with bogus default flags produced spurious
+        # `file not found` clang-diagnostic-errors that failed the job.
+        python3 -c "import json; print('\n'.join(e['file'] for e in json.load(open('build/compile_commands.json')) if '/src/' in e['file'] and e['file'].endswith('.cc')))" > tidy_files.txt
+        echo "Linting $(wc -l < tidy_files.txt) compiled first-party sources"
+        xargs clang-tidy -p build --config-file=.clang-tidy < tidy_files.txt
     - name: Wrapper coverage vs ImGui (advisory)
       # Reports the first-class-wrapped %% of ImGui's practical surface (the
       # "Wrapper coverage" success metric in DEVELOPMENT_PLAN.md). Advisory for

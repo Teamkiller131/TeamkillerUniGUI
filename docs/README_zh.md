@@ -1,6 +1,6 @@
 # TeamkillerUniGUI 文档索引
 
-> **3.8.11** · C++23 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
+> **3.8.12** · C++23 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
 
 ## 入门
 
