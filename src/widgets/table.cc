@@ -303,29 +303,39 @@ void Table::Render() {
             }
         }
 
-        for (int r = 0; r < (int) rows_.size(); r++) {
-            ImGui::TableNextRow();
-            for (int c = 0; c < (int) columns_.size(); c++) {
-                ImGui::TableSetColumnIndex(c);
-                ImGui::PushID(r * 1000 + c);
-                bool handled = false;
-                if (cell_renderer_)
-                    handled = cell_renderer_(r, c);
-                if (!handled) {
-                    const std::string display = FormatCellText(CellText(r, c), GetColumnUnit(c));
-                    const float width = std::max(0.0f, ImGui::GetContentRegionAvail().x);
-                    if (c == 0) {
-                        if (DrawSelectableAlignedText(display, r == selected_, width,
-                                                      GetColumnAlignment(c))) {
-                            selected_ = r;
-                            if (on_select_)
-                                on_select_(r);
+        // Virtualize the row loop with ImGuiListClipper: only the rows inside the
+        // current scroll viewport are laid out and drawn, so a Table with 100k
+        // rows costs about the same per frame as one with a screenful. This
+        // assumes uniform row heights (single-line cells or frame-height custom
+        // renderers), which is how Table lays its cells out.
+        ImGuiListClipper clipper;
+        clipper.Begin((int) rows_.size());
+        while (clipper.Step()) {
+            for (int r = clipper.DisplayStart; r < clipper.DisplayEnd; r++) {
+                ImGui::TableNextRow();
+                for (int c = 0; c < (int) columns_.size(); c++) {
+                    ImGui::TableSetColumnIndex(c);
+                    ImGui::PushID(r * 1000 + c);
+                    bool handled = false;
+                    if (cell_renderer_)
+                        handled = cell_renderer_(r, c);
+                    if (!handled) {
+                        const std::string display =
+                            FormatCellText(CellText(r, c), GetColumnUnit(c));
+                        const float width = std::max(0.0f, ImGui::GetContentRegionAvail().x);
+                        if (c == 0) {
+                            if (DrawSelectableAlignedText(display, r == selected_, width,
+                                                          GetColumnAlignment(c))) {
+                                selected_ = r;
+                                if (on_select_)
+                                    on_select_(r);
+                            }
+                        } else {
+                            DrawAlignedText(display, width, GetColumnAlignment(c));
                         }
-                    } else {
-                        DrawAlignedText(display, width, GetColumnAlignment(c));
                     }
+                    ImGui::PopID();
                 }
-                ImGui::PopID();
             }
         }
         ImGui::EndTable();

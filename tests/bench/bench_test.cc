@@ -150,3 +150,30 @@ TEST_F(BenchTest, DataTable_VirtualScroll_100kRows) {
     // to catch a regression that makes per-frame cost scale with total rows.
     ExpectUnderBudget(ms, 50, "DataTable steady-state render of 100k rows ms");
 }
+
+// ── Table virtual-scroll benchmark: render 100k rows ────────────────────────
+// The row-vector Table widget virtualises its row loop with ImGuiListClipper, so
+// — like DataTable — a 100k-row Table must render in time bounded by the visible
+// window, not the total row count.
+TEST_F(BenchTest, Table_VirtualScroll_100kRows) {
+    unigui::Table tbl("bench_tbl", {"ID", "Value"});
+    for (int i = 0; i < 100000; i++)
+        tbl.AddRow({std::to_string(i), std::to_string(i * 0.25)});
+
+    // ImGuiListClipper needs a prior frame's scroll/clip state to virtualise, so
+    // warm up across several frames and time the steady-state frame.
+    long long ms = 0;
+    for (int frame = 0; frame < 5; ++frame) {
+        auto t0 = std::chrono::high_resolution_clock::now();
+        tbl.Render();
+        ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                 std::chrono::high_resolution_clock::now() - t0)
+                 .count();
+        ImGui::Render();   // close the current frame
+        ImGui::NewFrame(); // open the next (last one is closed by TearDown)
+    }
+
+    // Budget: a steady-state frame draws only the visible window — well under a
+    // 16ms (60fps) frame. A regression that rendered all rows would blow past it.
+    ExpectUnderBudget(ms, 50, "Table steady-state render of 100k rows ms");
+}

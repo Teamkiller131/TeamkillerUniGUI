@@ -1,3 +1,21 @@
+## [3.9.2] - 2026-06-25
+
+> Performance: the row-vector `Table` widget is now virtualized.
+
+### Changed
+- **`Table` virtualizes its rows with `ImGuiListClipper`.** Previously every row
+  was laid out and drawn each frame (per-cell text formatting, measuring, and
+  custom clip-rect drawing), so a large table cost O(total rows) per frame. It now
+  processes only the rows inside the scroll viewport, so a 100k-row `Table`
+  renders in time bounded by the visible window — joining `DataTable` and
+  `VirtualList`. Assumes uniform row heights (single-line cells or frame-height
+  custom renderers), which is how `Table` lays its cells out.
+
+### Added
+- **`Table` 100k-row steady-state render benchmark** (`tests/bench/bench_test.cc`)
+  with a per-frame budget enforced by the Release CI jobs — locks in the
+  virtualized cost and catches any regression that scales with total row count.
+
 ## [3.9.1] - 2026-06-25
 
 > Completes the Horizon-5 reactive workstream: the trading models now plug into

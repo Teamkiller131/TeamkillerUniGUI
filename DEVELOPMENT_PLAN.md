@@ -262,8 +262,10 @@ Goal: turn the stub backends into real ones and make rendering measurably fast.
   per-frame column extraction — each with a regression floor. A `DataTable`
   virtual-scroll benchmark at **100k rows** (`tests/bench/bench_test.cc`) proves
   steady-state per-frame cost stays bounded by the visible window (joining the
-  existing `VirtualList`/CSV-import budgets). _Remaining:_ `Table` at 100k rows
-  and wiring the budgets into CI as a tracked gate.
+  existing `VirtualList`/CSV-import budgets). The row-vector **`Table` is now
+  `ImGuiListClipper`-virtualized** with its own 100k-row steady-state benchmark,
+  and all budgets run in the **Release CI jobs** (a tracked gate). _Remaining:_
+  per-widget micro-budgets as the widget set grows.
 - **P2 · M — GPU-side text/MSAA improvements** and a shared backend capability
   query so features degrade gracefully per renderer.
 
