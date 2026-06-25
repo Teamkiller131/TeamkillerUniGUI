@@ -22,6 +22,7 @@
 #include <unigui/widgets/richtext.h>
 
 #include <array>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
@@ -40,6 +41,18 @@ static void Section(const char* title) {
 // Notification is a normal widget (queue + Render), not a static singleton like
 // Toast — keep one instance the overlays tab pushes to and main renders.
 static Notification g_notif("sc_notif");
+
+// Global keyboard shortcuts. ShortcutManager::Process() reads global per-frame
+// input state, so it must run EVERY frame from the main loop — not inside a tab
+// body (a tab's body only executes while that tab is the active one, so a chord
+// registered there would almost never be polled). Register the chords exactly
+// once here; main() calls g_shortcuts.Process() per frame.
+static ShortcutManager g_shortcuts;
+static const bool g_shortcutsInit = [] {
+    g_shortcuts.Register(
+        ImGuiKey_S, /*ctrl=*/true, [] { Toast::Success("Ctrl+S fired!"); }, "Save");
+    return true;
+}();
 
 // File-scope row types for the data-grid widgets in the Data tab.
 struct PosRow {
@@ -228,9 +241,27 @@ static void TabTextPickers() {
     selA.Render();
 
     Section("CascadingCombo (linked dropdowns)");
+    // Level 0 = Province, level 1 = City. The City options depend on the chosen
+    // Province, so they must be relinked whenever the Province changes — that is
+    // what makes this combo "cascading" rather than two independent lists.
     static CascadingCombo cc(
         "sc_cc", {{"Province", {"Jiangsu", "Zhejiang"}}, {"City", {"Nanjing", "Suzhou"}}});
-    cc.WithLayout(CascadingCombo::Layout::Horizontal);
+    static const std::vector<std::vector<std::string>> kCitiesByProvince = {
+        {"Nanjing", "Suzhou", "Wuxi"},    // Jiangsu
+        {"Hangzhou", "Ningbo", "Wenzhou"} // Zhejiang
+    };
+    // Configure exactly once: register the link callback and seed the City list to
+    // match the default Province. Reconfiguring every frame would reset selection.
+    static bool ccInit = [] {
+        cc.WithLayout(CascadingCombo::Layout::Horizontal);
+        cc.SetOnChanged([](int level, int index) {
+            if (level == 0 && index >= 0 && index < (int) kCitiesByProvince.size())
+                cc.SetOptions(1, kCitiesByProvince[index]);
+        });
+        cc.SetOptions(1, kCitiesByProvince[0]);
+        return true;
+    }();
+    (void) ccInit;
     cc.Render();
 
     Section("File / directory pickers");
@@ -624,10 +655,32 @@ static void TabCharts() {
     Section("TimeSeriesChart (live P&L)");
     static TimeSeriesChart chart("sc_chart");
     static int sid = chart.AddSeries({.label = "PnL"});
+    // Init-once: configure the chart and seed it with a batch of historical mock
+    // points so it renders fully populated on the first frame, then keeps animating
+    // as fresh points trickle in one-per-frame below. Done exactly once so it never
+    // fights the user's pan/zoom.
+    static const double kSeedT0 = im::GetTime();
+    static const bool chartInit = [] {
+        chart.SetSlidingWindow(240);
+        constexpr int kSeed = 200;
+        double walk = 10.0;
+        for (int i = 0; i < kSeed; ++i) {
+            // Sine trend + small deterministic random walk = lifelike P&L history.
+            walk += 0.15 * std::sin(i * 0.21) + 0.04 * (((i * 1103515245 + 12345) % 7) - 3);
+            // Strictly-positive, monotonic timestamps in (0, kSeedT0): spreading the
+            // seed across [0, kSeedT0) keeps every point > 0 (so AppendPoint never
+            // trips its `timestamp < 0` -> frameCounter_ fallback) and places the
+            // whole history just left of the live tail, however small kSeedT0 is.
+            const double ts = kSeedT0 * (double) (i + 1) / (double) (kSeed + 1);
+            chart.AppendPoint(sid, (float) walk, ts);
+        }
+        return true;
+    }();
+    (void) chartInit;
+    // Live animation: one fresh point per frame continuing the wave at the real clock.
     static double phase = 0.0;
     phase += 0.15;
-    chart.AppendPoint(sid, (float) (10.0 + 3.0 * (phase - (int) phase)), im::GetTime());
-    chart.SetSlidingWindow(240);
+    chart.AppendPoint(sid, (float) (10.0 + 3.0 * std::sin(phase)), im::GetTime());
     chart.Render();
 
     Section("PriceTicker (scrolling tape)");
@@ -774,15 +827,10 @@ static void TabUtilities() {
     im::TextDisabled("dropped = " + std::to_string(dropped));
 
     Section("Shortcut — press Ctrl+S");
-    static ShortcutManager shortcuts;
-    static bool scInit = [] {
-        shortcuts.Register(
-            ImGuiKey_S, /*ctrl=*/true, [] { Toast::Success("Ctrl+S fired!"); }, "Save");
-        return true;
-    }();
-    (void) scInit;
-    shortcuts.Process();
-    im::TextDisabled("A ShortcutManager checks registered chords each frame.");
+    // The chord is registered at file scope (g_shortcuts) and processed every
+    // frame from main()'s render callback, so it fires regardless of which tab is
+    // active. Processing it here would only work while this tab is visible.
+    im::TextDisabled("A ShortcutManager checks registered chords each frame (processed globally).");
 
     Section("TrayIcon (Windows notification area)");
     static TrayIcon tray("sc_tray", "UniGUI Showcase");
@@ -881,6 +929,10 @@ int main(int argc, char** argv) {
                         TabUtilities();
                 }
             }
+
+            // ── global keyboard shortcuts (checked every frame, any tab) ─────
+            (void) g_shortcutsInit;
+            g_shortcuts.Process();
 
             // ── global overlays (drawn on top, once per frame) ───────────────
             Toast::Instance().Render();

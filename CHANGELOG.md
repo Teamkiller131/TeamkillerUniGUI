@@ -1,4 +1,32 @@
-## Unreleased
+## [3.8.13] - 2026-06-25
+
+> A real drag-and-drop library bug + three showcase interaction fixes surfaced by
+> running the demo: cascading combo, empty chart, and a globally-dead Ctrl+S.
+
+### Fixed
+- **`AcceptDragDrop<T>` never delivered the dropped value** (`include/unigui/widgets/dragdrop.h`).
+  It read `payload->Data` *after* `ImGui::EndDragDropTarget()`, but on the delivery
+  frame `EndDragDropTarget()` calls `ClearDragDrop()`, which frees/zeros ImGui's
+  payload buffer that `payload->Data` points into — so the wrapper returned a
+  nulled/dangling pointer and a completed drop left the receiver at its sentinel.
+  The value is now copied into stable storage **before** `EndDragDropTarget()` (with
+  a `DataSize == sizeof(T)` guard). Signature unchanged. New regression test
+  `tests/widgets/dragdrop_test.cc` scripts a full press→drag→release gesture and
+  asserts the value arrives (it returned `-1` before this fix).
+- **Showcase: CascadingCombo wasn't cascading.** The demo wired two independent
+  fixed lists, so changing the Province never changed the City options. It now
+  registers `SetOnChanged` (init-once) to relink the City list via `SetOptions`
+  whenever the Province changes — the widget already supported this; the demo
+  simply never used it.
+- **Showcase: TimeSeriesChart rendered empty.** The demo appended one point per
+  frame to an unseeded series, so on first view there was nothing to draw. It now
+  seeds ~200 historical mock points once (with strictly-positive, monotonic
+  timestamps so `AppendPoint`'s `timestamp < 0` frame-counter fallback can't
+  collapse them onto `x = 0`) and keeps appending a live point per frame.
+- **Showcase: Ctrl+S did nothing.** `ShortcutManager::Process()` was called inside
+  the Utilities tab body, which only runs while that tab is active, so the chord
+  was almost never polled. The manager is now file-scope and `Process()` runs every
+  frame from the main render callback, so the shortcut fires on any tab.
 
 ### Docs
 - **`docs/WIDGET_EXAMPLES.md` refreshed against the real headers.** An audit of all
@@ -17,11 +45,13 @@
 
 ### Added
 - **`examples/unigui_showcase`** — a comprehensive, runnable demo that exercises
-  **all 95 widgets** (plus the `PnlText`/`TagList` immediate helpers) across 11
-  tabbed sections, the full `unigui::im` immediate layer, the
-  `WindowScope`/`TabBarScope` RAII guards, and live theme/surface switching.
-  Written entirely against the UniGUI public API — **zero raw `ImGui::` calls** —
-  to demonstrate the wrapper end to end. Headless-friendly (`--frames N`).
+  **all 95 widgets** (plus the `PnlText`/`TagList` immediate helpers) across **10
+  category tabs** (Buttons · Inputs · Text & Pickers · Display · Indicators · Data ·
+  Layout · Charts & Trading · Overlays & Dialogs · Utilities), the full
+  `unigui::im` immediate layer, the `WindowScope`/`TabBarScope` RAII guards, and
+  live theme/surface switching. Written entirely against the UniGUI public API —
+  **zero raw `ImGui::` calls** — to demonstrate the wrapper end to end.
+  Headless-friendly (`--frames N`).
 
 ## [3.8.12] - 2026-06-25
 
