@@ -26,7 +26,4 @@ release/
 unigui_settings.ini
 
 # Local planning / working notes — internal only, not part of the public project
-/dev-plan-round2.md
-/review-tier1-safety-hardening.md
-/tasks-for-team.md
-/docs/jzdz-fit-plan.md
+.notes/
