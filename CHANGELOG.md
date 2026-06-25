@@ -10,6 +10,10 @@
   `Running`; `AlertBar::Severity` removed), and `void`-returning setters wrongly
   chained off `.Render()`. Every snippet now matches the current API; the entry
   count is corrected from 93 to 95 (adds `CommandPalette`, `FileDialog`).
+  Content-callback snippets now draw with `unigui::im::*` (e.g. `im::Text`) instead
+  of raw `ImGui::`, modelling the wrapper — only the handful of calls with no `im::`
+  equivalent (style-var push/pop, `IsKeyChordPressed`) stay raw, and are commented
+  to say so.
 
 ### Added
 - **`examples/unigui_showcase`** — a comprehensive, runnable demo that exercises

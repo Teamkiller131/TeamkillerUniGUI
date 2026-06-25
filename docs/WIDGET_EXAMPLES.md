@@ -29,6 +29,7 @@ bar->Render();
 ```cpp
 #include <unigui/widgets/animate.h>
 float a = unigui::Animate::FadeIn(0.25f);
+// Style-var push/pop have no unigui::im:: wrapper — drop to raw ImGui for these.
 ImGui::PushStyleVar(ImGuiStyleVar_Alpha, a);
 ImGui::Text("Fading in");
 ImGui::PopStyleVar();
@@ -42,10 +43,11 @@ ImGui::PopStyleVar();
 
 ```cpp
 #include <unigui/widgets/badge.h>
+#include <unigui/im/im.h>
 unigui::Badge badge("new");
 badge.SetVariant(unigui::Badge::Count);
 badge.SetCount(3);
-ImGui::Button("Inbox");
+unigui::im::Button("Inbox");
 badge.Render();  // after parent
 ```
 
@@ -84,8 +86,9 @@ if (btn->WasClicked()) { /* ... */ }
 
 ```cpp
 #include <unigui/widgets/card.h>
+#include <unigui/im/im.h>
 auto card = std::make_shared<unigui::Card>("card");
-card->SetContent([]{ ImGui::Text("Content"); });
+card->SetContent([]{ unigui::im::Text("Content"); });
 card->Render();
 ```
 
@@ -135,8 +138,9 @@ std::string s = unigui::Clipboard::Paste();
 
 ```cpp
 #include <unigui/widgets/collapsingheader.h>
+#include <unigui/im/im.h>
 auto h = std::make_shared<unigui::CollapsingHeader>("adv", "Advanced");
-h->SetContentCallback([]{ ImGui::Text("Details"); });
+h->SetContentCallback([]{ unigui::im::Text("Details"); });
 h->Render();
 ```
 
@@ -343,8 +347,9 @@ bar->Render();
 
 ```cpp
 #include <unigui/widgets/groupbox.h>
+#include <unigui/im/im.h>
 auto g = std::make_shared<unigui::GroupBox>("g", "Group");
-g->SetContentCallback([]{ ImGui::Text("Inside"); });
+g->SetContentCallback([]{ unigui::im::Text("Inside"); });
 g->Render();
 ```
 
@@ -599,9 +604,10 @@ ml->Render(); // ml->GetText() retrieves the edited value
 
 ```cpp
 #include <unigui/widgets/multisplitter.h>
+#include <unigui/im/im.h>
 static unigui::MultiSplitter sp("sp", unigui::MultiSplitter::Horizontal);
-sp.AddPanel(0.3f, []{ ImGui::Text("L"); });
-sp.AddPanel(0.7f, []{ ImGui::Text("R"); });
+sp.AddPanel(0.3f, []{ unigui::im::Text("L"); });
+sp.AddPanel(0.7f, []{ unigui::im::Text("R"); });
 sp.Render();
 ```
 
@@ -626,8 +632,9 @@ notif.Render();
 
 ```cpp
 #include <unigui/widgets/panel.h>
+#include <unigui/im/im.h>
 auto p = std::make_shared<unigui::Panel>("dock", "Panel");
-p->SetContentCallback([]{ ImGui::Text("Panel"); });
+p->SetContentCallback([]{ unigui::im::Text("Panel"); });
 p->Render();
 ```
 
@@ -639,8 +646,9 @@ p->Render();
 
 ```cpp
 #include <unigui/widgets/panelbox.h>
+#include <unigui/im/im.h>
 auto pb = std::make_shared<unigui::PanelBox>("pb", "Account");
-pb->SetContentCallback([]{ ImGui::Text("Body"); });
+pb->SetContentCallback([]{ unigui::im::Text("Body"); });
 pb->Render();
 ```
 
@@ -728,8 +736,9 @@ rb->Render();
 
 ```cpp
 #include <unigui/widgets/scrollarea.h>
+#include <unigui/im/im.h>
 auto sa = std::make_shared<unigui::ScrollArea>("scroll");
-sa->SetContentCallback([]{ for (int i = 0; i < 100; ++i) ImGui::Text("Line %d", i); });
+sa->SetContentCallback([]{ for (int i = 0; i < 100; ++i) unigui::im::Text("Line " + std::to_string(i)); });
 sa->Render();
 ```
 
@@ -868,9 +877,10 @@ sp->Render();
 
 ```cpp
 #include <unigui/widgets/splitter.h>
+#include <unigui/im/im.h>
 static unigui::Splitter split("split");
-split.SetContentA([]{ ImGui::Text("L"); });
-split.SetContentB([]{ ImGui::Text("R"); });
+split.SetContentA([]{ unigui::im::Text("L"); });
+split.SetContentB([]{ unigui::im::Text("R"); });
 split.Render();
 ```
 
@@ -922,8 +932,9 @@ tbl.Render();
 
 ```cpp
 #include <unigui/widgets/tabwidget.h>
+#include <unigui/im/im.h>
 static unigui::TabWidget tabs("tabs");
-tabs.AddTab({"a", "Tab A", []{ ImGui::Text("A"); }});
+tabs.AddTab({"a", "Tab A", []{ unigui::im::Text("A"); }});
 tabs.Render();
 ```
 
@@ -948,9 +959,10 @@ tag->Render();
 
 ```cpp
 #include <unigui/widgets/timeseries_chart.h>
+#include <unigui/im/im.h>
 static unigui::TimeSeriesChart chart("live");
 static int sid = chart.AddSeries({.label = "PnL"});
-chart.AppendPoint(sid, 1.23, ImGui::GetTime());
+chart.AppendPoint(sid, 1.23, unigui::im::GetTime());
 chart.Render();
 ```
 
@@ -1000,8 +1012,9 @@ tb.Render();
 
 ```cpp
 #include <unigui/widgets/tooltip.h>
-ImGui::Text("Hover me");
-if (ImGui::IsItemHovered())
+#include <unigui/im/im.h>
+unigui::im::Text("Hover me");
+if (unigui::im::IsItemHovered())
     unigui::Tooltip::Show("Hint text");
 ```
 
@@ -1055,9 +1068,10 @@ vl.Render();
 
 ```cpp
 #include <unigui/widgets/window.h>
+#include <unigui/im/im.h>
 auto win = std::make_shared<unigui::Window>("w", "My Window");
 auto body = std::make_shared<unigui::Panel>("body", "Body");
-body->SetContentCallback([]{ ImGui::Text("Content"); });
+body->SetContentCallback([]{ unigui::im::Text("Content"); });
 win->AddPanel(body);
 win->Render();
 ```
@@ -1070,8 +1084,9 @@ win->Render();
 
 ```cpp
 #include <unigui/widgets/wizard.h>
+#include <unigui/im/im.h>
 static unigui::Wizard wiz("wiz");
-wiz.AddStep("s1", "Step 1", []{ ImGui::Text("One"); });
+wiz.AddStep("s1", "Step 1", []{ unigui::im::Text("One"); });
 wiz.Render();
 ```
 
@@ -1251,7 +1266,7 @@ palette.AddCommand("file.open", "Open File", []{ openFile(); });
 palette.AddCommand("file.save", "Save File", []{ saveFile(); });
 palette.AddCommand({"view.theme", "Toggle Theme", "View", "Ctrl+T", []{ toggleTheme(); }});
 
-// Bind a hotkey somewhere in your frame:
+// Bind a hotkey somewhere in your frame (im:: has no key-chord helper — raw ImGui):
 if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_P)) palette.Open();
 palette.Render();   // filters/ranks as you type; Enter runs, Esc dismisses
 ```
