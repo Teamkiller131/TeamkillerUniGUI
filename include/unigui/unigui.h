@@ -28,6 +28,7 @@
 #include <unigui/core/main_thread.h>
 #include <unigui/core/make.h>
 #include <unigui/core/observable.h>
+#include <unigui/core/path_util.h>
 #include <unigui/core/scope.h>
 #include <unigui/core/session_axis.h>
 #include <unigui/core/settings.h>

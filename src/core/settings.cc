@@ -1,3 +1,4 @@
+#include <unigui/core/path_util.h>
 #include <unigui/core/settings.h>
 #include <unigui/core/strutil.h>
 
@@ -223,7 +224,9 @@ void Settings::EnableAutoSave(const std::string& path) {
 }
 void Settings::Shutdown() {
     if (autoSaveEnabled_)
-        Instance().Save(autoSavePathStatic_);
+        // autoSavePathStatic_ is a std::string that may hold a UTF-8 path; convert
+        // explicitly so a non-ASCII auto-save path isn't ANSI-mangled on Windows.
+        Instance().Save(PathFromUtf8(autoSavePathStatic_));
 }
 
 void Settings::AddRecentFile(const std::string& path, int max) {

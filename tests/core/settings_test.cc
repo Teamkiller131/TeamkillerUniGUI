@@ -206,16 +206,45 @@ TEST_F(SettingsTest, ClearRecentFiles_NoRecent_IsNoOp) {
 TEST_F(SettingsTest, SaveLoad_NonAsciiPath_RoundTrip) {
     auto& s = unigui::Settings::Instance();
     s.Set("key", "中文值");
-    // Build a UTF-8 path string directly. "配置" = \xE9\x85\x8D\xE7\xBD\xAE
-    // std::filesystem::path on POSIX treats char* as UTF-8 natively.
-    // On Windows, the path is handed to Utf8ToWide (MultiByteToWideChar CP_UTF8).
-    auto utf8Dir = std::string("unigui_\xE9\x85\x8D\xE7\xBD\xAE_test");
-    auto base = std::filesystem::temp_directory_path() / utf8Dir;
+    // "配置" = UTF-8 E9 85 8D E7 BD AE. Build the path via PathFromUtf8 so the
+    // directory is created with the correct Unicode name on Windows — a plain
+    // `temp_dir / std::string` would decode the UTF-8 bytes via the ANSI code
+    // page and create a mis-named directory (the bug the old test masked by being
+    // self-consistently wrong). Pass a std::filesystem::path (not a string) to
+    // Save/Load so there is no second ANSI re-decode.
+    const std::string utf8Dir = "unigui_\xE9\x85\x8D\xE7\xBD\xAE_test";
+    const auto base = std::filesystem::temp_directory_path() / unigui::PathFromUtf8(utf8Dir);
     std::filesystem::create_directories(base);
-    auto filePath = (base / "app.ini").string();
+    const auto filePath = base / "app.ini";
     ASSERT_TRUE(s.Save(filePath));
+    EXPECT_TRUE(std::filesystem::exists(filePath)); // written to the correct Unicode path
     s.Clear();
     ASSERT_TRUE(s.Load(filePath));
     EXPECT_EQ(s.Get("key"), "中文值");
+    std::filesystem::remove_all(base);
+}
+
+// Regression for the auto-save UTF-8 residual: EnableAutoSave takes a std::string,
+// and Shutdown() must treat it as UTF-8 (not the ANSI code page) when converting
+// to a path. On a non-GBK Windows runner the old implicit string→path conversion
+// would write to a mis-decoded location and this would fail.
+TEST_F(SettingsTest, AutoSave_Shutdown_Utf8Path_RoundTrip) {
+    auto& s = unigui::Settings::Instance();
+    const std::string utf8Dir = "unigui_\xE9\x85\x8D\xE7\xBD\xAE_autosave";
+    const auto base = std::filesystem::temp_directory_path() / unigui::PathFromUtf8(utf8Dir);
+    std::filesystem::create_directories(base);
+    const auto target = base / "auto.ini";
+    const auto u8 = target.u8string();
+    const std::string utf8Path(u8.begin(), u8.end()); // the UTF-8 string a caller would pass
+
+    s.Clear();
+    s.Set("auto", "值");
+    s.EnableAutoSave(utf8Path);
+    unigui::Settings::Shutdown(); // saves to the UTF-8 path
+
+    EXPECT_TRUE(std::filesystem::exists(target)); // correct Unicode location
+    s.Clear();
+    ASSERT_TRUE(s.Load(target));
+    EXPECT_EQ(s.Get("auto"), "值");
     std::filesystem::remove_all(base);
 }

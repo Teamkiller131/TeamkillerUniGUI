@@ -1,5 +1,28 @@
 ## Unreleased
 
+## [3.8.11] - 2026-06-25
+
+> Closes the last open item from the Round-2 safety-hardening review.
+
+### Added
+- **`core/path_util.h` — `PathFromUtf8(std::string_view)`** — construct a
+  `std::filesystem::path` from a UTF-8 string portably. A plain `path(std::string)`
+  decodes via the platform's native narrow encoding (the **ANSI code page** on
+  Windows, not UTF-8), mangling non-ASCII paths; this routes the bytes through
+  `std::u8string` to force UTF-8 on every platform (the non-deprecated C++20
+  replacement for `std::filesystem::u8path`). Header-only, unit-tested.
+
+### Fixed
+- **`Settings` auto-save mangled non-ASCII UTF-8 paths on Windows.**
+  `EnableAutoSave(const std::string&)` stores a path that `Shutdown()` passed to
+  `Save()` via an implicit `std::string`→`path` conversion — i.e. ANSI-decoded on
+  Windows, so a UTF-8 auto-save path with non-ASCII characters was written to the
+  wrong location on a non-GBK system. `Shutdown()` now converts via
+  `PathFromUtf8`. Also replaced the previous non-ASCII path test (which built the
+  directory via an ANSI-decoded `std::string`, masking the bug by being
+  self-consistently wrong) with one that creates a correctly-named Unicode
+  directory and a real `EnableAutoSave`→`Shutdown`→`Load` round-trip.
+
 ## [3.8.10] - 2026-06-25
 
 > **Cross-platform CI hardening — Linux GCC `-Werror`, macOS libc++, headless Windows.**
