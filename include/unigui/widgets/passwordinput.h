@@ -18,6 +18,10 @@ public:
     /// Returns 0-4: 0=empty, 1=weak, 2=fair, 3=good, 4=strong
     int GetStrengthScore() const;
 
+protected:
+    // Route bound-value updates through SetValue so the input buffer stays synced.
+    void ApplyBoundValue(std::string v) override { SetValue(std::move(v)); }
+
 private:
     int CalcStrength(const std::string& pw) const;
 

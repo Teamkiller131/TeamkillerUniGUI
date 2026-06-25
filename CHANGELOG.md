@@ -1,3 +1,36 @@
+## [3.9.0] - 2026-06-25
+
+> Horizon-5 reactive layer: derived `Computed<T>` values and first-class data
+> binding on the retained widgets.
+
+### Added
+- **`Computed<T>` — derived / recomputing observables** (`core/observable.h`). A
+  read-only observable whose value is recomputed from one or more source
+  observables (or other `Computed`s) whenever any of them changes, notifying its
+  own subscribers change-detected. It composes (a `Computed` can be a source for
+  another `Computed` or for `Bind`) and supports N-ary, heterogeneous, and even
+  zero-source derivations. **Lifetime-safe by design:** it caches each source's
+  latest value and computes from the cache, so a source destroyed before the
+  `Computed` never dangles — it simply stops contributing. Propagation is
+  *eventually consistent* (a multi-path "diamond" graph may briefly observe an
+  intermediate value and notify more than once before settling); derive from leaf
+  observables for glitch-free results.
+- **Widget data binding.** `ValueWidget<T>::BindValue(Observable<T>&, twoWay = true)`
+  gives every value widget (CheckBox, Slider, SpinBox, Drag*, Input*, LineEdit,
+  PasswordInput, ToggleSwitch, …) two-way binding: the widget adopts the source on
+  bind, model changes flow to the widget, and user edits flow back. Buffer-backed
+  inputs (LineEdit/PasswordInput) override a new protected `ApplyBoundValue` hook
+  so their input buffer stays synced. `Label::BindText` adds one-way text binding.
+  The widget owns the subscription (auto-detaches on destruction) and a lifetime
+  guard prevents a stale push-back if the source is destroyed first; a two-way
+  binding provably can't feed back into a loop (the change-detecting
+  `Observable::Set` plus a non-notifying apply path break it).
+- **`Observable<T>::Lifetime()`** — a `weak_ptr` token that expires when the
+  observable is destroyed (backs the binding's push-back guard).
+- 23 new headless tests covering `Computed` derivation / recompute / chaining /
+  diamonds / heterogeneous sources / source-death safety, and widget binding
+  (two-way, rebind, buffer-sync, no-loop, lifetime safety).
+
 ## [3.8.13] - 2026-06-25
 
 > A real drag-and-drop library bug + three showcase interaction fixes surfaced by

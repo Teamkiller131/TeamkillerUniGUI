@@ -283,14 +283,18 @@ Goal: broaden what apps can build without leaving the toolkit.
   together — switch preset/surface/font/accent live, export/import the palette as
   JSON, and `--css <file>` to hot-edit a stylesheet while it runs (headless via
   `--frames N`).
-- **P2 · L — Data binding / reactive layer.** _Foundation landed._ New
-  header-only `core/observable.h`: `Observable<T>` (change-detecting `Set`,
-  `ForceSet`, in-place `Mutate`, `Subscribe`/`SubscribeAndFire`) with **RAII
-  `Subscription`** handles that auto-unsubscribe and safely outlive the
-  observable (shared registry + weak ref), plus a `Bind(source, sink)` helper.
-  Move-only so observers aren't silently aliased. Fully unit-tested. _Remaining:_
-  `Computed`/derived observables and wiring bindings into the retained widgets +
-  trading models.
+- **P2 · L — Data binding / reactive layer.** _Largely landed._ Header-only
+  `core/observable.h`: `Observable<T>` (change-detecting `Set`, `ForceSet`,
+  in-place `Mutate`, `Subscribe`/`SubscribeAndFire`) with **RAII `Subscription`**
+  handles that auto-unsubscribe and safely outlive the observable (shared registry
+  + weak ref), a `Bind(source, sink)` helper, and **`Computed<T>`** —
+  derived/recomputing observables that are N-ary, heterogeneous, composable
+  (Computed-of-Computed), lifetime-safe via per-source value caching, and
+  eventually-consistent. **First-class widget binding** landed too:
+  `ValueWidget<T>::BindValue` (two-way, across every value widget, with an
+  `ApplyBoundValue` hook for buffer-backed inputs) and `Label::BindText`
+  (one-way), both with a source-lifetime guard. Fully unit-tested. _Remaining:_
+  wiring bindings into the trading models.
 - **P2 · M — Internationalization.** _Mostly done._ `core/locale.h` is now a
   real catalog: a **fallback chain** (current → base language → fallback locale →
   key) so partially-translated locales degrade gracefully, **positional

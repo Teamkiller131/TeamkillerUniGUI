@@ -21,6 +21,8 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -135,6 +137,11 @@ public:
 
     std::size_t ObserverCount() const { return reg_->observers.size(); }
 
+    /// A weak token that expires when this Observable is destroyed. Lets a holder
+    /// of a raw `Observable*` confirm the observable is still alive before
+    /// dereferencing it (e.g. a widget pushing a two-way-bound value back).
+    std::weak_ptr<const void> Lifetime() const noexcept { return reg_; }
+
 private:
     struct Registry {
         std::vector<std::pair<std::uint64_t, Observer>> observers;
@@ -152,10 +159,109 @@ private:
     T value_{};
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Computed<T> — a read-only derived observable.
+//
+// Recomputes its value from one or more source observables whenever any of them
+// changes, and notifies its own subscribers (change-detected, just like
+// Observable). It composes: a Computed exposes Get()/Subscribe(), so it can serve
+// as a source for another Computed or for Bind.
+//
+//     Observable<int> a{2}, b{3};
+//     Computed<int> sum{[](int x, int y){ return x + y; }, a, b};
+//     sum.Get();                       // 5
+//     auto s = sum.Subscribe(...);     // fires whenever a or b move the sum
+//     a = 10;                          // sum recomputes to 13, notifies once
+//
+// Lifetime: the Computed caches each source's latest value (refreshed via that
+// source's own subscription) and computes from the cache — it never reads a
+// source through a stored reference. A source may therefore be destroyed before
+// the Computed without dangling; it simply stops contributing updates and its
+// last value is retained. A Computed is address-sensitive (its source
+// subscriptions capture `this`), so it is neither copyable nor movable; hold it
+// in stable storage.
+//
+// Consistency: propagation is push-based and *eventually consistent*, not
+// glitch-free. In a multi-path (diamond) graph — a node that depends on a source
+// both directly and through an intermediate Computed — a recompute may briefly
+// read an intermediate value and may notify subscribers more than once per
+// upstream change before settling. For glitch-free results, derive in a single
+// Computed that reads only Observable leaves (`compute(a, b)`) rather than
+// chaining Computeds into a diamond.
+// ─────────────────────────────────────────────────────────────────────────────
+template <typename T> class Computed {
+public:
+    /// Construct from a compute function and the sources it reads. `compute` is
+    /// invoked as `compute(sourceValues...)` and must return T. Each source must
+    /// expose `.Get()` and `.Subscribe(...)` — an Observable or another Computed
+    /// both qualify.
+    template <typename Fn, typename... Sources> explicit Computed(Fn compute, Sources&... sources) {
+        // Snapshot each source's value into a shared cache; the evaluator computes
+        // from the cache, never from a live source reference, so a source going
+        // away can never dangle — its slot just stops updating.
+        using Cache = std::tuple<std::decay_t<decltype(sources.Get())>...>;
+        auto cache = std::make_shared<Cache>(sources.Get()...);
+        evaluator_ = [compute = std::move(compute), cache]() -> T {
+            return std::apply(compute, *cache);
+        };
+        SubscribeSources(cache, std::index_sequence_for<Sources...>{}, sources...);
+        value_.ForceSet(evaluator_()); // seed the cached value (no observers yet)
+    }
+
+    Computed(const Computed&) = delete;
+    Computed& operator=(const Computed&) = delete;
+    Computed(Computed&&) = delete;
+    Computed& operator=(Computed&&) = delete;
+
+    const T& Get() const { return value_.Get(); }
+    operator const T&() const { return value_.Get(); }
+
+    /// Subscribe to recomputations; the returned handle unsubscribes on destruction.
+    [[nodiscard]] Subscription Subscribe(typename Observable<T>::Observer obs) {
+        return value_.Subscribe(std::move(obs));
+    }
+    [[nodiscard]] Subscription SubscribeAndFire(typename Observable<T>::Observer obs) {
+        return value_.SubscribeAndFire(std::move(obs));
+    }
+    std::size_t ObserverCount() const { return value_.ObserverCount(); }
+
+    /// Expose the backing observable so a Computed can be used wherever an
+    /// `Observable<T>&` is expected (Bind, or a source for a further Computed).
+    Observable<T>& AsObservable() { return value_; }
+    const Observable<T>& AsObservable() const { return value_; }
+
+private:
+    template <typename Cache, std::size_t... Is, typename... Sources>
+    void SubscribeSources(std::shared_ptr<Cache> cache, std::index_sequence<Is...>,
+                          Sources&... sources) {
+        // On each source change: refresh that slot of the cache, then recompute.
+        (srcSubs_.push_back(sources.Subscribe([this, cache](const auto& v) {
+            std::get<Is>(*cache) = v;
+            Recompute();
+        })),
+         ...);
+    }
+    void Recompute() { value_.Set(evaluator_()); }
+
+    // Declaration order matters: srcSubs_ is declared LAST so it is destroyed
+    // first, unsubscribing from every source before evaluator_/value_ are torn
+    // down — no source can fire Recompute() into a half-destroyed Computed.
+    std::function<T()> evaluator_;
+    Observable<T> value_;
+    std::vector<Subscription> srcSubs_;
+};
+
 /// Bind an observable to a sink: invokes `sink` immediately with the current
 /// value and on every subsequent change. Returns the owning subscription.
 template <typename T, typename Sink>
 [[nodiscard]] Subscription Bind(Observable<T>& source, Sink&& sink) {
+    return source.SubscribeAndFire(std::forward<Sink>(sink));
+}
+
+/// Bind a Computed to a sink: fires immediately with the current derived value
+/// and on every subsequent recomputation. Returns the owning subscription.
+template <typename T, typename Sink>
+[[nodiscard]] Subscription Bind(Computed<T>& source, Sink&& sink) {
     return source.SubscribeAndFire(std::forward<Sink>(sink));
 }
 

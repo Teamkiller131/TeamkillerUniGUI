@@ -26,6 +26,10 @@ public:
     int GetUndoDepth() const { return undoIndex_ + 1; }
     int GetRedoDepth() const { return (int) undoStack_.size() - undoIndex_ - 1; }
 
+protected:
+    // Route bound-value updates through SetValue so the input buffer_ stays synced.
+    void ApplyBoundValue(std::string v) override { SetValue(std::move(v)); }
+
 private:
     void PushUndo();
     std::string label_;
