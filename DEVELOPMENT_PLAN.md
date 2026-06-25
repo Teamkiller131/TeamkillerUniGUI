@@ -312,8 +312,13 @@ Goal: broaden what apps can build without leaving the toolkit.
 
 Goal: make UniGUI easy to adopt and contribute to at scale.
 
-- **P2 · M — Packaging.** Publish to vcpkg registry and/or a Conan package;
-  versioned binary releases; `find_package(unigui)` story hardening.
+- **P2 · M — Packaging.** _`find_package` hardening landed._ A standalone
+  downstream consumer (`tests/packaging/consumer`) is built and **run against an
+  install tree** by the `install-consume` CI job (and `scripts/test_install.ps1`
+  locally), so a broken exported target, a missing `find_dependency()`, or an
+  uninstalled generated header now fails CI instead of a downstream user's build.
+  _Remaining:_ publish to a vcpkg registry and/or a Conan package; versioned
+  binary releases.
 - **P2 · M — Language bindings.** Explore C API + bindings (e.g. C#, Python) over
   a stable C ABI surface.
 - **P2 · L — Designer / live-preview tool.** Standalone app that previews DSL/CSS
