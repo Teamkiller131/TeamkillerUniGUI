@@ -9,6 +9,10 @@
 //
 // There is intentionally **not a single raw `ImGui::` call** in this file — that
 // is the point of the wrapper. Run headless for CI:  ./unigui_showcase --frames 10
+//
+// All 95 widgets are exercised, grouped into ten tabs by category:
+//   Buttons · Inputs · Text & Pickers · Display · Indicators · Data ·
+//   Layout · Charts & Trading · Overlays & Dialogs · Utilities
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include <unigui/unigui.h> // pulls in most widgets, im::, scope guards, theme, app
@@ -36,6 +40,22 @@ static void Section(const char* title) {
 // Notification is a normal widget (queue + Render), not a static singleton like
 // Toast — keep one instance the overlays tab pushes to and main renders.
 static Notification g_notif("sc_notif");
+
+// File-scope row types for the data-grid widgets in the Data tab.
+struct PosRow {
+    std::string sym;
+    double pnl;
+    int lots;
+};
+struct EdgPod {
+    std::string sym;
+    int mode;
+    int lots;
+};
+struct BasketLeg {
+    std::string sym;
+    int lots;
+};
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Tab 1 — Buttons & actions
@@ -107,7 +127,7 @@ static void TabButtons() {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Tab 2 — Inputs
+// Tab 2 — Inputs (booleans + numeric, retained and immediate)
 // ═════════════════════════════════════════════════════════════════════════════
 static void TabInputs() {
     Section("Booleans");
@@ -120,7 +140,7 @@ static void TabInputs() {
     static RadioGroup rg("sc_rg", {"Market", "Limit", "Stop"}, 0);
     rg.Render();
 
-    Section("Numeric — retained + immediate");
+    Section("Numeric — retained");
     static Slider<float> sl("sc_sl", "Gain", 0.5f, 0.f, 1.f);
     sl.Render();
     static SliderBar bar("sc_bar");
@@ -136,15 +156,37 @@ static void TabInputs() {
     spin.Render();
     static DragInt drag("sc_drag", "Lots", 5, 1.0f, 0, 100);
     drag.Render();
+    static DragFloat dfv("sc_dfv", "Drag", 1.f, 0.1f, 0.f, 10.f);
+    dfv.Render();
+    static InputInt ii("sc_ii", "Int");
+    ii.Render();
+    static InputFloat iff("sc_iff", "Float");
+    iff.Render();
 
+    Section("MultiHandleSlider (two draggable ticks)");
+    static MultiHandleSlider mh("sc_mh");
+    static bool mhInit = [] {
+        mh.SetRange(0.f, 100.f);
+        mh.SetTicks({{0, 20.f}, {1, 80.f}});
+        return true;
+    }();
+    (void) mhInit;
+    mh.Render();
+
+    Section("Numeric — immediate (im::)");
     static float imGain = 0.3f;
     im::SliderFloat("im SliderFloat", &imGain, 0.f, 1.f);
     static int imN = 4;
     im::SliderInt("im SliderInt", &imN, 0, 10);
     static float price = 12.5f;
     im::InputFloat("im InputFloat", &price, 0.1f, 1.0f, "%.2f");
+}
 
-    Section("Text");
+// ═════════════════════════════════════════════════════════════════════════════
+// Tab 3 — Text & pickers (text inputs, combos, colour, date, file pickers)
+// ═════════════════════════════════════════════════════════════════════════════
+static void TabTextPickers() {
+    Section("Text inputs");
     static LineEdit le("sc_le", "Name", "");
     le.SetPlaceholder("type your name…");
     le.Render();
@@ -156,6 +198,8 @@ static void TabInputs() {
     static SearchBox sb("sc_sb", "Search symbols…");
     sb.SetItems({"AAPL", "MSFT", "NVDA", "IF2506", "IC2506"});
     sb.Render();
+    static InputText it("sc_it", "Name (retained)");
+    it.Render();
 
     Section("Pickers");
     static ComboBox combo("sc_combo", "Symbol", std::vector<std::string>{"IF", "IC", "IH", "IM"});
@@ -178,10 +222,26 @@ static void TabInputs() {
     dp.Render();
     static ColorEdit ce("sc_ce", "Accent", 0.18f, 0.55f, 0.92f, 1.f);
     ce.Render();
+    static ColorPicker cpick("sc_cpick", "Pick", std::array<float, 3>{0.2f, 0.5f, 0.9f});
+    cpick.Render();
+    static Selectable selA("sc_sel", "A selectable row", false);
+    selA.Render();
+
+    Section("CascadingCombo (linked dropdowns)");
+    static CascadingCombo cc(
+        "sc_cc", {{"Province", {"Jiangsu", "Zhejiang"}}, {"City", {"Nanjing", "Suzhou"}}});
+    cc.WithLayout(CascadingCombo::Layout::Horizontal);
+    cc.Render();
+
+    Section("File / directory pickers");
+    static FilePath fp("sc_fp", "Input file");
+    fp.Render();
+    static DirPath dpp("sc_dpp", "Output dir");
+    dpp.Render();
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Tab 3 — Display & feedback
+// Tab 4 — Display & feedback (text, badges, status)
 // ═════════════════════════════════════════════════════════════════════════════
 static void TabDisplay() {
     Section("Text & rich text");
@@ -197,6 +257,11 @@ static void TabDisplay() {
     rt.Render();
     static Markdown md("sc_md", "### Markdown\n- supports **bold**\n- and lists");
     md.Render();
+
+    Section("HeroSection");
+    static HeroSection hero("sc_hero", "UniGUI", "A C++23 Dear ImGui wrapper");
+    hero.SetHeight(110.f);
+    hero.Render();
 
     Section("Badges · Tags · Status lamp");
     if (im::Button("Inbox")) {}
@@ -214,6 +279,30 @@ static void TabDisplay() {
     lamp.SetCaption("Live");
     lamp.Render();
 
+    Section("PnlText · TagList (immediate trading idioms)");
+    unigui::PnlText(12.4, "P&L +12.4%");
+    im::SameLine();
+    unigui::PnlText(-3.2, 2);
+    unigui::TagList({{"涨停", theme::Semantic::Up},
+                     {"跌停", theme::Semantic::Down},
+                     {"风险", theme::Semantic::Danger}});
+
+    Section("Separator (retained) · StatusBar");
+    static Separator sepw("sc_sepw");
+    sepw.Render();
+    static StatusBar sbar("sc_sbar", "Ready · UniGUI Showcase");
+    sbar.Render();
+
+    Section("Tooltip");
+    im::Text("Hover me for a tooltip");
+    if (im::IsItemHovered())
+        Tooltip::Show("This is a unigui::Tooltip");
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Tab 5 — Indicators (gauges, bars, loading states, media, animation)
+// ═════════════════════════════════════════════════════════════════════════════
+static void TabIndicators() {
     Section("Gauges · sparkline · progress");
     static Gauge cpu("sc_cpu");
     cpu.WithRange(0.f, 100.f).WithValue(63.f).WithSweepDegrees(270.f).WithCenterLabel("CPU");
@@ -258,17 +347,34 @@ static void TabDisplay() {
     }();
     (void) shimInit;
     shimmer.Render();
+
+    Section("SkeletonScreen");
+    static SkeletonScreen sk = SkeletonScreen::FromSize(260, 80, 4);
+    static bool skInit = [] {
+        sk.SetShimmer(true);
+        return true;
+    }();
+    (void) skInit;
+    sk.Render();
+
+    Section("Image · ImageButton (placeholder — no texture loaded)");
+    static Image img("sc_img");
+    img.SetTexture(nullptr, 64, 64);
+    img.Render();
+    im::SameLine();
+    static ImageButton ibtn("sc_ibtn", "icon");
+    ibtn.SetImage((ImTextureID) 0, 48, 48);
+    ibtn.Render();
+
+    Section("Animate (eased value driving a wrapped widget — no raw ImGui)");
+    float fade = Animate::FadeIn(0.6f); // eases 0→1 over 0.6s
+    im::Text("Animate::FadeIn → ProgressBar:");
+    im::ProgressBar(fade, ImVec2(220, 0));
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Tab 4 — Data
+// Tab 6 — Data (tables, trees, lists, editable grids)
 // ═════════════════════════════════════════════════════════════════════════════
-struct PosRow {
-    std::string sym;
-    double pnl;
-    int lots;
-};
-
 static void TabData() {
     Section("DataTable<T> — sign-coloured P&L");
     static std::vector<PosRow> rows{
@@ -336,10 +442,46 @@ static void TabData() {
     static VirtualList vlist("sc_vl", 100000);
     vlist.SetItemGetter([](int i) { return "Tick #" + std::to_string(i); });
     vlist.Render();
+
+    Section("EditableDataGrid<T> (combo + int cell editors)");
+    static std::vector<EdgPod> pods{{"IF2506", 0, 2}, {"IC2506", 1, 1}};
+    static EditableDataGrid<EdgPod> edg("sc_edg", {{"Sym", 90}, {"Mode", 90}, {"Lots", 70}});
+    static bool edgInit = [] {
+        edg.SetDataSource(&pods);
+        edg.SetCellFormatter([](int, int col, const EdgPod& p) -> std::string {
+            if (col == 0)
+                return p.sym;
+            if (col == 1)
+                return p.mode == 0 ? "Open" : "Close";
+            return std::to_string(p.lots);
+        });
+        edg.SetComboColumn(
+            1, [](int, const EdgPod&) { return std::vector<std::string>{"Open", "Close"}; },
+            [](int, const EdgPod& p) { return p.mode; }, [](int r, int v) { pods[r].mode = v; });
+        edg.SetIntColumn(
+            2, [](int, const EdgPod& p) { return p.lots; }, [](int r, int v) { pods[r].lots = v; });
+        return true;
+    }();
+    (void) edgInit;
+    edg.Render();
+
+    Section("BasketTicket<T> (Add / Remove toolbar over an editable grid)");
+    static BasketTicket<BasketLeg> ticket("sc_basket", {{"Symbol", 110}, {"Lots", 70}});
+    static bool ticketInit = [] {
+        ticket.SetRowFactory([] { return BasketLeg{"NEW", 1}; })
+            .SetValidator([](const BasketLeg& l) { return !l.sym.empty() && l.lots > 0; });
+        ticket.AddRow({"IF2506", 2});
+        ticket.Grid().SetCellFormatter([](int, int col, const BasketLeg& l) -> std::string {
+            return col == 0 ? l.sym : std::to_string(l.lots);
+        });
+        return true;
+    }();
+    (void) ticketInit;
+    ticket.Render();
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Tab 5 — Containers & layout
+// Tab 7 — Layout & containers
 // ═════════════════════════════════════════════════════════════════════════════
 static void TabLayout() {
     Section("Card · GroupBox · CollapsingHeader");
@@ -365,11 +507,38 @@ static void TabLayout() {
     });
     hdr.Render();
 
+    Section("Panel · PanelBox");
+    static Panel pnl("sc_pnl", "Panel");
+    pnl.SetContentCallback([] { im::Text("A Panel hosts content via a callback."); });
+    pnl.Render();
+    static PanelBox pbx("sc_pbx", "Account");
+    pbx.SetContentCallback([] { im::Text("PanelBox — a titled, bordered box."); });
+    pbx.Render();
+
+    Section("ScrollArea");
+    static ScrollArea sca("sc_sca");
+    sca.SetContentCallback([] {
+        for (int i = 0; i < 60; ++i)
+            im::Text("Scrollable line " + std::to_string(i));
+    });
+    sca.Render();
+
     Section("Splitter (drag the divider)");
     static Splitter split("sc_split", Splitter::Horizontal, 0.4f);
     split.SetContentA([] { im::TextWrapped("Left pane — instrument list."); });
     split.SetContentB([] { im::TextWrapped("Right pane — order book / chart."); });
     split.Render();
+
+    Section("MultiSplitter (3 panes)");
+    static MultiSplitter msp("sc_msp", MultiSplitter::Horizontal);
+    static bool mspInit = [] {
+        msp.AddPanel(0.34f, [] { im::Text("Pane 1"); });
+        msp.AddPanel(0.33f, [] { im::Text("Pane 2"); });
+        msp.AddPanel(0.33f, [] { im::Text("Pane 3"); });
+        return true;
+    }();
+    (void) mspInit;
+    msp.Render();
 
     Section("Breadcrumb · Toolbar · nested TabWidget");
     static Breadcrumb bc("sc_bc");
@@ -392,10 +561,64 @@ static void TabLayout() {
     }();
     (void) tabsInit;
     tabs.Render();
+
+    Section("Layout::HBox helper");
+    Layout::HBox({
+        [] { im::Button("HBox A"); },
+        [] { im::Button("HBox B"); },
+        [] { im::Button("HBox C"); },
+    });
+
+    Section("Form (validated fields)");
+    static Form form("sc_form", "Login");
+    static bool formInit = [] {
+        form.AddTextField("user", "Username", /*required=*/true);
+        form.AddTextField("pwd", "Password", true);
+        form.AddCheckbox("remember", "Remember me");
+        return true;
+    }();
+    (void) formInit;
+    form.Render();
+
+    Section("Wizard (multi-step)");
+    static Wizard wiz("sc_wiz");
+    static bool wizInit = [] {
+        wiz.AddStep("s1", "Account", [] { im::Text("Step 1 — account details"); });
+        wiz.AddStep("s2", "Confirm", [] { im::Text("Step 2 — confirm"); });
+        return true;
+    }();
+    (void) wizInit;
+    wiz.Render();
+
+    Section("Root-level primitives (Window · MenuBar · DockSpace)");
+    static Window demoWin("sc_win", "Demo Window (floats)");
+    static bool winInit = [] {
+        auto body = std::make_shared<Panel>("sc_winbody", "Body");
+        body->SetContentCallback(
+            [] { im::Text("A retained Window hosts Panels, floating separately."); });
+        demoWin.AddPanel(body);
+        return true;
+    }();
+    (void) winInit;
+    demoWin.Render(); // shows as its own floating window
+
+    static MenuBar topbar("sc_topbar");
+    static bool topbarInit = [] {
+        topbar.SetMenus({{"Demo", {{"Action", [] { Toast::Info("menu action"); }}}}});
+        return true;
+    }();
+    (void) topbarInit;
+    topbar.Render(); // renders as a global main menu bar at the top of the viewport
+
+    static DockSpace dock("sc_dock");
+    (void) dock; // a DockSpaceOverViewport root layout — instantiated here, but it
+                 // belongs at the app root, not inside a tab (it covers the viewport).
+    im::TextDisabled(
+        "Window floats separately, MenuBar is the top bar, DockSpace is app-root only.");
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Tab 6 — Charts & trading
+// Tab 8 — Charts & trading
 // ═════════════════════════════════════════════════════════════════════════════
 static void TabCharts() {
     Section("TimeSeriesChart (live P&L)");
@@ -439,7 +662,7 @@ static void TabCharts() {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Tab 7 — Overlays & add-ons
+// Tab 9 — Overlays & dialogs
 // ═════════════════════════════════════════════════════════════════════════════
 static void TabOverlays() {
     Section("Toasts & notifications");
@@ -472,6 +695,24 @@ static void TabOverlays() {
     if (im::Button("Open dialog"))
         dlg.Open();
     dlg.Render();
+
+    Section("ConfirmDialog (danger-styled)");
+    static ConfirmDialog confirm("sc_confirm");
+    static bool confirmInit = [] {
+        confirm.SetTitle("Delete order?");
+        confirm.SetMessage("This cannot be undone.");
+        confirm.SetDangerStyle(true);
+        return true;
+    }();
+    (void) confirmInit;
+    if (im::Button("Delete…"))
+        confirm.Open([] { Toast::Error("Deleted"); });
+    confirm.Render();
+
+    Section("ContextMenu — right-click the text");
+    im::Text("Right-click me");
+    ContextMenu::Show(
+        "sc_ctx", {{"Copy", [] { Toast::Info("copy"); }}, {"Paste", [] { Toast::Info("paste"); }}});
 
     Section("CommandPalette (add-on widget)");
     static CommandPalette palette;
@@ -507,231 +748,7 @@ static void TabOverlays() {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Tab 8 — More inputs (retained inputs, pickers, multi-handle slider)
-// ═════════════════════════════════════════════════════════════════════════════
-static void TabMoreInputs() {
-    Section("Retained numeric inputs (counterpart to the im:: ones)");
-    static InputInt ii("sc_ii", "Int");
-    ii.Render();
-    static InputFloat iff("sc_iff", "Float");
-    iff.Render();
-    static DragFloat dfv("sc_dfv", "Drag", 1.f, 0.1f, 0.f, 10.f);
-    dfv.Render();
-
-    Section("Retained text input · ColorPicker · Selectable");
-    static InputText it("sc_it", "Name");
-    it.Render();
-    static ColorPicker cpick("sc_cpick", "Pick", std::array<float, 3>{0.2f, 0.5f, 0.9f});
-    cpick.Render();
-    static Selectable selA("sc_sel", "A selectable row", false);
-    selA.Render();
-
-    Section("CascadingCombo (linked dropdowns) · MultiHandleSlider");
-    static CascadingCombo cc(
-        "sc_cc", {{"Province", {"Jiangsu", "Zhejiang"}}, {"City", {"Nanjing", "Suzhou"}}});
-    cc.WithLayout(CascadingCombo::Layout::Horizontal);
-    cc.Render();
-    static MultiHandleSlider mh("sc_mh");
-    static bool mhInit = [] {
-        mh.SetRange(0.f, 100.f);
-        mh.SetTicks({{0, 20.f}, {1, 80.f}});
-        return true;
-    }();
-    (void) mhInit;
-    mh.Render();
-
-    Section("File / directory pickers");
-    static FilePath fp("sc_fp", "Input file");
-    fp.Render();
-    static DirPath dpp("sc_dpp", "Output dir");
-    dpp.Render();
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// Tab 9 — More display
-// ═════════════════════════════════════════════════════════════════════════════
-static void TabMoreDisplay() {
-    Section("HeroSection");
-    static HeroSection hero("sc_hero", "UniGUI", "A C++23 Dear ImGui wrapper");
-    hero.SetHeight(110.f);
-    hero.Render();
-
-    Section("Separator (retained) · StatusBar");
-    static Separator sepw("sc_sepw");
-    sepw.Render();
-    static StatusBar sbar("sc_sbar", "Ready · UniGUI Showcase");
-    sbar.Render();
-
-    Section("PnlText · TagList (immediate trading idioms)");
-    unigui::PnlText(12.4, "P&L +12.4%");
-    im::SameLine();
-    unigui::PnlText(-3.2, 2);
-    unigui::TagList({{"涨停", theme::Semantic::Up},
-                     {"跌停", theme::Semantic::Down},
-                     {"风险", theme::Semantic::Danger}});
-
-    Section("SkeletonScreen · Tooltip");
-    static SkeletonScreen sk = SkeletonScreen::FromSize(260, 80, 4);
-    static bool skInit = [] {
-        sk.SetShimmer(true);
-        return true;
-    }();
-    (void) skInit;
-    sk.Render();
-    im::Text("Hover me for a tooltip");
-    if (im::IsItemHovered())
-        Tooltip::Show("This is a unigui::Tooltip");
-
-    Section("Image · ImageButton (placeholder — no texture loaded)");
-    static Image img("sc_img");
-    img.SetTexture(nullptr, 64, 64);
-    img.Render();
-    im::SameLine();
-    static ImageButton ibtn("sc_ibtn", "icon");
-    ibtn.SetImage((ImTextureID) 0, 48, 48);
-    ibtn.Render();
-
-    Section("Animate (eased value driving a wrapped widget — no raw ImGui)");
-    float fade = Animate::FadeIn(0.6f); // eases 0→1 over 0.6s
-    im::Text("Animate::FadeIn → ProgressBar:");
-    im::ProgressBar(fade, ImVec2(220, 0));
-}
-
-// File-scope row types for the data-grid widgets in TabMoreContainers.
-struct EdgPod {
-    std::string sym;
-    int mode;
-    int lots;
-};
-struct BasketLeg {
-    std::string sym;
-    int lots;
-};
-
-// ═════════════════════════════════════════════════════════════════════════════
-// Tab 10 — More containers & layout
-// ═════════════════════════════════════════════════════════════════════════════
-static void TabMoreContainers() {
-    Section("Panel · PanelBox");
-    static Panel pnl("sc_pnl", "Panel");
-    pnl.SetContentCallback([] { im::Text("A Panel hosts content via a callback."); });
-    pnl.Render();
-    static PanelBox pbx("sc_pbx", "Account");
-    pbx.SetContentCallback([] { im::Text("PanelBox — a titled, bordered box."); });
-    pbx.Render();
-
-    Section("ScrollArea");
-    static ScrollArea sca("sc_sca");
-    sca.SetContentCallback([] {
-        for (int i = 0; i < 60; ++i)
-            im::Text("Scrollable line " + std::to_string(i));
-    });
-    sca.Render();
-
-    Section("MultiSplitter (3 panes)");
-    static MultiSplitter msp("sc_msp", MultiSplitter::Horizontal);
-    static bool mspInit = [] {
-        msp.AddPanel(0.34f, [] { im::Text("Pane 1"); });
-        msp.AddPanel(0.33f, [] { im::Text("Pane 2"); });
-        msp.AddPanel(0.33f, [] { im::Text("Pane 3"); });
-        return true;
-    }();
-    (void) mspInit;
-    msp.Render();
-
-    Section("Layout::HBox helper");
-    Layout::HBox({
-        [] { im::Button("HBox A"); },
-        [] { im::Button("HBox B"); },
-        [] { im::Button("HBox C"); },
-    });
-
-    Section("Form (validated fields)");
-    static Form form("sc_form", "Login");
-    static bool formInit = [] {
-        form.AddTextField("user", "Username", /*required=*/true);
-        form.AddTextField("pwd", "Password", true);
-        form.AddCheckbox("remember", "Remember me");
-        return true;
-    }();
-    (void) formInit;
-    form.Render();
-
-    Section("Wizard (multi-step)");
-    static Wizard wiz("sc_wiz");
-    static bool wizInit = [] {
-        wiz.AddStep("s1", "Account", [] { im::Text("Step 1 — account details"); });
-        wiz.AddStep("s2", "Confirm", [] { im::Text("Step 2 — confirm"); });
-        return true;
-    }();
-    (void) wizInit;
-    wiz.Render();
-
-    Section("EditableDataGrid<T> (combo + int cell editors)");
-    static std::vector<EdgPod> pods{{"IF2506", 0, 2}, {"IC2506", 1, 1}};
-    static EditableDataGrid<EdgPod> edg("sc_edg", {{"Sym", 90}, {"Mode", 90}, {"Lots", 70}});
-    static bool edgInit = [] {
-        edg.SetDataSource(&pods);
-        edg.SetCellFormatter([](int, int col, const EdgPod& p) -> std::string {
-            if (col == 0)
-                return p.sym;
-            if (col == 1)
-                return p.mode == 0 ? "Open" : "Close";
-            return std::to_string(p.lots);
-        });
-        edg.SetComboColumn(
-            1, [](int, const EdgPod&) { return std::vector<std::string>{"Open", "Close"}; },
-            [](int, const EdgPod& p) { return p.mode; }, [](int r, int v) { pods[r].mode = v; });
-        edg.SetIntColumn(
-            2, [](int, const EdgPod& p) { return p.lots; }, [](int r, int v) { pods[r].lots = v; });
-        return true;
-    }();
-    (void) edgInit;
-    edg.Render();
-
-    Section("BasketTicket<T> (Add / Remove toolbar over an editable grid)");
-    static BasketTicket<BasketLeg> ticket("sc_basket", {{"Symbol", 110}, {"Lots", 70}});
-    static bool ticketInit = [] {
-        ticket.SetRowFactory([] { return BasketLeg{"NEW", 1}; })
-            .SetValidator([](const BasketLeg& l) { return !l.sym.empty() && l.lots > 0; });
-        ticket.AddRow({"IF2506", 2});
-        ticket.Grid().SetCellFormatter([](int, int col, const BasketLeg& l) -> std::string {
-            return col == 0 ? l.sym : std::to_string(l.lots);
-        });
-        return true;
-    }();
-    (void) ticketInit;
-    ticket.Render();
-
-    Section("Root-level primitives (Window · MenuBar · DockSpace)");
-    static Window demoWin("sc_win", "Demo Window (floats)");
-    static bool winInit = [] {
-        auto body = std::make_shared<Panel>("sc_winbody", "Body");
-        body->SetContentCallback(
-            [] { im::Text("A retained Window hosts Panels, floating separately."); });
-        demoWin.AddPanel(body);
-        return true;
-    }();
-    (void) winInit;
-    demoWin.Render(); // shows as its own floating window
-
-    static MenuBar topbar("sc_topbar");
-    static bool topbarInit = [] {
-        topbar.SetMenus({{"Demo", {{"Action", [] { Toast::Info("menu action"); }}}}});
-        return true;
-    }();
-    (void) topbarInit;
-    topbar.Render(); // renders as a global main menu bar at the top of the viewport
-
-    static DockSpace dock("sc_dock");
-    (void) dock; // a DockSpaceOverViewport root layout — instantiated here, but it
-                 // belongs at the app root, not inside a tab (it covers the viewport).
-    im::TextDisabled(
-        "Window floats separately, MenuBar is the top bar, DockSpace is app-root only.");
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// Tab 11 — Utilities (Clipboard, DragDrop, Shortcut, ContextMenu, ConfirmDialog, TrayIcon)
+// Tab 10 — Utilities (system integration: clipboard, drag-drop, shortcuts, tray)
 // ═════════════════════════════════════════════════════════════════════════════
 static void TabUtilities() {
     Section("Clipboard");
@@ -766,24 +783,6 @@ static void TabUtilities() {
     (void) scInit;
     shortcuts.Process();
     im::TextDisabled("A ShortcutManager checks registered chords each frame.");
-
-    Section("ContextMenu — right-click the text");
-    im::Text("Right-click me");
-    ContextMenu::Show(
-        "sc_ctx", {{"Copy", [] { Toast::Info("copy"); }}, {"Paste", [] { Toast::Info("paste"); }}});
-
-    Section("ConfirmDialog");
-    static ConfirmDialog confirm("sc_confirm");
-    static bool confirmInit = [] {
-        confirm.SetTitle("Delete order?");
-        confirm.SetMessage("This cannot be undone.");
-        confirm.SetDangerStyle(true);
-        return true;
-    }();
-    (void) confirmInit;
-    if (im::Button("Delete…"))
-        confirm.Open([] { Toast::Error("Deleted"); });
-    confirm.Render();
 
     Section("TrayIcon (Windows notification area)");
     static TrayIcon tray("sc_tray", "UniGUI Showcase");
@@ -858,28 +857,26 @@ int main(int argc, char** argv) {
                 im::SameLine();
                 im::TextDisabled("95 widgets · immediate layer · zero raw ImGui");
 
-                // ── sections ─────────────────────────────────────────────────
+                // ── tabs (grouped by category) ───────────────────────────────
                 if (TabBarScope bar{"sc_tabs"}) {
                     if (TabItemScope t{"Buttons"})
                         TabButtons();
                     if (TabItemScope t{"Inputs"})
                         TabInputs();
+                    if (TabItemScope t{"Text & Pickers"})
+                        TabTextPickers();
                     if (TabItemScope t{"Display"})
                         TabDisplay();
+                    if (TabItemScope t{"Indicators"})
+                        TabIndicators();
                     if (TabItemScope t{"Data"})
                         TabData();
                     if (TabItemScope t{"Layout"})
                         TabLayout();
                     if (TabItemScope t{"Charts & Trading"})
                         TabCharts();
-                    if (TabItemScope t{"Overlays"})
+                    if (TabItemScope t{"Overlays & Dialogs"})
                         TabOverlays();
-                    if (TabItemScope t{"Inputs+"})
-                        TabMoreInputs();
-                    if (TabItemScope t{"Display+"})
-                        TabMoreDisplay();
-                    if (TabItemScope t{"Containers+"})
-                        TabMoreContainers();
                     if (TabItemScope t{"Utilities"})
                         TabUtilities();
                 }
