@@ -319,3 +319,36 @@ unigui::Render();
 
 The optional `network/` module (`<unigui/network/network.h>`) provides HTTP +
 WebSocket clients you can pair with this pattern.
+
+## Reactive models (Observable / Computed)
+
+The trading value types (`Quote`, `Position`, `Order`, `Trade`) are value-equality
+comparable, so they plug straight into the reactive layer
+(`<unigui/core/observable.h>`) — no extra glue. Wrap a row in an `Observable<T>`
+for change-detected updates, and derive live metrics with `Computed<T>`:
+
+```cpp
+using namespace unigui;
+using namespace unigui::trading;
+
+Observable<Quote> quote{ Quote{.symbol="AAPL", .bid=190.0, .ask=190.1, .last=190.0,
+                               .prevClose=188.0} };
+
+// Derived, recomputed automatically whenever `quote` changes:
+Computed<double> mid      { [](const Quote& q){ return q.Mid(); },       quote };
+Computed<double> changePct{ [](const Quote& q){ return q.ChangePct(); }, quote };
+
+// Push a feed update — observers fire only if a field actually changed:
+quote.Mutate([](Quote& q){ q.last = 191.25; });   // mid & changePct recompute
+
+// Bind a derived value to a widget or any sink:
+Label tag{"px_tag"};
+auto sub = Bind(changePct, [&](double pct){
+    tag.SetText(pct >= 0 ? "▲" : "▼");
+});
+```
+
+Value widgets bind the same way via `ValueWidget<T>::BindValue` (two-way) and
+`Label::BindText` (one-way) — see [`core/observable.h`](../include/unigui/core/observable.h).
+Keep updating the models from the feed thread and marshal to the render thread as
+above; the reactive notifications run wherever you call `Set`/`Mutate`.

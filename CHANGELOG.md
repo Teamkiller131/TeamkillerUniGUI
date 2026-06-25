@@ -1,3 +1,18 @@
+## [3.9.1] - 2026-06-25
+
+> Completes the Horizon-5 reactive workstream: the trading models now plug into
+> the reactive layer.
+
+### Added
+- **Trading value types are reactive-ready.** `Quote`, `Position`, `Order`, and
+  `Trade` (`trading/quote.h`) gained defaulted value equality (`operator==`), so
+  they drop straight into the reactive layer: `Observable<Quote>` updates are
+  change-detected, and `Computed<...>` can derive live metrics from them
+  (`Computed<double>{[](const Quote& q){ return q.Mid(); }, quoteObs}`,
+  `ChangePct`, `Spread`, …) and feed a sink/widget via `Bind`. No feed logic is
+  added to the models — they stay pure data; equality is the only wiring needed.
+  5 new headless tests (`tests/trading/reactive_test.cc`).
+
 ## [3.9.0] - 2026-06-25
 
 > Horizon-5 reactive layer: derived `Computed<T>` values and first-class data

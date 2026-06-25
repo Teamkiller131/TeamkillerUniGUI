@@ -31,6 +31,10 @@ struct Quote {
     std::int64_t askSize = 0;
     std::int64_t volume = 0;
 
+    /// Value equality — lets a Quote drive an `Observable<Quote>` (change-detected
+    /// updates) and `Computed<...>` derivations of its metrics.
+    bool operator==(const Quote&) const = default;
+
     double Mid() const { return (bid + ask) * 0.5; }
     double Spread() const { return ask - bid; }
     /// Absolute change vs. previous close.
@@ -45,6 +49,8 @@ struct Position {
     std::int64_t qty = 0; // signed: > 0 long, < 0 short
     double avgPrice = 0.0;
     double last = 0.0;
+
+    bool operator==(const Position&) const = default;
 
     bool IsLong() const { return qty > 0; }
     bool IsShort() const { return qty < 0; }
@@ -81,6 +87,8 @@ struct Order {
     std::int64_t filled = 0;
     OrderStatus status = OrderStatus::New;
 
+    bool operator==(const Order&) const = default;
+
     std::int64_t Remaining() const { return qty - filled; }
     bool IsDone() const {
         return status == OrderStatus::Filled || status == OrderStatus::Cancelled ||
@@ -100,6 +108,8 @@ struct Trade {
     double price = 0.0;
     std::int64_t qty = 0;
     double timestamp = 0.0; // epoch seconds
+
+    bool operator==(const Trade&) const = default;
 
     double Notional() const { return price * static_cast<double>(qty); }
 };
