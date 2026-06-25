@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstdint>
 #include <gtest/gtest.h>
+#include <string>
 #include <vector>
 
 using namespace std::chrono;
@@ -25,6 +26,19 @@ template <typename Fn> long long TimeUs(Fn&& fn) {
     const auto t0 = high_resolution_clock::now();
     fn();
     return duration_cast<microseconds>(high_resolution_clock::now() - t0).count();
+}
+
+// Wall-clock budgets only assert in optimized builds; a Debug build is far
+// slower and host-dependent, so the timing check is skipped there (the work
+// still runs). See tests/bench/bench_test.cc for the same rationale.
+inline void ExpectUnderBudget(long long actual, long long budget, const std::string& what) {
+#ifdef NDEBUG
+    EXPECT_LT(actual, budget) << what << ": " << actual << " (budget " << budget << ")";
+#else
+    (void) actual;
+    (void) budget;
+    (void) what;
+#endif
 }
 
 } // namespace
@@ -99,7 +113,7 @@ TEST(TradingBench, OhlcSeries_1MTicks) {
     // Rolling window caps the retained bars.
     EXPECT_LE(series.Size(), 1024u);
     EXPECT_FALSE(series.Empty());
-    EXPECT_LT(us, 1000000) << "OhlcSeries 1M ticks took " << us << "us";
+    ExpectUnderBudget(us, 1000000, "OhlcSeries 1M ticks us");
 }
 
 // Column extraction (ImPlot feed) over a full window — done per frame while a
@@ -119,5 +133,5 @@ TEST(TradingBench, OhlcSeries_ColumnExtraction) {
         }
     });
     EXPECT_GT(total, 0u);
-    EXPECT_LT(us, 1000000) << "OhlcSeries 1k column extractions took " << us << "us";
+    ExpectUnderBudget(us, 1000000, "OhlcSeries 1k column extractions us");
 }

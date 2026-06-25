@@ -4,7 +4,25 @@
 
 #include <chrono>
 #include <gtest/gtest.h>
+#include <string>
 #include <vector>
+
+namespace {
+// Performance budgets are only meaningful in optimized builds. A Debug build is
+// 5-20x slower and varies wildly by CI host, so the wall-clock assertion is
+// skipped there — the benchmark still runs the work (catching crashes/UB) but
+// does not flake the build. Release keeps asserting, catching real regressions.
+inline void ExpectUnderBudget(long long actual, long long budget, const std::string& what) {
+#ifdef NDEBUG
+    EXPECT_LT(actual, budget) << what << ": " << actual << " (budget " << budget << ")";
+#else
+    (void) actual;
+    (void) budget;
+    (void) what;
+#endif
+}
+} // namespace
+
 class BenchTest : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -28,7 +46,7 @@ TEST_F(BenchTest, FrameTime_100Buttons) {
     auto us = std::chrono::duration_cast<std::chrono::microseconds>(
                   std::chrono::high_resolution_clock::now() - t0)
                   .count();
-    EXPECT_LT(us, 20000);
+    ExpectUnderBudget(us, 20000, "FrameTime_100Buttons us");
 }
 TEST_F(BenchTest, FrameTime_100Labels) {
     std::vector<unigui::Label> ls;
@@ -40,7 +58,7 @@ TEST_F(BenchTest, FrameTime_100Labels) {
     auto us = std::chrono::duration_cast<std::chrono::microseconds>(
                   std::chrono::high_resolution_clock::now() - t0)
                   .count();
-    EXPECT_LT(us, 10000);
+    ExpectUnderBudget(us, 10000, "FrameTime_100Labels us");
 }
 TEST_F(BenchTest, VirtualList_10k) {
     unigui::VirtualList vl("vl", 10000);
@@ -51,7 +69,7 @@ TEST_F(BenchTest, VirtualList_10k) {
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                   std::chrono::high_resolution_clock::now() - t0)
                   .count();
-    EXPECT_LT(ms, 100);
+    ExpectUnderBudget(ms, 100, "VirtualList_10k ms");
 }
 TEST_F(BenchTest, Form_20Fields) {
     unigui::Form f("f", "T");
@@ -62,7 +80,7 @@ TEST_F(BenchTest, Form_20Fields) {
     auto us = std::chrono::duration_cast<std::chrono::microseconds>(
                   std::chrono::high_resolution_clock::now() - t0)
                   .count();
-    EXPECT_LT(us, 30000);
+    ExpectUnderBudget(us, 30000, "Form_20Fields us");
 }
 
 // ── CSV Import benchmark: 100k rows × 5 columns ─────────────────────────────
@@ -90,8 +108,7 @@ TEST_F(BenchTest, CSV_Import_100kRows) {
     EXPECT_GT(ms, 0);
 
     // Performance budget: 100k rows should parse in under 500ms on modern hardware
-    EXPECT_LT(ms, 500) << "CSV import of 100k rows took " << ms
-                       << "ms (budget: 500ms). Consider optimizing the parser.";
+    ExpectUnderBudget(ms, 500, "CSV import of 100k rows ms");
 }
 
 // ── DataTable virtual-scroll benchmark: render 100k rows ────────────────────
@@ -131,6 +148,5 @@ TEST_F(BenchTest, DataTable_VirtualScroll_100kRows) {
     // Budget: once virtualised, a steady-state frame of a 100k-row table renders
     // only the visible window — well under a 16ms (60fps) frame. Generous floor
     // to catch a regression that makes per-frame cost scale with total rows.
-    EXPECT_LT(ms, 50) << "DataTable steady-state render of 100k rows took " << ms
-                      << "ms (budget: 50ms). Virtual scroll may have regressed.";
+    ExpectUnderBudget(ms, 50, "DataTable steady-state render of 100k rows ms");
 }

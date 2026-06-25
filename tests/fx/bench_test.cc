@@ -5,8 +5,23 @@
 
 #include <chrono>
 #include <gtest/gtest.h>
+#include <string>
 
 using namespace unigui::fx;
+
+namespace {
+// Wall-clock budgets only assert in optimized builds (Debug is far slower and
+// host-dependent); see tests/bench/bench_test.cc for the rationale.
+inline void ExpectUnderBudget(long long actual, long long budget, const std::string& what) {
+#ifdef NDEBUG
+    EXPECT_LT(actual, budget) << what << ": " << actual << " (budget " << budget << ")";
+#else
+    (void) actual;
+    (void) budget;
+    (void) what;
+#endif
+}
+} // namespace
 
 TEST(EffectBench, Easing_All10Curves_Under1ms) {
     auto t0 = std::chrono::high_resolution_clock::now();
@@ -25,7 +40,7 @@ TEST(EffectBench, Easing_All10Curves_Under1ms) {
     }
     auto t1 = std::chrono::high_resolution_clock::now();
     auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-    EXPECT_LT(us, 5000) << "100k easing evaluations took " << us << " us";
+    ExpectUnderBudget(us, 5000, "100k easing evaluations us");
 }
 
 TEST(EffectBench, AnimationState_100Updates_Fast) {
@@ -36,5 +51,5 @@ TEST(EffectBench, AnimationState_100Updates_Fast) {
         s.Update(0.016f); // simulate 60fps
     auto t1 = std::chrono::high_resolution_clock::now();
     auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-    EXPECT_LT(us, 2000) << "10k animation updates took " << us << " us";
+    ExpectUnderBudget(us, 2000, "10k animation updates us");
 }

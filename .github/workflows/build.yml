@@ -57,9 +57,12 @@ jobs:
         ~/vcpkg/bootstrap-vcpkg.sh
         echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
     - name: Configure
+      # macos-latest runners are Apple Silicon (arm64); the triplet MUST match the
+      # compile arch or vcpkg deps (gtest/imgui/…) link as x86_64 against arm64
+      # objects → "symbol(s) not found for architecture arm64".
       run: |
         cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
-          -DVCPKG_TARGET_TRIPLET=x64-osx -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          -DVCPKG_TARGET_TRIPLET=arm64-osx -G Ninja -DCMAKE_BUILD_TYPE=Release \
           -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
     - name: Build
       run: cmake --build build
