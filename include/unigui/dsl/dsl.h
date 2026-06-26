@@ -65,6 +65,7 @@ struct Node {
         Spacing,
         If,
         For,
+        Custom,
     };
     Kind kind = Kind::Label;
 
@@ -113,6 +114,11 @@ struct Node {
     std::vector<float> flexGrow;
     float flexGap = 0.0f;
     FlexJustify flexJustify = FlexJustify::Start;
+
+    // Custom — an escape hatch: `customDraw` is invoked verbatim each frame, so any
+    // immediate-mode (`unigui::im`) drawing — or a hosted Component — can live
+    // inside a DSL tree.
+    std::function<void()> customDraw;
 };
 
 // ── Containers ───────────────────────────────────────────────────────────────
@@ -134,6 +140,10 @@ NodePtr Flex(std::vector<NodePtr> children, float gap = 0.0f,
              FlexJustify justify = FlexJustify::Start);
 NodePtr Flex(std::vector<NodePtr> children, std::vector<float> weights, float gap = 0.0f,
              FlexJustify justify = FlexJustify::Start);
+
+/// Escape hatch: embed arbitrary immediate-mode drawing (or a hosted Component)
+/// in a DSL tree. `draw` runs verbatim each frame at the current cursor.
+NodePtr Custom(std::function<void()> draw);
 
 // ── Text ─────────────────────────────────────────────────────────────────────
 NodePtr Label(std::string text);

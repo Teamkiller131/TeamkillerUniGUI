@@ -273,6 +273,15 @@ Goal: turn the stub backends into real ones and make rendering measurably fast.
 
 Goal: broaden what apps can build without leaving the toolkit.
 
+- **P0 · L — Framework transformation.** _In progress._ Turn the toolkit into an
+  opinionated application framework. **Phase 1 landed:** the component model —
+  `dsl::Component` + reactive `dsl::State<T>` with dirty-tracked rebuilds, plus
+  `dsl::Host`/`dsl::Custom` for composition (`dsl/component.h`). _Remaining:_
+  (2) commit to + document a golden path and port an example to it; (3) the
+  application layer — `App`/`Navigator` (routed screens), `Store` (shared state),
+  `Effect` (lifecycle-bound async); (4) a learning guide, a flagship reference
+  app built in the idiom, and a component/state inspector.
+
 - **P1 · L — Layout system.** _Started._ A header-only CSS-flexbox solver landed
   (`core/flex_layout.h`: `SolveFlex`) — pure and fully unit-tested. It now handles
   the **main axis** (grow/shrink, min/max clamps, `justify-content`, gaps), the

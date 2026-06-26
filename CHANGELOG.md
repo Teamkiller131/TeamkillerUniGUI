@@ -1,3 +1,22 @@
+## [3.14.0] - 2026-06-26
+
+> **Framework, phase 1 — the component model.** The keystone that turns UniGUI
+> from a widget library into an application framework: self-contained, stateful,
+> composable units with reactive state and dirty-tracked rebuilds.
+
+### Added
+- **`dsl::Component` + `dsl::State<T>`** (`dsl/component.h`). A `Component`
+  overrides `Build()` to declare its view as a DSL node tree from its `State`; the
+  framework mounts it once (`OnMount`), rebuilds the tree only when a `State`
+  changes (dirty tracking), and renders the cached tree each frame. `State<T>` is
+  a reactive cell built on `Observable<T>` — writing change-detects and marks the
+  owning component dirty, and it feeds `Computed<T>`/`Bind` via `AsObservable()`.
+  Components compose with **`dsl::Host(child)`**, each child keeping its own state
+  and dirty tracking. Lifecycle hooks `OnMount`/`OnUnmount`. 8 new tests.
+- **`dsl::Custom(draw)`** — a DSL escape hatch node that runs an arbitrary
+  immediate-mode (`unigui::im`) draw callback each frame, so any custom drawing —
+  or a hosted `Component` — can live inside a declarative tree.
+
 ## [3.13.0] - 2026-06-26
 
 > Layout system, rounded out: cross-axis alignment in the FlexRow container,

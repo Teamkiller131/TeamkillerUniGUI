@@ -57,6 +57,12 @@ NodePtr Flex(std::vector<NodePtr> children, std::vector<float> weights, float ga
     return n;
 }
 
+NodePtr Custom(std::function<void()> draw) {
+    auto n = makeNode(Node::Kind::Custom);
+    n->customDraw = std::move(draw);
+    return n;
+}
+
 // ── Text ─────────────────────────────────────────────────────────────────────
 
 static NodePtr makeText(Node::Kind k, std::string text) {
@@ -287,6 +293,11 @@ static void renderImpl(const NodePtr& node) {
     case Node::Kind::For:
         for (int i = 0; i < node->count && node->itemBuilder; ++i)
             renderImpl(node->itemBuilder(i));
+        break;
+
+    case Node::Kind::Custom:
+        if (node->customDraw)
+            node->customDraw();
         break;
     }
 }

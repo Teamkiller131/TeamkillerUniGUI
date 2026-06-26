@@ -35,6 +35,7 @@
 #include <unigui/core/settings.h>
 #include <unigui/core/undo_stack.h>
 #include <unigui/core/version.h>
+#include <unigui/dsl/component.h>
 #include <unigui/dsl/dsl.h>
 #include <unigui/events/eventbus.h>
 #include <unigui/ext/plot.h>
