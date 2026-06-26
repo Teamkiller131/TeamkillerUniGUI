@@ -1,8 +1,11 @@
 #include <unigui/dsl/dsl.h>
+#include <unigui/widgets/layout.h>
 
 #include <imgui.h>
 
+#include <string>
 #include <utility>
+#include <vector>
 
 namespace unigui::dsl {
 
@@ -37,6 +40,20 @@ NodePtr VBox(std::vector<NodePtr> children) {
 NodePtr HBox(std::vector<NodePtr> children) {
     auto n = makeNode(Node::Kind::HBox);
     n->children = std::move(children);
+    return n;
+}
+
+NodePtr Flex(std::vector<NodePtr> children, float gap, FlexJustify justify) {
+    auto n = makeNode(Node::Kind::Flex);
+    n->children = std::move(children);
+    n->flexGap = gap;
+    n->flexJustify = justify;
+    return n;
+}
+NodePtr Flex(std::vector<NodePtr> children, std::vector<float> weights, float gap,
+             FlexJustify justify) {
+    auto n = Flex(std::move(children), gap, justify);
+    n->flexGrow = std::move(weights);
     return n;
 }
 
@@ -151,6 +168,12 @@ NodePtr For(int count, std::function<NodePtr(int)> builder) {
 
 // ── Render ─────────────────────────────────────────────────────────────────
 
+// Per-frame counter that hands each rendered Flex row a stable, unique id (for
+// ID safety). Reset at the start of every Render() so the ids a given tree
+// produces are identical frame-to-frame (the tree structure is retained), yet
+// distinct between sibling Flex rows in one window.
+static int g_flexCounter = 0;
+
 static void renderImpl(const NodePtr& node) {
     if (!node)
         return;
@@ -176,6 +199,35 @@ static void renderImpl(const NodePtr& node) {
                 im::SameLine();
         }
         break;
+
+    case Node::Kind::Flex: {
+        // Build one FlexChild per DSL child. Each child grows by its weight in
+        // `flexGrow` (default 1 = equal split); its render callback re-enters the
+        // SAME per-node dispatch, so any node Kind can live inside a Flex row.
+        std::vector<unigui::Layout::FlexChild> kids;
+        kids.reserve(node->children.size());
+        for (size_t i = 0; i < node->children.size(); ++i) {
+            const float grow = i < node->flexGrow.size() ? node->flexGrow[i] : 1.0f;
+            unigui::Layout::FlexChild fc;
+            fc.item.grow = grow;
+            // Capture the child shared_ptr by value (cheap) so the callback stays
+            // valid for the FlexRow call; it re-enters the SAME per-node dispatch.
+            fc.render = [child = node->children[i]] { renderImpl(child); };
+            kids.push_back(std::move(fc));
+        }
+        // Stable, unique id for ID safety: a per-render counter (reset each
+        // frame in Render()), so the same tree yields the same ids every frame
+        // while sibling Flex rows stay distinct.
+        const std::string id = "##dslflex" + std::to_string(g_flexCounter++);
+        // One fixed line of height so following content flows underneath; pass
+        // through the requested gap and justify. (v1: single line, fixed height.)
+        unigui::Layout::FlexRowOptions opt;
+        opt.height = ImGui::GetFrameHeightWithSpacing();
+        opt.gap = node->flexGap;
+        opt.justify = node->flexJustify;
+        unigui::Layout::FlexRow(id.c_str(), kids, opt);
+        break;
+    }
 
     case Node::Kind::Button:
         if (im::Button(node->label, node->buttonVariant) && node->onClick)
@@ -240,6 +292,7 @@ static void renderImpl(const NodePtr& node) {
 }
 
 void Render(NodePtr root) {
+    g_flexCounter = 0;
     renderImpl(root);
 }
 

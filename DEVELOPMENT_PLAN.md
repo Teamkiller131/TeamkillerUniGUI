@@ -275,13 +275,14 @@ Goal: broaden what apps can build without leaving the toolkit.
 
 - **P1 · L — Layout system.** _Started._ A header-only CSS-flexbox solver landed
   (`core/flex_layout.h`: `SolveFlex`) — pure and fully unit-tested. It now handles
-  the **main axis** (grow/shrink, min/max clamps, `justify-content`, gaps) **and
-  the cross axis** (`align-items`: Start/Center/End/Stretch), making it a complete
-  2D flex-line solver. A widget-facing **`Layout::FlexRow`** container now applies
-  it through ImGui child regions (main-axis; hardened against the zero-width
-  BeginChild trap). _Remaining:_ cross-axis `align` in the container; line
-  wrapping (flex-wrap); then wire it into the DSL so UIs reflow without manual
-  sizing (complements VBox/HBox).
+  the **main axis** (grow/shrink, min/max clamps, `justify-content`, gaps), the
+  **cross axis** (`align-items`), and **line wrapping** (`SolveFlexWrap`,
+  CSS `flex-wrap`). A widget-facing **`Layout::FlexRow`** container applies it
+  through ImGui child regions with `justify` + cross-axis `align` (hardened
+  against the zero-width BeginChild trap and the manual-cursor bounds assertion),
+  and the declarative DSL gained a **`dsl::Flex`** node rendered through it.
+  _Remaining (optional):_ a wrapping container (FlexRow currently lays out a
+  single line); per-child cross-size ergonomics in the DSL; nested-flex polish.
 - **P1 · M — Accessibility.** Surface the existing `AccessibleName`/`Description`
   fields through a real a11y tree / screen-reader bridge where the platform
   allows; keyboard-only navigation audit.

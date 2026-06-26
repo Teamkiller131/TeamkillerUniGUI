@@ -68,6 +68,11 @@ struct FlexRowOptions {
     float height = 0.0f; ///< child height; <=0 fills the remaining vertical space
     float gap = 0.0f;    ///< fixed gap between adjacent children
     layout::FlexJustify justify = layout::FlexJustify::Start;
+    /// Cross-axis (vertical) alignment of children within the row's height (CSS
+    /// align-items). Effective only when children set `FlexChild::item.crossSize`
+    /// (Start/Center/End) or `opt.height>0` (Stretch); the default Start with no
+    /// per-child crossSize preserves the legacy uniform-height behavior.
+    layout::FlexAlign align = layout::FlexAlign::Start;
 };
 
 /// Lay children out in a horizontal flex line, sizing each via the flexbox solver
@@ -81,8 +86,12 @@ struct FlexRowOptions {
 /// its container (it forfeits the cursor flow for anything after it); pass a
 /// positive height to lay further content out below the row.
 ///
-/// Main-axis only for now: cross-axis alignment (`unigui::layout::FlexAlign`) is
-/// supported by the solver but not yet plumbed through this helper.
+/// Cross-axis alignment (`opt.align`, CSS align-items) positions each child
+/// vertically within the row. The row's cross-axis extent is `opt.height` (or the
+/// remaining content height when `opt.height<=0`). A child's effective height is
+/// its solved cross size when it sets `FlexChild::item.crossSize` (or under
+/// Stretch), otherwise it falls back to `opt.height`. The default (align=Start,
+/// no per-child crossSize) keeps the legacy uniform-height layout unchanged.
 inline void FlexRow(const char* id, const std::vector<FlexChild>& children,
                     const FlexRowOptions& opt = {}) {
     if (children.empty())
@@ -100,13 +109,30 @@ inline void FlexRow(const char* id, const std::vector<FlexChild>& children,
     for (const auto& c : children)
         items.push_back(c.item);
 
+    // Cross-axis extent: explicit height, else the remaining content height. This
+    // feeds the solver so Center/End/Stretch have a box to align within. (A
+    // non-positive avail is harmless: crossOffsets clamp to 0 and Stretch falls
+    // back to the per-child crossSize.)
+    const float crossSize = height > 0.0f ? height : ImGui::GetContentRegionAvail().y;
+
     layout::FlexParams params;
     params.containerSize = container;
+    params.crossSize = crossSize;
     params.gap = gap;
     params.justify = opt.justify;
+    params.align = opt.align;
     const std::vector<layout::FlexSpan> spans = layout::SolveFlex(items, params);
 
     const ImVec2 start = ImGui::GetCursorPos();
+    // Reserve the row's footprint up front with one invisible item. Children are
+    // positioned absolutely below (and, under cross-axis align, may sit short of
+    // the row's bottom), so without this the exact resume to start.y+height would
+    // over-extend the window and trip ImGui's "SetCursorPos extended bounds
+    // without an item" assertion. The Dummy claims the full rect; children draw on
+    // top. (height<=0 fills the remaining space — children extend it themselves.)
+    if (height > 0.0f)
+        ImGui::Dummy(ImVec2(container, height));
+
     ImGui::PushID(id);
     for (std::size_t i = 0; i < children.size(); ++i) {
         // Omit a child the solver collapses to ~0 width: ImGui treats a child
@@ -114,21 +140,27 @@ inline void FlexRow(const char* id, const std::vector<FlexChild>& children,
         // zero-width child balloon over its neighbours.
         if (!(spans[i].size > 0.5f))
             continue;
-        ImGui::SetCursorPos(ImVec2(start.x + spans[i].offset, start.y));
+        // Cross (Y) axis from the solved span: a positive solved cross size wins
+        // (real alignment), otherwise fall back to opt.height so a caller passing
+        // only opt.height keeps the legacy uniform-height behavior (height 0 ⇒
+        // BeginChild fills the remaining vertical space). crossOffset is 0 under
+        // the default Start align, so the Y offset is harmless there.
+        const float childY = start.y + spans[i].crossOffset;
+        const float childH = spans[i].crossSize > 0.0f ? spans[i].crossSize : height;
+        ImGui::SetCursorPos(ImVec2(start.x + spans[i].offset, childY));
         ImGui::BeginChild((std::string("##fc") + std::to_string(i)).c_str(),
-                          ImVec2(spans[i].size, height), ImGuiChildFlags_None);
+                          ImVec2(spans[i].size, childH), ImGuiChildFlags_None);
         if (children[i].render)
             children[i].render();
         ImGui::EndChild();
     }
     ImGui::PopID();
 
-    // Resume at the row's bottom edge so following content flows underneath. We
-    // stop exactly at start.y+height (where the child regions already extended the
-    // content) — going further would trip ImGui's "SetCursorPos extended bounds
-    // without a following item" assertion. Callers wanting a gap add Spacing().
-    // (height<=0 fills the remaining vertical space, so there is nothing to flow
-    // after — see the doc note.)
+    // Resume exactly at the row's bottom edge so following content flows
+    // underneath with no extra spacing. This is in-bounds (the reserve Dummy above
+    // already extended the content to start.y+height). Callers wanting a gap add
+    // Spacing(). (height<=0 fills the remaining vertical space — nothing flows
+    // after; see the doc note.)
     if (height > 0.0f)
         ImGui::SetCursorPos(ImVec2(start.x, start.y + height));
 }

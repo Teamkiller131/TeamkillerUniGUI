@@ -80,3 +80,22 @@ TEST_F(DSLTest, IfElse_RendersElseBranch) {
     Render(ui);
     SUCCEED();
 }
+TEST_F(DSLTest, Flex_BuildsFlexKind) {
+    auto ui = Flex({Button("A"), Button("B"), Label("C")});
+    ASSERT_TRUE(ui != nullptr);
+    EXPECT_EQ(ui->kind, Node::Kind::Flex);
+    EXPECT_EQ(ui->children.size(), 3u);
+}
+TEST_F(DSLTest, Flex_EqualSplit_Renders) {
+    // Default equal-grow split: three children share the row width evenly.
+    auto ui = Window("FlexWin", Flex({Button("One"), Button("Two"), Label("Three")}));
+    Render(ui);
+    SUCCEED();
+}
+TEST_F(DSLTest, Flex_Weighted_Renders) {
+    // Per-child weights + a gap + justify, rendered without crashing.
+    auto ui = Window("FlexWeighted",
+                     Flex({Button("L"), Button("R")}, {2.f, 1.f}, 8.f, FlexJustify::Start));
+    Render(ui);
+    SUCCEED();
+}

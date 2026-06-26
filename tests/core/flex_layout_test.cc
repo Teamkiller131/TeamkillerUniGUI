@@ -1,12 +1,15 @@
 #include <unigui/core/flex_layout.h>
 
+#include <cstddef>
 #include <gtest/gtest.h>
+#include <vector>
 
 using unigui::layout::FlexAlign;
 using unigui::layout::FlexItem;
 using unigui::layout::FlexJustify;
 using unigui::layout::FlexParams;
 using unigui::layout::SolveFlex;
+using unigui::layout::SolveFlexWrap;
 
 namespace {
 constexpr float kEps = 1e-3f;
@@ -150,4 +153,110 @@ TEST(FlexLayoutTest, AlignStretchFillsCrossAxis) {
                   {.containerSize = 50.0f, .crossSize = 100.0f, .align = FlexAlign::Stretch});
     EXPECT_NEAR(spans[0].crossOffset, 0.0f, kEps);
     EXPECT_NEAR(spans[0].crossSize, 100.0f, kEps); // stretched to the line height
+}
+
+// ── flex-wrap line-breaking (SolveFlexWrap) ──────────────────────────────────
+TEST(FlexLayoutWrapTest, EmptyReturnsEmpty) {
+    auto lines = SolveFlexWrap({}, {.containerSize = 100.0f});
+    EXPECT_TRUE(lines.empty());
+}
+
+TEST(FlexLayoutWrapTest, AllItemsFitProduceSingleLineEqualToSolveFlex) {
+    // Two 100px items in a 400px container fit on one line; the wrapped result
+    // must equal the single-line SolveFlex result exactly.
+    const std::vector<FlexItem> items = {{.basis = 100.0f, .grow = 1.0f},
+                                         {.basis = 100.0f, .grow = 2.0f}};
+    const FlexParams params{.containerSize = 400.0f, .gap = 10.0f};
+
+    auto lines = SolveFlexWrap(items, params);
+    auto flat = SolveFlex(items, params);
+
+    ASSERT_EQ(lines.size(), 1u);
+    ASSERT_EQ(lines[0].size(), flat.size());
+    for (std::size_t i = 0; i < flat.size(); ++i) {
+        EXPECT_NEAR(lines[0][i].offset, flat[i].offset, kEps);
+        EXPECT_NEAR(lines[0][i].size, flat[i].size, kEps);
+        EXPECT_NEAR(lines[0][i].crossOffset, flat[i].crossOffset, kEps);
+        EXPECT_NEAR(lines[0][i].crossSize, flat[i].crossSize, kEps);
+    }
+}
+
+TEST(FlexLayoutWrapTest, OverflowWrapsIntoIndependentlySolvedLines) {
+    // Four 100px items in a 250px container: greedy packing fits two per line
+    // (100 + 10 gap + 100 = 210 <= 250; adding a third = 320 > 250). Each line is
+    // solved on its own and stacked by the explicit lineHeight on the cross axis.
+    const std::vector<FlexItem> items = {{.basis = 100.0f, .crossSize = 30.0f},
+                                         {.basis = 100.0f, .crossSize = 30.0f},
+                                         {.basis = 100.0f, .crossSize = 30.0f},
+                                         {.basis = 100.0f, .crossSize = 30.0f}};
+    const FlexParams params{.containerSize = 250.0f, .gap = 10.0f};
+
+    auto lines = SolveFlexWrap(items, params, /*lineHeight=*/50.0f);
+    ASSERT_EQ(lines.size(), 2u);
+    ASSERT_EQ(lines[0].size(), 2u);
+    ASSERT_EQ(lines[1].size(), 2u);
+
+    // Each line is solved independently: items packed at the start with the gap.
+    EXPECT_NEAR(lines[0][0].offset, 0.0f, kEps);
+    EXPECT_NEAR(lines[0][0].size, 100.0f, kEps);
+    EXPECT_NEAR(lines[0][1].offset, 110.0f, kEps); // 100 + 10 gap
+    EXPECT_NEAR(lines[0][1].size, 100.0f, kEps);
+    EXPECT_NEAR(lines[1][0].offset, 0.0f, kEps);
+    EXPECT_NEAR(lines[1][0].size, 100.0f, kEps);
+    EXPECT_NEAR(lines[1][1].offset, 110.0f, kEps);
+    EXPECT_NEAR(lines[1][1].size, 100.0f, kEps);
+
+    // Line 0 sits at cross 0; line 1 is shifted down by exactly one lineHeight.
+    EXPECT_NEAR(lines[0][0].crossOffset, 0.0f, kEps);
+    EXPECT_NEAR(lines[0][1].crossOffset, 0.0f, kEps);
+    EXPECT_NEAR(lines[1][0].crossOffset, 50.0f, kEps);
+    EXPECT_NEAR(lines[1][1].crossOffset, 50.0f, kEps);
+    // crossOffset increases by exactly lineHeight between consecutive lines.
+    EXPECT_NEAR(lines[1][0].crossOffset - lines[0][0].crossOffset, 50.0f, kEps);
+}
+
+TEST(FlexLayoutWrapTest, AutoLineHeightUsesPerLineMaxCrossSize) {
+    // No explicit lineHeight → each line's height is its tallest item crossSize.
+    // Container 250, no gap: two 100px items pack per line (200 <= 250; a third
+    // = 300 > 250 wraps). Line 0's tallest crossSize is 40, so line 1 is shifted
+    // down by 40 (not by item-2's own 25).
+    const std::vector<FlexItem> items = {{.basis = 100.0f, .crossSize = 20.0f},
+                                         {.basis = 100.0f, .crossSize = 40.0f},
+                                         {.basis = 100.0f, .crossSize = 25.0f}};
+    const FlexParams params{.containerSize = 250.0f};
+
+    auto lines = SolveFlexWrap(items, params);
+    ASSERT_EQ(lines.size(), 2u);
+    ASSERT_EQ(lines[0].size(), 2u);
+    ASSERT_EQ(lines[1].size(), 1u);
+
+    EXPECT_NEAR(lines[0][0].crossOffset, 0.0f, kEps);
+    EXPECT_NEAR(lines[0][1].crossOffset, 0.0f, kEps);
+    // Shifted by line 0's tallest item crossSize (40), the auto line height.
+    EXPECT_NEAR(lines[1][0].crossOffset, 40.0f, kEps);
+}
+
+TEST(FlexLayoutWrapTest, OversizedItemOccupiesItsOwnLine) {
+    // A single item whose basis exceeds the container gets a line to itself, and
+    // neighbours wrap around it. Container 100; item1 basis 250 (oversized).
+    // shrink = 0 so the per-line SolveFlex leaves each item at its basis, isolating
+    // the line-breaking behaviour under test.
+    const std::vector<FlexItem> items = {{.basis = 80.0f, .shrink = 0.0f, .crossSize = 10.0f},
+                                         {.basis = 250.0f, .shrink = 0.0f, .crossSize = 10.0f},
+                                         {.basis = 80.0f, .shrink = 0.0f, .crossSize = 10.0f}};
+    const FlexParams params{.containerSize = 100.0f};
+
+    auto lines = SolveFlexWrap(items, params, /*lineHeight=*/12.0f);
+    ASSERT_EQ(lines.size(), 3u);
+    ASSERT_EQ(lines[0].size(), 1u);
+    ASSERT_EQ(lines[1].size(), 1u); // the oversized item alone on its own line
+    ASSERT_EQ(lines[2].size(), 1u);
+
+    EXPECT_NEAR(lines[0][0].size, 80.0f, kEps);
+    EXPECT_NEAR(lines[1][0].size, 250.0f, kEps); // kept at basis (shrink = 0)
+    EXPECT_NEAR(lines[2][0].size, 80.0f, kEps);
+
+    EXPECT_NEAR(lines[0][0].crossOffset, 0.0f, kEps);
+    EXPECT_NEAR(lines[1][0].crossOffset, 12.0f, kEps);
+    EXPECT_NEAR(lines[2][0].crossOffset, 24.0f, kEps);
 }

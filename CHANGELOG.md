@@ -1,3 +1,29 @@
+## [3.13.0] - 2026-06-26
+
+> Layout system, rounded out: cross-axis alignment in the FlexRow container,
+> flex-wrap line breaking in the solver, and a declarative-DSL flex node —
+> implemented in parallel and integrated together.
+
+### Added
+- **Flex line wrapping — `unigui::layout::SolveFlexWrap`** (`core/flex_layout.h`).
+  Greedily breaks items into lines along the main axis (CSS `flex-wrap: wrap`),
+  resolves each line independently with `SolveFlex`, and stacks the lines on the
+  cross axis — each line offset by the **sum of the preceding lines' heights**
+  (a caller-supplied uniform `lineHeight`, or the per-line tallest `crossSize`
+  when auto). Additive; `SolveFlex` is unchanged. 5 new tests.
+- **Cross-axis alignment in `Layout::FlexRow`.** `FlexRowOptions::align`
+  (`layout::FlexAlign` — Start/Center/End/Stretch) positions each child vertically
+  within the row via the solver's `crossOffset`/`crossSize`. The default (Start,
+  no per-child `crossSize`) preserves the prior uniform-height layout. The row now
+  reserves its footprint with an invisible item so aligned (shorter) children
+  can't under-extend the window bounds. 3 new tests.
+- **DSL `Flex` node.** `dsl::Flex({...})` describes a horizontal flex row in the
+  declarative DSL, rendered through `Layout::FlexRow`; children share the width by
+  their flex-grow weight (default equal split), with an optional per-child
+  `weights` overload plus `gap` and `justify` (`dsl::FlexJustify`). Children render
+  through the same per-node dispatch, so any node nests inside a flex row. 3 new
+  tests.
+
 ## [3.12.0] - 2026-06-26
 
 ### Added

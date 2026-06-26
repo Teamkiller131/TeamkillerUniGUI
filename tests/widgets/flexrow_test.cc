@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+using unigui::layout::FlexAlign;
 using unigui::Layout::FlexChild;
 using unigui::layout::FlexJustify;
 using unigui::Layout::FlexRow;
@@ -110,4 +111,41 @@ TEST_F(FlexRowTest, TwoRowsInOneWindowDoNotCollide) {
             {.width = 200.0f, .height = 20.0f});
     EXPECT_EQ(a, 2);
     EXPECT_EQ(b, 2);
+}
+
+TEST_F(FlexRowTest, AlignCenterOffsetsChildOnCrossAxis) {
+    // Row height 100, child cross size 40 → centered child sits 30px down from the
+    // row's top edge ((100 - 40) / 2). Capture the row start via a Start-aligned
+    // probe so the centered child's Y is read relative to it (independent of the
+    // window's absolute content origin).
+    float rowTop = -1.0f, childTop = -1.0f;
+    FlexRow("center-probe", {{{.basis = 100.0f}, [&] { rowTop = ImGui::GetWindowPos().y; }}},
+            {.width = 400.0f, .height = 100.0f});
+    FlexRow("center",
+            {{{.basis = 100.0f, .crossSize = 40.0f}, [&] { childTop = ImGui::GetWindowPos().y; }}},
+            {.width = 400.0f, .height = 100.0f, .align = FlexAlign::Center});
+    ASSERT_GT(rowTop, 0.0f);
+    ASSERT_GT(childTop, 0.0f);
+    // Second row starts one row-height (100) below the first; the centered child is
+    // then offset a further 30px within its own row.
+    EXPECT_NEAR(childTop - rowTop, 130.0f, 2.0f);
+}
+
+TEST_F(FlexRowTest, AlignStretchFillsRowHeight) {
+    // Under Stretch the solver hands back the container cross size, so the child's
+    // region fills the full 100px row height even though it requested crossSize 40.
+    float h = -1.0f;
+    FlexRow("stretch",
+            {{{.basis = 100.0f, .crossSize = 40.0f}, [&] { h = ImGui::GetWindowHeight(); }}},
+            {.width = 400.0f, .height = 100.0f, .align = FlexAlign::Stretch});
+    EXPECT_NEAR(h, 100.0f, 2.0f);
+}
+
+TEST_F(FlexRowTest, DefaultAlignKeepsUniformHeight) {
+    // Backward-compat: default align=Start with no per-child crossSize must keep
+    // the legacy behavior — every child gets opt.height regardless of alignment.
+    float h = -1.0f;
+    FlexRow("uniform", {{{.basis = 100.0f}, [&] { h = ImGui::GetWindowHeight(); }}},
+            {.width = 400.0f, .height = 60.0f});
+    EXPECT_NEAR(h, 60.0f, 2.0f);
 }

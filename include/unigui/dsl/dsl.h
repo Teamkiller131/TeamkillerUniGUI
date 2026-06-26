@@ -25,6 +25,7 @@
 // itself — so simply re-`Render()`-ing the same tree preserves user input.
 // ─────────────────────────────────────────────────────────────────────────────
 
+#include <unigui/core/flex_layout.h>
 #include <unigui/im/im.h>
 
 #include <functional>
@@ -41,12 +42,16 @@ using NodePtr = std::shared_ptr<Node>;
 /// Themed button color variant — mirrors `unigui::im::ButtonVariant`.
 using ButtonVariant = im::ButtonVariant;
 
+/// Main-axis distribution for a `Flex` row — mirrors `unigui::layout::FlexJustify`.
+using FlexJustify = layout::FlexJustify;
+
 /// A DSL node. Every builder function below produces one of these `Kind`s.
 struct Node {
     enum class Kind {
         Window,
         VBox,
         HBox,
+        Flex,
         Button,
         Label,
         Text,
@@ -100,6 +105,14 @@ struct Node {
     // For.
     int count = 0;
     std::function<NodePtr(int)> itemBuilder;
+
+    // Flex — one horizontal flex line of `children`. Each child grows by its
+    // weight in `flexGrow` (parallel to `children`; defaults to 1 = equal split).
+    // `flexGap` is the pixel gap between children; `flexJustify` distributes any
+    // leftover main-axis space (see `unigui::layout::FlexJustify`).
+    std::vector<float> flexGrow;
+    float flexGap = 0.0f;
+    FlexJustify flexJustify = FlexJustify::Start;
 };
 
 // ── Containers ───────────────────────────────────────────────────────────────
@@ -107,6 +120,20 @@ NodePtr Window(std::string title, NodePtr child);
 NodePtr Window(std::string title, std::vector<NodePtr> children);
 NodePtr VBox(std::vector<NodePtr> children);
 NodePtr HBox(std::vector<NodePtr> children);
+
+/// Horizontal flexbox row. Children are laid out side-by-side and share the
+/// available width by their flex-grow weight; with the default weight (1) every
+/// child gets an equal slice. Rendered through `unigui::Layout::FlexRow` at a
+/// fixed one-line height (`ImGui::GetFrameHeightWithSpacing()`).
+///
+/// Limitations (v1): single line only (no wrap), one fixed row height, and
+/// cross-axis alignment is not exposed. For per-child weights use the
+/// `weights` overload (parallel to `children`; a shorter/empty vector falls
+/// back to weight 1 for the missing entries).
+NodePtr Flex(std::vector<NodePtr> children, float gap = 0.0f,
+             FlexJustify justify = FlexJustify::Start);
+NodePtr Flex(std::vector<NodePtr> children, std::vector<float> weights, float gap = 0.0f,
+             FlexJustify justify = FlexJustify::Start);
 
 // ── Text ─────────────────────────────────────────────────────────────────────
 NodePtr Label(std::string text);
