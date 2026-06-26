@@ -20,6 +20,7 @@
 #include <unigui/core/decimate.h>
 #include <unigui/core/dpi.h>
 #include <unigui/core/error.h>
+#include <unigui/core/flex_layout.h>
 #include <unigui/core/format_cn.h>
 #include <unigui/core/format_num.h>
 #include <unigui/core/layout_store.h>

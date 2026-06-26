@@ -273,7 +273,11 @@ Goal: turn the stub backends into real ones and make rendering measurably fast.
 
 Goal: broaden what apps can build without leaving the toolkit.
 
-- **P1 · L — Layout system.** A constraint/flex layout pass on top of the DSL so
+- **P1 · L — Layout system.** _Started._ A header-only CSS-flexbox **main-axis
+  solver** landed (`core/flex_layout.h`: `SolveFlex` with grow/shrink, min/max
+  clamps, `justify-content`, and gaps) — the pure, fully unit-tested computational
+  core. _Remaining:_ a widget-facing flex container that applies it via ImGui,
+  cross-axis alignment (align-items) and wrapping, then wire it into the DSL so
   UIs reflow without manual sizing (complements VBox/HBox).
 - **P1 · M — Accessibility.** Surface the existing `AccessibleName`/`Description`
   fields through a real a11y tree / screen-reader bridge where the platform

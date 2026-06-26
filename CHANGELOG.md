@@ -1,3 +1,19 @@
+## [3.10.0] - 2026-06-25
+
+> Horizon-5 layout: a CSS-flexbox-style main-axis solver — the computational
+> foundation of the constraint/flex layout system.
+
+### Added
+- **`unigui::layout::SolveFlex`** (`core/flex_layout.h`) — a header-only, pure
+  (no-ImGui) flexbox main-axis solver. Given a container length and a list of
+  `FlexItem`s (flex-basis + grow/shrink + min/max clamps), it resolves each item's
+  main-axis size and offset, with proper freeze-and-redistribute handling of the
+  min/max clamps, full `justify-content` (Start/End/Center/SpaceBetween/
+  SpaceAround/SpaceEvenly), and inter-item gaps. This is the computational core the
+  widget-facing flex container will build on (cross-axis alignment and wrapping
+  land in later passes). Exposed via the umbrella `<unigui/unigui.h>`. 13 new
+  headless tests.
+
 ## [3.9.2] - 2026-06-25
 
 > Performance: the row-vector `Table` widget is now virtualized.
