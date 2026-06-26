@@ -1,15 +1,17 @@
 # API Index
 
-Master lookup for the **entire public surface** of TeamkillerUniGUI 3.8.12.
+Master lookup for the **entire public surface** of TeamkillerUniGUI 3.16.0.
 
 | Category | Count | Primary doc |
 |----------|------:|-------------|
-| Retained widgets & helpers | **93** | [WIDGET_API.md](WIDGET_API.md), [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) |
-| `unigui::im` functions | **201** | [WIDGET_API §2](WIDGET_API.md#immediate-mode-uniguiim-vs-retained-mode) |
-| `unigui::dsl` builders | **18** | [WIDGET_API — DSL](WIDGET_API.md#declarative-dsl-uniguidsl) |
-| App / theme / core | **15+** | Below + [GETTING_STARTED.md](GETTING_STARTED.md) |
+| Retained widgets & helpers | **95** | [WIDGET_API.md](WIDGET_API.md), [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) |
+| `unigui::im` functions | **201** | [IM_API.md](IM_API.md) |
+| `unigui::dsl` builders + component framework | **24+** | [DSL.md](DSL.md), [FRAMEWORK.md](FRAMEWORK.md) |
+| Reactive (Observable / Computed / State / Store) | — | [REACTIVE.md](REACTIVE.md) |
+| Layout (SolveFlex / FlexRow / Layout helpers) | — | [LAYOUT.md](LAYOUT.md) |
+| App / theme / core | **15+** | [BACKENDS.md](BACKENDS.md), [THEMING.md](THEMING.md), [GETTING_STARTED.md](GETTING_STARTED.md) |
 
-> README badge **「93 widgets」** counts retained components under `include/unigui/widgets/` (81 headers + layout RAII). It does **not** include `im::`, DSL, theme, or optional modules — those add **40+** additional APIs.
+> README badge **「95 widgets」** counts retained components under `include/unigui/widgets/`. It does **not** include `im::`, the DSL, the component framework, the reactive/layout layers, theme, or optional modules — those add **hundreds** of additional APIs (see the dedicated docs above).
 
 ---
 
@@ -145,6 +147,22 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | `dsl::Flex` | `dsl/dsl.h` | Declarative flex-row node rendered via `Layout::FlexRow` |
 | `Layout::HBox`, `Layout::VBox`, `BeginHSplit` | `widgets/layout.h` | Inline layout functions |
 | `HBox`, `VBox` (RAII) | `widgets/layout.h` | Scoped horizontal/vertical groups |
+
+---
+
+## Application framework (`unigui::dsl`)
+
+The opinionated way to build apps — see [FRAMEWORK.md](FRAMEWORK.md).
+
+| API | Header | Summary |
+|-----|--------|---------|
+| `Component` | `dsl/component.h` | Base class: `Build()` a view from state; dirty-tracked rebuild + lifecycle (`OnMount`/`OnUnmount`/`Unmount`) |
+| `State<T>` | `dsl/component.h` | Component-local reactive cell (marks owner dirty on change) |
+| `Host(child)`, `Custom(draw)` | `dsl/component.h`, `dsl/dsl.h` | Compose a child component / immediate-mode escape hatch |
+| `Component::Watch`, `OnCleanup` | `dsl/component.h` | React to shared state; effect-teardown lifecycle |
+| `DrawInspector`, `Component::BuildCount` | `dsl/component.h` | Live component inspector overlay |
+| `Store<T>` | `dsl/app.h` | Shared, app-wide reactive state |
+| `Navigator` | `dsl/app.h` | Stack of screens: `Push`/`Pop`/`Replace`/`Render` |
 
 ---
 

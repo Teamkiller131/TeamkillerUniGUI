@@ -140,12 +140,21 @@ Examples accept `--frames N` to render N frames and exit — use this in CI/smok
 |------|----------------|
 | `README.md` / `README_zh.md` | Overview, quick start, full widget table |
 | `docs/README.md` | Documentation hub / index |
-| `docs/GETTING_STARTED.md` | Build + first app |
-| `docs/WIDGET_API.md` | Full widget API reference (all 93) |
+| `docs/GETTING_STARTED.md` | Build + first apps (immediate / widget / framework) |
+| `docs/ARCHITECTURE.md` | **Big-picture layered architecture + "which layer?" guide** |
+| `docs/FRAMEWORK.md` | **The application framework (Component + State + Store + Navigator)** |
+| `docs/REACTIVE.md` | Reactive layer (`Observable`/`Computed`/`Bind`/`State`/`Store`) |
+| `docs/LAYOUT.md` | Layout system (`SolveFlex`/`SolveFlexWrap`/`Layout::FlexRow`) |
+| `docs/IM_API.md` | Immediate layer `unigui::im` — full grouped reference |
+| `docs/DSL.md` | Declarative DSL (view language) reference |
+| `docs/THEMING.md` | Theme engine + CSS styling & hot-reload |
+| `docs/BACKENDS.md` | Backend abstraction (platforms × renderers) + app loop |
+| `docs/WIDGET_API.md` | Full widget API reference (all 95) |
 | `docs/WIDGET_EXAMPLES.md` | One minimal example per widget |
-| `docs/API_INDEX.md` | Master index (widgets + `im` + DSL + core) |
-| `docs/MODULES.md` | Sub-module overview |
+| `docs/API_INDEX.md` | Master index (widgets + `im` + DSL + framework + core) |
+| `docs/MODULES.md` | Per-module reference (events/plugin/config/sqlite/ipc/network/fonts) |
 | `docs/TRADING.md` | Trading toolkit (financial formatting, models; widgets upcoming) |
+| `docs/EXAMPLES.md` | Cookbook (composition, theme, tables, DSL, threading) |
 | `docs/API_STABILITY.md` | **Public-API contract (semver, tiers, deprecation lifecycle)** |
 | `docs/TROUBLESHOOTING.md` | Build / CRT / CI FAQ |
 | `INTEGRATION.md` | Submodule + vcpkg embedding |

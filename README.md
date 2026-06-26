@@ -61,12 +61,21 @@ ctest --test-dir build
 
 | Doc | Description |
 |-----|-------------|
-| **[docs/README.md](docs/README.md)** | **Documentation hub** (index) |
-| [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Build & first app |
+| **[docs/README.md](docs/README.md)** | **Documentation hub** (full index) |
+| [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Prerequisites, building per platform, first apps |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layered architecture + "which layer should I use?" |
+| **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)** | **The application framework** (Component + State + Store + Navigator) |
+| [docs/REACTIVE.md](docs/REACTIVE.md) | Reactive layer: `Observable` / `Computed` / `Bind` / `State` / `Store` |
+| [docs/LAYOUT.md](docs/LAYOUT.md) | Flexbox layout: `SolveFlex` / `SolveFlexWrap` / `Layout::FlexRow` |
+| [docs/IM_API.md](docs/IM_API.md) | The immediate layer `unigui::im` (full reference) |
+| [docs/DSL.md](docs/DSL.md) | The declarative DSL (view language) |
+| [docs/THEMING.md](docs/THEMING.md) | Theme engine + CSS styling & hot-reload |
+| [docs/BACKENDS.md](docs/BACKENDS.md) | Backends (platforms × renderers) + the app loop |
+| [docs/WIDGET_EXAMPLES.md](docs/WIDGET_EXAMPLES.md) | One minimal example per widget (95 entries) |
+| [docs/WIDGET_API.md](docs/WIDGET_API.md) | Full widget API (TreeView / CascadingCombo inline) |
+| [docs/API_INDEX.md](docs/API_INDEX.md) | Master index (widgets + `im` + DSL + framework + core) |
+| [docs/MODULES.md](docs/MODULES.md) | Optional modules (EventBus, plugins, SQLite, IPC, network, …) |
 | [docs/EXAMPLES.md](docs/EXAMPLES.md) | Cookbook (composition, theme, DSL, threading) |
-| [docs/WIDGET_EXAMPLES.md](docs/WIDGET_EXAMPLES.md) | One minimal example per widget (93 entries) |
-| [docs/WIDGET_API.md](docs/WIDGET_API.md) | Full API (widgets + inline TreeView / CascadingCombo) |
-| [docs/API_INDEX.md](docs/API_INDEX.md) | Master index (widgets + `im` + DSL + core) |
 | [docs/API_STABILITY.md](docs/API_STABILITY.md) | API contract: semver, stability tiers, deprecation policy |
 | [docs/TRADING.md](docs/TRADING.md) | Trading toolkit: financial formatting + models |
 | [INTEGRATION.md](INTEGRATION.md) | Submodule + vcpkg embedding |
