@@ -143,13 +143,21 @@ jobs:
         cmake --build build --target unigui
         cmake --install build
     - name: Build + run the find_package(unigui) consumer
-      # Consume from the install tree. CMAKE_PREFIX_PATH carries both the UniGUI
-      # install prefix and the vcpkg tree so the config's find_dependency() calls
-      # (imgui, glfw, …) resolve — exactly how a downstream user consuming a
-      # vcpkg-provided UniGUI would build.
+      # Consume from the install tree THROUGH the vcpkg toolchain (classic mode,
+      # reusing the deps already built above via VCPKG_INSTALLED_DIR). The toolchain
+      # is required so vcpkg's find_package wrappers resolve the deep transitive
+      # graph — e.g. freetype-config's find_dependency(ZLIB) only yields a
+      # ZLIB::ZLIB target when vcpkg's zlib wrapper is active. A bare
+      # CMAKE_PREFIX_PATH consume skips those wrappers and fails on Linux. This is
+      # exactly how a real vcpkg-provided UniGUI consumer builds. CMAKE_PREFIX_PATH
+      # adds the UniGUI install prefix on top.
       run: |
         cmake -B build_consumer -S tests/packaging/consumer -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_PREFIX_PATH="$PWD/_pkg;$PWD/build/vcpkg_installed/x64-linux"
+          -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=x64-linux \
+          -DVCPKG_MANIFEST_MODE=OFF \
+          -DVCPKG_INSTALLED_DIR="$PWD/build/vcpkg_installed" \
+          -DCMAKE_PREFIX_PATH="$PWD/_pkg"
         cmake --build build_consumer
         ./build_consumer/consumer
