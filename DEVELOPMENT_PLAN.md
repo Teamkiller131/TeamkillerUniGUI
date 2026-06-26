@@ -277,9 +277,11 @@ Goal: broaden what apps can build without leaving the toolkit.
   (`core/flex_layout.h`: `SolveFlex`) — pure and fully unit-tested. It now handles
   the **main axis** (grow/shrink, min/max clamps, `justify-content`, gaps) **and
   the cross axis** (`align-items`: Start/Center/End/Stretch), making it a complete
-  2D flex-line solver. _Remaining:_ line wrapping (flex-wrap); a widget-facing
-  flex container that applies the solver via ImGui; then wire it into the DSL so
-  UIs reflow without manual sizing (complements VBox/HBox).
+  2D flex-line solver. A widget-facing **`Layout::FlexRow`** container now applies
+  it through ImGui child regions (main-axis; hardened against the zero-width
+  BeginChild trap). _Remaining:_ cross-axis `align` in the container; line
+  wrapping (flex-wrap); then wire it into the DSL so UIs reflow without manual
+  sizing (complements VBox/HBox).
 - **P1 · M — Accessibility.** Surface the existing `AccessibleName`/`Description`
   fields through a real a11y tree / screen-reader bridge where the platform
   allows; keyboard-only navigation audit.

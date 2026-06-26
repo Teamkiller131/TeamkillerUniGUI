@@ -140,7 +140,8 @@ Header: `dsl/dsl.h`. CMake: `UNIGUI_MODULE_DSL=ON`.
 | `Observable<T>`, `Subscription`, `Bind` | `core/observable.h` | Reactive value + RAII subscriptions |
 | `Computed<T>` | `core/observable.h` | Derived/recomputing observable (N-ary, composable) |
 | `ValueWidget<T>::BindValue`, `Label::BindText` | `widgets/value_widget.h`, `widgets/label.h` | Two-way / one-way widget data binding |
-| `SolveFlex`, `FlexItem`, `FlexJustify` | `core/flex_layout.h` | CSS-flexbox main-axis solver (grow/shrink, justify, gaps) |
+| `SolveFlex`, `FlexItem`, `FlexJustify`, `FlexAlign` | `core/flex_layout.h` | CSS-flexbox 2D solver (grow/shrink, justify, align, gaps) |
+| `Layout::FlexRow`, `FlexChild`, `FlexRowOptions` | `widgets/layout.h` | ImGui flex-row container built on `SolveFlex` |
 | `Layout::HBox`, `Layout::VBox`, `BeginHSplit` | `widgets/layout.h` | Inline layout functions |
 | `HBox`, `VBox` (RAII) | `widgets/layout.h` | Scoped horizontal/vertical groups |
 

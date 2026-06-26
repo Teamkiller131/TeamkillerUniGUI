@@ -1,3 +1,19 @@
+## [3.12.0] - 2026-06-26
+
+### Added
+- **`Layout::FlexRow` — an ImGui flex-row container.** Lays children out in a
+  horizontal flex line by applying `unigui::layout::SolveFlex`: each `FlexChild`
+  pairs a `FlexItem` (basis/grow/shrink/min/max) with a render callback drawn
+  inside a child region of its resolved width. Configured via a designated-init
+  `FlexRowOptions{width, height, gap, justify}`; the per-row `id` scopes the
+  child-region IDs so multiple rows coexist in one window. Hardened against the
+  edges an adversarial review surfaced: a child the solver collapses to ~0 width
+  is omitted (rather than tripping ImGui's "width 0 = fill remaining" rule and
+  ballooning over its neighbours), a no-room / NaN container renders nothing, and
+  `gap`/`height` are clamped non-negative. Main-axis only for now (cross-axis
+  `align` lands in a later pass). 8 headless tests — turns the flex solver into a
+  usable layout widget.
+
 ## [3.11.0] - 2026-06-26
 
 ### Added
