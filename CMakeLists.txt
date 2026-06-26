@@ -45,6 +45,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile_commands.json fo
 # ── Warning configuration ────────────────────────────────────────────────────
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerWarnings.cmake)
 
+# ── Install layout ───────────────────────────────────────────────────────────
+# Must precede add_subdirectory(src): src/'s install() rules reference
+# CMAKE_INSTALL_INCLUDEDIR, and install() captures the DESTINATION at configure
+# time. If GNUInstallDirs is included only later, that variable is empty in src/'s
+# scope and `unigui_export.h` installs to an absolute "/unigui" (which fails on a
+# clean prefix). Setting it here makes the dirs available to every subdirectory.
+include(GNUInstallDirs)
+
 # ── Subdirectories ───────────────────────────────────────────────────────────
 add_subdirectory(src)
 
@@ -79,7 +87,6 @@ if(UNIGUI_BUILD_EXAMPLES)
 endif()
 
 # ── Installation ─────────────────────────────────────────────────────────────
-include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 install(DIRECTORY include/

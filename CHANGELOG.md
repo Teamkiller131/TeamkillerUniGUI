@@ -1,3 +1,22 @@
+## [3.11.0] - 2026-06-26
+
+### Added
+- **Cross-axis alignment for the flex solver.** `SolveFlex` now resolves each
+  item's cross-axis offset + size per `FlexParams::align` (new `FlexAlign`:
+  Start/Center/End/Stretch), driven by `FlexItem::crossSize` and a container
+  `FlexParams::crossSize`. Together with the main-axis pass this makes
+  `SolveFlex` a complete 2D flex-line solver (line wrapping still to come). 4 new
+  tests. Additive — existing main-axis usage is unchanged.
+
+### Fixed
+- **`find_package(unigui)` install on a clean prefix.** `unigui_export.h` was
+  installed to an absolute `/unigui` because `GNUInstallDirs` was included *after*
+  `add_subdirectory(src)`, leaving `CMAKE_INSTALL_INCLUDEDIR` empty in `src/`'s
+  scope when its `install()` rules were captured at configure time. Hoisted
+  `GNUInstallDirs` above the subdirectory so the destination resolves to
+  `${prefix}/include/unigui`. Caught by the new `install-consume` CI job — it
+  passed locally only because the build directory had the variable cached.
+
 ## [3.10.0] - 2026-06-25
 
 > Horizon-5 layout: a CSS-flexbox-style main-axis solver — the computational

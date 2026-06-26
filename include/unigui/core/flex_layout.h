@@ -15,7 +15,8 @@
 //     // spans[0] = {offset 0,   size 200}   (100 + 1/3 of the 300px free)
 //     // spans[1] = {offset 200, size 200}   (100 + 2/3 of the 300px free)
 //
-// Cross-axis alignment (align-items) and wrapping are layered on in later passes.
+// Cross-axis placement (align-items) is supported via FlexParams::align +
+// FlexItem::crossSize; line wrapping (flex-wrap) is layered on in a later pass.
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include <algorithm>
@@ -24,28 +25,38 @@
 
 namespace unigui::layout {
 
-/// One participant in a flex line. All sizes are pixels along the main axis.
+/// One participant in a flex line. All sizes are pixels.
 struct FlexItem {
     float basis = 0.0f;      // preferred main-axis size (flex-basis)
     float grow = 0.0f;       // share of leftover space to absorb (flex-grow)
     float shrink = 1.0f;     // share of overflow to give up (flex-shrink)
-    float minSize = 0.0f;    // lower clamp on the resolved size
-    float maxSize = FLT_MAX; // upper clamp on the resolved size
+    float minSize = 0.0f;    // lower clamp on the resolved main-axis size
+    float maxSize = FLT_MAX; // upper clamp on the resolved main-axis size
+    float crossSize = 0.0f;  // preferred cross-axis size (used by align != Stretch)
 };
 
 /// Distribution of leftover main-axis space (CSS justify-content).
 enum class FlexJustify { Start, End, Center, SpaceBetween, SpaceAround, SpaceEvenly };
 
+/// Cross-axis placement of each item within the line (CSS align-items).
+enum class FlexAlign { Start, Center, End, Stretch };
+
 struct FlexParams {
     float containerSize = 0.0f;               // available main-axis length
+    float crossSize = 0.0f;                   // available cross-axis length (0 = unknown)
     float gap = 0.0f;                         // fixed gap between adjacent items
-    FlexJustify justify = FlexJustify::Start; // leftover-space distribution
+    FlexJustify justify = FlexJustify::Start; // leftover main-axis distribution
+    FlexAlign align = FlexAlign::Start;       // cross-axis placement
 };
 
-/// Resolved geometry for one item: main-axis offset + size, both in pixels.
+/// Resolved geometry for one item. Main-axis offset+size always; cross-axis
+/// offset+size are filled per the align mode (cross fields stay 0 when no
+/// container crossSize / crossSize is given).
 struct FlexSpan {
     float offset = 0.0f;
     float size = 0.0f;
+    float crossOffset = 0.0f;
+    float crossSize = 0.0f;
 };
 
 namespace detail {
@@ -182,6 +193,27 @@ inline std::vector<FlexSpan> SolveFlex(const std::vector<FlexItem>& items,
         out[i].offset = cursor;
         out[i].size = size[i];
         cursor += size[i] + between;
+
+        // Cross-axis placement (align-items).
+        const float cs = items[i].crossSize;
+        switch (params.align) {
+        case FlexAlign::Stretch:
+            out[i].crossSize = params.crossSize > 0.0f ? params.crossSize : cs;
+            out[i].crossOffset = 0.0f;
+            break;
+        case FlexAlign::Start:
+            out[i].crossSize = cs;
+            out[i].crossOffset = 0.0f;
+            break;
+        case FlexAlign::Center:
+            out[i].crossSize = cs;
+            out[i].crossOffset = std::max(0.0f, (params.crossSize - cs) * 0.5f);
+            break;
+        case FlexAlign::End:
+            out[i].crossSize = cs;
+            out[i].crossOffset = std::max(0.0f, params.crossSize - cs);
+            break;
+        }
     }
     return out;
 }

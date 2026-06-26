@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+using unigui::layout::FlexAlign;
 using unigui::layout::FlexItem;
 using unigui::layout::FlexJustify;
 using unigui::layout::FlexParams;
@@ -116,4 +117,37 @@ TEST(FlexLayoutTest, JustifySpaceEvenly) {
                            {.containerSize = 300.0f, .justify = FlexJustify::SpaceEvenly});
     EXPECT_NEAR(spans[0].offset, 100.0f / 3.0f, kEps);                 // 33.333
     EXPECT_NEAR(spans[1].offset, 100.0f / 3.0f * 2.0f + 100.0f, kEps); // 166.667
+}
+
+// ── cross-axis placement (align-items); item crossSize 40 in a 100-tall line ──
+TEST(FlexLayoutTest, AlignStartKeepsItemCrossSizeAtZeroOffset) {
+    auto spans =
+        SolveFlex({{.basis = 50.0f, .crossSize = 40.0f}},
+                  {.containerSize = 50.0f, .crossSize = 100.0f, .align = FlexAlign::Start});
+    ASSERT_EQ(spans.size(), 1u);
+    EXPECT_NEAR(spans[0].crossOffset, 0.0f, kEps);
+    EXPECT_NEAR(spans[0].crossSize, 40.0f, kEps);
+}
+
+TEST(FlexLayoutTest, AlignCenterCentersOnCrossAxis) {
+    auto spans =
+        SolveFlex({{.basis = 50.0f, .crossSize = 40.0f}},
+                  {.containerSize = 50.0f, .crossSize = 100.0f, .align = FlexAlign::Center});
+    EXPECT_NEAR(spans[0].crossOffset, 30.0f, kEps); // (100 - 40) / 2
+    EXPECT_NEAR(spans[0].crossSize, 40.0f, kEps);
+}
+
+TEST(FlexLayoutTest, AlignEndPushesToCrossEnd) {
+    auto spans = SolveFlex({{.basis = 50.0f, .crossSize = 40.0f}},
+                           {.containerSize = 50.0f, .crossSize = 100.0f, .align = FlexAlign::End});
+    EXPECT_NEAR(spans[0].crossOffset, 60.0f, kEps); // 100 - 40
+    EXPECT_NEAR(spans[0].crossSize, 40.0f, kEps);
+}
+
+TEST(FlexLayoutTest, AlignStretchFillsCrossAxis) {
+    auto spans =
+        SolveFlex({{.basis = 50.0f, .crossSize = 40.0f}},
+                  {.containerSize = 50.0f, .crossSize = 100.0f, .align = FlexAlign::Stretch});
+    EXPECT_NEAR(spans[0].crossOffset, 0.0f, kEps);
+    EXPECT_NEAR(spans[0].crossSize, 100.0f, kEps); // stretched to the line height
 }
