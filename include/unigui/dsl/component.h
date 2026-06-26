@@ -29,7 +29,9 @@
 #include <unigui/core/observable.h>
 #include <unigui/dsl/dsl.h>
 
+#include <algorithm>
 #include <functional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -74,6 +76,17 @@ private:
     Component* owner_;
 };
 
+namespace detail {
+/// Live-component registry powering DrawInspector(). Single-threaded UI, so a plain
+/// vector is fine. Each Component registers in its ctor and removes itself in its
+/// dtor. Intentionally leaked (heap, never freed) so a Component held in a static
+/// can still deregister at program teardown regardless of static-destruction order.
+inline std::vector<Component*>& ComponentRegistry() {
+    static std::vector<Component*>* reg = new std::vector<Component*>();
+    return *reg;
+}
+} // namespace detail
+
 /// Base class for a reactive UI component. Override Build() to declare the view as
 /// a DSL node tree from the component's State; the framework rebuilds it only when
 /// state changes and renders the cached tree each frame.
@@ -83,14 +96,20 @@ private:
 /// on the heap).
 class Component {
 public:
-    Component() = default;
-    virtual ~Component() = default;
+    Component() { detail::ComponentRegistry().push_back(this); }
+    virtual ~Component() {
+        auto& reg = detail::ComponentRegistry();
+        reg.erase(std::remove(reg.begin(), reg.end(), this), reg.end());
+    }
 
     Component(const Component&) = delete;
     Component& operator=(const Component&) = delete;
 
     /// Declare the view as a DSL node tree from the component's current State.
     virtual NodePtr Build() = 0;
+
+    /// Display name for the inspector (override to identify a component type).
+    virtual const char* InspectorName() const { return "Component"; }
 
     /// Lifecycle. OnMount runs once, just before the first Build(). OnUnmount is a
     /// hook the app/navigator calls when the component leaves the tree; it is not
@@ -103,6 +122,8 @@ public:
     void MarkDirty() { dirty_ = true; }
     bool IsDirty() const { return dirty_; }
     bool IsMounted() const { return mounted_; }
+    /// Number of times Build() has run (rebuilds). Useful for the inspector.
+    int BuildCount() const { return buildCount_; }
 
     /// React to *shared* state: re-render this component whenever `source` changes.
     /// `source` is anything with `AsObservable()` — a `Store`, another component's
@@ -127,6 +148,7 @@ public:
         }
         if (dirty_) {
             tree_ = Build();
+            ++buildCount_;
             dirty_ = false;
         }
         dsl::Render(tree_);
@@ -150,6 +172,7 @@ private:
     NodePtr tree_;
     bool dirty_ = true;
     bool mounted_ = false;
+    int buildCount_ = 0;
     std::vector<Subscription> watches_;           // external-state subscriptions (lifetime)
     std::vector<std::function<void()>> cleanups_; // effect teardowns, run on Unmount
 };
@@ -168,6 +191,23 @@ template <typename T> void State<T>::MarkOwnerDirty() {
 /// member) so it outlives the rendered tree.
 inline NodePtr Host(Component& child) {
     return Custom([&child] { child.Render(); });
+}
+
+/// Debug overlay: list every live Component with its name, mount/dirty state, and
+/// build count (rebuild count). Call inside a window each frame — it draws with the
+/// immediate layer. Pairs with ImGui's own metrics window for diagnosing why a
+/// component is (or isn't) rebuilding.
+inline void DrawInspector() {
+    const auto& reg = detail::ComponentRegistry();
+    im::Text("Live components: " + std::to_string(reg.size()));
+    for (const Component* c : reg) {
+        std::string line = c->InspectorName();
+        line += c->IsMounted() ? "  [mounted" : "  [unmounted";
+        if (c->IsDirty())
+            line += ", dirty";
+        line += "]  builds=" + std::to_string(c->BuildCount());
+        im::BulletText(line);
+    }
 }
 
 } // namespace unigui::dsl

@@ -81,10 +81,14 @@ public:
         }
     }
 
-    /// Render the current (top) screen. Call once per frame.
+    /// Render the current (top) screen. Call once per frame. Holds a strong ref so
+    /// the screen survives its own Render() even if a callback it fires Pop()s or
+    /// Replace()s it mid-frame — it then destructs safely after Render() returns.
     void Render() {
-        if (!stack_.empty())
-            stack_.back()->Render();
+        if (stack_.empty())
+            return;
+        ScreenPtr top = stack_.back();
+        top->Render();
     }
 
     Component* Top() const { return stack_.empty() ? nullptr : stack_.back().get(); }

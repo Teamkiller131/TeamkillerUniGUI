@@ -142,3 +142,18 @@ TEST_F(ComponentTest, HostRendersChildIndependently) {
     EXPECT_EQ(p.child.builds, 2); // child rebuilt
     EXPECT_EQ(p.child.count(), 9);
 }
+
+TEST_F(ComponentTest, InspectorRegistryAndBuildCount) {
+    const std::size_t before = unigui::dsl::detail::ComponentRegistry().size();
+    {
+        CounterComp c;
+        EXPECT_EQ(unigui::dsl::detail::ComponentRegistry().size(), before + 1);
+        c.Render();
+        EXPECT_EQ(c.BuildCount(), 1);
+        c.count = 1;
+        c.Render();
+        EXPECT_EQ(c.BuildCount(), 2);                  // rebuild counted
+        EXPECT_NO_THROW(unigui::dsl::DrawInspector()); // draws via im in this frame
+    }
+    EXPECT_EQ(unigui::dsl::detail::ComponentRegistry().size(), before); // deregistered on dtor
+}

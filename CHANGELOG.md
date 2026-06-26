@@ -1,3 +1,27 @@
+## [3.16.0] - 2026-06-26
+
+> **Framework, phases 2 & 4 — the golden path, a flagship app, and the inspector.**
+> The component framework now has a documented way in, a real reference app, and
+> live introspection — completing the framework-transformation arc.
+
+### Added
+- **The framework guide** — `docs/FRAMEWORK.md`: the golden path for building
+  apps (Components + reactive State, composition with `Host`, `Store` + `Watch`
+  for shared state, effects/lifecycle, `Navigator`, the inspector, and the
+  `dsl::Custom` escape hatch), with a "which layer when" table.
+- **`examples/framework_demo`** — a complete multi-screen app built entirely in
+  the framework idiom: a shared `Store`, a `Navigator` with two screens,
+  component-local `State`, `Watch`, an effect with cleanup, and the inspector
+  overlay. Runs headless (`--frames N`).
+- **`dsl::DrawInspector()`** — a live overlay listing every mounted `Component`
+  with its mount/dirty state and rebuild count, backed by a component registry
+  (`Component::BuildCount()`, `Component::InspectorName()`).
+
+### Fixed
+- **`dsl::Navigator::Render`** now holds a strong reference to the current screen,
+  so a screen can safely `Pop()`/`Replace()` itself from a mid-frame callback (it
+  destructs after its `Render()` returns rather than under it).
+
 ## [3.15.0] - 2026-06-26
 
 > **Framework, phase 3 — the application layer.** Above the component model:

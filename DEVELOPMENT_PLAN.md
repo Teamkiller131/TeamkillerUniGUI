@@ -273,16 +273,16 @@ Goal: turn the stub backends into real ones and make rendering measurably fast.
 
 Goal: broaden what apps can build without leaving the toolkit.
 
-- **P0 · L — Framework transformation.** _In progress._ Turn the toolkit into an
-  opinionated application framework. **Phase 1 landed:** the component model —
-  `dsl::Component` + reactive `dsl::State<T>` with dirty-tracked rebuilds, plus
-  `dsl::Host`/`dsl::Custom` for composition (`dsl/component.h`). **Phase 3 landed:**
-  the application layer (`dsl/app.h`) — `dsl::Store<T>` (shared state),
-  `dsl::Navigator` (routed screen stack), `Component::Watch` (shared-state → render
-  bridge) and `Component::OnCleanup` (effect teardown lifecycle). _Remaining:_
-  (2) commit to + document a golden path and port an example to it; (4) a learning
-  guide, a flagship reference app built in the idiom, and a component/state
-  inspector.
+- **P0 · L — Framework transformation.** _Landed (all four phases)._ The toolkit
+  is now an opinionated application framework. **(1)** the component model —
+  `dsl::Component` + reactive `dsl::State<T>` with dirty-tracked rebuilds and
+  `dsl::Host`/`dsl::Custom` composition (`dsl/component.h`); **(3)** the application
+  layer (`dsl/app.h`) — `dsl::Store<T>`, `dsl::Navigator`, `Component::Watch` /
+  `OnCleanup`; **(2 + 4)** the **golden-path guide** (`docs/FRAMEWORK.md`), a
+  flagship reference app (`examples/framework_demo`), and the live
+  **`dsl::DrawInspector()`** component/state inspector. _Next:_ deepen the idiom
+  (forms/validation as components, a routing/URL story, devtools beyond the
+  inspector) as real apps drive requirements.
 
 - **P1 · L — Layout system.** _Started._ A header-only CSS-flexbox solver landed
   (`core/flex_layout.h`: `SolveFlex`) — pure and fully unit-tested. It now handles
