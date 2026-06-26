@@ -31,6 +31,7 @@
 
 #include <functional>
 #include <utility>
+#include <vector>
 
 namespace unigui::dsl {
 
@@ -103,6 +104,20 @@ public:
     bool IsDirty() const { return dirty_; }
     bool IsMounted() const { return mounted_; }
 
+    /// React to *shared* state: re-render this component whenever `source` changes.
+    /// `source` is anything with `AsObservable()` — a `Store`, another component's
+    /// `State`, a `Computed`, or a raw `Observable`. Establish in OnMount() (or the
+    /// constructor); the subscription lives for the component's lifetime. This is
+    /// the bridge from app-wide state to a component's view.
+    template <typename W> void Watch(W& source) {
+        watches_.push_back(source.AsObservable().Subscribe([this](const auto&) { MarkDirty(); }));
+    }
+
+    /// Register a teardown to run when the component unmounts — the cleanup half of
+    /// an effect set up in OnMount() (cancel a subscription, stop a timer, …). Run
+    /// in reverse order of registration.
+    void OnCleanup(std::function<void()> fn) { cleanups_.push_back(std::move(fn)); }
+
     /// Render once per frame: mount on the first call, (re)Build the view tree when
     /// state changed since the last build, then draw the cached tree.
     void Render() {
@@ -117,19 +132,26 @@ public:
         dsl::Render(tree_);
     }
 
-    /// Fire OnUnmount (idempotent). The app/navigator calls this when removing the
-    /// component from the live tree.
+    /// Unmount (idempotent): run the registered cleanups (reverse order), then
+    /// OnUnmount. The app/navigator calls this when removing the component from the
+    /// live tree.
     void Unmount() {
-        if (mounted_) {
-            OnUnmount();
-            mounted_ = false;
-        }
+        if (!mounted_)
+            return;
+        for (auto it = cleanups_.rbegin(); it != cleanups_.rend(); ++it)
+            if (*it)
+                (*it)();
+        cleanups_.clear();
+        OnUnmount();
+        mounted_ = false;
     }
 
 private:
     NodePtr tree_;
     bool dirty_ = true;
     bool mounted_ = false;
+    std::vector<Subscription> watches_;           // external-state subscriptions (lifetime)
+    std::vector<std::function<void()>> cleanups_; // effect teardowns, run on Unmount
 };
 
 template <typename T> void State<T>::Set(T v) {

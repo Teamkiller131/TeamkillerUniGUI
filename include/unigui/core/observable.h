@@ -87,6 +87,11 @@ public:
     const T& Get() const { return value_; }
     operator const T&() const { return value_; }
 
+    /// Identity accessor so generic code can treat an Observable, State, Store, or
+    /// Computed uniformly as "something with an AsObservable()".
+    Observable& AsObservable() noexcept { return *this; }
+    const Observable& AsObservable() const noexcept { return *this; }
+
     /// Set the value, notifying observers only if it actually changed
     /// (compared with operator==). Returns true if a change/notification happened.
     bool Set(T value) {

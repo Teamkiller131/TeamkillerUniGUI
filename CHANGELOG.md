@@ -1,3 +1,25 @@
+## [3.15.0] - 2026-06-26
+
+> **Framework, phase 3 — the application layer.** Above the component model:
+> shared state, routed screens, and a lifecycle for effects.
+
+### Added
+- **`dsl::Store<T>`** (`dsl/app.h`) — shared, app-wide reactive state (vs. a
+  component-local `State`). `Get`/`Set`/`Update`, feeds `Computed`/`Bind` via
+  `AsObservable()`. Held outside the component tree and shared across components.
+- **`dsl::Navigator`** — a stack of screens (`Component`s): `Push`/`Pop`/`Replace`
+  and `Render()` the top one each frame. Owns its screens; leaving a screen
+  unmounts it (running its cleanups + `OnUnmount`).
+- **`Component::Watch(source)`** — the bridge from shared state to a component's
+  view: re-renders the component whenever `source` (a `Store`, another component's
+  `State`, a `Computed`, or a raw `Observable`) changes. Establish in `OnMount()`.
+- **`Component::OnCleanup(fn)`** — register an effect teardown run (reverse order)
+  when the component unmounts, pairing with setup done in `OnMount()`.
+- **`Observable<T>::AsObservable()`** — identity accessor so `Watch` treats
+  `Observable`/`State`/`Store`/`Computed` uniformly.
+- 7 new tests (Store get/set/update + Computed, Watch-driven re-render, same-value
+  no-op, reverse-order cleanups, Navigator push/pop/replace + unmount).
+
 ## [3.14.0] - 2026-06-26
 
 > **Framework, phase 1 — the component model.** The keystone that turns UniGUI
