@@ -141,11 +141,13 @@ void Bus::PublishAsync(const std::string& topic, const std::any& event) {
 }
 
 void Bus::WorkerThread() {
-    while (running_) {
+    for (;;) {
         std::unique_lock lock(queueMutex_);
         queueCV_.wait_for(lock, std::chrono::milliseconds(100));
-        if (!running_)
-            break;
+        // Drain everything currently queued BEFORE honouring a shutdown request, so
+        // that async events already published via PublishAsync are delivered rather
+        // than dropped. Shutdown() sets running_ under no lock but the push happened-
+        // before it under queueMutex_, so re-acquiring the lock here observes them.
         while (!asyncQueue_.empty()) {
             auto [topic, event] = std::move(asyncQueue_.front());
             asyncQueue_.pop();
@@ -153,6 +155,8 @@ void Bus::WorkerThread() {
             Publish(topic, event);
             lock.lock();
         }
+        if (!running_)
+            break;
     }
 }
 

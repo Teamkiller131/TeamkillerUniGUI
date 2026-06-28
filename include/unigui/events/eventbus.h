@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <string>
@@ -45,8 +46,15 @@ public:
     /// Subscribe to all events (debug/logging).
     SubID SubscribeAll(Handler handler);
 
-    /// Shutdown the async worker thread.
+    /// Shutdown the async worker thread. Async events already published via
+    /// PublishAsync before this call are drained and delivered first; the worker then
+    /// stops. Idempotent — safe to call more than once.
     void Shutdown();
+
+    /// Test-only: construct a standalone Bus (production code uses the Instance()
+    /// singleton). Lets tests exercise Shutdown()/draining deterministically without
+    /// tearing down the shared singleton.
+    static std::unique_ptr<Bus> CreateForTesting() { return std::unique_ptr<Bus>(new Bus()); }
 
 private:
     Bus();

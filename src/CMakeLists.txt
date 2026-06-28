@@ -336,8 +336,14 @@ if(WIN32)
         backend/metal_renderer.cc
         backend/webgpu_renderer.cc
         backend/emscripten_platform.cc
-        backend/dx11_renderer.cc
     )
+    # dx11_renderer.cc references d3d11/imgui_impl_dx11 symbols, but those libs are
+    # only linked under UNIGUI_BACKEND_DX11. Compiling it unconditionally produced
+    # unresolved externals with DX11 OFF. Gate it like dx12_renderer.cc; app.cc and
+    # backend_factory.h already guard their DX11 references on UNIGUI_HAS_DX11.
+    if(UNIGUI_BACKEND_DX11)
+        target_sources(unigui PRIVATE backend/dx11_renderer.cc)
+    endif()
     if(UNIGUI_BACKEND_DX12)
         target_sources(unigui PRIVATE backend/dx12_renderer.cc)
     endif()

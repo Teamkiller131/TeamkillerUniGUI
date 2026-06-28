@@ -39,3 +39,21 @@ TEST_F(DBTest, Migrate_EmptyQueryValue_DoesNotCrash) {
     EXPECT_NO_THROW(db.Migrate(1, "CREATE TABLE t1 (id INT)"));
     EXPECT_TRUE(db.Migrate(1, "CREATE TABLE t1 (id INT)")); // idempotent
 }
+
+// ── Row::Get(const char*): name-based column access (was declared but never
+//    defined — a guaranteed linker error for any caller). This test references the
+//    symbol so a future missing definition is caught at link time. ──
+TEST_F(DBTest, Row_GetByColumnName) {
+    db.Execute("CREATE TABLE t (id INT, name TEXT)");
+    db.Execute("INSERT INTO t VALUES(?,?)", {7, std::string("Carol")});
+    std::string gotId, gotName, gotMissing = "sentinel";
+    int n = db.Query("SELECT id, name FROM t", {}, [&](Row& r) {
+        gotId = r.Get("id");
+        gotName = r.Get("name");
+        gotMissing = r.Get("nope"); // unknown column -> ""
+    });
+    EXPECT_EQ(n, 1);
+    EXPECT_EQ(gotId, "7");
+    EXPECT_EQ(gotName, "Carol");
+    EXPECT_EQ(gotMissing, "");
+}

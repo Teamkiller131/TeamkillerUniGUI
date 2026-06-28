@@ -92,7 +92,8 @@ void TrayIcon::UpdateTooltip(std::string title) {
     Shell_NotifyIconW(NIM_MODIFY, &nid);
 #endif
 }
-void TrayIcon::ShowNotification([[maybe_unused]] std::string title, [[maybe_unused]] std::string msg,
+void TrayIcon::ShowNotification([[maybe_unused]] std::string title,
+                                [[maybe_unused]] std::string msg,
                                 [[maybe_unused]] NotifyType type) {
 #ifdef _WIN32
     NOTIFYICONDATAW nid = {};
@@ -125,7 +126,8 @@ void TrayIcon::ShowNotification([[maybe_unused]] std::string title, [[maybe_unus
 #endif
 }
 #ifdef _WIN32
-void TrayIcon::BuildContextMenu(HMENU hMenu, std::vector<TrayMenuItem>& items, int& idCounter) {
+void TrayIcon::BuildContextMenu(void* hMenuV, std::vector<TrayMenuItem>& items, int& idCounter) {
+    HMENU hMenu = (HMENU) hMenuV;
     for (auto& item : items) {
         if (item.isSeparator) {
             AppendMenuA(hMenu, MF_SEPARATOR, 0, nullptr);

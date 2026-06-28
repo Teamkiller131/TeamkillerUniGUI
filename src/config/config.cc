@@ -2,9 +2,13 @@
 #include <unigui/core/log.h>
 #include <unigui/core/strutil.h>
 
+// Third-party parser backends — kept out of the public config.h so they do not leak
+// into every consumer translation unit.
+#include <cpptoml.h>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <nlohmann/json.hpp>
 #include <sstream>
 
 namespace unigui::config {

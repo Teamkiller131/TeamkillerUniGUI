@@ -1,6 +1,10 @@
 #include <unigui/events/eventbus.h>
 
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <gtest/gtest.h>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 using namespace unigui::events;
@@ -146,4 +150,42 @@ TEST(BusTest, Scoped_HandlerUnsubscribesItself_NoDeadlock) {
     // Second publish should not trigger the handler
     Bus::Instance().Publish("scoped.e", int{2});
     EXPECT_EQ(count, 1);
+}
+
+// ── Async worker thread (PublishAsync + Shutdown drain) ──────────────────────
+
+TEST(BusAsyncTest, PublishAsync_EventuallyDelivers) {
+    std::atomic<int> got{-1};
+    std::mutex m;
+    std::condition_variable cv;
+    auto sub = Bus::Instance().SubscribeScoped("async.deliver", [&](const std::any& e) {
+        {
+            std::lock_guard<std::mutex> lk(m);
+            got.store(std::any_cast<int>(e));
+        }
+        cv.notify_one();
+    });
+    Bus::Instance().PublishAsync("async.deliver", int{42});
+    std::unique_lock<std::mutex> lk(m);
+    EXPECT_TRUE(cv.wait_for(lk, std::chrono::seconds(2), [&] { return got.load() == 42; }));
+    EXPECT_EQ(got.load(), 42);
+}
+
+TEST(BusAsyncTest, Shutdown_DrainsPendingEvents) {
+    // A standalone bus so Shutdown() is deterministic and the shared singleton is
+    // untouched. Every event published before Shutdown() must still be delivered.
+    auto bus = Bus::CreateForTesting();
+    std::atomic<int> delivered{0};
+    bus->Subscribe("drain.test", [&](const std::any&) { delivered.fetch_add(1); });
+    constexpr int kN = 50;
+    for (int i = 0; i < kN; i++)
+        bus->PublishAsync("drain.test", i);
+    bus->Shutdown(); // drains the queue, then joins the worker
+    EXPECT_EQ(delivered.load(), kN);
+}
+
+TEST(BusAsyncTest, Shutdown_IsIdempotent) {
+    auto bus = Bus::CreateForTesting();
+    bus->Shutdown();
+    EXPECT_NO_THROW(bus->Shutdown()); // second call is a no-op (worker not joinable)
 }

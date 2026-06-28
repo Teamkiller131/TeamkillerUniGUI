@@ -1,14 +1,10 @@
 #pragma once
 
-#ifdef _WIN32
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <windows.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
-#endif
+// No <windows.h>/GLFW-native block here: native window handles are exposed as void*
+// via GetNativeWindowHandle(), and the Win32/glfwGetWin32Window plumbing is confined
+// to src/backend/glfw_platform.cc. WIN32_LEAN_AND_MEAN + NOMINMAX are applied
+// project-wide by the build (see src/CMakeLists.txt), so consumers never get the
+// legacy <winsock.h> or the min/max macros through this umbrella header.
 
 #include <unigui/backend/backend_factory.h>
 #include <unigui/backend/backend_types.h>

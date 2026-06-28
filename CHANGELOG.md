@@ -1,5 +1,45 @@
 ## [Unreleased]
 
+## [3.18.0] - 2026-06-28
+
+> **P1 hardening: build robustness, header hygiene, and the never-tested module
+> seams.** Continues acting on the audit — the optional modules and backend
+> configurations now build in the shapes the docs advertise, public headers stop
+> leaking their dependencies, and the async/lifecycle code paths get real tests.
+
+### Fixed
+- **`UNIGUI_BACKEND_DX11=OFF` now links on Windows.** `dx11_renderer.cc` was
+  compiled unconditionally while the d3d11/dxgi libraries linked only under
+  `UNIGUI_BACKEND_DX11`, so the documented "disable DX11" path produced unresolved
+  externals. It is now gated like `dx12_renderer.cc` (and `CreateDX11Renderer()` is
+  declared only under `UNIGUI_HAS_DX11`); `app.cc`/`backend_factory.h` already
+  guarded their references. A new `windows-msvc-debug-no-dx11` preset exercises it.
+- **`sqlite::Row::Get(const char*)` was declared but never defined** — a guaranteed
+  linker error for any caller. It is now implemented (each `Row` carries the column
+  names parallel to its values), returning "" for an unknown column.
+- **`EventBus::Shutdown()` now drains pending async events before stopping.** The
+  worker thread broke out of its loop on the shutdown flag *before* draining the
+  queue, silently dropping already-published `PublishAsync` events. It now drains,
+  then stops; the contract is documented and tested.
+
+### Changed
+- **Public headers no longer leak their implementation dependencies.** `config.h`
+  drops `cpptoml`, `nlohmann/json`, and an unused `<any>` (moved into `config.cc`);
+  `network.h` drops `<httplib.h>` (used only in the `.cc`); `undo_stack.h` drops a
+  dead `<stdexcept>`; `trayicon.h` and `ipc/shmem.h` no longer pull `<windows.h>`
+  (the tray menu handle is type-erased to `void*`; the shmem mapping headers move to
+  the `.cc`); and the `unigui.h` umbrella drops its unused `<windows.h>`/GLFW-native
+  block. Combined with the project-wide `WIN32_LEAN_AND_MEAN`/`NOMINMAX` from 3.17.0,
+  consumers stop inheriting heavy system includes and macro pollution.
+
+### Added
+- **`Bus::CreateForTesting()`** — a test-only seam to construct a standalone
+  `EventBus` so `Shutdown()`/draining can be exercised without tearing down the
+  shared singleton.
+- Tests: EventBus `PublishAsync` delivery + `Shutdown` drain + idempotency; Plugin
+  `Manager::Reload` (unknown → null, built-in-without-path → null, instance survives);
+  and `sqlite::Row::Get(const char*)` by column name.
+
 ## [3.17.0] - 2026-06-28
 
 > **Security & correctness hardening, plus the optional-module build resurrected.**

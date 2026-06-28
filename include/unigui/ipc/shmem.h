@@ -1,14 +1,9 @@
 #pragma once
-#include <cstring>
+// The OS mapping headers (<windows.h> / <sys/mman.h> …) are implementation details
+// used in src/ipc/shmem.cc; the class members are all void*/int, so they are not
+// needed here, and keeping them out spares every IPC consumer the heavy include.
+#include <cstddef>
 #include <string>
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#endif
 
 namespace unigui::ipc {
 

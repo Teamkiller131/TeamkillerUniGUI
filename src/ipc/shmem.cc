@@ -1,5 +1,16 @@
 #include <unigui/core/log.h>
 #include <unigui/ipc/shmem.h>
+
+#include <cstring>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
 namespace unigui::ipc {
 SharedMemory::SharedMemory(const std::string& name, size_t size)
         : size_(size)

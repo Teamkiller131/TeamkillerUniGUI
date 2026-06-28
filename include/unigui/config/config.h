@@ -1,8 +1,8 @@
 #pragma once
-#include <any>
-#include <cpptoml.h>
+// NOTE: the TOML/JSON backends (cpptoml, nlohmann/json) are implementation details
+// and are included in src/config/config.cc, not here — they must not leak into every
+// consumer that includes this public header.
 #include <functional>
-#include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>

@@ -11,9 +11,11 @@ namespace unigui::sqlite {
 using Param = std::variant<int, double, std::string, std::nullptr_t, const char*>;
 
 struct Row {
-    std::vector<std::string> columns;
+    std::vector<std::string> columns; ///< Column values for this row.
+    std::vector<std::string> names;   ///< Column names, parallel to `columns`.
     std::string Get(int i) const { return i < (int) columns.size() ? columns[i] : ""; }
-    std::string Get(const char* name); // not implemented inline — needs column index
+    /// Value of the column named `name`, or "" if there is no such column.
+    std::string Get(const char* name) const;
 };
 
 class Database {

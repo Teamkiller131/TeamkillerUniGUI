@@ -23,8 +23,11 @@ std::unique_ptr<RendererBackend> CreateOpenGL3Renderer();
 /// Creates a Vulkan renderer backend.
 std::unique_ptr<RendererBackend> CreateVulkanRenderer();
 
-/// Creates a DirectX 11 renderer backend (Windows only).
+/// Creates a DirectX 11 renderer backend (Windows only). Only defined when the
+/// DX11 backend is compiled in (UNIGUI_BACKEND_DX11=ON), mirroring CreateDX12Renderer.
+#ifdef UNIGUI_HAS_DX11
 std::unique_ptr<RendererBackend> CreateDX11Renderer();
+#endif
 
 /// Creates a Metal renderer backend (macOS only).
 std::unique_ptr<RendererBackend> CreateMetalRenderer();

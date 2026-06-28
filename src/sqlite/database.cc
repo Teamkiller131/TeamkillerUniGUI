@@ -6,6 +6,15 @@
 
 namespace unigui::sqlite {
 
+std::string Row::Get(const char* name) const {
+    if (!name)
+        return "";
+    for (size_t i = 0; i < names.size(); i++)
+        if (names[i] == name)
+            return i < columns.size() ? columns[i] : "";
+    return "";
+}
+
 Database::~Database() {
     Close();
 }
@@ -73,9 +82,18 @@ int Database::Query(const std::string& sql, const std::vector<Param>& params,
     }
     BindParams(stmt, params);
     int colCount = sqlite3_column_count(stmt);
+    // Column names are identical for every row — resolve them once.
+    std::vector<std::string> colNames;
+    colNames.reserve(colCount);
+    for (int i = 0; i < colCount; i++) {
+        const char* n = sqlite3_column_name(stmt, i);
+        colNames.emplace_back(n ? n : "");
+    }
     int rows = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         Row row;
+        row.names = colNames;
+        row.columns.reserve(colCount);
         for (int i = 0; i < colCount; i++) {
             const char* val = (const char*) sqlite3_column_text(stmt, i);
             row.columns.push_back(val ? val : "");

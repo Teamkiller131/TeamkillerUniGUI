@@ -4,9 +4,6 @@
 #include <functional>
 #include <string>
 #include <vector>
-#ifdef _WIN32
-#include <windows.h>
-#endif
 namespace unigui {
 struct TrayMenuItem {
     std::string label;
@@ -40,7 +37,9 @@ private:
     void* hwnd_ = nullptr;
     void CreateWin32();
     void DestroyWin32();
-    void BuildContextMenu(HMENU hMenu, std::vector<TrayMenuItem>& items, int& idCounter);
+    // hMenu is an HMENU, type-erased to void* so this public header needs no
+    // <windows.h> (cast back at the definition in trayicon.cc).
+    void BuildContextMenu(void* hMenu, std::vector<TrayMenuItem>& items, int& idCounter);
 #endif
 };
 } // namespace unigui

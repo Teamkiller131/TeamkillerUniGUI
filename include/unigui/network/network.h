@@ -9,8 +9,10 @@
 #define NOMINMAX
 #endif
 #endif
+// httplib is an implementation detail of HttpClient (used only in network.cc), so it
+// is NOT included here. ixwebsocket must stay: WebSocketClient embeds ix::WebSocket by
+// value.
 #include <functional>
-#include <httplib.h>
 #include <ixwebsocket/IXWebSocket.h>
 #include <map>
 #include <mutex>

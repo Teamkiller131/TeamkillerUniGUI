@@ -40,3 +40,23 @@ TEST_F(PluginTest, Unload_RemovesPlugin) {
     EXPECT_TRUE(Manager::Instance().Unload("T2"));
     EXPECT_TRUE(Manager::Instance().List().empty());
 }
+
+// ── Reload (DLL-lifetime pointer swap) — the classic stale-handle UAF surface ──
+
+TEST_F(PluginTest, Reload_Unknown_ReturnsNull) {
+    EXPECT_EQ(Manager::Instance().Reload("does-not-exist"), nullptr);
+}
+
+TEST_F(PluginTest, Reload_BuiltinWithoutPath_ReturnsNull) {
+    class TestPlugin : public IPlugin {
+        PluginInfo GetInfo() const override { return {"RT", "1.0"}; }
+        bool Init() override { return true; }
+        void Shutdown() override {}
+    };
+    Manager::Instance().Register(new TestPlugin());
+    // Register leaves the DLL path empty, so Reload has nothing to reload and must
+    // short-circuit to nullptr — never attempting to FreeLibrary a built-in plugin.
+    EXPECT_EQ(Manager::Instance().Reload("RT"), nullptr);
+    // The built-in is still registered and usable after the no-op reload.
+    ASSERT_NE(Manager::Instance().Get("RT"), nullptr);
+}
