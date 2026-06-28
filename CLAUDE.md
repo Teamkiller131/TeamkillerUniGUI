@@ -89,6 +89,8 @@ ctest --preset windows-msvc-debug --output-on-failure
 | Coverage | `windows-clang-coverage` (target `coverage`) |
 | Warnings-as-errors | `linux-gcc-debug-werror` (or `-DUNIGUI_WARNINGS_AS_ERRORS=ON`) |
 | SDL3 + Vulkan | `windows-msvc-sdl3-vulkan-{debug,release}` |
+| All optional modules ON | `windows-msvc-debug-modules` (sqlite/config/ipc/network/trading + their vcpkg features) |
+| DX11 backend OFF | `windows-msvc-debug-no-dx11` (smoke for the `-DUNIGUI_BACKEND_DX11=OFF` path) |
 
 ### Run an example (headless-friendly)
 Examples accept `--frames N` to render N frames and exit — use this in CI/smoke:
