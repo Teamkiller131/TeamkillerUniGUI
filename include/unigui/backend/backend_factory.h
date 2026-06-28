@@ -69,7 +69,7 @@ inline DefaultBackend CreateBackend(BackendType type) {
         return {nullptr, nullptr};
 #endif
     case BackendType::Metal:
-#ifdef __APPLE__
+#ifdef UNIGUI_HAS_METAL
         return {CreateGLFWPlatform(BackendType::Metal), CreateMetalRenderer()};
 #else
         return {nullptr, nullptr};
@@ -87,9 +87,21 @@ inline DefaultBackend CreateBackend(BackendType type) {
         return {nullptr, nullptr};
 #endif
     case BackendType::WebGPU:
+#ifdef UNIGUI_HAS_WEBGPU
         return {CreateGLFWPlatform(BackendType::WebGPU), CreateWebGPURenderer()};
+#else
+        // WebGPU renderer is a stub (no Dawn/wgpu linked). Honour the {nullptr,nullptr}
+        // contract instead of returning a half-pair {valid platform, null renderer}.
+        return {nullptr, nullptr};
+#endif
     case BackendType::Emscripten:
-        return {CreateEmscriptenPlatform(), CreateWebGPURenderer()};
+#ifdef __EMSCRIPTEN__
+        // The Emscripten/WebGL port renders through the OpenGL3 (WebGL) backend, NOT
+        // the perpetually-null WebGPU stub.
+        return {CreateEmscriptenPlatform(), CreateOpenGL3Renderer()};
+#else
+        return {nullptr, nullptr};
+#endif
     }
     return {nullptr, nullptr};
 }

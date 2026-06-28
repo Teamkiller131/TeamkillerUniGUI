@@ -1,5 +1,53 @@
 ## [Unreleased]
 
+## [4.1.0] - 2026-06-28
+
+> **Backend hardening + CI that actually runs the backends.** A backend audit found
+> that macOS and the Web build were broken on their primary paths and that the
+> Linux/macOS CI only ever proved the backends *compiled*. The cross-platform paths
+> are fixed and CI now runs a headless `--frames` smoke that asserts the GLFW+OpenGL3
+> backend boots and renders.
+
+### Fixed
+- **macOS: the default GLFW+OpenGL3 backend now works.** Two independent defects made
+  it non-functional: the GLFW core-profile context omitted `GLFW_OPENGL_FORWARD_COMPAT`
+  (so `glfwCreateWindow` returned null on every Mac, and with Metal a stub the fallback
+  ladder bottomed out at "no usable backend"); and the renderer used GLSL `#version 130`,
+  invalid in a core profile. Now: `GLFW_OPENGL_FORWARD_COMPAT` on Apple + `#version 150`
+  everywhere (valid on any GL ≥ 3.2 core context).
+- **The Web (Emscripten) build now compiles.** `emscripten_platform.cc` passed `int*`
+  to `emscripten_get_element_css_size` (which takes `double*`) — a hard compile error
+  hidden from desktop CI; and `EmscriptenSetMainLoop` registered the address of a
+  by-value `std::function` (a per-frame use-after-free). Both fixed (+ a HiDPI canvas
+  backing-size correction).
+- **Vulkan renderer no longer leaks on partial bring-up failure.** `Shutdown()` gated
+  teardown on a `ready` flag set only at the very end, so any mid-bring-up failure
+  (no ICD, llvmpipe, split present queue — common on headless Linux) leaked the
+  `VkInstance`/`VkDevice`/pool/surface. `Shutdown()` is now idempotent and every
+  failure routes through it; the swapchain is validated after creation.
+- **SDL3 platform no longer destroys a host-owned window or calls global `SDL_Quit()`.**
+  It now tracks window/subsystem ownership, uses refcount-safe `SDL_InitSubSystem`/
+  `SDL_QuitSubSystem(VIDEO)`, checks `ImGui_ImplSDL3_InitForVulkan`, null-checks
+  `SDL_Vulkan_GetInstanceExtensions`, and logs every failure path.
+- **HiDPI/retina text is no longer blurry on macOS/Linux.** `DetectDPIScale` only
+  implemented the Win32 path (returning 1.0 elsewhere); the app now uses the platform
+  window's content scale via a new `PlatformBackend::GetContentScale()`.
+- **Backend factory honours the `{nullptr,nullptr}` contract.** The WebGPU and
+  Emscripten cases returned half-pairs `{valid platform, null renderer}`; they are now
+  gated, and Emscripten pairs with the OpenGL3 (WebGL) renderer it actually uses.
+- Smaller: a GLFW error callback for diagnosable bring-up failures; checked
+  `ImGui_ImplGlfw_Init*` returns; a `glfwGetRequiredInstanceExtensions` null guard; an
+  OpenGL3 double-init guard; the Metal stub no longer creates an ImGui context as a
+  side effect of its failing `Init()`.
+
+### Added
+- **`PlatformBackend::GetContentScale()`** (default 1.0) — the HiDPI content-scale
+  factor, implemented for GLFW (`glfwGetWindowContentScale`) and SDL3.
+- **CI now verifies the backends RUN, not just compile.** The Linux job runs
+  `hello_unigui --frames 10` under `xvfb` + software `llvmpipe` (a real 3.3-core GL
+  context) and the macOS job runs it directly — both asserting exit 0 (no `|| true`),
+  so a fail-to-launch or fail-clean Init fails the job.
+
 ## [4.0.0] - 2026-06-28
 
 > **Breaking: `Result<T>` is now `std::expected`.** The hand-rolled result type is

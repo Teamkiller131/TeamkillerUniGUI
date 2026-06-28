@@ -238,18 +238,28 @@ bool VulkanRenderer::BringUp(PlatformBackend* platform, int w, int h) {
         return false;
     }
 
-    if (!p_->CreateInstance())
+    // Each failure routes through Shutdown() so partially-created Vulkan objects are
+    // torn down instead of leaked (mid-bring-up failure — no ICD, llvmpipe, split
+    // present queue — is common on headless Linux).
+    if (!p_->CreateInstance()) {
+        Shutdown();
         return false;
-    if (!p_->CreateDeviceObjects())
+    }
+    if (!p_->CreateDeviceObjects()) {
+        Shutdown();
         return false;
-    if (!p_->CreateDescriptorPool())
+    }
+    if (!p_->CreateDescriptorPool()) {
+        Shutdown();
         return false;
+    }
 
     // Delegate surface creation to the platform (glfwCreateWindowSurface /
     // SDL_Vulkan_CreateSurface) — the only OS-specific step.
     if (!platform->CreateVulkanSurface(p_->instance, &p_->surface) ||
         p_->surface == VK_NULL_HANDLE) {
         std::fprintf(stderr, "[unigui] Vulkan: platform surface creation failed\n");
+        Shutdown();
         return false;
     }
 
@@ -259,6 +269,7 @@ bool VulkanRenderer::BringUp(PlatformBackend* platform, int w, int h) {
                                          &wsiSupport);
     if (wsiSupport != VK_TRUE) {
         std::fprintf(stderr, "[unigui] Vulkan: queue family lacks present (WSI) support\n");
+        Shutdown();
         return false;
     }
 
@@ -283,6 +294,17 @@ bool VulkanRenderer::BringUp(PlatformBackend* platform, int w, int h) {
                                            p_->queueFamily, p_->allocator, w, h, p_->minImageCount,
                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
+    // CreateOrResizeWindow is void and only soft-reports VkResult errors via CheckVk
+    // (which logs and continues), so validate the swapchain before driving frames
+    // against it (surface lost, software-device OOM, bad extent).
+    if (wd->Swapchain == VK_NULL_HANDLE || wd->ImageCount == 0 ||
+        wd->RenderPass == VK_NULL_HANDLE) {
+        std::fprintf(stderr, "[unigui] Vulkan: swapchain/window creation failed (images=%u)\n",
+                     wd->ImageCount);
+        Shutdown();
+        return false;
+    }
+
     ImGui_ImplVulkan_InitInfo info{};
     info.ApiVersion = VK_API_VERSION_1_3;
     info.Instance = p_->instance;
@@ -302,6 +324,7 @@ bool VulkanRenderer::BringUp(PlatformBackend* platform, int w, int h) {
 
     if (!ImGui_ImplVulkan_Init(&info)) {
         std::fprintf(stderr, "[unigui] Vulkan: ImGui_ImplVulkan_Init failed\n");
+        Shutdown();
         return false;
     }
     p_->imguiInited = true;
@@ -363,8 +386,10 @@ void VulkanRenderer::SetClearColor(float r, float g, float b, float a) {
 }
 
 void VulkanRenderer::Shutdown() {
-    if (!p_->ready)
-        return;
+    // No `if (!ready) return` guard: `ready` is set only at the very end of BringUp, so
+    // gating on it would leak every object created during a PARTIAL bring-up failure.
+    // The body below null-checks each handle and nulls it after destroy, so it is safe
+    // at any partial stage AND idempotent (a second call finds everything VK_NULL_HANDLE).
     if (p_->device)
         vkDeviceWaitIdle(p_->device);
     if (p_->imguiInited) {

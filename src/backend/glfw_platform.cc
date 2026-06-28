@@ -23,6 +23,12 @@ public:
             : needGL_(needGL) {}
 
     bool Init([[maybe_unused]] void* native_window_handle = nullptr) override {
+        // Set the error callback BEFORE glfwInit so failures inside glfwInit itself
+        // (no X11 DISPLAY on a headless box, NSGL pixel-format failure on macOS, a
+        // Wayland mismatch) report their real cause instead of a bare "failed".
+        glfwSetErrorCallback([](int code, const char* desc) {
+            UNIGUI_LOG_ERROR("GLFW error {}: {}", code, desc ? desc : "(no description)");
+        });
         if (!glfwInit()) {
             UNIGUI_LOG_ERROR("glfwInit() failed");
             return false;
@@ -36,6 +42,12 @@ public:
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+            // macOS only grants a 3.2+ CORE profile to a FORWARD-COMPAT context;
+            // without this hint glfwCreateWindow returns null on every Mac, which
+            // (since Metal is a stub) leaves macOS with no working backend at all.
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+#endif
         } else {
             // DX11/DX12/Metal/WebGPU own the swapchain on the native HWND — do NOT
             // let GLFW create an OpenGL context (it would be unused and can confuse
@@ -53,12 +65,20 @@ public:
                         needGL_ ? "OpenGL context" : "GLFW_NO_API");
         glfwShowWindow(window_);
 
+        bool imguiOk = false;
         if (needGL_) {
             glfwMakeContextCurrent(window_);
             glfwSwapInterval(1);
-            ImGui_ImplGlfw_InitForOpenGL(window_, true);
+            imguiOk = ImGui_ImplGlfw_InitForOpenGL(window_, true);
         } else {
-            ImGui_ImplGlfw_InitForOther(window_, true);
+            imguiOk = ImGui_ImplGlfw_InitForOther(window_, true);
+        }
+        if (!imguiOk) {
+            UNIGUI_LOG_ERROR("ImGui_ImplGlfw_Init* failed");
+            glfwDestroyWindow(window_);
+            window_ = nullptr;
+            glfwTerminate();
+            return false;
         }
         UNIGUI_LOG_DEBUG("ImGui GLFW backend initialized");
         initialized_ = true;
@@ -109,6 +129,14 @@ public:
         }
     }
 
+    float GetContentScale() const override {
+        if (!window_)
+            return 1.0f;
+        float xs = 1.0f, ys = 1.0f;
+        glfwGetWindowContentScale(window_, &xs, &ys); // 1.0 / 2.0 (retina) / 1.5 …
+        return xs > 0.f ? xs : 1.0f;
+    }
+
     void SetTitle(const char* title) override {
         if (window_)
             glfwSetWindowTitle(window_, title);
@@ -126,6 +154,8 @@ public:
     void GetVulkanInstanceExtensions(std::vector<const char*>& out) const override {
         uint32_t count = 0;
         const char** exts = glfwGetRequiredInstanceExtensions(&count);
+        if (!exts) // null on error (no Vulkan loader / display); count is then unspecified
+            return;
         for (uint32_t i = 0; i < count; ++i)
             out.push_back(exts[i]);
     }

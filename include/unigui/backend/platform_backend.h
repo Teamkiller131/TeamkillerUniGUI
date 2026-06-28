@@ -40,6 +40,10 @@ public:
         if (h)
             *h = 0;
     }
+    /// The window's HiDPI content-scale factor (1.0 = 96dpi, 2.0 = retina). Used to
+    /// rasterize the font atlas at the right size on macOS/Linux, where the Win32
+    /// DPI query does not apply. Default 1.0 for platforms that can't report it.
+    virtual float GetContentScale() const { return 1.0f; }
     /// Set the window title.
     virtual void SetTitle(const char*) {}
     /// Set the window client area size.

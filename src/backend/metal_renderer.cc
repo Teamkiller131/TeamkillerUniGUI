@@ -27,11 +27,10 @@ namespace unigui {
 namespace {
 class MetalRenderer : public RendererBackend {
 public:
-    bool Init(ImGuiContext* context) override {
-        if (!context && !ImGui::GetCurrentContext()) {
-            IMGUI_CHECKVERSION();
-            ImGui::CreateContext();
-        }
+    bool Init(ImGuiContext* /*context*/) override {
+        // A renderer Init() that returns false must have NO side effects. Context
+        // lifetime belongs to the app/Init layer, not to a stub declaring failure —
+        // so do not CreateContext() here.
         UNIGUI_LOG_ERROR("Metal backend is not yet implemented (no CAMetalLayer/drawable "
                          "integration). Use the GLFW+OpenGL3 or Vulkan backend on macOS.");
         return false;

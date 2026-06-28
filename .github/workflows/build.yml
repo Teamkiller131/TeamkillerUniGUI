@@ -42,8 +42,18 @@ jobs:
           -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
     - name: Build
       run: cmake --build build
+    - name: Headless backend smoke (GLFW+OpenGL3 must actually RUN, not just compile)
+      # xvfb provides a virtual X display; llvmpipe a real software OpenGL 3.3-core
+      # context. `hello_unigui --frames 10` returns 0 only if the backend initialised
+      # AND rendered 10 frames AND shut down cleanly; a fail-clean Init returns 1.
+      # No `|| true` here — this step is the actual "does the Linux backend run?" proof.
+      run: |
+        sudo apt-get install -y xvfb libgl1-mesa-dri libglu1-mesa
+        LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe \
+          xvfb-run -a -s "-screen 0 1280x720x24" \
+          ./build/examples/hello_unigui/hello_unigui --frames 10
     - name: Test
-      run: ctest --test-dir build --output-on-failure || true  # headless GL failures expected
+      run: ctest --test-dir build --output-on-failure || true  # GL-context ctests may self-skip headless
 
   macos:
     runs-on: macos-latest
@@ -66,6 +76,11 @@ jobs:
           -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
     - name: Build
       run: cmake --build build
+    - name: Headless backend smoke (GLFW+OpenGL3 must actually RUN)
+      # macOS runners expose a working (software/virtual) GL path and do NOT need xvfb.
+      # Exits 0 only if the GLFW_OPENGL_FORWARD_COMPAT context came up and the
+      # "#version 150" shaders compiled — i.e. the macOS GL fixes actually work.
+      run: ./build/examples/hello_unigui/hello_unigui --frames 10
     - name: Test
       run: ctest --test-dir build --output-on-failure || true
 

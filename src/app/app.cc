@@ -89,7 +89,14 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
 
     float dpi = config.theme.dpi_scale; // 0 = auto-detect once the window is up
     if (dpi <= 0) {
+#ifdef _WIN32
         dpi = DetectDPIScale(g_platform->GetWindowHandle());
+#else
+        // macOS/Linux: the GLFW/SDL window content scale is the reliable HiDPI factor
+        // (DetectDPIScale only implements the Win32 path, returning 1.0 elsewhere —
+        // which rasterized the font atlas at 1x and blurred retina/HiDPI text).
+        dpi = g_platform->GetContentScale();
+#endif
         if (dpi < 0.5f)
             dpi = 1.0f;
     }
