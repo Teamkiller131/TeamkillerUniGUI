@@ -25,7 +25,7 @@ namespace unigui {
 UNIGUI_EXPERIMENTAL
 class NodeEditor {
 public:
-    NodeEditor(std::string id);
+    explicit NodeEditor(std::string id);
     ~NodeEditor();
     NodeEditor(const NodeEditor&) = delete;
     NodeEditor& operator=(const NodeEditor&) = delete;

@@ -154,10 +154,15 @@ private:
     };
 
     void Notify() {
-        // Snapshot so an observer may (un)subscribe during its own callback.
+        // Snapshot the observer list so an observer may (un)subscribe during its own
+        // callback, and copy the value out FIRST: an observer is allowed to destroy
+        // this Observable (e.g. a bound widget being torn down), after which `value_`
+        // would be a dangling member read. The snapshot keeps the Registry alive for
+        // the loop; the value copy means we touch no member of *this after it starts.
         const auto snapshot = reg_->observers;
+        const T v = value_;
         for (const auto& [id, obs] : snapshot)
-            obs(value_);
+            obs(v);
     }
 
     std::shared_ptr<Registry> reg_ = std::make_shared<Registry>();

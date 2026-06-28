@@ -3,6 +3,7 @@
 #include <imgui.h>
 
 #include <chrono>
+#include <cmath>
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
@@ -176,4 +177,24 @@ TEST_F(BenchTest, Table_VirtualScroll_100kRows) {
     // Budget: a steady-state frame draws only the visible window — well under a
     // 16ms (60fps) frame. A regression that rendered all rows would blow past it.
     ExpectUnderBudget(ms, 50, "Table steady-state render of 100k rows ms");
+}
+
+// The LTTB decimator runs per-frame on large series in the charting widgets. It has
+// correctness tests; this pins its O(n) cost so a quadratic regression is caught.
+TEST_F(BenchTest, LTTB_Decimate_1MTo2k) {
+    constexpr std::size_t n = 1000000;
+    std::vector<double> xs(n), ys(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        xs[i] = static_cast<double>(i);
+        ys[i] = std::sin(static_cast<double>(i) * 0.001) + static_cast<double>(i % 97) * 0.01;
+    }
+    const auto t0 = std::chrono::high_resolution_clock::now();
+    const auto idx = unigui::LttbIndices(xs.data(), ys.data(), n, 2000);
+    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::high_resolution_clock::now() - t0)
+                        .count();
+    EXPECT_LE(idx.size(), 2000u);
+    // O(n) over 1M points is a few ms in Release; a quadratic bucket scan would be
+    // orders of magnitude over. The generous budget tolerates CI-host variance.
+    ExpectUnderBudget(ms, 200, "LTTB 1M->2k ms");
 }

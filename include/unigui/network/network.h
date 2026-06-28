@@ -21,6 +21,18 @@
 
 namespace unigui::network {
 
+/// Result of splitting a URL into its scheme/host/path. Pure, IO-free, and unit-
+/// testable independent of the live HTTP stack.
+struct ParsedUrl {
+    std::string host; ///< "example.com" or "host:port" (no scheme, no path)
+    std::string path; ///< Leading-'/' path; "/" when the URL has none
+    bool https = false;
+};
+
+/// Split a URL into scheme/host/path. Recognises http:// and https:// prefixes;
+/// a URL with no scheme is treated as a bare host. Never throws.
+ParsedUrl SplitUrl(const std::string& url);
+
 struct HttpResponse {
     int status = 0;
     std::string body;

@@ -189,7 +189,7 @@ endforeach()
 
 # Extended widget tests — only when UNIGUI_MODULE_WIDGETS=ON
 if(UNIGUI_MODULE_WIDGETS)
-    foreach(_widget treeview listview table slider colorpicker coloredit listbox filepath dirpath toggleswitch inputint inputfloat inputtext splitter multisplitter tooltip datepicker image loadingindicator notification hyperlink tag breadcrumb multiline iconbutton space contextmenu shortcut dragdrop richtext imagebutton markdown virtuallist multicombo propertygrid searchbox toast passwordinput wizard dragfloat dragint statuslamp cascadingcombo sliderbar futuresriskbar sparkline gauge segmentedcontrol priceticker pnltext taglist editabledatagrid metriccard togglebutton buttongroup connection_status groupedrisktree basketticket timeseries_chart commandpalette filedialog databinding flexrow)
+    foreach(_widget treeview listview table slider colorpicker coloredit listbox filepath dirpath toggleswitch inputint inputfloat inputtext splitter multisplitter tooltip datepicker image loadingindicator notification hyperlink tag breadcrumb multiline iconbutton space contextmenu shortcut dragdrop richtext imagebutton markdown virtuallist multicombo propertygrid searchbox toast passwordinput wizard dragfloat dragint statuslamp cascadingcombo sliderbar futuresriskbar sparkline gauge segmentedcontrol priceticker pnltext taglist editabledatagrid metriccard togglebutton buttongroup connection_status groupedrisktree basketticket timeseries_chart commandpalette filedialog databinding flexrow multihandleslider)
         add_executable(test_${_widget} widgets/${_widget}_test.cc)
         target_link_libraries(test_${_widget} PRIVATE GTest::gtest GTest::gtest_main unigui)
         target_compile_features(test_${_widget} PRIVATE cxx_std_23)
@@ -330,6 +330,11 @@ if(UNIGUI_MODULE_NETWORK)
     target_link_libraries(test_websocket PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_websocket PRIVATE cxx_std_23)
     gtest_discover_tests(test_websocket)
+
+    add_executable(test_url_parse network/url_parse_test.cc)
+    target_link_libraries(test_url_parse PRIVATE GTest::gtest GTest::gtest_main unigui)
+    target_compile_features(test_url_parse PRIVATE cxx_std_23)
+    gtest_discover_tests(test_url_parse)
 endif()
 
 # v3.0 fx tests

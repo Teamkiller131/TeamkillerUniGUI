@@ -1,5 +1,50 @@
 ## [Unreleased]
 
+## [3.19.0] - 2026-06-28
+
+> **P2/P3: lifetime hardening, the untested seams get tests, per-frame allocations
+> trimmed, and safe modernization.** Closes out the audit roadmap.
+
+### Fixed
+- **`Observable::Notify()` no longer reads a destroyed `*this`.** An observer is
+  allowed to destroy the Observable from inside its callback (e.g. a bound widget
+  being torn down); `Notify` now copies the value to a local before the dispatch
+  loop, so it touches no member of `*this` once notification begins.
+
+### Changed
+- **Per-frame allocations trimmed on hot widgets.** `DepthLadder::Render` derives
+  `maxSize` from the bid/ask level vectors it already built instead of calling
+  `OrderBook::MaxSize()` (which rebuilt them — two extra allocations + map walks each
+  frame). `Table` no longer materialises a `std::string` per visible cell: the draw
+  helpers take `std::string_view` (ImGui begin/end text overloads) and the cell
+  formatter returns a view into the stored cell on the common path, allocating only
+  when a unit must be appended.
+- **Docs accuracy.** The `SolveFlex` worked example in `core/flex_layout.h` and
+  `docs/ARCHITECTURE.md` showed a numerically impossible result (200/200, "300px
+  free"); corrected to the solver's real output (166.667/233.333, 200px free). The
+  README test-count prose no longer contradicts the badge, and the `CLAUDE.md`
+  trading row reflects the shipped widgets.
+
+### Added
+- **`std::span` overloads for `PlotLine`/`PlotBars`/`PlotScatter`** (`ext/plot.h`,
+  `@experimental`) — bounds-safe, taking the shorter of the two spans so mismatched
+  lengths cannot over-read.
+- **`network::SplitUrl()`** — the URL scheme/host/path split is now a pure, unit-
+  tested free function (declared in `network.h`); `HttpClient::Get`/`Post` share it
+  instead of duplicating the slash-finding.
+- **`MultiHandleSlider::GetRangeMin()`/`GetRangeMax()`** accessors.
+- `explicit` on the single-argument `sqlite::Transaction` and `NodeEditor`
+  constructors.
+- Tests: `UndoStack` max-depth eviction / redo-tail truncation / `RedoDepth`;
+  `MultiHandleSlider` tick + range + render; `network::SplitUrl` (new
+  `tests/network/url_parse_test.cc`); and an LTTB-decimator perf budget in
+  `tests/bench`.
+
+### Deferred
+- Migrating `core/error.h`'s hand-rolled `Result<T>` to `std::expected` is a
+  semver-major change (its `value()`/`error()` surface is governed/tested) and is
+  intentionally left for a future major release.
+
 ## [3.18.0] - 2026-06-28
 
 > **P1 hardening: build robustness, header hygiene, and the never-tested module

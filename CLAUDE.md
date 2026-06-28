@@ -153,7 +153,7 @@ Examples accept `--frames N` to render N frames and exit — use this in CI/smok
 | `docs/WIDGET_EXAMPLES.md` | One minimal example per widget |
 | `docs/API_INDEX.md` | Master index (widgets + `im` + DSL + framework + core) |
 | `docs/MODULES.md` | Per-module reference (events/plugin/config/sqlite/ipc/network/fonts) |
-| `docs/TRADING.md` | Trading toolkit (financial formatting, models; widgets upcoming) |
+| `docs/TRADING.md` | Trading toolkit (financial formatting, models, widgets: CandlestickChart / DepthLadder / OrderTicket / blotters) |
 | `docs/EXAMPLES.md` | Cookbook (composition, theme, tables, DSL, threading) |
 | `docs/API_STABILITY.md` | **Public-API contract (semver, tiers, deprecation lifecycle)** |
 | `docs/TROUBLESHOOTING.md` | Build / CRT / CI FAQ |

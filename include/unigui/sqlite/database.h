@@ -52,7 +52,7 @@ private:
 
 class Transaction {
 public:
-    Transaction(Database& db)
+    explicit Transaction(Database& db)
             : db_(db) {
         db_.Execute("BEGIN");
     }

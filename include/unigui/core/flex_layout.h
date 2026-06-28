@@ -12,8 +12,9 @@
 //     using namespace unigui::layout;
 //     auto spans = SolveFlex({{.basis = 100, .grow = 1}, {.basis = 100, .grow = 2}},
 //                            {.containerSize = 400});
-//     // spans[0] = {offset 0,   size 200}   (100 + 1/3 of the 300px free)
-//     // spans[1] = {offset 200, size 200}   (100 + 2/3 of the 300px free)
+//     // free space = 400 - 100 - 100 = 200px, split 1:2 by the grow factors
+//     // spans[0] = {offset 0,       size 166.667}   (100 + 1/3 of the 200px free)
+//     // spans[1] = {offset 166.667, size 233.333}   (100 + 2/3 of the 200px free)
 //
 // Cross-axis placement (align-items) is supported via FlexParams::align +
 // FlexItem::crossSize; line wrapping (flex-wrap) is layered on by SolveFlexWrap,

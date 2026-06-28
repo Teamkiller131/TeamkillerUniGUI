@@ -29,7 +29,11 @@ public:
     void RemoveTick(int id);
 
     // ── Range ────────────────────────────────────────────────────────────
+    /// Set the value range. `max` is clamped to at least `min + 1` so the bar always
+    /// has a non-degenerate span (the renderer divides by it).
     void SetRange(float min, float max);
+    float GetRangeMin() const { return rangeMin_; }
+    float GetRangeMax() const { return rangeMax_; }
 
     // ── Callbacks ─────────────────────────────────────────────────────────
     using TickChangedFn = std::function<void(int id, float newPos)>;

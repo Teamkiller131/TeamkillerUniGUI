@@ -18,23 +18,32 @@
 
 namespace unigui::network {
 
+// ── URL parsing (pure, unit-tested in tests/network/url_parse_test.cc) ────────
+
+ParsedUrl SplitUrl(const std::string& url) {
+    ParsedUrl r;
+    std::string rest = url;
+    if (rest.rfind("https://", 0) == 0) {
+        r.https = true;
+        rest = rest.substr(8);
+    } else if (rest.rfind("http://", 0) == 0) {
+        rest = rest.substr(7);
+    }
+    const auto slash = rest.find('/');
+    if (slash != std::string::npos) {
+        r.host = rest.substr(0, slash);
+        r.path = rest.substr(slash);
+    } else {
+        r.host = rest;
+        r.path = "/";
+    }
+    return r;
+}
+
 // ── HTTP ────────────────────────────────────────────────────────────────────
 
-static httplib::Client* makeClient(const std::string& url) {
-    // Parse scheme+host from URL
-    if (url.find("https://") == 0) {
-        auto host = url.substr(8);
-        auto slash = host.find('/');
-        std::string path = (slash != std::string::npos) ? host.substr(slash) : "/";
-        host = (slash != std::string::npos) ? host.substr(0, slash) : host;
-        auto* cli = new httplib::Client(host.c_str());
-        cli->set_follow_location(true);
-        return cli;
-    }
-    auto host = url.find("http://") == 0 ? url.substr(7) : url;
-    auto slash = host.find('/');
-    host = (slash != std::string::npos) ? host.substr(0, slash) : host;
-    auto* cli = new httplib::Client(host.c_str());
+static httplib::Client* makeClient(const ParsedUrl& u) {
+    auto* cli = new httplib::Client(u.host.c_str());
     cli->set_follow_location(true);
     return cli;
 }
@@ -42,13 +51,12 @@ static httplib::Client* makeClient(const std::string& url) {
 HttpResponse HttpClient::Get(const std::string& url,
                              const std::map<std::string, std::string>& headers) {
     HttpResponse resp;
-    auto* cli = makeClient(url);
+    const ParsedUrl u = SplitUrl(url);
+    auto* cli = makeClient(u);
     httplib::Headers hdrs;
     for (auto& [k, v] : headers)
         hdrs.emplace(k, v);
-    auto slash = url.find('/', url.find("://") != std::string::npos ? url.find("://") + 3 : 0);
-    std::string path = (slash != std::string::npos) ? url.substr(slash) : "/";
-    auto res = cli->Get(path, hdrs);
+    auto res = cli->Get(u.path, hdrs);
     if (res) {
         resp.status = res->status;
         resp.body = res->body;
@@ -61,14 +69,13 @@ HttpResponse HttpClient::Post(const std::string& url, const std::string& body,
                               const std::string& contentType,
                               const std::map<std::string, std::string>& headers) {
     HttpResponse resp;
-    auto* cli = makeClient(url);
+    const ParsedUrl u = SplitUrl(url);
+    auto* cli = makeClient(u);
     httplib::Headers hdrs;
     hdrs.emplace("Content-Type", contentType);
     for (auto& [k, v] : headers)
         hdrs.emplace(k, v);
-    auto slash = url.find('/', url.find("://") != std::string::npos ? url.find("://") + 3 : 0);
-    std::string path = (slash != std::string::npos) ? url.substr(slash) : "/";
-    auto res = cli->Post(path, hdrs, body, contentType.c_str());
+    auto res = cli->Post(u.path, hdrs, body, contentType.c_str());
     if (res) {
         resp.status = res->status;
         resp.body = res->body;

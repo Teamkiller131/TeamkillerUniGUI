@@ -147,7 +147,14 @@ void DepthLadder::Render() {
         std::reverse(asks.begin(), asks.end());
         std::vector<Level> bids = book_->Bids(depth_); // already high→low
 
-        const std::int64_t maxSize = book_->MaxSize(depth_);
+        // Derive maxSize from the level vectors already built above, rather than
+        // calling book_->MaxSize(depth_) which rebuilds the same Bids()/Asks()
+        // vectors (two extra heap allocations + map traversals) every frame.
+        std::int64_t maxSize = 0;
+        for (const auto& l : asks)
+            maxSize = std::max(maxSize, l.size);
+        for (const auto& l : bids)
+            maxSize = std::max(maxSize, l.size);
 
         int rowIndex = 0;
         for (const auto& lvl : asks) {

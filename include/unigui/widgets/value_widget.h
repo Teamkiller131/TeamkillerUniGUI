@@ -33,6 +33,11 @@ public:
     /// auto-detaches when the widget is destroyed (no dangling). The widget must
     /// not be moved or copied after binding (the binding captures `this`).
     /// Calling BindValue again rebinds to the new source.
+    ///
+    /// The bound *source* `Observable` must likewise not be moved while the binding is
+    /// live: a two-way binding writes back through the source's address, and the
+    /// liveness token (`Lifetime()`) tracks destruction, not moves — a moved-from
+    /// source would leave the write-back targeting an empty husk.
     void BindValue(Observable<T>& src, bool twoWay = true) {
         bound_ = twoWay ? &src : nullptr;
         boundLife_ = src.Lifetime();

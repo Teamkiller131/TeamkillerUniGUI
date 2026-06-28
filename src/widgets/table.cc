@@ -22,17 +22,35 @@ std::string Trim(std::string_view value) {
     return std::string(value.substr(first, last - first));
 }
 
+// Non-allocating trim: a view into `value` with leading/trailing ASCII whitespace
+// removed. Used on the per-cell render path so the common case allocates nothing.
+std::string_view TrimView(std::string_view value) {
+    size_t first = 0;
+    while (first < value.size() && std::isspace(static_cast<unsigned char>(value[first])))
+        ++first;
+    size_t last = value.size();
+    while (last > first && std::isspace(static_cast<unsigned char>(value[last - 1])))
+        --last;
+    return value.substr(first, last - first);
+}
+
 bool EndsWith(std::string_view value, std::string_view suffix) {
     return value.size() >= suffix.size() && value.substr(value.size() - suffix.size()) == suffix;
 }
 
-std::string FormatCellText(std::string_view raw, std::string_view unit) {
+// Returns the cell text to draw as a view. On the common path (no unit, or the value
+// already carries the unit) it is a view into `raw` with NO allocation; only when the
+// unit must be appended is `scratch` filled and returned. `scratch` must outlive the
+// returned view.
+std::string_view FormatCellText(std::string_view raw, std::string_view unit, std::string& scratch) {
     if (raw.empty() || unit.empty())
-        return std::string(raw);
-    std::string trimmed = Trim(raw);
+        return raw;
+    const std::string_view trimmed = TrimView(raw);
     if (trimmed.empty() || EndsWith(trimmed, unit))
-        return std::string(raw);
-    return trimmed + std::string(unit);
+        return raw;
+    scratch.assign(trimmed.data(), trimmed.size());
+    scratch.append(unit.data(), unit.size());
+    return scratch;
 }
 
 bool ParseNumericCell(std::string_view text, std::string_view unit, double& out) {
@@ -73,33 +91,39 @@ float AlignedOffset(float availableWidth, float contentWidth, Table::Alignment a
     }
 }
 
-void DrawAlignedText(const std::string& text, float width, Table::Alignment alignment) {
+// Take std::string_view (not const std::string&) and use ImGui's begin/end text
+// overloads, so the per-cell display string never has to be materialised/copied.
+void DrawAlignedText(std::string_view text, float width, Table::Alignment alignment) {
+    const char* tb = text.data();
+    const char* te = text.data() + text.size();
     const ImVec2 start = ImGui::GetCursorScreenPos();
-    const ImVec2 size = ImGui::CalcTextSize(text.c_str());
+    const ImVec2 size = ImGui::CalcTextSize(tb, te);
     const float lineHeight = std::max(ImGui::GetTextLineHeight(), size.y);
     ImGui::Dummy(ImVec2(width, lineHeight));
     ImDrawList* draw = ImGui::GetWindowDrawList();
     draw->PushClipRect(start, ImVec2(start.x + width, start.y + lineHeight), true);
     const float x = start.x + AlignedOffset(width, size.x, alignment);
     const float y = start.y + std::max(0.0f, (lineHeight - size.y) * 0.5f);
-    draw->AddText(ImVec2(x, y), ImGui::GetColorU32(ImGuiCol_Text), text.c_str());
+    draw->AddText(ImVec2(x, y), ImGui::GetColorU32(ImGuiCol_Text), tb, te);
     draw->PopClipRect();
 }
 
-bool DrawSelectableAlignedText(const std::string& text, bool selected, float width,
+bool DrawSelectableAlignedText(std::string_view text, bool selected, float width,
                                Table::Alignment alignment) {
+    const char* tb = text.data();
+    const char* te = text.data() + text.size();
     ImGui::SetNextItemAllowOverlap();
     const bool clicked =
         ImGui::Selectable("##cell", selected,
                           ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
     const ImVec2 start = ImGui::GetItemRectMin();
     const ImVec2 end = ImGui::GetItemRectMax();
-    const ImVec2 size = ImGui::CalcTextSize(text.c_str());
+    const ImVec2 size = ImGui::CalcTextSize(tb, te);
     ImDrawList* draw = ImGui::GetWindowDrawList();
     draw->PushClipRect(start, ImVec2(start.x + width, end.y), true);
     const float x = start.x + AlignedOffset(width, size.x, alignment);
     const float y = start.y + std::max(0.0f, ((end.y - start.y) - size.y) * 0.5f);
-    draw->AddText(ImVec2(x, y), ImGui::GetColorU32(ImGuiCol_Text), text.c_str());
+    draw->AddText(ImVec2(x, y), ImGui::GetColorU32(ImGuiCol_Text), tb, te);
     draw->PopClipRect();
     return clicked;
 }
@@ -320,8 +344,9 @@ void Table::Render() {
                     if (cell_renderer_)
                         handled = cell_renderer_(r, c);
                     if (!handled) {
-                        const std::string display =
-                            FormatCellText(CellText(r, c), GetColumnUnit(c));
+                        std::string scratch; // owns only the rare unit-append case
+                        const std::string_view display =
+                            FormatCellText(CellText(r, c), GetColumnUnit(c), scratch);
                         const float width = std::max(0.0f, ImGui::GetContentRegionAvail().x);
                         if (c == 0) {
                             if (DrawSelectableAlignedText(display, r == selected_, width,
