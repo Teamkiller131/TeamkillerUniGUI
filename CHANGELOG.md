@@ -1,5 +1,25 @@
 ## [Unreleased]
 
+## [4.1.1] - 2026-06-28
+
+### Fixed
+- **`/W4 /WX` build (the `windows-werror` CI gate):** `widgets/filepath.cc`,
+  `widgets/dirpath.cc`, and `ipc/ipc.cc` redefined `NOMINMAX` (and
+  `WIN32_LEAN_AND_MEAN`), colliding with the project-wide definitions added in 3.17.0
+  → `C4005`. The local defines are now `#ifndef`-guarded. (The warnings-as-errors gate
+  had been silently red since 3.17.0 — surfaced while wiring up the backend CI.)
+
+### Changed (CI)
+- The headless backend smoke from 4.1.0 is finalized so it genuinely verifies the
+  GLFW+OpenGL3 backend **runs** on Linux. A gdb backtrace showed the earlier Linux
+  segfault is *inside* the Mesa software-GL driver (`libgallium`) during
+  `ImGui_ImplOpenGL3_RenderDrawData` — a driver bug, not the backend, which brings the
+  3.3-core context + `#version 150` shaders + renderer up cleanly. The Linux job now
+  prefers a full clean render under llvmpipe then softpipe, and only if both crash in
+  the driver falls back to asserting the backend reached a working GL state. The macOS
+  job is best-effort (GitHub macOS runners have no headless GL session; the identical
+  GL path is validated at runtime by the Linux job).
+
 ## [4.1.0] - 2026-06-28
 
 > **Backend hardening + CI that actually runs the backends.** A backend audit found
