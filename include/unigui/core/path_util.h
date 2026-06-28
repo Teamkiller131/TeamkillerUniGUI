@@ -18,9 +18,20 @@ namespace unigui {
 /// `-Wdeprecated -Werror`). On POSIX, where the native narrow encoding is already
 /// UTF-8, the result is identical to a plain `path(string)` construction.
 inline std::filesystem::path PathFromUtf8(std::string_view utf8) {
+#ifdef __cpp_char8_t
     // char -> char8_t is a value-preserving byte copy (modular for bytes > 127),
-    // so this reproduces the exact UTF-8 byte sequence as a u8string.
+    // so this reproduces the exact UTF-8 byte sequence as a u8string — the
+    // non-deprecated C++20 way to force UTF-8 interpretation of the bytes.
     return std::filesystem::path(std::u8string(utf8.begin(), utf8.end()));
+#else
+    // char8_t disabled (e.g. MSVC /Zc:char8_t-): std::u8string is unavailable.
+    // u8path performs the same UTF-8 decode; it is deprecated in C++20, so
+    // suppress the one-line deprecation diagnostic.
+  #if defined(_MSC_VER)
+    #pragma warning(suppress : 4996)
+  #endif
+    return std::filesystem::u8path(utf8.begin(), utf8.end());
+#endif
 }
 
 } // namespace unigui

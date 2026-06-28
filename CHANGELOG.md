@@ -1,3 +1,12 @@
+## [Unreleased]
+
+### Fixed
+- **`core/path_util.h` — `PathFromUtf8` now builds under `/Zc:char8_t-`.** It
+  routed UTF-8 bytes through `std::u8string`, which does not exist when char8_t is
+  disabled (a common MSVC ABI choice for consumers). Guarded behind `__cpp_char8_t`:
+  the modern `u8string` path when char8_t is on, a `u8path` fallback (deprecation
+  suppressed) when it is off. No behaviour change where char8_t is enabled.
+
 ## [3.16.0] - 2026-06-26
 
 > **Framework, phases 2 & 4 — the golden path, a flagship app, and the inspector.**
