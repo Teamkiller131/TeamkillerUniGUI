@@ -141,53 +141,10 @@ void Client::Close() {
     }
 }
 
-// ── SharedMemory ────────────────────────────────────────────────────────────
-
-SharedMemory::SharedMemory(const std::string& name, size_t size)
-        : size_(size)
-        , name_(name) {
-#ifdef _WIN32
-    handle_ = CreateFileMappingA(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, (DWORD) size,
-                                 name.c_str());
-    if (handle_)
-        data_ = MapViewOfFile(handle_, FILE_MAP_ALL_ACCESS, 0, 0, size);
-#else
-    fd_ = shm_open(name.c_str(), O_CREAT | O_RDWR, 0666);
-    if (fd_ >= 0) {
-        ftruncate(fd_, size);
-        data_ = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
-    }
-#endif
-    if (data_)
-        UNIGUI_LOG_INFO("SHM created: {} ({} bytes)", name, (int) size);
-    else
-        UNIGUI_LOG_WARN("SHM failed: {}", name);
-}
-
-SharedMemory::~SharedMemory() {
-    if (data_) {
-#ifdef _WIN32
-        UnmapViewOfFile(data_);
-        if (handle_)
-            CloseHandle(handle_);
-#else
-        munmap(data_, size_);
-        if (fd_ >= 0) {
-            close(fd_);
-            shm_unlink(name_.c_str());
-        }
-#endif
-    }
-}
-
-void SharedMemory::Write(const void* data, size_t size, size_t offset) {
-    if (data_ && offset + size <= size_)
-        std::memcpy((char*) data_ + offset, data, size);
-}
-
-void SharedMemory::Read(void* data, size_t size, size_t offset) {
-    if (data_ && offset + size <= size_)
-        std::memcpy(data, (char*) data_ + offset, size);
-}
+// NOTE: SharedMemory lives in shmem.{h,cc}. It was previously duplicated here, but
+// SharedMemory is not declared in ipc.h (only Channel/Server/Client are), so this
+// translation unit could never have compiled that copy — and building both ipc.cc
+// and shmem.cc would have been a duplicate-symbol link error. The canonical and only
+// definition is in src/ipc/shmem.cc.
 
 } // namespace unigui::ipc

@@ -1,4 +1,14 @@
 #pragma once
+// Ensure <winsock2.h> (pulled by httplib/ixwebsocket) wins over the legacy <winsock.h>
+// that a prior <windows.h> include would otherwise bring in — see src/network/network.cc.
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#endif
 #include <functional>
 #include <httplib.h>
 #include <ixwebsocket/IXWebSocket.h>
@@ -44,6 +54,11 @@ public:
 
 private:
     ix::WebSocket ws_;
+    // Guards the three callbacks below: the IXWebSocket background thread reads them
+    // from the message handler while OnMessage/OnOpen/OnClose may rewrite them from
+    // another thread. Without this, re-registering a callback races the read and can
+    // free the previously-installed target while it is executing.
+    mutable std::mutex cbMutex_;
     std::function<void(const std::string&)> onMsg_;
     std::function<void()> onOpen_;
     std::function<void()> onClose_;

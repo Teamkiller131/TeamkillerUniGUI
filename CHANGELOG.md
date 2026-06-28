@@ -1,11 +1,65 @@
 ## [Unreleased]
 
+## [3.17.0] - 2026-06-28
+
+> **Security & correctness hardening, plus the optional-module build resurrected.**
+> A multi-dimension audit surfaced four reachable bugs — all fixed with regression
+> tests — and revealed that the optional modules (IPC / network / config / SQLite)
+> had never actually compiled on Windows. They now build, test, and ship with a
+> dedicated preset.
+
+### Security
+- **`ipc::SharedMemory::Write`/`Read` — integer-overflow bounds check allowed
+  out-of-bounds reads/writes across the (untrusted) shared-memory boundary.**
+  `offset + size <= size_` wraps in unsigned arithmetic (e.g. `offset == SIZE_MAX`),
+  defeating the guard so `memcpy` runs outside the mapped view. It now checks
+  `offset <= size_ && size <= size_ - offset`. Fixed in both `src/ipc/ipc.cc` and
+  `src/ipc/shmem.cc`, with an overflow-offset regression test.
+
 ### Fixed
-- **`core/path_util.h` — `PathFromUtf8` now builds under `/Zc:char8_t-`.** It
-  routed UTF-8 bytes through `std::u8string`, which does not exist when char8_t is
-  disabled (a common MSVC ABI choice for consumers). Guarded behind `__cpp_char8_t`:
-  the modern `u8string` path when char8_t is on, a `u8path` fallback (deprecation
-  suppressed) when it is off. No behaviour change where char8_t is enabled.
+- **`TabWidget` use-after-free when a tab's content callback adds or removes tabs.**
+  The render loop held a reference into `tabs_` across the user callback; an `AddTab`
+  (reallocation) or `RemoveTab` (erase) from inside it freed the executing
+  `std::function`. Structural mutations issued while rendering are now deferred and
+  applied after `EndTabBar`. Reachable from an ordinary open/close-tab button.
+- **`WebSocketClient` data race / use-after-free on its callbacks.** `onMsg_` /
+  `onOpen_` / `onClose_` were read by the IXWebSocket background thread while the
+  setters rewrote them unsynchronized. They are now mutex-guarded, and the message
+  handler snapshots the relevant callback under the lock before invoking it outside
+  the critical section.
+- **CSS gradient parser threw `std::out_of_range` on a gradient with no hex color**
+  (e.g. `linear-gradient(to right, red, blue)`), breaking the engine's documented
+  non-throwing contract. It now returns cleanly when there is no `#`.
+- **Removed the banned throwing `std::stod` from `widgets/form.cc` and the public
+  `widgets/datatable.h`**, restoring the project-wide "no throwing parsers" rule.
+  Both now use the new non-throwing `unigui::TryToDouble` (see Added).
+- **`core/path_util.h` — `PathFromUtf8` now builds under `/Zc:char8_t-`.** Guarded
+  behind `__cpp_char8_t`: the `u8string` path when char8_t is on, a `u8path`
+  fallback when it is off. No behaviour change where char8_t is enabled.
+- **The optional modules now compile and link on Windows.** Gated OFF in every
+  preset, they had never been built and had accumulated latent breakage:
+  `src/ipc/ipc.cc` carried a duplicate, never-compilable `SharedMemory` definition
+  (removed in favour of the canonical `shmem.cc`); the config module linked a
+  non-existent `cpptoml::cpptoml` target (the real one is `cpptoml`); SQLite linked
+  the deprecated `SQLite::SQLite3`; the network module hit a `<winsock2.h>` /
+  `<windows.h>` include-order conflict and was missing `bcrypt` (for mbedtls); and a
+  stale config fuzz test constructed the now-singleton `config::Store` directly.
+
+### Added
+- **`unigui::TryToDouble(const std::string&, double&)`** in `core/strutil.h` — a
+  non-throwing leading-double parser returning `bool` + out-param, preserving the
+  numeric/non-numeric distinction that `std::stod` callers relied on.
+- **`windows-msvc-debug-modules` CMake preset** (configure + build + test) — builds
+  with every optional module ON plus the vcpkg manifest features that supply their
+  dependencies, so the module and module-test code the default presets never
+  compiled is actually exercised.
+- **Project-wide `WIN32_LEAN_AND_MEAN` + `NOMINMAX` on Windows**, so the lean
+  `<windows.h>` is used everywhere and the `min`/`max` macros never leak into
+  consumer translation units.
+- Regression tests: TabWidget add/remove-from-callback (ASan-friendly), SharedMemory
+  overflow-offset no-op, CSS named-color/`none` gradients don't throw, a
+  concurrent-setter WebSocket smoke test (new `tests/network/`), and the resurrected
+  config fuzz target.
 
 ## [3.16.0] - 2026-06-26
 

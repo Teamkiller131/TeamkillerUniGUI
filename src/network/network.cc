@@ -1,3 +1,16 @@
+// On Windows, WIN32_LEAN_AND_MEAN must be defined before ANYTHING pulls in <windows.h>
+// (spdlog, via core/log.h, does). Otherwise <windows.h> includes the legacy <winsock.h>,
+// defines _WINSOCKAPI_, and the later <winsock2.h>/<ws2tcpip.h> from httplib/ixwebsocket
+// are skipped — producing a flood of undeclared-identifier errors in ws2tcpip.h.
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#endif
+
 #include <unigui/core/log.h>
 #include <unigui/network/network.h>
 
@@ -68,12 +81,35 @@ HttpResponse HttpClient::Post(const std::string& url, const std::string& body,
 
 WebSocketClient::WebSocketClient() {
     ws_.setOnMessageCallback([this](const ix::WebSocketMessagePtr& msg) {
-        if (msg->type == ix::WebSocketMessageType::Message && onMsg_)
-            onMsg_(msg->str);
-        else if (msg->type == ix::WebSocketMessageType::Open && onOpen_)
-            onOpen_();
-        else if (msg->type == ix::WebSocketMessageType::Close && onClose_)
-            onClose_();
+        // Snapshot only the relevant callback under the lock, then invoke it OUTSIDE
+        // the critical section — user code may re-enter the client (e.g. Send) and we
+        // must not hold cbMutex_ across it. Copying keeps the target alive for the call
+        // even if a setter swaps the member concurrently.
+        if (msg->type == ix::WebSocketMessageType::Message) {
+            std::function<void(const std::string&)> cb;
+            {
+                std::lock_guard<std::mutex> g(cbMutex_);
+                cb = onMsg_;
+            }
+            if (cb)
+                cb(msg->str);
+        } else if (msg->type == ix::WebSocketMessageType::Open) {
+            std::function<void()> cb;
+            {
+                std::lock_guard<std::mutex> g(cbMutex_);
+                cb = onOpen_;
+            }
+            if (cb)
+                cb();
+        } else if (msg->type == ix::WebSocketMessageType::Close) {
+            std::function<void()> cb;
+            {
+                std::lock_guard<std::mutex> g(cbMutex_);
+                cb = onClose_;
+            }
+            if (cb)
+                cb();
+        }
     });
 }
 
@@ -91,12 +127,15 @@ void WebSocketClient::Send(const std::string& msg) {
     ws_.send(msg);
 }
 void WebSocketClient::OnMessage(std::function<void(const std::string&)> cb) {
+    std::lock_guard<std::mutex> g(cbMutex_);
     onMsg_ = std::move(cb);
 }
 void WebSocketClient::OnOpen(std::function<void()> cb) {
+    std::lock_guard<std::mutex> g(cbMutex_);
     onOpen_ = std::move(cb);
 }
 void WebSocketClient::OnClose(std::function<void()> cb) {
+    std::lock_guard<std::mutex> g(cbMutex_);
     onClose_ = std::move(cb);
 }
 bool WebSocketClient::IsConnected() const {

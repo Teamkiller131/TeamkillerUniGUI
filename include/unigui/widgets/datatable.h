@@ -1,4 +1,5 @@
 #pragma once
+#include <unigui/core/strutil.h>
 #include <unigui/theme/color_tokens.h>
 #include <unigui/widgets/widget_base.h>
 

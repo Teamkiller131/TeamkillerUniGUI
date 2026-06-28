@@ -167,15 +167,15 @@ std::vector<FormError> Form::Validate() const {
             }
             if (it->second.hasRange &&
                 (f.type == FormField::Type::Number || f.type == FormField::Type::Slider)) {
-                try {
-                    double val = std::stod(f.value);
-                    if (val < it->second.min || val > it->second.max) {
-                        errors.push_back({f.name, "Value out of range [" +
-                                                      std::to_string(it->second.min) + ", " +
-                                                      std::to_string(it->second.max) + "]"});
-                    }
-                } catch (const std::exception&) {
+                // Non-throwing parse (std::stod is banned project-wide): distinguish a
+                // genuine parse failure from an out-of-range value.
+                double val = 0.0;
+                if (!TryToDouble(f.value, val)) {
                     errors.push_back({f.name, "Not a valid number"});
+                } else if (val < it->second.min || val > it->second.max) {
+                    errors.push_back({f.name, "Value out of range [" +
+                                                  std::to_string(it->second.min) + ", " +
+                                                  std::to_string(it->second.max) + "]"});
                 }
             }
         }

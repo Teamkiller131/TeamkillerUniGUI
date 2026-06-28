@@ -49,7 +49,7 @@ TEST(FuzzConfig, RandomBytes_AllFormats_NoThrow) {
     for (int i = 0; i < 500; ++i) {
         std::string content = RandomString(rng, 512);
         TempFile tf(content);
-        unigui::config::Store store;
+        auto& store = unigui::config::Store::Instance();
         EXPECT_NO_THROW(store.LoadTOML(tf.str())) << "TOML iteration " << i;
         EXPECT_NO_THROW(store.LoadJSON(tf.str())) << "JSON iteration " << i;
         EXPECT_NO_THROW(store.LoadINI(tf.str())) << "INI iteration " << i;
@@ -68,7 +68,7 @@ TEST(FuzzConfig, TomlLikeTokens_NoThrow) {
         for (int j = 0; j < len; ++j)
             content.push_back(alphabet[idxDist(rng)]);
         TempFile tf(content);
-        unigui::config::Store store;
+        auto& store = unigui::config::Store::Instance();
         EXPECT_NO_THROW(store.LoadTOML(tf.str())) << "iteration " << i;
         EXPECT_NO_THROW(store.LoadINI(tf.str())) << "iteration " << i;
     }
@@ -77,7 +77,7 @@ TEST(FuzzConfig, TomlLikeTokens_NoThrow) {
 TEST(FuzzConfig, EdgeCases_NoThrow) {
     auto loadAll = [](const std::string& content) {
         TempFile tf(content);
-        unigui::config::Store store;
+        auto& store = unigui::config::Store::Instance();
         EXPECT_NO_THROW(store.LoadTOML(tf.str()));
         EXPECT_NO_THROW(store.LoadJSON(tf.str()));
         EXPECT_NO_THROW(store.LoadINI(tf.str()));
@@ -99,7 +99,7 @@ TEST(FuzzConfig, EdgeCases_NoThrow) {
         garbage[i] = static_cast<char>(i);
     loadAll(garbage);
     // Loading a non-existent path must be safe and return false.
-    unigui::config::Store store;
+    auto& store = unigui::config::Store::Instance();
     EXPECT_NO_THROW(store.LoadTOML("/nonexistent/unigui_fuzz/does_not_exist.toml"));
     EXPECT_NO_THROW(store.LoadJSON("/nonexistent/unigui_fuzz/does_not_exist.json"));
     EXPECT_NO_THROW(store.LoadINI("/nonexistent/unigui_fuzz/does_not_exist.ini"));

@@ -31,5 +31,14 @@ private:
     int prevActive_ = 0;
     fx::AnimationState transAnim_;
     std::unordered_map<int, ImGuiKey> tabShortcuts_;
+
+    // Re-entrancy guard: while Render() iterates tabs_, an AddTab/RemoveTab issued
+    // from inside a tab's content_callback must NOT mutate tabs_ — a push_back can
+    // reallocate and an erase can shift/free the very TabPage (and its executing
+    // std::function) being iterated, a use-after-free. While rendering_ is true the
+    // mutation is queued here and flushed after EndTabBar, when tabs_ is idle.
+    bool rendering_ = false;
+    std::vector<TabPage> pendingAdds_;
+    std::vector<std::string> pendingRemoves_;
 };
 } // namespace unigui

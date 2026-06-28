@@ -25,8 +25,8 @@ namespace {
 
 // CSS identifier char class — mirrors the old key pattern [\w-].
 constexpr bool IsKeyChar(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-           c == '_' || c == '-';
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' ||
+           c == '-';
 }
 
 // Strip leading/trailing ASCII spaces and tabs in place (matches the previous
@@ -215,11 +215,10 @@ int Engine::Parse(const std::string& css) {
                         TrimAsciiSpace(sel);
                         StyleRule rule;
                         ParseSelector(rule, sel);
-                        ParsePropsInto(
-                            rule.props,
-                            std::string_view(innerBlock).substr(innerBrace + 1,
-                                                                innerClose - innerBrace - 1),
-                            vars_);
+                        ParsePropsInto(rule.props,
+                                       std::string_view(innerBlock)
+                                           .substr(innerBrace + 1, innerClose - innerBrace - 1),
+                                       vars_);
                         mr.rules.push_back(std::move(rule));
                     }
                 }
@@ -576,7 +575,11 @@ static void ApplyProp(const std::string& key, const std::string& val) {
         }
 
         // Extract colors: "#rrggbb" or "#rrggbbaa"
-        std::string colors_s = v.substr(v.find('#'));
+        auto hashPos = v.find('#');
+        if (hashPos == std::string::npos)
+            return; // no hex colors (e.g. named-color or "none" gradient) — substr(npos) would
+                    // throw
+        std::string colors_s = v.substr(hashPos);
         unsigned int c1r = 0, c1g = 0, c1b = 0, c2r = 0, c2g = 0, c2b = 0;
         int n = sscanf(colors_s.c_str(), "#%02x%02x%02x %*[, ] #%02x%02x%02x", &c1r, &c1g, &c1b,
                        &c2r, &c2g, &c2b);

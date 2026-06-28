@@ -2,6 +2,15 @@
 add_library(unigui "")
 add_library(unigui::unigui ALIAS unigui)
 
+# Windows: force the lean <windows.h> everywhere and kill the min/max macros. Several
+# headers pull in <windows.h>; without WIN32_LEAN_AND_MEAN it drags in the legacy
+# <winsock.h>, which then collides with the <winsock2.h>/<ws2tcpip.h> that the network
+# module's httplib/ixwebsocket need (the umbrella TU mixes both). PUBLIC so consumers
+# that aggregate our headers inherit the same safe defaults.
+if(WIN32)
+    target_compile_definitions(unigui PUBLIC WIN32_LEAN_AND_MEAN NOMINMAX)
+endif()
+
 # CRT diagnostic for MSVC integration users
 if(MSVC)
     if(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "MultiThreadedDLL")
@@ -49,13 +58,15 @@ set(UNIGUI_LIBS
 # ── Optional module deps ──────────────────────────────────────────────────────
 if(UNIGUI_MODULE_SQLITE)
     find_package(SQLite3 REQUIRED)
-    list(APPEND UNIGUI_LIBS SQLite::SQLite3)
+    list(APPEND UNIGUI_LIBS SQLite3::SQLite3)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_SQLITE)
 endif()
 if(UNIGUI_MODULE_CONFIG)
     find_package(cpptoml CONFIG REQUIRED)
     find_package(nlohmann_json CONFIG REQUIRED)
-    list(APPEND UNIGUI_LIBS cpptoml::cpptoml nlohmann_json::nlohmann_json)
+    # cpptoml's vcpkg port exports an unnamespaced INTERFACE target `cpptoml`
+    # (not `cpptoml::cpptoml`).
+    list(APPEND UNIGUI_LIBS cpptoml nlohmann_json::nlohmann_json)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_CONFIG)
 endif()
 if(UNIGUI_MODULE_IPC)
@@ -67,6 +78,11 @@ if(UNIGUI_MODULE_NETWORK)
     find_package(httplib CONFIG REQUIRED)
     find_package(ixwebsocket CONFIG REQUIRED)
     list(APPEND UNIGUI_LIBS httplib::httplib ixwebsocket::ixwebsocket)
+    # ixwebsocket's TLS backend (mbedtls) calls BCryptGenRandom, which lives in
+    # bcrypt.lib; the vcpkg port does not propagate it as a transitive link dep.
+    if(WIN32)
+        list(APPEND UNIGUI_LIBS bcrypt)
+    endif()
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_NETWORK)
 endif()
 

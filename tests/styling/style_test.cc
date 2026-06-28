@@ -76,6 +76,30 @@ TEST_F(StyleTest, UnknownProperty_IsIgnoredSafely) {
     });
 }
 
+// ── Gradient parser must not throw on a value with no '#' hex color. The old
+//    v.substr(v.find('#')) threw std::out_of_range (substr(npos)) on named colors,
+//    breaking the engine's documented non-throwing contract. ──
+TEST_F(StyleTest, GradientWithoutHexColor_DoesNotThrow) {
+    EXPECT_NO_THROW({
+        Engine::Instance().Parse("Window { gradient: linear-gradient(to right, red, blue); }");
+        Engine::Instance().Apply("Window");
+    });
+}
+
+TEST_F(StyleTest, GradientNone_DoesNotThrow) {
+    EXPECT_NO_THROW({
+        Engine::Instance().Parse("Window { bg-gradient: none; }");
+        Engine::Instance().Apply("Window");
+    });
+}
+
+TEST_F(StyleTest, GradientWithHexColors_StillParses) {
+    EXPECT_NO_THROW({
+        Engine::Instance().Parse("Window { gradient: linear-gradient(90deg, #ff0000, #0000ff); }");
+        Engine::Instance().Apply("Window");
+    });
+}
+
 // ── Hot-reload from disk (Horizon 5) ────────────────────────────────────────
 
 namespace {

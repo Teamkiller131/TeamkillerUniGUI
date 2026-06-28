@@ -35,11 +35,13 @@ SharedMemory::~SharedMemory() {
     }
 }
 void SharedMemory::Write(const void* d, size_t s, size_t off) {
-    if (data_ && off + s <= size_)
+    // Overflow-safe bounds check (see ipc.cc): `off + s` would wrap in unsigned
+    // arithmetic, so test the offset first then the size against remaining space.
+    if (data_ && off <= size_ && s <= size_ - off)
         std::memcpy((char*) data_ + off, d, s);
 }
 void SharedMemory::Read(void* d, size_t s, size_t off) {
-    if (data_ && off + s <= size_)
+    if (data_ && off <= size_ && s <= size_ - off)
         std::memcpy(d, (char*) data_ + off, s);
 }
 } // namespace unigui::ipc

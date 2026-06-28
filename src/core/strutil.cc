@@ -28,6 +28,18 @@ double ToDoubleOr(const std::string& s, double def) {
     return end == s.c_str() ? def : v;
 }
 
+bool TryToDouble(const std::string& s, double& out) {
+    if (s.empty())
+        return false;
+    const char* begin = s.c_str();
+    char* end = nullptr;
+    double v = std::strtod(begin, &end);
+    if (end == begin)
+        return false; // no digits consumed
+    out = v;
+    return true;
+}
+
 void TrimInPlace(std::string& s) {
     while (!s.empty() && (s.front() == ' ' || s.front() == '\t'))
         s.erase(0, 1);
