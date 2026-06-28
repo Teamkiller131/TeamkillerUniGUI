@@ -1,6 +1,10 @@
 #ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN // also defined project-wide; guard against C4005 redefinition
 #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 
 #include <winsock2.h>

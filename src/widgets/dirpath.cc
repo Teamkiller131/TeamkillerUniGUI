@@ -4,7 +4,9 @@
 
 #include <algorithm>
 #ifdef _WIN32
+#ifndef NOMINMAX // also defined project-wide; guard to avoid a /W4 C4005 redefinition
 #define NOMINMAX
+#endif
 #include <windows.h>
 
 #include <shlobj.h>
