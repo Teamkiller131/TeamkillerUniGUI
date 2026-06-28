@@ -2,6 +2,8 @@
 // NOTE: the TOML/JSON backends (cpptoml, nlohmann/json) are implementation details
 // and are included in src/config/config.cc, not here — they must not leak into every
 // consumer that includes this public header.
+#include <unigui/core/error.h>
+
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -15,9 +17,12 @@ public:
     static Store& Instance();
 
     // ── Load ────────────────────────────────────────────────────────────────
-    bool LoadTOML(const std::string& path);
-    bool LoadJSON(const std::string& path);
-    bool LoadINI(const std::string& path);
+    // Each returns a value result on success, or an error result:
+    // Err(ErrorCode::FileNotFound) if the path can't be opened, or
+    // Err(ErrorCode::ParseFailed) if the contents are malformed.
+    Result<void> LoadTOML(const std::string& path);
+    Result<void> LoadJSON(const std::string& path);
+    Result<void> LoadINI(const std::string& path);
 
     // ── Save ────────────────────────────────────────────────────────────────
     bool SaveTOML(const std::string& path) const;

@@ -5,10 +5,23 @@ using namespace unigui::sqlite;
 
 class DBTest : public ::testing::Test {
 protected:
-    void SetUp() override { db.Open(":memory:"); }
+    void SetUp() override { ASSERT_TRUE(db.Open(":memory:").has_value()); }
     void TearDown() override { db.Close(); }
     Database db;
 };
+
+// Open now returns Result<void> (4.0): a value result on success, OpenFailed on a
+// path that sqlite cannot open.
+TEST(DBOpen, Success_HasValue) {
+    Database d;
+    EXPECT_TRUE(d.Open(":memory:").has_value());
+}
+TEST(DBOpen, BadPath_ReturnsOpenFailed) {
+    Database d;
+    const auto r = d.Open("/no_such_dir_unigui/nested/does_not_exist.db");
+    ASSERT_FALSE(r.has_value());
+    EXPECT_EQ(r.error(), unigui::ErrorCode::OpenFailed);
+}
 
 TEST_F(DBTest, CreateTable_Execute) {
     db.Execute("CREATE TABLE t (id INT, name TEXT)");

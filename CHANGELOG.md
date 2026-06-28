@@ -1,5 +1,41 @@
 ## [Unreleased]
 
+## [4.0.0] - 2026-06-28
+
+> **Breaking: `Result<T>` is now `std::expected`.** The hand-rolled result type is
+> replaced by a thin alias over `std::expected<T, ErrorCode>`, and the two fallible
+> APIs the audit flagged adopt it. Major because the error-construction and
+> `value()`-access semantics change.
+
+### Breaking
+- **`unigui::Result<T>` is now `using Result = std::expected<T, ErrorCode>`.**
+  - Construct an error with **`Err(ErrorCode::X)`**. The old implicit
+    `Result<T>(ErrorCode)` constructor is gone — `std::expected` requires the error
+    wrapped in `std::unexpected`, which `Err()` does for you.
+  - `value()` on the error path now **throws `std::bad_expected_access<ErrorCode>`**
+    instead of being undefined behaviour (the predecessor returned a dangling ref).
+  - In exchange: the full monadic surface (`and_then` / `or_else` / `transform` /
+    `value_or`), and the inconsistent "no value, error == None" state the old type
+    permitted is no longer representable.
+- **`sqlite::Database::Open`** now returns `Result<void>` (was `bool`) —
+  `Err(ErrorCode::OpenFailed)` on failure.
+- **`config::Store::LoadTOML` / `LoadJSON` / `LoadINI`** now return `Result<void>`
+  (was `bool`), distinguishing `Err(ErrorCode::FileNotFound)` from
+  `Err(ErrorCode::ParseFailed)`.
+- New `ErrorCode` entries: `FileNotFound`, `ParseFailed`, `OpenFailed`.
+
+### Migration
+- `return ErrorCode::X;` → `return Err(ErrorCode::X);`
+- `if (!db.Open(p)) …` still compiles (`std::expected` has an explicit
+  `operator bool`); prefer `if (auto r = db.Open(p); !r) handle(r.error());` to use
+  the code.
+
+### Notes
+- The wide virtual `Init()` hierarchy (`app::Init`, `PlatformBackend` /
+  `RendererBackend::Init`, `IPlugin::Init`) intentionally stays `bool` — converting a
+  deep virtual interface to `Result` is a large break for little gain, and is out of
+  scope here.
+
 ## [3.19.0] - 2026-06-28
 
 > **P2/P3: lifetime hardening, the untested seams get tests, per-frame allocations

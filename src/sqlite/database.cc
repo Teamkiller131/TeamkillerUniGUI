@@ -19,16 +19,16 @@ Database::~Database() {
     Close();
 }
 
-bool Database::Open(const std::string& path) {
+Result<void> Database::Open(const std::string& path) {
     if (sqlite3_open(path.c_str(), &db_) != SQLITE_OK) {
         UNIGUI_LOG_ERROR("SQLite open failed: {} ({})", path, sqlite3_errmsg(db_));
         db_ = nullptr;
-        return false;
+        return Err(ErrorCode::OpenFailed);
     }
     // Enable WAL mode for concurrency
     Execute("PRAGMA journal_mode=WAL");
     UNIGUI_LOG_INFO("SQLite opened: {}", path);
-    return true;
+    return {};
 }
 
 void Database::Close() {

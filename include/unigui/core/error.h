@@ -1,6 +1,6 @@
 #pragma once
 
-#include <optional>
+#include <expected>
 #include <string>
 #include <string_view>
 
@@ -14,38 +14,33 @@ enum class ErrorCode {
     AlreadyInitialized,
     NotInitialized,
     RenderFailed,
+    FileNotFound,
+    ParseFailed,
+    OpenFailed,
 };
 
 /// Returns a human-readable message for the given error code.
 std::string_view ErrorMessage(ErrorCode code);
 
-/// Simple Result type. Holds either a value or an error code.
-/// Uses std::optional internally for the value path.
-template <typename T> class Result {
-public:
-    /// Construct a success result with a value.
-    Result(T value)
-            : value_(std::move(value))
-            , error_(ErrorCode::None) {}
+/// `Result<T>` — either a value or an `ErrorCode`.
+///
+/// As of 4.0 this is a thin alias over `std::expected`, so it carries the full
+/// monadic surface (`and_then` / `or_else` / `transform` / `value_or`), and
+/// `value()` throws `std::bad_expected_access<ErrorCode>` on the error path instead
+/// of being undefined behaviour (the hand-rolled predecessor returned a dangling
+/// reference). The error state always holds a real `ErrorCode`, so the inconsistent
+/// "no value yet error == None" state the old type permitted is no longer
+/// representable.
+///
+/// Construct a success from a value (implicit); construct an error with `Err()`:
+///     Result<int> ok = 42;
+///     Result<int> bad = Err(ErrorCode::InvalidArgument);
+template <typename T> using Result = std::expected<T, ErrorCode>;
 
-    /// Construct an error result with an error code.
-    Result(ErrorCode error)
-            : value_(std::nullopt)
-            , error_(error) {}
-
-    /// Returns true if the result holds a value.
-    bool has_value() const { return value_.has_value(); }
-
-    /// Returns the value. Undefined behavior if has_value() is false.
-    T& value() { return *value_; }
-    const T& value() const { return *value_; }
-
-    /// Returns the error code.
-    ErrorCode error() const { return error_; }
-
-private:
-    std::optional<T> value_;
-    ErrorCode error_;
-};
+/// Build an error result: `return Err(ErrorCode::X);` works for any `Result<T>`.
+/// Do not pass `ErrorCode::None` — an error result by definition carries a failure.
+[[nodiscard]] inline std::unexpected<ErrorCode> Err(ErrorCode code) noexcept {
+    return std::unexpected(code);
+}
 
 } // namespace unigui

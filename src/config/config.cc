@@ -71,7 +71,12 @@ void Store::SetBool(const std::string& k, bool v) {
 }
 
 // ── TOML ────────────────────────────────────────────────────────────────────
-bool Store::LoadTOML(const std::string& path) {
+Result<void> Store::LoadTOML(const std::string& path) {
+    {
+        std::ifstream probe(path);
+        if (!probe)
+            return Err(ErrorCode::FileNotFound);
+    }
     try {
         auto tbl = cpptoml::parse_file(path);
         for (auto it = tbl->begin(); it != tbl->end(); ++it) {
@@ -86,10 +91,10 @@ bool Store::LoadTOML(const std::string& path) {
                 SetValue(key, v->get() ? "true" : "false");
         }
         UNIGUI_LOG_INFO("Store: loaded TOML {} ({} keys)", path, (int) data_.size());
-        return true;
+        return {};
     } catch (...) {
         UNIGUI_LOG_WARN("Store: TOML parse failed: {}", path);
-        return false;
+        return Err(ErrorCode::ParseFailed);
     }
 }
 
@@ -114,11 +119,11 @@ bool Store::SaveTOML(const std::string& path) const {
 }
 
 // ── JSON ────────────────────────────────────────────────────────────────────
-bool Store::LoadJSON(const std::string& path) {
+Result<void> Store::LoadJSON(const std::string& path) {
+    std::ifstream f(path);
+    if (!f)
+        return Err(ErrorCode::FileNotFound);
     try {
-        std::ifstream f(path);
-        if (!f)
-            return false;
         nlohmann::json j;
         f >> j;
         for (auto& [k, v] : j.items()) {
@@ -132,10 +137,10 @@ bool Store::LoadJSON(const std::string& path) {
                 SetValue(k, v.get<bool>() ? "true" : "false");
         }
         UNIGUI_LOG_INFO("Store: loaded JSON {} ({} keys)", path, (int) data_.size());
-        return true;
+        return {};
     } catch (...) {
         UNIGUI_LOG_WARN("Store: JSON parse failed: {}", path);
-        return false;
+        return Err(ErrorCode::ParseFailed);
     }
 }
 
@@ -166,10 +171,10 @@ bool Store::SaveJSON(const std::string& path) const {
 }
 
 // ── INI ─────────────────────────────────────────────────────────────────────
-bool Store::LoadINI(const std::string& path) {
+Result<void> Store::LoadINI(const std::string& path) {
     FILE* f = fopen(path.c_str(), "r");
     if (!f)
-        return false;
+        return Err(ErrorCode::FileNotFound);
     char buf[4096];
     while (fgets(buf, sizeof(buf), f)) {
         std::string line(buf);
@@ -181,7 +186,7 @@ bool Store::LoadINI(const std::string& path) {
     }
     fclose(f);
     UNIGUI_LOG_INFO("Store: loaded INI {} ({} keys)", path, (int) data_.size());
-    return true;
+    return {};
 }
 
 } // namespace unigui::config

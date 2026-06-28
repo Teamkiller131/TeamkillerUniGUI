@@ -1,4 +1,6 @@
 #pragma once
+#include <unigui/core/error.h>
+
 #include <functional>
 #include <memory>
 #include <sqlite3.h>
@@ -23,7 +25,10 @@ public:
     Database() = default;
     ~Database();
 
-    bool Open(const std::string& path);
+    /// Open (or create) the database at `path`. Returns a value result on success,
+    /// or `Err(ErrorCode::OpenFailed)` if sqlite could not open it (the detailed
+    /// sqlite message is logged).
+    Result<void> Open(const std::string& path);
     void Close();
     bool IsOpen() const { return db_ != nullptr; }
 

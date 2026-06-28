@@ -346,10 +346,11 @@ class Store {
 public:
     static Store& Instance();
 
-    // Load
-    bool LoadTOML(const std::string& path);
-    bool LoadJSON(const std::string& path);
-    bool LoadINI(const std::string& path);
+    // Load — Result<void> (4.0): Err(ErrorCode::FileNotFound) if the path can't be
+    // opened, Err(ErrorCode::ParseFailed) if the contents are malformed.
+    Result<void> LoadTOML(const std::string& path);
+    Result<void> LoadJSON(const std::string& path);
+    Result<void> LoadINI(const std::string& path);
 
     // Save
     bool SaveTOML(const std::string& path) const;
@@ -443,7 +444,7 @@ public:
     Database() = default;
     ~Database();
 
-    bool Open(const std::string& path);
+    Result<void> Open(const std::string& path); // 4.0: Err(ErrorCode::OpenFailed) on failure
     void Close();
     bool IsOpen() const;
 

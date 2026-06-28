@@ -16,6 +16,12 @@ std::string_view ErrorMessage(ErrorCode code) {
         return "Not initialized";
     case ErrorCode::RenderFailed:
         return "Render failed";
+    case ErrorCode::FileNotFound:
+        return "File not found";
+    case ErrorCode::ParseFailed:
+        return "Parse failed";
+    case ErrorCode::OpenFailed:
+        return "Open failed";
     }
     return "Unknown error";
 }
