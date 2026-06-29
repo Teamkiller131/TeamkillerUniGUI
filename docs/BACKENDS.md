@@ -114,7 +114,7 @@ A *platform* owns the window and input. Two are shipped:
 |----------|------------------------|--------|------------|
 | **GLFW** (default) | `GLFW_GL3`, `DX11`, `DX12`, `Vulkan`, `Metal`, `WebGPU` | Fully functional | `UNIGUI_BACKEND_GLFW3` (ON) |
 | **SDL3** (opt-in) | `SDL3_Vulkan` | Functional when built with SDL3 | `UNIGUI_BACKEND_SDL3` (OFF) |
-| Emscripten/Web | `Emscripten` | **Stub** — not functional | (compiled in core, no gate) |
+| Emscripten/Web | `Emscripten` | **Functional** (WebAssembly + WebGL2; delegates to GLFW) | (compiled in core, no gate) |
 
 GLFW is the workhorse platform: it creates the window for every renderer except
 SDL3's. The factory's `CreateGLFWPlatform(BackendType type)` takes the backend
@@ -133,24 +133,23 @@ std::unique_ptr<PlatformBackend> CreateEmscriptenPlatform();
 
 ## 3. Renderers
 
-A *renderer* owns the GPU API. The status column is the important one — only
-OpenGL3, Vulkan, DX11, and DX12 are real; the rest are stubs.
+A *renderer* owns the GPU API. The status column is the important one — OpenGL3
+(incl. WebGL2 on the Web), Vulkan, DX11, DX12, and Metal are real; only WebGPU
+remains a stub.
 
 | Renderer | `BackendType` | Status | OS | CMake gate |
 |----------|---------------|--------|----|------------|
-| **OpenGL 3** (default) | `GLFW_GL3` | **Functional** | All | `UNIGUI_BACKEND_GLFW3` (ON) |
+| **OpenGL 3** (default) | `GLFW_GL3`, `Emscripten` | **Functional** (GLES3/WebGL2 on the Web) | All + Web | `UNIGUI_BACKEND_GLFW3` (ON) |
 | **Vulkan** | `Vulkan`, `SDL3_Vulkan` | **Functional** | All (cross-platform) | `UNIGUI_BACKEND_VULKAN` / `UNIGUI_BACKEND_SDL3` (OFF) |
 | **DirectX 11** | `DX11` | **Functional** | **Windows only** | `UNIGUI_BACKEND_DX11` (ON) |
 | **DirectX 12** | `DX12` | **Functional** | **Windows only** | `UNIGUI_BACKEND_DX12` (OFF) |
-| **Metal** | `Metal` | **STUB** — do not rely on it | macOS | (auto on `APPLE`) |
+| **Metal** | `Metal` | **Functional** (`imgui_impl_metal` on a `CAMetalLayer`) | macOS | (auto on `APPLE`) |
 | **WebGPU** | `WebGPU` | **STUB** — do not rely on it | — | (no gate) |
-| **Emscripten/Web** | `Emscripten` | **STUB** — do not rely on it | Web | (no gate) |
 
-> **Stub warning.** The **Metal, WebGPU, and Emscripten** renderers/platforms
-> are non-functional stubs. They are wired into the `BackendType` enum and the
-> factory switch for forward-compatibility, but they do **not** render. Don't
-> assume they work when threading features through the backend layer — target
-> OpenGL3 / Vulkan / DX11 / DX12 for anything real.
+> **Stub warning.** Only the **WebGPU** renderer is a non-functional stub. It is
+> wired into the `BackendType` enum and the factory switch for
+> forward-compatibility, but it does **not** render — target OpenGL3 / Vulkan /
+> DX11 / DX12 / Metal, or the Emscripten (WebGL2) path on the Web.
 
 The factory exposes one creator per renderer. Note that `CreateMetalRenderer`
 and `CreateWebGPURenderer` are always *declared* (unguarded), while
@@ -160,7 +159,7 @@ and `CreateWebGPURenderer` are always *declared* (unguarded), while
 std::unique_ptr<RendererBackend> CreateOpenGL3Renderer();
 std::unique_ptr<RendererBackend> CreateVulkanRenderer();
 std::unique_ptr<RendererBackend> CreateDX11Renderer();
-std::unique_ptr<RendererBackend> CreateMetalRenderer();   // stub
+std::unique_ptr<RendererBackend> CreateMetalRenderer();   // macOS (imgui_impl_metal)
 #ifdef UNIGUI_HAS_DX12
 std::unique_ptr<RendererBackend> CreateDX12Renderer();
 #endif
@@ -306,9 +305,8 @@ inline DefaultBackend CreateDefaultBackend() {
 }
 ```
 
-Note that the `Metal`, `WebGPU`, and `Emscripten` cases are **not** wrapped in
-`UNIGUI_HAS_*` guards in the same way — `Metal` is guarded by `__APPLE__`, while
-`WebGPU` and `Emscripten` always call their (stub) creators. So the pairings are:
+Note that `Metal` is guarded by `__APPLE__` and `Emscripten` by `__EMSCRIPTEN__`,
+while `WebGPU` always calls its (stub) creator. So the pairings are:
 
 | `BackendType` | Platform | Renderer |
 |---------------|----------|----------|
@@ -317,9 +315,9 @@ Note that the `Metal`, `WebGPU`, and `Emscripten` cases are **not** wrapped in
 | `SDL3_Vulkan` | SDL3 | Vulkan |
 | `DX11` | GLFW (NO_API) | DirectX 11 |
 | `DX12` | GLFW (NO_API) | DirectX 12 |
-| `Metal` | GLFW (NO_API) | Metal *(stub)* |
+| `Metal` | GLFW (NO_API) | Metal (`imgui_impl_metal`) |
 | `WebGPU` | GLFW (NO_API) | WebGPU *(stub)* |
-| `Emscripten` | Emscripten *(stub)* | WebGPU *(stub)* |
+| `Emscripten` | Emscripten → GLFW (WebGL2 context) | OpenGL 3 (GLES3/WebGL2) |
 
 ### 4.1 Automatic fallback
 
@@ -362,7 +360,10 @@ These map to the `UNIGUI_HAS_*` compile definitions consumed by the factory and
 - `UNIGUI_BACKEND_SDL3` → `UNIGUI_HAS_SDL3`
   (`find_package(SDL3 CONFIG REQUIRED)`).
 - On `APPLE`, the Metal renderer is compiled and `UNIGUI_HAS_METAL` defined
-  automatically (it remains a stub).
+  automatically (a real `imgui_impl_metal` renderer on a `CAMetalLayer`).
+- Under an Emscripten toolchain, `cmake/Emscripten.cmake` provides imgui/implot/
+  spdlog via FetchContent and GLFW/WebGL2/freetype via Emscripten ports; the lib
+  cross-compiles to WebAssembly and renders through the OpenGL3 (WebGL2) backend.
 
 The DX11/DX12 link steps are inside an `if(WIN32)` guard, so requesting them on
 Linux/macOS has no effect at link time — but you should still pass
@@ -682,6 +683,5 @@ the backdrop automatically.
 | Backdrop clear | Automatic — backends clear to `GetBackdropColor()` every frame |
 | Native handle | `unigui::GetNativeWindowHandle()` (HWND on Windows, `GLFWwindow*` elsewhere) |
 
-> **Stub reminder:** Metal, WebGPU, and Emscripten are present in the enum and
-> factory but are **non-functional stubs**. Use OpenGL3, Vulkan, DX11, or DX12
-> for real rendering.
+> **Stub reminder:** only **WebGPU** is still a non-functional stub. OpenGL3,
+> Vulkan, DX11, DX12, Metal, and the Emscripten (WebGL2) path are all real.

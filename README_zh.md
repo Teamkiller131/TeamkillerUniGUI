@@ -72,9 +72,9 @@ unigui:: API
     │   ├── SDL3 + Vulkan 1.3 ★ (生产级)
     │   ├── GLFW + DX11 ★ (生产级，Windows 默认)
     │   ├── GLFW + DX12 ★ (生产级)
-    │   ├── Metal          (macOS，桩 — 干净失败，回退到 GL3)
+    │   ├── Metal          (macOS — 基于 CAMetalLayer 的 imgui_impl_metal)
     │   ├── WebGPU         (跨平台，桩)
-    │   └── Emscripten     (Web/HTML5 — 平台已可编译，渲染器待实现)
+    │   └── Emscripten     (Web/HTML5 — WebAssembly + WebGL2)
     └── App 启动器 (Init / Run / NewFrame / Render)
     ↓
 ImGui (v1.92.8，docking + multi-viewport)
@@ -336,9 +336,9 @@ cfg.backend = BackendType::GLFW_GL3;      // GLFW + OpenGL 3.3 ★
 cfg.backend = BackendType::SDL3_Vulkan;   // SDL3 + Vulkan 1.3 ★
 cfg.backend = BackendType::DX11;          // GLFW + DirectX 11 ★
 cfg.backend = BackendType::DX12;          // GLFW + DirectX 12 ★
-cfg.backend = BackendType::Metal;         // macOS Metal — 桩（Init 干净失败 → 回退到 GLFW+OpenGL3）
+cfg.backend = BackendType::Metal;         // macOS Metal — 基于 CAMetalLayer 的 imgui_impl_metal
 cfg.backend = BackendType::WebGPU;        // Dawn/WGPU — 桩（尚未链接渲染器）
-cfg.backend = BackendType::Emscripten;    // Web/HTML5 — 平台已可编译；WebGPU/WebGL 渲染器待实现
+cfg.backend = BackendType::Emscripten;    // Web/HTML5 — WebAssembly + WebGL2（用 emcmake 构建）
 ```
 
 | 后端 | 平台 | 图形 API | 状态 | MSAA |
@@ -347,9 +347,9 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5 — 平台已可编译；
 | SDL3+Vulkan | Win/Lin/Mac | Vulkan 1.3 | ★ 生产级 | 可配 |
 | GLFW+DX11 | Windows | DirectX 11 | ★ 生产级 | 4x |
 | GLFW+DX12 | Windows | DirectX 12 | ★ 生产级 | 可配 |
-| Metal | macOS | Metal 2 | 桩（干净回退 → GL3） | 原生 |
+| Metal | macOS | Metal 2 | ★ 已实现（imgui_impl_metal） | 原生 |
 | WebGPU | 跨平台 | Dawn/WGPU | 桩 | 原生 |
-| Emscripten | Web | WebGL/WebGPU | 平台已可编译；渲染器待实现 | 浏览器 |
+| Emscripten | Web | WebGL2 | ★ 已实现（WASM + WebGL2） | 浏览器 |
 
 ## 子模块
 

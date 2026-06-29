@@ -1,5 +1,40 @@
 ## [Unreleased]
 
+## [4.2.0] - 2026-06-29
+
+> **Two backends go from stub to real: macOS Metal and the Web.** The Metal renderer is
+> now a working `imgui_impl_metal` implementation, and UniGUI compiles, links, and runs
+> as a WebAssembly + WebGL2 application — the full framework (95 widgets, theme engine,
+> DSL, styling, immediate-mode layer) in the browser, build-verified in CI with a
+> downloadable `web_demo` artifact.
+
+### Added
+- **Metal renderer (macOS).** `MetalRenderer` drives `imgui_impl_metal` against a
+  `CAMetalLayer` attached to the GLFW window's `NSView`: device + command queue setup in
+  `BringUp`, per-frame drawable acquisition + render-pass encoding in `NewFrameMetal`,
+  and present/commit in `RenderDrawData`. Compiled as Objective-C++ with ARC. The macOS
+  CI job build-verifies it. Replaces the previous clean-fallback stub.
+- **Emscripten / WebGL2 web backend.** UniGUI now cross-compiles to WebAssembly. A wasm
+  build can't use the vcpkg dependency stack (glad is desktop-GL-only; GLFW/WebGL2/
+  freetype come from Emscripten ports), so `cmake/Emscripten.cmake` sources imgui
+  (docking), implot, and spdlog via FetchContent and exposes the same target names the
+  library expects. The renderer runs through the OpenGL3 backend targeting GLES3/WebGL2
+  (`#version 300 es`), and the browser owns the frame loop via `emscripten_set_main_loop`.
+- **`web_demo` example.** A self-contained `web_demo.html`/`.js`/`.wasm` showing the
+  retained-mode widgets, theme, and immediate-mode helpers running in the browser. Built
+  by a new `emscripten` CI job (emsdk + `emcmake`) that also uploads it as an artifact.
+
+### Fixed
+- **Emscripten backend brought up no window.** The bespoke `EmscriptenPlatform` only
+  adopted a window handle passed to `Init()`, but the app loop calls `Init(nullptr)` — so
+  `BackendType::Emscripten` created no GL context and `NewFrame()` never drove
+  `ImGui_ImplGlfw`; it would have rendered nothing. Emscripten's GLFW port implements the
+  same `glfw3.h` APIs against the HTML5 canvas + WebGL2, so the platform now delegates to
+  the proven `GLFWPlatform` (real context + `ImGui_ImplGlfw_InitForOpenGL`).
+- **WebGL canvas was never cleared.** `Render()` issued the GL clear + buffer swap only
+  for `BackendType::GLFW_GL3`; the Emscripten backend renders through the same OpenGL3
+  path, so the clear/swap now applies to both GL backends.
+
 ## [4.1.1] - 2026-06-28
 
 ### Fixed

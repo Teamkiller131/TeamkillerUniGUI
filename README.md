@@ -4,7 +4,7 @@
 [![CMake](https://img.shields.io/badge/CMake-3.31%2B-green)](https://cmake.org/)
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
-[![Version](https://img.shields.io/badge/version-4.1.1-blueviolet)]()
+[![Version](https://img.shields.io/badge/version-4.2.0-blueviolet)]()
 [![Tests](https://img.shields.io/badge/tests-1169-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-95-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
@@ -102,9 +102,9 @@ unigui:: API
     │   ├── SDL3 + Vulkan 1.3 ★ (production)
     │   ├── GLFW + DX11 ★ (production, Windows default)
     │   ├── GLFW + DX12 ★ (production)
-    │   ├── Metal          (macOS, stub — fails cleanly, falls back to GL3)
+    │   ├── Metal          (macOS — imgui_impl_metal on a CAMetalLayer)
     │   ├── WebGPU         (cross-platform, stub)
-    │   └── Emscripten     (Web/HTML5 — platform compiles, renderer pending)
+    │   └── Emscripten     (Web/HTML5 — WebAssembly + WebGL2)
     └── App Bootstrap (Init / Run / NewFrame / Render)
     ↓
 ImGui (v1.92.8, docking + multi-viewport)
@@ -470,9 +470,9 @@ cfg.backend = BackendType::Vulkan;        // GLFW + Vulkan 1.3 (cross-platform) 
 cfg.backend = BackendType::SDL3_Vulkan;   // SDL3 + Vulkan 1.3 (opt-in, see below)
 cfg.backend = BackendType::DX11;          // GLFW + DirectX 11 ★
 cfg.backend = BackendType::DX12;          // GLFW + DirectX 12 ★
-cfg.backend = BackendType::Metal;         // macOS Metal — stub (Init fails cleanly → falls back to GLFW+OpenGL3)
+cfg.backend = BackendType::Metal;         // macOS Metal — imgui_impl_metal on a CAMetalLayer
 cfg.backend = BackendType::WebGPU;        // Dawn/WGPU — stub (no renderer linked yet)
-cfg.backend = BackendType::Emscripten;    // Web/HTML5 — platform compiles; WebGPU/WebGL renderer still pending
+cfg.backend = BackendType::Emscripten;    // Web/HTML5 — WebAssembly + WebGL2 (build via emcmake)
 ```
 
 | Backend | Platform | Graphics API | Status | MSAA |
@@ -482,9 +482,9 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5 — platform compiles; We
 | SDL3+Vulkan | Win/Lin/Mac | Vulkan 1.3 | Opt-in (needs SDL3) | Config |
 | GLFW+DX11 | Windows | DirectX 11 | ★ Production | 4x |
 | GLFW+DX12 | Windows | DirectX 12 | ★ Production | Config |
-| Metal | macOS | Metal 2 | Stub (clean fallback → GL3) | Native |
+| Metal | macOS | Metal 2 | ★ Implemented (imgui_impl_metal) | Native |
 | WebGPU | Cross | Dawn/WGPU | Stub | Native |
-| Emscripten | Web | WebGL/WebGPU | Platform compiles; renderer pending | Browser |
+| Emscripten | Web | WebGL2 | ★ Implemented (WASM + WebGL2) | Browser |
 
 **Vulkan is backend-agnostic.** There is a single, platform-independent `VulkanRenderer`
 (built on Dear ImGui's `imgui_impl_vulkan`). The one OS-specific step — creating the

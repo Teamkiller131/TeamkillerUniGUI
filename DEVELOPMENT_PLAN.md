@@ -20,9 +20,11 @@ Since then the toolkit became an **opinionated application framework** (Horizon 
 Component/State/Store/Navigator + reactive + layout + theming tools), passed a
 **multi-dimension correctness/security audit** (P0–P3 all fixed and shipped across
 3.17–3.19, plus the 4.0 `Result<T>` → `std::expected` major), and had its
-**cross-platform backends hardened and verified at runtime in CI**. The near-term
-focus shifts to the remaining frontier: real **Metal/WebGPU/Emscripten** renderers,
-**accessibility**, **visual-regression** testing, and **packaging reach**.
+**cross-platform backends hardened and verified at runtime in CI**. The **Metal**
+renderer and the **Emscripten/WebGL2** web backend are now real (4.2.0; the latter
+build-verified in CI with a downloadable `web_demo` artifact). The near-term focus
+shifts to the remaining frontier: the **WebGPU** renderer, **accessibility**,
+**visual-regression** testing, and **packaging reach**.
 
 ## 1. Vision
 
@@ -67,11 +69,12 @@ Guiding principles:
 - Theme engine: Dark/Light + 13 presets, unified style/color tokens, surface
   materials, semantic colors, elevation; theme export/import + CSS hot-reload + a live
   `theme_editor`.
-- 7 backends — 4 production (GLFW+GL3, GLFW/SDL3+Vulkan, DX11, DX12), all hardened on
-  their failure paths. Metal/WebGPU stay **stubs that fail cleanly**; **Emscripten now
-  compiles** but is unverified end-to-end. The default GLFW+OpenGL3 path is
-  **CI-verified to run on Linux** (headless xvfb + llvmpipe smoke), and its identical
-  GL code path covers macOS.
+- 7 backends — 6 functional (GLFW+GL3, GLFW/SDL3+Vulkan, DX11, DX12, **Metal**, and the
+  **Emscripten/WebGL2** web path), all hardened on their failure paths. Only **WebGPU**
+  stays a stub that fails cleanly. The default GLFW+OpenGL3 path is **CI-verified to run
+  on Linux** (headless xvfb + llvmpipe smoke) and its identical GL code path covers
+  macOS; the **wasm build is CI-verified** (emsdk + `emcmake`, with a `web_demo`
+  artifact). Metal is build-verified on the macOS CI runner.
 - **`Result<T>` is `std::expected<T, ErrorCode>`** (4.0): errors via `Err()`, monadic
   ops, throwing `value()`; adopted in `sqlite::Database::Open` and `config::Store::Load*`.
 - Optional modules — SQLite, config (TOML/JSON/INI), IPC (shmem + ZMQ), network
