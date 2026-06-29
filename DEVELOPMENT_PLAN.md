@@ -1,6 +1,6 @@
 # TeamkillerUniGUI — Long-Term Development Plan
 
-_Last updated: 2026-06-29 · Current version: 4.1.1_
+_Last updated: 2026-06-29 · Current version: 4.3.1_
 
 This document lays out a long-horizon roadmap for the project. It is meant to be
 a living document: revisit it each release, check off what shipped, and re-scope
@@ -20,12 +20,15 @@ Since then the toolkit became an **opinionated application framework** (Horizon 
 Component/State/Store/Navigator + reactive + layout + theming tools), passed a
 **multi-dimension correctness/security audit** (P0–P3 all fixed and shipped across
 3.17–3.19, plus the 4.0 `Result<T>` → `std::expected` major), and had its
-**cross-platform backends hardened and verified at runtime in CI**. All seven backends
-are now real: the **Metal** renderer (4.2.0), the **Emscripten/WebGL2** web backend
-(4.2.0), and the **WebGPU** web renderer (4.3.0, emdawnwebgpu) — the wasm builds are
-CI-verified with downloadable `web_demo` artifacts. The near-term focus shifts to the
-remaining frontier: **accessibility**,
-**visual-regression** testing, and **packaging reach**.
+**cross-platform backends hardened and verified at runtime in CI**. **All seven backends
+are now real and online** — the **Metal** renderer (4.2.0), the **Emscripten/WebGL2** web
+backend (4.2.0), and the **WebGPU** web renderer (4.3.0, emdawnwebgpu) — with the wasm
+builds CI-verified and shipped as downloadable `web_demo` artifacts (a tabbed widget
+gallery). Browser verification of those artifacts also caught and fixed a latent
+black-screen bug in the GLFW+OpenGL3/WebGL path (4.3.1), so the GL backend is now
+confirmed rendering, not just compiling. With backend **completeness** done, the frontier
+moves to backend **performance**, a **visual-regression** harness (the black-screen bug
+slipped through log-only CI), **accessibility**, and **packaging reach**.
 
 ## 1. Vision
 
@@ -90,6 +93,17 @@ Guiding principles:
 
 ### Recently completed
 
+- **All 7 backends online — Metal + WebGL2 + WebGPU (4.2.0–4.3.1).** The last three
+  stub backends became real: a working **Metal** `imgui_impl_metal` renderer on a
+  `CAMetalLayer` (4.2.0, build-verified on the macOS CI runner); the **Emscripten/WebGL2**
+  web backend — the whole 40k-line library cross-compiles to WebAssembly via a FetchContent
+  + Emscripten-ports CMake mode, rendering through GLES3/WebGL2 (4.2.0); and the **WebGPU**
+  web renderer via emsdk 4.0.10 + `--use-port=emdawnwebgpu` with async device acquisition
+  (4.3.0). CI build-verifies both wasm targets and uploads a tabbed **widget-gallery**
+  `web_demo` artifact for each. Browser-testing the artifact then caught a latent
+  black-screen bug — the GL backend never called `ImGui_ImplOpenGL3_NewFrame()`, so it
+  built no shader/buffers — fixed in 4.3.1 (which also repaired the desktop GLFW+OpenGL3
+  path).
 - **Multi-dimension correctness/security audit — P0–P3, shipped 3.17.0–3.19.0.** A
   49-agent audit (each finding adversarially verified) surfaced and fixed, with
   regression tests: a reachable **IPC integer-overflow OOB read/write** (security), a
@@ -134,16 +148,24 @@ Guiding principles:
 
 ### Known gaps / debt
 
-- **Metal, WebGPU, and Emscripten/WebGL2 are now real** (4.2.0–4.3.0). The wasm
-  backends are build-verified in CI; their in-browser runtime is validated manually
-  (CI has no GPU/browser). No backend remains a stub.
+- **All 7 backends are real** (Metal/WebGL2/WebGPU landed 4.2.0–4.3.1) — no stub
+  remains. The wasm backends are build-verified in CI; their in-browser runtime is
+  validated manually (CI has no GPU/browser), and WebGL2 is confirmed rendering as of
+  4.3.1.
+- **No automated visual / screenshot regression testing yet — now a priority.** The
+  4.3.1 black-screen bug (GL drew nothing) passed every CI signal because the Linux
+  smoke greps *log lines*, not *pixels*: Windows defaults to DX11, the macOS runner has
+  no GL context, and the smoke only asserts bring-up. A framebuffer-readback / `glGetError`
+  assertion (and ideally a GPU-capable runner for the WebGL/WebGPU paths) is the fix —
+  see Horizon 4.
+- **Font manager probes a hardcoded Linux emoji path** (`/usr/share/fonts/.../
+  NotoColorEmoji.ttf`) on every platform — a harmless warning off Linux, but it should
+  be platform-aware; the web build has no system CJK/emoji fonts at all.
 - **Software-GL rendering crashes inside the Mesa driver.** `llvmpipe`/`softpipe`
   segfault *within* `libgallium` during `ImGui_ImplOpenGL3_RenderDrawData` — a driver
   bug, **not** the UniGUI backend (which brings the GL context up cleanly) and absent
   on hardware GL. Consequence: the Linux CI smoke verifies backend *bring-up* rather
   than a full software render.
-- **No automated visual / screenshot regression testing yet** (needs a GPU-capable
-  CI runner).
 - **Coverage, wrapper-coverage, and clang-tidy gates are still advisory** — flip each
   to a hard gate once its baseline is confirmed stable.
 - **~4,900 clang-tidy *style* warnings** remain (mostly `f`-suffix / brace nits that
@@ -307,7 +329,9 @@ scroll, `FlashRow`, row/cell color, checkbox columns, groups, context menu),
 
 ### Horizon 4 — Backend completeness & performance
 
-Goal: turn the stub backends into real ones and make rendering measurably fast.
+Goal: ~~turn the stub backends into real ones~~ **(done — all 7 are real, 4.2.0–4.3.1)**
+and make rendering measurably fast + regression-proof. The open work is now backend
+**performance** and a **visual-regression** harness, not completeness.
 
 _**Landed (4.1.x) — cross-platform hardening + CI runtime verification.**_ The four
 production backends were audited and hardened on every failure path; the
@@ -318,21 +342,35 @@ host-window/`SDL_Quit` ownership bugs were closed; the factory now honours its
 GLFW+OpenGL3 backend boots and renders on Linux** (the macOS GL code path is validated
 by the same run).
 
-_**Landed (4.2.0–4.3.0) — every backend is now real.**_
+_**Landed (4.2.0–4.3.1) — every backend is now real and online.**_
 
 - ~~**P1 · L — Implement the Metal renderer** (macOS).~~ **Done (4.2.0):** real
   `imgui_impl_metal` on a `CAMetalLayer`, build-verified on the macOS CI runner.
 - ~~**P1 · L — Implement WebGPU + Emscripten** for a working browser target.~~ **Done
   (4.2.0 WebGL2, 4.3.0 WebGPU):** UniGUI cross-compiles + links to WebAssembly through
   both the WebGL2 (OpenGL3/GLES3) and WebGPU (emdawnwebgpu) renderers; CI builds a
-  `web_demo` artifact for each. In-browser runtime is validated manually.
+  tabbed widget-gallery `web_demo` artifact for each. In-browser runtime is validated
+  manually.
+- ~~**P0 · S — Fix the GLFW+OpenGL3/WebGL black screen.**~~ **Done (4.3.1):** the GL
+  renderer never called `ImGui_ImplOpenGL3_NewFrame()`, so it built no shader/buffers
+  and drew nothing; added a `RendererBackend::NewFrame()` hook. Caught by browser-testing
+  the `web_demo` artifact — it also fixed the desktop GLFW+OpenGL3 path.
 - ~~**P1 · M — DPI / multi-monitor robustness.**~~ **Partly done.** Non-Windows DPI now
   reads the platform window's content scale (`PlatformBackend::GetContentScale()` →
   `glfwGetWindowContentScale` / SDL), fixing blurry retina/HiDPI text on macOS/Linux.
   _Remaining:_ fractional-scaling polish and runtime DPI changes across all backends.
-- **P2 · S — A GPU-capable CI runner** so the Linux/macOS smoke can verify a *full*
-  render; today it falls back to asserting bring-up when the Mesa software GL driver
-  crashes inside `RenderDrawData`.
+- **P1 · M — Visual-regression / pixel-level CI (now the top backend gap).** The 4.3.1
+  black-screen bug drew nothing yet passed every CI signal because the smoke greps *log
+  lines*, not *pixels*. Add a render assertion the log-only smoke can't fool: a
+  post-frame `glGetError()` check and/or a framebuffer readback that asserts the screen
+  isn't the uniform clear color, plus — ideally — a **GPU-capable CI runner** so the
+  Linux/macOS smoke can verify a *full* render (today it falls back to asserting bring-up
+  when the Mesa software GL driver crashes inside `RenderDrawData`) and a headless-browser
+  smoke for the WebGL/WebGPU artifacts.
+- **P3 · S — Platform-aware font fallback.** The font manager probes a hardcoded Linux
+  emoji path (`/usr/share/fonts/.../NotoColorEmoji.ttf`) on every OS; make it
+  platform-aware, and offer an opt-in CJK font merge for the web build (which has no
+  system fonts).
 - **P1 · M — Performance budget & benchmarks.** _In progress._ Trading-model
   benchmarks landed (`tests/trading/bench_test.cc`): `OrderBook` under 200k
   price deltas + 5k full-book snapshots, and `OhlcSeries` over 1M ticks +
