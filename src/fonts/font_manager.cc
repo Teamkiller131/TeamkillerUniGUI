@@ -123,6 +123,14 @@ void Manager::Build() {
 }
 
 void Manager::LoadSystemEmoji(float size) {
+#ifdef __EMSCRIPTEN__
+    // The web build has no system fonts (MEMFS is empty), so there is nothing to probe —
+    // skip rather than log a misleading "not found at /usr/share/fonts/…" warning. To get
+    // emoji/CJK on the web, load a font explicitly via the font manager.
+    (void) size;
+    UNIGUI_LOG_DEBUG("Emoji font: skipped on the web build (no system fonts)");
+    return;
+#else
     auto& io = ImGui::GetIO();
 
     if (size <= 0.f) {
@@ -149,12 +157,6 @@ void Manager::LoadSystemEmoji(float size) {
     const char* emoji_path = "C:/Windows/Fonts/seguiemj.ttf";
 #elif defined(__APPLE__)
     const char* emoji_path = "/System/Library/Fonts/Apple Color Emoji.ttc";
-#elif defined(__EMSCRIPTEN__)
-    // The web build has no system fonts (MEMFS is empty), so there is nothing to probe —
-    // skip rather than log a misleading "not found at /usr/share/fonts/…" warning. To get
-    // emoji/CJK on the web, load a font explicitly via the font manager.
-    UNIGUI_LOG_DEBUG("Emoji font: skipped on the web build (no system fonts)");
-    return;
 #else
     const char* emoji_path = "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf";
 #endif
@@ -201,6 +203,7 @@ void Manager::LoadSystemEmoji(float size) {
         IM_FREE(data);
         UNIGUI_LOG_WARN("Failed to load emoji font from {}", emoji_path);
     }
+#endif // !__EMSCRIPTEN__
 }
 
 } // namespace unigui::fonts
