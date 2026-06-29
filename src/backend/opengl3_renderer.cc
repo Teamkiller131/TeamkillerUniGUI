@@ -68,6 +68,14 @@ public:
         initialized_ = false;
     }
 
+    void NewFrame() override {
+        // Lazily creates the GL device objects (shader program, vertex/index buffers,
+        // font texture) on the first call. Skipping it leaves ImGui's draw calls with no
+        // shader/buffer bound — the WebGL/GLES path then logs "no valid shader program in
+        // use" / "bufferData: no buffer" and renders nothing.
+        ImGui_ImplOpenGL3_NewFrame();
+    }
+
     void RenderDrawData(ImDrawData* draw_data) override {
         if (draw_data)
             ImGui_ImplOpenGL3_RenderDrawData(draw_data);

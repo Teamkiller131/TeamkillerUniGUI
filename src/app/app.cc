@@ -354,6 +354,11 @@ bool NewFrame() {
         static_cast<WebGPURenderer*>(g_renderer.get())->NewFrameWGPU(cw, ch);
     }
 #endif
+    // Renderer per-frame setup before ImGui::NewFrame(). For the OpenGL3/WebGL backend
+    // this is ImGui_ImplOpenGL3_NewFrame(), which lazily builds the shader program +
+    // buffers; without it the GL path draws nothing. No-op for backends that drive their
+    // per-frame setup through the typed calls above (DX11/DX12/Vulkan/Metal/WebGPU).
+    g_renderer->NewFrame();
     g_platform->NewFrame();
     ImGui::NewFrame();
     ProcessMainThreadTasks();

@@ -16,6 +16,15 @@ public:
     /// @return true on success
     virtual bool Init(ImGuiContext* context) = 0;
 
+    /// Per-frame renderer setup, called once before `ImGui::NewFrame()`. The default is
+    /// a no-op; backends whose ImGui impl needs a per-frame call that lazily creates/
+    /// validates its GPU device objects (notably `ImGui_ImplOpenGL3_NewFrame`, which
+    /// builds the shader program + vertex/index buffers) override this. Without it the
+    /// GL backend renders with "no valid shader program in use" / "bufferData: no
+    /// buffer" and draws nothing. (DX/Vulkan/Metal drive their per-frame setup through
+    /// their own typed calls in the app loop.)
+    virtual void NewFrame() {}
+
     /// Shut down and release renderer resources.
     virtual void Shutdown() = 0;
 
