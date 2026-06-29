@@ -54,9 +54,12 @@ target_compile_options(unigui_imgui PUBLIC ${UNIGUI_EM_SETTINGS})
 add_library(imgui::imgui ALIAS unigui_imgui)
 
 # ── implot — sources only, depends on imgui ───────────────────────────────────
+# Must track imgui 1.92: the last implot tag (v0.16) still uses IM_OFFSETOF, which
+# imgui 1.92 removed, so it fails to compile against our imgui. master switched to
+# offsetof and matches the newer implot the desktop vcpkg build already uses.
 FetchContent_Declare(implot_em
     GIT_REPOSITORY https://github.com/epezent/implot.git
-    GIT_TAG v0.16)
+    GIT_TAG master)
 FetchContent_MakeAvailable(implot_em)
 add_library(unigui_implot STATIC
     ${implot_em_SOURCE_DIR}/implot.cpp
