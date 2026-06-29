@@ -152,12 +152,12 @@ Guiding principles:
   remains. The wasm backends are build-verified in CI; their in-browser runtime is
   validated manually (CI has no GPU/browser), and WebGL2 is confirmed rendering as of
   4.3.1.
-- **No automated visual / screenshot regression testing yet — now a priority.** The
-  4.3.1 black-screen bug (GL drew nothing) passed every CI signal because the Linux
-  smoke greps *log lines*, not *pixels*: Windows defaults to DX11, the macOS runner has
-  no GL context, and the smoke only asserts bring-up. A framebuffer-readback / `glGetError`
-  assertion (and ideally a GPU-capable runner for the WebGL/WebGPU paths) is the fix —
-  see Horizon 4.
+- **Visual / pixel-level CI — partially addressed.** The 4.3.1 black-screen bug (GL drew
+  nothing) passed every CI signal because the Linux smoke grepped *log lines*, not
+  *pixels*. The smoke now reads the framebuffer back and asserts the GL backend actually
+  drew (`UNIGUI_RENDER_VERIFY` → `glError`/`drawn=true`), so that class is caught. Still
+  missing: a GPU-capable runner for a software-free full render, a headless-browser smoke
+  for the WebGL/WebGPU artifacts, and golden-image snapshot diffing — see Horizon 4.
 - **Font manager probes a hardcoded Linux emoji path** (`/usr/share/fonts/.../
   NotoColorEmoji.ttf`) on every platform — a harmless warning off Linux, but it should
   be platform-aware; the web build has no system CJK/emoji fonts at all.
@@ -359,14 +359,17 @@ _**Landed (4.2.0–4.3.1) — every backend is now real and online.**_
   reads the platform window's content scale (`PlatformBackend::GetContentScale()` →
   `glfwGetWindowContentScale` / SDL), fixing blurry retina/HiDPI text on macOS/Linux.
   _Remaining:_ fractional-scaling polish and runtime DPI changes across all backends.
-- **P1 · M — Visual-regression / pixel-level CI (now the top backend gap).** The 4.3.1
-  black-screen bug drew nothing yet passed every CI signal because the smoke greps *log
-  lines*, not *pixels*. Add a render assertion the log-only smoke can't fool: a
-  post-frame `glGetError()` check and/or a framebuffer readback that asserts the screen
-  isn't the uniform clear color, plus — ideally — a **GPU-capable CI runner** so the
-  Linux/macOS smoke can verify a *full* render (today it falls back to asserting bring-up
-  when the Mesa software GL driver crashes inside `RenderDrawData`) and a headless-browser
-  smoke for the WebGL/WebGPU artifacts.
+- **P1 · M — Visual-regression / pixel-level CI.** _Started._ The 4.3.1 black-screen bug
+  drew nothing yet passed every CI signal because the smoke greps *log lines*, not
+  *pixels*. **✅ Landed:** `UNIGUI_RENDER_VERIFY=1` makes the app read the GL framebuffer
+  back after `RenderDrawData` (post-frame `glGetError()` + a clear-vs-drawn pixel-grid
+  count → `[render-verify] … drawn=true|false`), and the Linux smoke asserts `drawn=true`
+  after a clean run — so the black-screen class now fails CI (verified: `glError=0x0
+  nonClear=2100/3600 drawn=true`). _Remaining:_ a **GPU-capable CI runner** so the
+  Linux/macOS smoke can verify a *full* render without the software-GL fallback (today it
+  reverts to asserting bring-up when the Mesa driver crashes inside `RenderDrawData`), a
+  **headless-browser smoke** for the WebGL/WebGPU artifacts, and **golden-image snapshot
+  diffing** for regressions beyond "is the frame blank".
 - **P3 · S — Platform-aware font fallback.** The font manager probes a hardcoded Linux
   emoji path (`/usr/share/fonts/.../NotoColorEmoji.ttf`) on every OS; make it
   platform-aware, and offer an opt-in CJK font merge for the web build (which has no
