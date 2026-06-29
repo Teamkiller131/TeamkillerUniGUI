@@ -30,6 +30,9 @@
 #ifdef UNIGUI_HAS_VULKAN
 #include <unigui/backend/vulkan_renderer.h>
 #endif
+#ifdef UNIGUI_HAS_METAL
+#include <unigui/backend/metal_renderer.h>
+#endif
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -183,6 +186,25 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
     }
 #endif
 
+#ifdef UNIGUI_HAS_METAL
+    if (type == BackendType::Metal) {
+        int pw = 0, ph = 0;
+        g_platform->GetClientSize(&pw, &ph);
+        if (pw <= 0) {
+            pw = config.width;
+            ph = config.height;
+        }
+        // The Metal renderer needs the NSWindow (from the platform) to attach its
+        // CAMetalLayer; like Vulkan, the heavy lifting is in BringUp, not Init.
+        auto* mr = static_cast<MetalRenderer*>(g_renderer.get());
+        if (!mr->BringUp(g_platform->GetNativeWindowHandle(), pw, ph)) {
+            UNIGUI_LOG_ERROR("Metal device/layer creation failed");
+            ResetBackendOnly();
+            return false;
+        }
+    }
+#endif
+
     if (!g_renderer || !g_renderer->Init(ImGui::GetCurrentContext())) {
         UNIGUI_LOG_ERROR("Renderer init failed (backend={})", (int) type);
         ResetBackendOnly();
@@ -286,6 +308,14 @@ bool NewFrame() {
         if (cw > 0 && ch > 0)
             vr->RequestResize(cw, ch);
         vr->NewFrameVk();
+    }
+#endif
+#ifdef UNIGUI_HAS_METAL
+    if (g_backend == BackendType::Metal) {
+        int cw = 0, ch = 0;
+        g_platform->GetClientSize(&cw, &ch);
+        // Acquire the drawable + start the command buffer/encoder BEFORE ImGui::NewFrame.
+        static_cast<MetalRenderer*>(g_renderer.get())->NewFrameMetal(cw, ch);
     }
 #endif
     g_platform->NewFrame();

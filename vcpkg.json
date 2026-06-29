@@ -25,6 +25,14 @@
       ]
     },
     {
+      "name": "imgui",
+      "default-features": false,
+      "platform": "osx",
+      "features": [
+        "metal-binding"
+      ]
+    },
+    {
       "name": "glfw3"
     },
     {

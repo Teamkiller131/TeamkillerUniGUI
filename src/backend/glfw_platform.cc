@@ -11,6 +11,9 @@
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+#elif defined(__APPLE__)
+#define GLFW_EXPOSE_NATIVE_COCOA // exposes glfwGetCocoaWindow (NSWindow*) for Metal
+#include <GLFW/glfw3native.h>
 #endif
 #include <memory>
 
@@ -113,6 +116,8 @@ public:
     void* GetNativeWindowHandle() const override {
 #ifdef _WIN32
         return glfwGetWin32Window(window_);
+#elif defined(__APPLE__)
+        return (void*) glfwGetCocoaWindow(window_); // NSWindow* — Metal attaches a CAMetalLayer
 #else
         return window_;
 #endif
