@@ -145,6 +145,16 @@ if(APPLE)
     message(STATUS "Metal backend enabled (macOS)")
 endif()
 
+# ── Emscripten WebGPU renderer (opt-in web build) ─────────────────────────────
+# When the wasm build is configured with -DUNIGUI_WEB_WEBGPU=ON, the WebGPU renderer +
+# imgui_impl_wgpu are compiled (see cmake/Emscripten.cmake) and gated by this macro.
+# webgpu_renderer.cc is already in the source list (the else()/WIN32 backend block);
+# the macro flips it from the {nullptr} stub to the real implementation.
+if(EMSCRIPTEN AND UNIGUI_WEB_WEBGPU)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_WEBGPU)
+    message(STATUS "Emscripten WebGPU renderer enabled (-sUSE_WEBGPU)")
+endif()
+
 target_link_libraries(unigui PUBLIC ${UNIGUI_LIBS})
 
 # ═══════════════════════════════════════════════════════════════════════════════

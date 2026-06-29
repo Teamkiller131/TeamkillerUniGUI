@@ -46,7 +46,10 @@ int main() {
     config.width = 1280;
     config.height = 720;
     config.title = "UniGUI Web Demo";
-#ifdef __EMSCRIPTEN__
+#if defined(__EMSCRIPTEN__) && defined(UNIGUI_HAS_WEBGPU)
+    // GLFW (NO_API) canvas + WebGPU renderer (built with -DUNIGUI_WEB_WEBGPU=ON).
+    config.backend = unigui::BackendType::WebGPU;
+#elif defined(__EMSCRIPTEN__)
     // emscripten platform (emscripten's GLFW) + OpenGL3/WebGL2 renderer.
     config.backend = unigui::BackendType::Emscripten;
 #endif

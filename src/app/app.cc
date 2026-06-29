@@ -38,6 +38,9 @@
 #ifdef UNIGUI_HAS_METAL
 #include <unigui/backend/metal_renderer.h>
 #endif
+#ifdef UNIGUI_HAS_WEBGPU
+#include <unigui/backend/webgpu_renderer.h>
+#endif
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -210,6 +213,26 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
     }
 #endif
 
+#ifdef UNIGUI_HAS_WEBGPU
+    if (type == BackendType::WebGPU) {
+        int pw = 0, ph = 0;
+        g_platform->GetClientSize(&pw, &ph);
+        if (pw <= 0) {
+            pw = config.width;
+            ph = config.height;
+        }
+        // WebGPU device acquisition is async; BringUp kicks it off and returns true.
+        // The renderer stays inert (Ready()==false) until the device callback fires,
+        // so early frames simply draw nothing — fine under the browser RAF loop.
+        auto* wr = static_cast<WebGPURenderer*>(g_renderer.get());
+        if (!wr->BringUp(pw, ph)) {
+            UNIGUI_LOG_ERROR("WebGPU instance/surface creation failed");
+            ResetBackendOnly();
+            return false;
+        }
+    }
+#endif
+
     if (!g_renderer || !g_renderer->Init(ImGui::GetCurrentContext())) {
         UNIGUI_LOG_ERROR("Renderer init failed (backend={})", (int) type);
         ResetBackendOnly();
@@ -321,6 +344,14 @@ bool NewFrame() {
         g_platform->GetClientSize(&cw, &ch);
         // Acquire the drawable + start the command buffer/encoder BEFORE ImGui::NewFrame.
         static_cast<MetalRenderer*>(g_renderer.get())->NewFrameMetal(cw, ch);
+    }
+#endif
+#ifdef UNIGUI_HAS_WEBGPU
+    if (g_backend == BackendType::WebGPU) {
+        int cw = 0, ch = 0;
+        g_platform->GetClientSize(&cw, &ch);
+        // (Re)configure the swap chain on resize + acquire this frame's texture view.
+        static_cast<WebGPURenderer*>(g_renderer.get())->NewFrameWGPU(cw, ch);
     }
 #endif
     g_platform->NewFrame();

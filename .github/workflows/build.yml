@@ -226,7 +226,7 @@ jobs:
         test -f build_web/examples/web_demo/web_demo.html
         test -f build_web/examples/web_demo/web_demo.wasm
         test -f build_web/examples/web_demo/web_demo.js
-    - name: Upload web demo artifact
+    - name: Upload web demo artifact (WebGL2)
       uses: actions/upload-artifact@v4
       with:
         name: unigui-web-demo
@@ -234,3 +234,26 @@ jobs:
           build_web/examples/web_demo/web_demo.html
           build_web/examples/web_demo/web_demo.js
           build_web/examples/web_demo/web_demo.wasm
+    # Second wasm build: the WebGPU renderer path (-sUSE_WEBGPU + imgui_impl_wgpu).
+    - name: Configure (wasm + WebGPU)
+      run: |
+        emcmake cmake -B build_web_wgpu -S . -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          -DUNIGUI_BUILD_TESTS=OFF -DUNIGUI_BUILD_EXAMPLES=ON \
+          -DUNIGUI_MODULE_PLUGIN=OFF -DUNIGUI_MODULE_EVENTS=OFF \
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF \
+          -DUNIGUI_WEB_WEBGPU=ON
+    - name: Build the WebGPU web demo (.html/.js/.wasm)
+      run: cmake --build build_web_wgpu --target web_demo
+    - name: Verify the WebGPU artifact was produced
+      run: |
+        ls -la build_web_wgpu/examples/web_demo/
+        test -f build_web_wgpu/examples/web_demo/web_demo.html
+        test -f build_web_wgpu/examples/web_demo/web_demo.wasm
+    - name: Upload web demo artifact (WebGPU)
+      uses: actions/upload-artifact@v4
+      with:
+        name: unigui-web-demo-webgpu
+        path: |
+          build_web_wgpu/examples/web_demo/web_demo.html
+          build_web_wgpu/examples/web_demo/web_demo.js
+          build_web_wgpu/examples/web_demo/web_demo.wasm
