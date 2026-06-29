@@ -1,5 +1,26 @@
 ## [Unreleased]
 
+## [4.3.1] - 2026-06-29
+
+### Fixed
+- **GLFW+OpenGL3 / WebGL backend rendered nothing (black screen).** The OpenGL3 renderer
+  never called `ImGui_ImplOpenGL3_NewFrame()`, which lazily builds the GL device objects
+  (shader program + vertex/index buffers + font texture). Without it ImGui's draw calls
+  ran with no program/buffer bound — the GL log filled with `INVALID_OPERATION:
+  drawElements: no valid shader program in use` / `bufferData: no buffer`. Added a
+  default-no-op `RendererBackend::NewFrame()` hook, overridden by the OpenGL3 renderer and
+  invoked before `ImGui::NewFrame()`. This also repairs the desktop GLFW+OpenGL3 backend;
+  it had slipped through because Windows defaults to DX11, the macOS CI runner can't make a
+  GL context, and the Linux smoke greps log lines rather than pixels. Confirmed fixed
+  in-browser on the WebGL2 `web_demo`.
+
+### Changed
+- **`web_demo` is now a tabbed widget gallery.** One window with a tab bar showcasing ~40
+  UniGUI widgets (Buttons, Inputs, Toggles, Selection, Progress, Layout, Navigation, Data,
+  File & Color, Info, Cards & Effects) plus a live theme switcher — instead of leaning on
+  `ImGui::ShowDemoWindow()`. The misleading CJK panel (tofu without a CJK font on the web)
+  is replaced with an honest note.
+
 ## [4.3.0] - 2026-06-29
 
 > **WebGPU on the Web — the last backend stub is gone.** UniGUI now also compiles and
