@@ -29,6 +29,16 @@ FetchContent_Declare(spdlog_em
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
     GIT_TAG v1.14.1)
 FetchContent_MakeAvailable(spdlog_em)
+# The fmt bundled by spdlog 1.14 (fmt 10.x) trips a consteval bug on Emscripten's
+# Clang: "call to consteval function fmt::basic_format_string<…> is not a constant
+# expression" in logger.h, which fails every TU that includes <spdlog> (i.e. all of
+# them, via core/log.h). Forcing FMT_USE_CONSTEVAL=0 makes the format_string
+# constructor constexpr instead of consteval — compile-time checks degrade to the
+# runtime path, which is harmless here since the desktop builds already validate every
+# format string. PUBLIC so it propagates to the unigui lib's own TUs.
+if(TARGET spdlog)
+    target_compile_definitions(spdlog PUBLIC FMT_USE_CONSTEVAL=0)
+endif()
 
 # ── imgui (docking branch) — sources only, no upstream CMakeLists ─────────────
 FetchContent_Declare(imgui_em
