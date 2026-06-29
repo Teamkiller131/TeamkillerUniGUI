@@ -1,5 +1,31 @@
 ## [Unreleased]
 
+## [4.3.0] - 2026-06-29
+
+> **WebGPU on the Web — the last backend stub is gone.** UniGUI now also compiles and
+> links as a WebAssembly + **WebGPU** application, alongside the WebGL2 path. All seven
+> backends are now real.
+
+### Added
+- **WebGPU renderer (Emscripten).** `WebGPURenderer` renders to the HTML5 `#canvas`
+  through the browser's WebGPU and drives `imgui_impl_wgpu`. imgui 1.92's wgpu backend
+  requires the modern `webgpu.h` (WGPUStringView, the surface API, CallbackInfo structs),
+  so the WebGPU build uses Emscripten 4.0.10's `--use-port=emdawnwebgpu` (the legacy
+  `-sUSE_WEBGPU` binding no longer compiles). Device acquisition is asynchronous: BringUp
+  starts the adapter/device request with `AllowSpontaneous` callbacks (which fire from the
+  browser event loop) and the renderer stays inert until the device callback configures
+  the surface and runs `ImGui_ImplWGPU_Init` — early frames simply draw nothing, which
+  fits the browser RAF loop. Enable with `-DUNIGUI_WEB_WEBGPU=ON` under an `emcmake`
+  configure; `web_demo` then targets `BackendType::WebGPU`.
+- **CI builds both wasm backends.** The `emscripten` job now build-verifies the WebGL2
+  *and* WebGPU `web_demo` (emsdk 4.0.10) and uploads each as a separate artifact
+  (`unigui-web-demo`, `unigui-web-demo-webgpu`). CI has no GPU/browser, so build + link
+  are gated in CI and the in-browser runtime is validated manually with the artifacts.
+
+### Changed
+- The Emscripten wasm builds move to emsdk **4.0.10** (required by emdawnwebgpu; the
+  WebGL2 build runs on it unchanged).
+
 ## [4.2.0] - 2026-06-29
 
 > **Two backends go from stub to real: macOS Metal and the Web.** The Metal renderer is

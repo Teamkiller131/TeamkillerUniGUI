@@ -10,8 +10,8 @@ the theme's backdrop color so translucent (glass) surfaces read correctly.
 This document covers:
 
 - The two-interface abstraction (`PlatformBackend` × `RendererBackend`).
-- Which **platforms** and **renderers** are available, and which are
-  fully-functional vs. **stubs**.
+- Which **platforms** and **renderers** are available (all are functional;
+  WebGPU is the newest and build-verified in CI).
 - How to **select** a backend at runtime (`AppConfig::backend` /
   `BackendType`) and at build time (CMake `UNIGUI_BACKEND_*` options + the named
   presets).
@@ -133,9 +133,8 @@ std::unique_ptr<PlatformBackend> CreateEmscriptenPlatform();
 
 ## 3. Renderers
 
-A *renderer* owns the GPU API. The status column is the important one — OpenGL3
-(incl. WebGL2 on the Web), Vulkan, DX11, DX12, and Metal are real; only WebGPU
-remains a stub.
+A *renderer* owns the GPU API. Every renderer is now real — OpenGL3 (incl.
+WebGL2 on the Web), Vulkan, DX11, DX12, Metal, and WebGPU.
 
 | Renderer | `BackendType` | Status | OS | CMake gate |
 |----------|---------------|--------|----|------------|
@@ -144,12 +143,12 @@ remains a stub.
 | **DirectX 11** | `DX11` | **Functional** | **Windows only** | `UNIGUI_BACKEND_DX11` (ON) |
 | **DirectX 12** | `DX12` | **Functional** | **Windows only** | `UNIGUI_BACKEND_DX12` (OFF) |
 | **Metal** | `Metal` | **Functional** (`imgui_impl_metal` on a `CAMetalLayer`) | macOS | (auto on `APPLE`) |
-| **WebGPU** | `WebGPU` | **STUB** — do not rely on it | — | (no gate) |
+| **WebGPU** | `WebGPU` | **Functional** (`imgui_impl_wgpu`, emdawnwebgpu) | Web | `UNIGUI_WEB_WEBGPU` (OFF) |
 
-> **Stub warning.** Only the **WebGPU** renderer is a non-functional stub. It is
-> wired into the `BackendType` enum and the factory switch for
-> forward-compatibility, but it does **not** render — target OpenGL3 / Vulkan /
-> DX11 / DX12 / Metal, or the Emscripten (WebGL2) path on the Web.
+> **All backends are real.** Every renderer renders. WebGPU is the newest: it is
+> build-verified in CI (emsdk 4.0.10 + `--use-port=emdawnwebgpu`); since CI has no
+> GPU/browser, its in-browser runtime is validated manually with the uploaded
+> `web_demo` artifact. The default GLFW+OpenGL3 path is the most battle-tested.
 
 The factory exposes one creator per renderer. Note that `CreateMetalRenderer`
 and `CreateWebGPURenderer` are always *declared* (unguarded), while
@@ -163,7 +162,7 @@ std::unique_ptr<RendererBackend> CreateMetalRenderer();   // macOS (imgui_impl_m
 #ifdef UNIGUI_HAS_DX12
 std::unique_ptr<RendererBackend> CreateDX12Renderer();
 #endif
-std::unique_ptr<RendererBackend> CreateWebGPURenderer();  // stub
+std::unique_ptr<RendererBackend> CreateWebGPURenderer();  // Web (imgui_impl_wgpu)
 ```
 
 ### 3.1 DirectX 11 / 12 are Windows-only
@@ -305,8 +304,8 @@ inline DefaultBackend CreateDefaultBackend() {
 }
 ```
 
-Note that `Metal` is guarded by `__APPLE__` and `Emscripten` by `__EMSCRIPTEN__`,
-while `WebGPU` always calls its (stub) creator. So the pairings are:
+Note that `Metal` is guarded by `__APPLE__`, and `WebGPU`/`Emscripten` by
+`__EMSCRIPTEN__` (+ `UNIGUI_HAS_WEBGPU` for WebGPU). So the pairings are:
 
 | `BackendType` | Platform | Renderer |
 |---------------|----------|----------|
@@ -316,7 +315,7 @@ while `WebGPU` always calls its (stub) creator. So the pairings are:
 | `DX11` | GLFW (NO_API) | DirectX 11 |
 | `DX12` | GLFW (NO_API) | DirectX 12 |
 | `Metal` | GLFW (NO_API) | Metal (`imgui_impl_metal`) |
-| `WebGPU` | GLFW (NO_API) | WebGPU *(stub)* |
+| `WebGPU` | GLFW (NO_API) | WebGPU (`imgui_impl_wgpu`, emdawnwebgpu) |
 | `Emscripten` | Emscripten → GLFW (WebGL2 context) | OpenGL 3 (GLES3/WebGL2) |
 
 ### 4.1 Automatic fallback
@@ -683,5 +682,6 @@ the backdrop automatically.
 | Backdrop clear | Automatic — backends clear to `GetBackdropColor()` every frame |
 | Native handle | `unigui::GetNativeWindowHandle()` (HWND on Windows, `GLFWwindow*` elsewhere) |
 
-> **Stub reminder:** only **WebGPU** is still a non-functional stub. OpenGL3,
-> Vulkan, DX11, DX12, Metal, and the Emscripten (WebGL2) path are all real.
+> **All backends are real.** OpenGL3, Vulkan, DX11, DX12, Metal, the Emscripten
+> (WebGL2) path, and WebGPU all render. WebGPU is the newest — build-verified in
+> CI, with its in-browser runtime validated manually via the `web_demo` artifact.

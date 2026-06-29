@@ -20,10 +20,11 @@ Since then the toolkit became an **opinionated application framework** (Horizon 
 Component/State/Store/Navigator + reactive + layout + theming tools), passed a
 **multi-dimension correctness/security audit** (P0–P3 all fixed and shipped across
 3.17–3.19, plus the 4.0 `Result<T>` → `std::expected` major), and had its
-**cross-platform backends hardened and verified at runtime in CI**. The **Metal**
-renderer and the **Emscripten/WebGL2** web backend are now real (4.2.0; the latter
-build-verified in CI with a downloadable `web_demo` artifact). The near-term focus
-shifts to the remaining frontier: the **WebGPU** renderer, **accessibility**,
+**cross-platform backends hardened and verified at runtime in CI**. All seven backends
+are now real: the **Metal** renderer (4.2.0), the **Emscripten/WebGL2** web backend
+(4.2.0), and the **WebGPU** web renderer (4.3.0, emdawnwebgpu) — the wasm builds are
+CI-verified with downloadable `web_demo` artifacts. The near-term focus shifts to the
+remaining frontier: **accessibility**,
 **visual-regression** testing, and **packaging reach**.
 
 ## 1. Vision
@@ -69,12 +70,12 @@ Guiding principles:
 - Theme engine: Dark/Light + 13 presets, unified style/color tokens, surface
   materials, semantic colors, elevation; theme export/import + CSS hot-reload + a live
   `theme_editor`.
-- 7 backends — 6 functional (GLFW+GL3, GLFW/SDL3+Vulkan, DX11, DX12, **Metal**, and the
-  **Emscripten/WebGL2** web path), all hardened on their failure paths. Only **WebGPU**
-  stays a stub that fails cleanly. The default GLFW+OpenGL3 path is **CI-verified to run
-  on Linux** (headless xvfb + llvmpipe smoke) and its identical GL code path covers
-  macOS; the **wasm build is CI-verified** (emsdk + `emcmake`, with a `web_demo`
-  artifact). Metal is build-verified on the macOS CI runner.
+- 7 backends, all functional (GLFW+GL3, GLFW/SDL3+Vulkan, DX11, DX12, **Metal**, the
+  **Emscripten/WebGL2** web path, and **WebGPU** via emdawnwebgpu), all hardened on their
+  failure paths. The default GLFW+OpenGL3 path is **CI-verified to run on Linux**
+  (headless xvfb + llvmpipe smoke) and its identical GL code path covers macOS; both
+  **wasm builds (WebGL2 + WebGPU) are CI-verified** (emsdk 4.0.10 + `emcmake`, with
+  `web_demo` artifacts). Metal is build-verified on the macOS CI runner.
 - **`Result<T>` is `std::expected<T, ErrorCode>`** (4.0): errors via `Err()`, monadic
   ops, throwing `value()`; adopted in `sqlite::Database::Open` and `config::Store::Load*`.
 - Optional modules — SQLite, config (TOML/JSON/INI), IPC (shmem + ZMQ), network
@@ -133,9 +134,9 @@ Guiding principles:
 
 ### Known gaps / debt
 
-- **Metal / WebGPU renderers are non-functional stubs** (they now fail cleanly
-  rather than pretending to succeed); the **Emscripten** path compiles but is
-  unverified end-to-end. Real implementations are Horizon 4.
+- **Metal, WebGPU, and Emscripten/WebGL2 are now real** (4.2.0–4.3.0). The wasm
+  backends are build-verified in CI; their in-browser runtime is validated manually
+  (CI has no GPU/browser). No backend remains a stub.
 - **Software-GL rendering crashes inside the Mesa driver.** `llvmpipe`/`softpipe`
   segfault *within* `libgallium` during `ImGui_ImplOpenGL3_RenderDrawData` — a driver
   bug, **not** the UniGUI backend (which brings the GL context up cleanly) and absent
@@ -315,13 +316,16 @@ the **non-compiling Web build** were fixed; Vulkan partial-init leaks and SDL3
 host-window/`SDL_Quit` ownership bugs were closed; the factory now honours its
 `{nullptr,nullptr}` contract; and a headless `--frames` CI smoke **proves the
 GLFW+OpenGL3 backend boots and renders on Linux** (the macOS GL code path is validated
-by the same run). What remains is making the *stub* renderers real:
+by the same run).
 
-- **P1 · L — Implement the Metal renderer** (macOS), replacing the cleanly-failing
-  stub; validate against the Vulkan/MoltenVK path.
-- **P1 · L — Implement WebGPU + Emscripten** for a working browser target; ship a web
-  demo of `widget_gallery`. _(Emscripten now **compiles**; the WebGPU/WebGL renderer is
-  the remaining gap.)_
+_**Landed (4.2.0–4.3.0) — every backend is now real.**_
+
+- ~~**P1 · L — Implement the Metal renderer** (macOS).~~ **Done (4.2.0):** real
+  `imgui_impl_metal` on a `CAMetalLayer`, build-verified on the macOS CI runner.
+- ~~**P1 · L — Implement WebGPU + Emscripten** for a working browser target.~~ **Done
+  (4.2.0 WebGL2, 4.3.0 WebGPU):** UniGUI cross-compiles + links to WebAssembly through
+  both the WebGL2 (OpenGL3/GLES3) and WebGPU (emdawnwebgpu) renderers; CI builds a
+  `web_demo` artifact for each. In-browser runtime is validated manually.
 - ~~**P1 · M — DPI / multi-monitor robustness.**~~ **Partly done.** Non-Windows DPI now
   reads the platform window's content scale (`PlatformBackend::GetContentScale()` →
   `glfwGetWindowContentScale` / SDL), fixing blurry retina/HiDPI text on macOS/Linux.
@@ -474,10 +478,10 @@ Track these over time to know the plan is working:
 - **Quality:** test count & coverage %; fuzz targets; open P0/P1 bug count.
 - **Performance:** frame time for `DataTable`/`VirtualList`/DOM at 100k rows and
   high update rates; parser throughput (CSV/JSON).
-- **Reach:** functional backends (**4/7** production today — GLFW+GL3 **CI-verified to
-  run on Linux**, Vulkan, DX11, DX12; Metal/WebGPU stubs, Emscripten compiles; target
-  7/7); platforms with a passing test suite (**Win/Linux/macOS all green**); packaging
-  channels available.
+- **Reach:** functional backends (**7/7** today — GLFW+GL3 **CI-verified to run on
+  Linux**, Vulkan, DX11, DX12, Metal, plus the **WebGL2 and WebGPU** wasm paths,
+  CI-build-verified); platforms with a passing test suite (**Win/Linux/macOS all
+  green**); packaging channels available.
 - **Adoption:** examples that build on web; external plugins; downstream
   embedders.
 
@@ -485,8 +489,9 @@ Track these over time to know the plan is working:
 
 - When picking up work, start from the **highest-priority item in the lowest open
   horizon** unless a release-blocking bug takes precedence. With **Horizons 2 & 3
-  complete** and the audit + backend-hardening arc shipped, the open frontier is
-  **Horizon 4** (a real **Metal** renderer, then **WebGPU/Emscripten** + a web demo) and
+  complete**, the audit + backend-hardening arc shipped, and **Horizon 4's backend
+  completeness done** (Metal + WebGL2 + WebGPU, 4.2.0–4.3.0 — all 7 backends real), the
+  open frontier is **Horizon 4's performance work** and
   **Horizon 5** (**accessibility**; deepening the framework idiom), plus the
   cross-cutting **visual-regression harness** and flipping the **coverage / clang-tidy**
   gates from advisory to hard once their baselines are pinned.
