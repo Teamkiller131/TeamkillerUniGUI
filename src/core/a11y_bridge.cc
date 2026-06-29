@@ -1,15 +1,20 @@
-// Platform screen-reader bridge for unigui::a11y.
+// Platform screen-reader bridge for unigui::a11y. `InstallSystemBridge()` routes focus
+// changes + live announcements to the OS assistive-technology runtime:
 //
-// On Windows it raises UI Automation **notification events** (spoken by Narrator / NVDA /
-// JAWS) for focus changes and live announcements. Notifications are fire-and-forget, so
-// this only needs a minimal UIA provider for the app window — it does NOT expose a full
-// element tree (which immediate-mode ImGui can't cheaply provide). On every other
-// platform InstallSystemBridge() falls back to the reference logging bridge.
+//   • Windows    — UI Automation notification events (Narrator / NVDA / JAWS).
+//   • Web (wasm) — an ARIA live region in the page DOM (any browser screen reader).
+//   • macOS      — NSAccessibility announcement notifications (VoiceOver).
+//   • Linux/other — logging fallback (AT-SPI is the remaining native bridge).
+//
+// Notifications are fire-and-forget, so no full element tree is exposed (which
+// immediate-mode ImGui can't cheaply provide). All branches enable a11y and subscribe to
+// the same SetOnFocusChanged / SetOnAnnounce callbacks.
 #include <unigui/core/accessibility.h>
 #include <unigui/core/log.h>
 
 #include <string>
 
+// ─────────────────────────────────────────────────────────────────────────────
 #if defined(_WIN32)
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -33,7 +38,6 @@ public:
     explicit WindowProvider(HWND h)
             : hwnd_(h) {}
 
-    // IUnknown
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv) override {
         if (!ppv)
             return E_POINTER;
@@ -52,8 +56,6 @@ public:
             delete this;
         return static_cast<ULONG>(r);
     }
-
-    // IRawElementProviderSimple
     HRESULT STDMETHODCALLTYPE get_ProviderOptions(ProviderOptions* opts) override {
         if (!opts)
             return E_POINTER;
@@ -86,8 +88,7 @@ private:
     HWND hwnd_ = nullptr;
 };
 
-// Process-lifetime singleton (intentional one-time leak; the window outlives it).
-WindowProvider* g_provider = nullptr;
+WindowProvider* g_provider = nullptr; // process-lifetime singleton (intentional)
 
 std::wstring ToWide(const std::string& s) {
     if (s.empty())
@@ -100,7 +101,7 @@ std::wstring ToWide(const std::string& s) {
 
 void Raise(const std::wstring& text, NotificationProcessing processing) {
     if (!g_provider || text.empty() || !UiaClientsAreListening())
-        return; // no screen reader listening — skip the work
+        return;
     BSTR display = SysAllocString(text.c_str());
     BSTR activity = SysAllocString(L"unigui");
     UiaRaiseNotificationEvent(g_provider, NotificationKind_Other, processing, display, activity);
@@ -118,10 +119,9 @@ void InstallSystemBridge(void* hwnd) {
     }
     if (!g_provider)
         g_provider = new WindowProvider(static_cast<HWND>(hwnd));
-
     SetOnFocusChanged([](const Node& n) {
         if (n.role == Role::Unknown && n.name.empty())
-            return; // focus cleared — nothing to speak
+            return;
         std::string text = std::string(RoleName(n.role)) + " " + n.name;
         if (!n.value.empty())
             text += ", " + n.value;
@@ -137,12 +137,105 @@ void InstallSystemBridge(void* hwnd) {
 
 } // namespace unigui::a11y
 
-#else // !_WIN32
+// ─────────────────────────────────────────────────────────────────────────────
+#elif defined(__EMSCRIPTEN__)
+
+#include <emscripten.h>
+
+namespace unigui::a11y {
+namespace {
+// Mirror focus/announcements into hidden ARIA live regions in the page; any browser
+// screen reader (VoiceOver, NVDA, Narrator, Orca, TalkBack) reads them.
+void SpeakWeb(const std::string& text, bool assertive) {
+    if (text.empty())
+        return;
+    // clang-format off
+    EM_ASM({
+        var id = $1 ? 'unigui-a11y-assertive' : 'unigui-a11y-polite';
+        var d = document.getElementById(id);
+        if (!d) {
+            d = document.createElement('div');
+            d.id = id;
+            d.setAttribute('aria-live', $1 ? 'assertive' : 'polite');
+            d.setAttribute('aria-atomic', 'true');
+            d.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;' +
+                              'clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;';
+            document.body.appendChild(d);
+        }
+        d.textContent = UTF8ToString($0);
+    }, text.c_str(), assertive ? 1 : 0);
+    // clang-format on
+}
+} // namespace
+
+void InstallSystemBridge(void* /*hwnd*/) {
+    SetEnabled(true);
+    SetOnFocusChanged([](const Node& n) {
+        if (n.role == Role::Unknown && n.name.empty())
+            return;
+        std::string text = std::string(RoleName(n.role)) + " " + n.name;
+        if (!n.value.empty())
+            text += ", " + n.value;
+        SpeakWeb(text, /*assertive=*/false);
+    });
+    SetOnAnnounce(
+        [](const Announcement& a) { SpeakWeb(a.message, a.politeness == Live::Assertive); });
+    UNIGUI_LOG_INFO("[a11y] Web ARIA live-region bridge installed");
+}
+
+} // namespace unigui::a11y
+
+// ─────────────────────────────────────────────────────────────────────────────
+#elif defined(__APPLE__)
+
+#import <AppKit/AppKit.h>
+
+namespace unigui::a11y {
+namespace {
+NSWindow* g_window = nil;
+void Speak(const std::string& text, bool assertive) {
+    if (text.empty() || g_window == nil)
+        return;
+    NSString* msg = [NSString stringWithUTF8String:text.c_str()];
+    NSDictionary* info = @{
+        NSAccessibilityAnnouncementKey : (msg ? msg : @""),
+        NSAccessibilityPriorityKey :
+            @(assertive ? NSAccessibilityPriorityHigh : NSAccessibilityPriorityMedium)
+    };
+    NSAccessibilityPostNotificationWithUserInfo(
+        g_window, NSAccessibilityAnnouncementRequestedNotification, info);
+}
+} // namespace
+
+void InstallSystemBridge(void* nsWindow) {
+    SetEnabled(true);
+    if (!nsWindow) {
+        InstallLoggingBridge();
+        return;
+    }
+    g_window = (__bridge NSWindow*) nsWindow;
+    SetOnFocusChanged([](const Node& n) {
+        if (n.role == Role::Unknown && n.name.empty())
+            return;
+        std::string text = std::string(RoleName(n.role)) + " " + n.name;
+        if (!n.value.empty())
+            text += ", " + n.value;
+        Speak(text, /*assertive=*/false);
+    });
+    SetOnAnnounce(
+        [](const Announcement& a) { Speak(a.message, a.politeness == Live::Assertive); });
+    UNIGUI_LOG_INFO("[a11y] macOS NSAccessibility bridge installed");
+}
+
+} // namespace unigui::a11y
+
+// ─────────────────────────────────────────────────────────────────────────────
+#else // Linux / other — logging fallback (AT-SPI is the remaining native bridge)
 
 namespace unigui::a11y {
 void InstallSystemBridge(void* /*nativeWindowHandle*/) {
-    // No native AT bridge on this platform yet — the logging bridge is the reference
-    // implementation a real NSAccessibility / AT-SPI / web-ARIA bridge would replace.
+    // No native AT bridge wired on this platform yet; the logging bridge is the reference
+    // implementation an AT-SPI bridge would replace (same SetOnFocusChanged/SetOnAnnounce).
     InstallLoggingBridge();
 }
 } // namespace unigui::a11y
