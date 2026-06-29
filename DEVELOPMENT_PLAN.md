@@ -1,22 +1,28 @@
 # TeamkillerUniGUI — Long-Term Development Plan
 
-_Last updated: 2026-06-14 · Current version: 3.5.0 (+ Unreleased work)_
+_Last updated: 2026-06-29 · Current version: 4.1.1_
 
 This document lays out a long-horizon roadmap for the project. It is meant to be
 a living document: revisit it each release, check off what shipped, and re-scope
 what's next. It complements — but does not replace — `CHANGELOG.md` (what
 happened) and `RELEASE.md` (per-release notes).
 
-Two new headline goals drive the near-term roadmap:
+The project's two original headline goals are **achieved**:
 
-1. **Complete the wrapper.** Provide first-class UniGUI wrappers for the *full*
-   Dear ImGui surface (today only ~¼ of ImGui's ~450–500 public functions have
-   one), so users rarely need to drop to raw `ImGui::` — while raw ImGui stays
-   fully supported and auto-themed.
-2. **A trading-client toolkit.** Ship batteries-included, presentation-layer
-   building blocks for data-dense, real-time trading UIs (order ticket,
-   candlestick/OHLC chart, depth-of-market ladder, blotters/watchlist), backed
-   by small in-memory models — without becoming a trading app itself.
+1. ~~**Complete the wrapper.**~~ **Done (Horizon 2).** `unigui::im` now wraps **100%
+   of ImGui's practical surface** (201 functions, A1–A6). Raw `ImGui::` stays fully
+   supported and auto-themed.
+2. ~~**A trading-client toolkit.**~~ **Done (Horizon 3).** The four trading widget
+   families (order ticket, candlestick/OHLC chart, depth ladder, blotters) + thin
+   models + the `trading_dashboard` example shipped.
+
+Since then the toolkit became an **opinionated application framework** (Horizon 5:
+Component/State/Store/Navigator + reactive + layout + theming tools), passed a
+**multi-dimension correctness/security audit** (P0–P3 all fixed and shipped across
+3.17–3.19, plus the 4.0 `Result<T>` → `std::expected` major), and had its
+**cross-platform backends hardened and verified at runtime in CI**. The near-term
+focus shifts to the remaining frontier: real **Metal/WebGPU/Emscripten** renderers,
+**accessibility**, **visual-regression** testing, and **packaging reach**.
 
 ## 1. Vision
 
@@ -49,20 +55,63 @@ Guiding principles:
 
 ## 2. Where we are today (baseline)
 
-- 84 widgets (100% PushID-safe), the `unigui::im` immediate-mode layer (**201
-  functions; A1–A6 complete** — inputs/sliders/drags, window/layout/scroll/cursor, popups/modals/menus, item & input queries, misc widgets/debug/draw-list, and the A6 remainder: tooltips, disabled scope, combo/listbox/selectable, trees/headers, tab bars, plots/progress, color editors & conversion, window-state queries — **100% of ImGui's practical surface**), declarative DSL, CSS styling engine,
-  EventBus, plugin system, font manager.
+- **95 widgets** (100% PushID-safe), the `unigui::im` immediate layer (**201
+  functions = 100% of ImGui's practical surface**, A1–A6 complete), declarative DSL,
+  CSS styling engine, EventBus, plugin system, font manager.
+- **Application framework** (`unigui::dsl`): `Component` + reactive `State<T>`,
+  `Store<T>`, `Navigator`, `Watch`/`OnCleanup`, the live `DrawInspector()` overlay,
+  and the `Custom` escape hatch — see `docs/FRAMEWORK.md`.
+- **Reactive + layout cross-cutting layers**: `core/observable.h`
+  (`Observable`/`Computed`/`Bind` + first-class widget binding) and
+  `core/flex_layout.h` (`SolveFlex`/`SolveFlexWrap` + `Layout::FlexRow` + `dsl::Flex`).
 - Theme engine: Dark/Light + 13 presets, unified style/color tokens, surface
-  materials (Solid/Glass/Frosted/Acrylic/Minimal), semantic colors, elevation.
-- 7 backends — 4 production (GLFW+GL3, GLFW/SDL3+Vulkan, DX11, DX12); Metal,
-  WebGPU, Emscripten are **stubs**.
-- Optional modules: SQLite, config (TOML/JSON/INI), IPC (shared memory + ZMQ),
-  network (HTTP/WebSocket).
-- ~110 GoogleTest files, benchmarks, and fuzz targets (CSV/JSON/CSS/config).
-- CI: cross-platform build/test + format/tidy quality gate + advisory coverage.
+  materials, semantic colors, elevation; theme export/import + CSS hot-reload + a live
+  `theme_editor`.
+- 7 backends — 4 production (GLFW+GL3, GLFW/SDL3+Vulkan, DX11, DX12), all hardened on
+  their failure paths. Metal/WebGPU stay **stubs that fail cleanly**; **Emscripten now
+  compiles** but is unverified end-to-end. The default GLFW+OpenGL3 path is
+  **CI-verified to run on Linux** (headless xvfb + llvmpipe smoke), and its identical
+  GL code path covers macOS.
+- **`Result<T>` is `std::expected<T, ErrorCode>`** (4.0): errors via `Err()`, monadic
+  ops, throwing `value()`; adopted in `sqlite::Database::Open` and `config::Store::Load*`.
+- Optional modules — SQLite, config (TOML/JSON/INI), IPC (shmem + ZMQ), network
+  (HTTP/WebSocket) — **now build & test on Windows** via the
+  `windows-msvc-debug-modules` preset (they were bit-rotted/unbuilt before the audit).
+- ~155 GoogleTest files (**1169** default-preset cases), benchmarks (incl. an LTTB
+  perf budget) and fuzz targets (CSV/JSON/CSS/config).
+- CI (**all green**): cross-platform build/test (Win/Linux/macOS) + a **headless
+  backend smoke that proves the GL path actually runs** + warnings-as-errors on **both
+  GCC and MSVC** + install-consume packaging + **clang-tidy** (pinned 19) + advisory
+  coverage.
 
 ### Recently completed
 
+- **Multi-dimension correctness/security audit — P0–P3, shipped 3.17.0–3.19.0.** A
+  49-agent audit (each finding adversarially verified) surfaced and fixed, with
+  regression tests: a reachable **IPC integer-overflow OOB read/write** (security), a
+  **TabWidget use-after-free**, a **WebSocket callback data race**, a **CSS gradient
+  `std::out_of_range`**, banned `std::stod` parsers, a **DX11-off link break**, a
+  declared-but-undefined `sqlite::Row::Get`, public-header hygiene (no leaked impl deps
+  / Win32 macros), EventBus shutdown-drain, Observable notify-after-destroy, and
+  per-frame allocation trims (`DepthLadder`/`Table`).
+- **Optional-module build resurrected.** IPC/network/config/SQLite had never compiled
+  on Windows (an ODR duplicate, wrong CMake targets, `<winsock2.h>` ordering, a missing
+  `bcrypt`); they now build + test under the new `windows-msvc-debug-modules` preset.
+- **`Result<T>` → `std::expected` (4.0.0, breaking).** A semver-major modernization —
+  `Err(ErrorCode::X)`, the monadic surface, throwing `value()` — adopted in
+  `Database::Open` and `Store::Load*`.
+- **Backend cross-platform hardening + CI runtime verification (4.1.x).** Fixed the
+  **macOS-was-completely-broken** GL path (forward-compat core context + GLSL 150), the
+  **non-compiling Web build** (`int*`→`double*`, a main-loop UAF), Vulkan partial-init
+  leaks, SDL3 host-window/`SDL_Quit` ownership, factory half-null pairs, and non-Windows
+  DPI (new `PlatformBackend::GetContentScale()`); added a headless `--frames` CI smoke
+  that **proves the GLFW+OpenGL3 backend runs on Linux**.
+- **CI made fully green.** `windows-werror` (red since 3.17.0 on a `NOMINMAX`
+  collision) and `clang-tidy` (an older clang couldn't parse C++23 `<expected>` → pinned
+  clang-tidy-19) both fixed.
+- **Comprehensive reference docs.** 7 new header-verified docs (ARCHITECTURE, REACTIVE,
+  LAYOUT, IM_API, DSL, THEMING, BACKENDS) + rewritten MODULES/GETTING_STARTED + a
+  rebuilt docs hub.
 - **`src/v2/` consolidated.** The `v2/` directory was a naming holdover from the
   v2.9.0 namespace removal, not a second code path; its files were the *sole*
   implementations of `dsl`/`styling`/`events`/`plugin`/`config`/`sqlite`/`ipc`/
@@ -81,20 +130,24 @@ Guiding principles:
 
 ### Known gaps / debt
 
-- **ImGui wrapper is ~¼ complete.** ~250+ lower-level/utility/vector functions
-  have no first-class wrapper: vector & scalar `Input/Slider/Drag` variants,
-  window/scroll/cursor control, generic popups/modals, item & input queries,
-  draw-list access, debug tool windows, and a few misc widgets
-  (`InvisibleButton`, `ArrowButton`, `CheckboxFlags`, `ColorButton`).
-- **Trading toolkit complete (Horizon 3).** B0–B6 done (formatting, models,
-  candlestick chart, DOM/depth ladder, order ticket, blotters/watchlist/tape +
-  `DataTable` freeze-pane, and the `trading_dashboard` example). Optional
-  follow-ups only: a PriceTicker marquee and in-cell mini sparkline/bar renderers
-  (the latter needs a custom-draw cell hook in `DataTable`).
-- Metal / WebGPU / Emscripten backends are non-functional stubs.
-- Theme "UI beautification" work is still in `Unreleased` — needs to land and be
-  visually regression-tested.
-- No automated visual/screenshot regression testing yet.
+- **Metal / WebGPU renderers are non-functional stubs** (they now fail cleanly
+  rather than pretending to succeed); the **Emscripten** path compiles but is
+  unverified end-to-end. Real implementations are Horizon 4.
+- **Software-GL rendering crashes inside the Mesa driver.** `llvmpipe`/`softpipe`
+  segfault *within* `libgallium` during `ImGui_ImplOpenGL3_RenderDrawData` — a driver
+  bug, **not** the UniGUI backend (which brings the GL context up cleanly) and absent
+  on hardware GL. Consequence: the Linux CI smoke verifies backend *bring-up* rather
+  than a full software render.
+- **No automated visual / screenshot regression testing yet** (needs a GPU-capable
+  CI runner).
+- **Coverage, wrapper-coverage, and clang-tidy gates are still advisory** — flip each
+  to a hard gate once its baseline is confirmed stable.
+- **~4,900 clang-tidy *style* warnings** remain (mostly `f`-suffix / brace nits that
+  match the house style); they're tolerated (`WarningsAsErrors` is empty, so only real
+  diagnostics fail the step). Curating the check set and driving the count down is
+  optional future cleanup.
+- Optional trading follow-ups: a `PriceTicker` marquee and in-cell mini sparkline/bar
+  renderers (the latter needs a custom-draw cell hook in `DataTable`).
 
 ## 3. Roadmap by horizon
 
@@ -113,16 +166,18 @@ release with tests + docs.
   GPU-capable CI runner.)_
 - **P1 · S — Coverage gate.** _Advisory landed._ Confirm the headless baseline,
   raise `COVERAGE_FLOOR` to just under it, then flip the step to a hard `exit 1`.
-- ~~**P2 · S — Warnings-as-errors.**~~ **Done (GCC).** The whole tree (library +
-  tests + examples) builds **warning-clean under GCC with
-  `UNIGUI_WARNINGS_AS_ERRORS=ON`** (all tests pass), and a dedicated
-  `linux-werror` job in `build.yml` now **enforces** it on every push/PR.
-  `-Wextra`'s `missing-field-initializers` is suppressed
-  (`-Wno-missing-field-initializers`) because it conflicts with the clang-tidy
-  `readability-redundant-member-init` policy. _Remaining: confirm MSVC/Clang are
-  equally clean and add them to the gate._
+- ~~**P2 · S — Warnings-as-errors.**~~ **Done (GCC + MSVC).** The whole tree (library +
+  tests + examples) builds warning-clean under **GCC `-Werror`** (`linux-werror`) **and
+  MSVC `/W4 /WX`** (`windows-werror`), both **enforced on every push/PR** in
+  `build.yml`. (The MSVC gate had silently regressed since 3.17.0 on a `NOMINMAX`
+  macro collision until the 4.1.x backend work re-greened it — a reminder that an
+  unwatched gate is no gate.) `-Wextra`'s `missing-field-initializers` stays suppressed
+  (it conflicts with the clang-tidy `readability-redundant-member-init` policy).
 
-### Horizon 2 — Complete the ImGui wrapper (im layer first)
+### Horizon 2 — Complete the ImGui wrapper (im layer first) — ✅ COMPLETE
+
+`unigui::im` reached **201 functions = 100% of ImGui's practical surface** (A1–A6 all
+shipped). The per-phase record is kept below.
 
 Goal: bring `unigui::im` to ~full ImGui coverage. The immediate layer is the
 right vehicle — each function is a thin, allocation-light wrapper (no per-item
@@ -250,12 +305,27 @@ scroll, `FlashRow`, row/cell color, checkbox columns, groups, context menu),
 
 Goal: turn the stub backends into real ones and make rendering measurably fast.
 
-- **P1 · L — Implement the Metal renderer** (macOS), replacing the stub; validate
-  against the Vulkan/MoltenVK path.
-- **P1 · L — Implement WebGPU + Emscripten** for a working browser target; ship a
-  web demo of `widget_gallery`.
-- **P1 · M — DPI / multi-monitor robustness.** Per-monitor DPI scaling, fractional
-  scaling, runtime DPI changes across all production backends.
+_**Landed (4.1.x) — cross-platform hardening + CI runtime verification.**_ The four
+production backends were audited and hardened on every failure path; the
+**macOS-was-completely-broken** GL path (forward-compat core context + GLSL 150) and
+the **non-compiling Web build** were fixed; Vulkan partial-init leaks and SDL3
+host-window/`SDL_Quit` ownership bugs were closed; the factory now honours its
+`{nullptr,nullptr}` contract; and a headless `--frames` CI smoke **proves the
+GLFW+OpenGL3 backend boots and renders on Linux** (the macOS GL code path is validated
+by the same run). What remains is making the *stub* renderers real:
+
+- **P1 · L — Implement the Metal renderer** (macOS), replacing the cleanly-failing
+  stub; validate against the Vulkan/MoltenVK path.
+- **P1 · L — Implement WebGPU + Emscripten** for a working browser target; ship a web
+  demo of `widget_gallery`. _(Emscripten now **compiles**; the WebGPU/WebGL renderer is
+  the remaining gap.)_
+- ~~**P1 · M — DPI / multi-monitor robustness.**~~ **Partly done.** Non-Windows DPI now
+  reads the platform window's content scale (`PlatformBackend::GetContentScale()` →
+  `glfwGetWindowContentScale` / SDL), fixing blurry retina/HiDPI text on macOS/Linux.
+  _Remaining:_ fractional-scaling polish and runtime DPI changes across all backends.
+- **P2 · S — A GPU-capable CI runner** so the Linux/macOS smoke can verify a *full*
+  render; today it falls back to asserting bring-up when the Mesa software GL driver
+  crashes inside `RenderDrawData`.
 - **P1 · M — Performance budget & benchmarks.** _In progress._ Trading-model
   benchmarks landed (`tests/trading/bench_test.cc`): `OrderBook` under 200k
   price deltas + 5k full-book snapshots, and `OhlcSeries` over 1M ticks +
@@ -349,8 +419,17 @@ Goal: make UniGUI easy to adopt and contribute to at scale.
 
 These run in parallel with every horizon:
 
-- **Quality:** keep CI green on all presets; grow coverage; expand fuzz/bench;
-  zero `clang-tidy` regressions.
+- **Quality:** keep all CI green — Build & Test (Win/Linux/macOS + both `-Werror`/`/WX`
+  gates + install-consume + the headless backend smoke) and Quality (`clang-tidy`
+  pinned to 19, coverage). Grow coverage; expand fuzz/bench; keep `clang-tidy` free of
+  real diagnostics (the ~4,900-warning advisory style backlog is separate). **Actually
+  watch the gates:** two (`windows-werror`, `clang-tidy`) silently regressed for several
+  releases while unobserved — an unwatched gate is no gate.
+- **Cross-platform runtime verification:** the headless `--frames` smoke runs the
+  GLFW+OpenGL3 backend on the Linux runner (xvfb + software GL) and asserts it boots and
+  renders — turning "compiles" into "runs". The `windows-msvc-debug-modules` and
+  `windows-msvc-debug-no-dx11` presets exercise the off-by-default module/backend code
+  paths that the default build never touches.
 - **Wrapper-coverage tracking:** `scripts/coverage_vs_imgui.py` (_landed_)
   reports the first-class-wrapped % of the ImGui practical surface each CI run
   (advisory in `quality.yml`); the trend should move up, never down. Currently
@@ -392,17 +471,22 @@ Track these over time to know the plan is working:
 - **Quality:** test count & coverage %; fuzz targets; open P0/P1 bug count.
 - **Performance:** frame time for `DataTable`/`VirtualList`/DOM at 100k rows and
   high update rates; parser throughput (CSV/JSON).
-- **Reach:** functional backends (target: 7/7); platforms with a passing test
-  suite; packaging channels available.
+- **Reach:** functional backends (**4/7** production today — GLFW+GL3 **CI-verified to
+  run on Linux**, Vulkan, DX11, DX12; Metal/WebGPU stubs, Emscripten compiles; target
+  7/7); platforms with a passing test suite (**Win/Linux/macOS all green**); packaging
+  channels available.
 - **Adoption:** examples that build on web; external plugins; downstream
   embedders.
 
 ## 7. How to use this document
 
 - When picking up work, start from the **highest-priority item in the lowest open
-  horizon** unless a release-blocking bug takes precedence. Within the current
-  push, the recommended first slices are **B0 (financial formatting)** and **A1
-  (im input/slider completeness)** — both are fully unit-testable headlessly.
+  horizon** unless a release-blocking bug takes precedence. With **Horizons 2 & 3
+  complete** and the audit + backend-hardening arc shipped, the open frontier is
+  **Horizon 4** (a real **Metal** renderer, then **WebGPU/Emscripten** + a web demo) and
+  **Horizon 5** (**accessibility**; deepening the framework idiom), plus the
+  cross-cutting **visual-regression harness** and flipping the **coverage / clang-tidy**
+  gates from advisory to hard once their baselines are pinned.
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
 - Re-scope horizons at each release: promote, demote, or split items as reality
