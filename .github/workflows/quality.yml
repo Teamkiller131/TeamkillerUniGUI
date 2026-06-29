@@ -14,7 +14,12 @@ jobs:
     - name: Install deps
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build clang-tidy \
+        # Pin clang-tidy-19: the runner's default clang-tidy is an older clang whose
+        # frontend cannot parse libstdc++'s C++23 <expected> (used by core/error.h since
+        # 4.0), producing 3 spurious clang-diagnostic-errors ("no template named
+        # 'expected' in namespace 'std'") that make the lint exit non-zero even though
+        # GCC compiles the code fine.
+        sudo apt-get install -y ninja-build clang-tidy-19 \
           libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
     - name: Setup vcpkg
       run: |
@@ -41,8 +46,12 @@ jobs:
         # here — linting those with bogus default flags produced spurious
         # `file not found` clang-diagnostic-errors that failed the job.
         python3 -c "import json; print('\n'.join(e['file'] for e in json.load(open('build/compile_commands.json')) if '/src/' in e['file'] and e['file'].endswith('.cc')))" > tidy_files.txt
+        clang-tidy-19 --version
         echo "Linting $(wc -l < tidy_files.txt) compiled first-party sources"
-        xargs clang-tidy -p build --config-file=.clang-tidy < tidy_files.txt
+        # --extra-arg forces C++23 for the frontend regardless of how the compile DB
+        # records the standard, so <expected> is available. Style warnings are advisory
+        # (WarningsAsErrors is empty); only real clang-diagnostic-errors fail the step.
+        xargs clang-tidy-19 -p build --config-file=.clang-tidy --extra-arg=-std=gnu++23 < tidy_files.txt
     - name: Wrapper coverage vs ImGui (advisory)
       # Reports the first-class-wrapped %% of ImGui's practical surface (the
       # "Wrapper coverage" success metric in DEVELOPMENT_PLAN.md). Advisory for
