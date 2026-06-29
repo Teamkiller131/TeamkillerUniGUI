@@ -7,9 +7,12 @@
   UI; **ARIA-style live announcements** (`Announce` with `Live::Polite`/`Assertive`,
   drainable or callback-driven) for focus-independent status/validation messages; richer
   `Node` state (`focused`/`disabled`) and roles (Toggle/Progress/Window/Group/Status/…);
-  an in-app **`a11y::DrawInspector()`** (tree + focus + recent announcements) and a
-  reference **`InstallLoggingBridge()`** that routes focus + announcements to the logger
-  (the seam a real UIA / NSAccessibility / AT-SPI / ARIA bridge plugs into). The app loop
+  an in-app **`a11y::DrawInspector()`** (tree + focus + recent announcements) and bridges:
+  the reference **`InstallLoggingBridge()`** (logger) and a real **`InstallSystemBridge()`**
+  that on **Windows raises UI Automation notification events** — spoken by Narrator / NVDA /
+  JAWS — for focus changes and announcements (logging fallback on other platforms, pending
+  NSAccessibility / AT-SPI / web-ARIA bridges). The new **`AppConfig::accessibility`** flag
+  opts the whole layer in with one line (installs the bridge once the window is up). The app loop
   now enables **`ImGuiConfigFlags_NavEnableKeyboard`** (Tab/arrow keyboard navigation) and
   resets the tree each frame; eleven widgets report into it via the new
   `Widget::ReportAccessible(role, focused, value, disabled)` — Button, CheckBox,

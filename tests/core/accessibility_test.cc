@@ -137,3 +137,12 @@ TEST_F(A11yTest, Announce_NoOpWhenDisabledOrEmpty) {
     a11y::Announce("ignored while disabled");
     EXPECT_TRUE(a11y::DrainAnnouncements().empty());
 }
+
+TEST_F(A11yTest, InstallSystemBridge_NullHandleEnablesAndFallsBack) {
+    // A null window handle forces the logging fallback on every platform; it must still
+    // enable a11y. (This also links the platform bridge TU — the Windows build pulls in
+    // UI Automation here.)
+    a11y::SetEnabled(false);
+    a11y::InstallSystemBridge(nullptr);
+    EXPECT_TRUE(a11y::IsEnabled());
+}

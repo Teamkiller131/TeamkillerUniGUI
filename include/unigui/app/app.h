@@ -22,6 +22,12 @@ struct AppConfig {
     /// font system this keeps text crisp across DPIs without pre-building glyph
     /// sizes — recommended for multi-monitor / fractional-DPI setups.
     bool dpiScaleFonts = false;
+    /// Opt into the accessibility layer (`unigui::a11y`): enables keyboard nav (already
+    /// on), the per-frame element tree, and installs the platform screen-reader bridge
+    /// once the window is up (UI Automation on Windows → Narrator/NVDA/JAWS; logging
+    /// fallback elsewhere). Off by default (zero cost); apps can also call
+    /// `a11y::SetEnabled`/`InstallSystemBridge` directly.
+    bool accessibility = false;
 };
 
 bool Init(const AppConfig& config);

@@ -412,16 +412,19 @@ Goal: broaden what apps can build without leaving the toolkit.
   and the declarative DSL gained a **`dsl::Flex`** node rendered through it.
   _Remaining (optional):_ a wrapping container (FlexRow currently lays out a
   single line); per-child cross-size ergonomics in the DSL; nested-flex polish.
-- **P1 · M — Accessibility.** _Started._ The `unigui::a11y` module now provides a real
-  **per-frame accessibility tree** (`BeginFrame`/`AddNode`/`Tree`) on top of the focus
+- **P1 · M — Accessibility.** _Substantially landed._ The `unigui::a11y` module provides a
+  real **per-frame accessibility tree** (`BeginFrame`/`AddNode`/`Tree`) on top of the focus
   tracker, **ARIA-style live announcements** (`Announce` + `Live` politeness, callback or
-  drain), richer `Node` state/roles, an in-app **`DrawInspector()`**, and a reference
-  **`InstallLoggingBridge()`** — the seam a platform AT bridge (UIA / NSAccessibility /
-  AT-SPI / web ARIA) implements. The app loop enables **keyboard navigation**
-  (`NavEnableKeyboard`) and Button/CheckBox/ToggleSwitch/LineEdit report into the tree via
-  `Widget::ReportAccessible`. _Remaining:_ wire the rest of the widget set; a real platform
-  screen-reader bridge (the logging bridge is the reference); a focused keyboard-only nav
-  audit; and ARIA emission on the web build.
+  drain), richer `Node` state/roles, an in-app **`DrawInspector()`**, and bridges: the
+  reference **`InstallLoggingBridge()`** and a real **`InstallSystemBridge()`** that on
+  **Windows raises UI Automation notification events** (Narrator/NVDA/JAWS) via a minimal
+  UIA provider. The app loop enables **keyboard navigation** (`NavEnableKeyboard`),
+  **`AppConfig::accessibility`** opts the whole layer in, and **11 widgets** report into the
+  tree (Button/CheckBox/ToggleSwitch/LineEdit/RadioGroup/InputInt/InputFloat/InputText/
+  Selectable/Hyperlink/PasswordInput) via `Widget::ReportAccessible`. _Remaining:_
+  **macOS NSAccessibility / Linux AT-SPI / web-ARIA** bridges (Windows UIA is the template);
+  wire the composite widgets (Combo/Slider/TabWidget/TreeView/Table/DatePicker); a focused
+  keyboard-only nav audit.
 - ~~**P1 · M — Theming authoring tools.**~~ **Done.** Theme export/import
   (`ExportThemeJSON`/`ImportThemeJSON`, round-trip tested), **CSS hot-reload from
   disk** (`styling::Engine::LoadFile()` + `ReloadIfChanged()`/`Clear()`/

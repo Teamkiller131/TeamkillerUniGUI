@@ -56,19 +56,34 @@ a11y::Announce("Form has errors", a11y::Live::Assertive); // interrupts
 Consumers either subscribe (`SetOnAnnounce`) or poll (`DrainAnnouncements`, e.g. in a
 headless test).
 
-## Writing a platform bridge
+## Turning it on
 
-A real screen-reader integration implements the same two callbacks the logging bridge
-does, forwarding to the OS AT runtime:
+One flag opts the whole layer in — it enables a11y and installs the platform bridge once
+the window exists:
 
 ```cpp
-a11y::SetEnabled(true);
+unigui::AppConfig cfg;
+cfg.accessibility = true;   // keyboard nav + tree + screen-reader bridge
+unigui::RunApp(cfg, drawFn);
+```
+
+## Platform bridges
+
+A bridge implements the two callbacks, forwarding to the OS AT runtime:
+
+```cpp
 a11y::SetOnFocusChanged([](const a11y::Node& n) { /* UIA / NSAccessibility / AT-SPI / ARIA */ });
 a11y::SetOnAnnounce([](const a11y::Announcement& a) { /* live region */ });
 ```
 
-`InstallLoggingBridge()` is the reference implementation (logger output). On the web,
-the same hooks can mirror focus/announcements into ARIA live regions in the page.
+- **`InstallSystemBridge(hwnd)`** picks the right bridge per platform. On **Windows** it
+  raises **UI Automation notification events** (`UiaRaiseNotificationEvent`) for focus
+  changes and announcements — spoken by **Narrator / NVDA / JAWS** — backed by a minimal
+  UIA provider on the window. (`AppConfig::accessibility` calls this for you.)
+- On macOS / Linux / web it currently falls back to the logging bridge; NSAccessibility,
+  AT-SPI, and web-ARIA bridges are the next implementations (same two callbacks).
+- **`InstallLoggingBridge()`** is the reference implementation (logger output) — useful
+  for development and headless testing.
 
 ## Try it
 

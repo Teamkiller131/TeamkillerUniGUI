@@ -121,6 +121,9 @@ endif()
 
 # ── DX11 + DX12 (Windows, optional) ───────────────────────────────────────────
 if(WIN32)
+    # UI Automation for the a11y screen-reader bridge (UiaRaiseNotificationEvent /
+    # UiaHostProviderFromHwnd in core/a11y_bridge_win.cc) — always linked on Windows.
+    list(APPEND UNIGUI_LIBS uiautomationcore)
     if(UNIGUI_BACKEND_DX11)
         list(APPEND UNIGUI_LIBS d3d11 d3dcompiler dxgi dxguid)
         target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DX11)
@@ -172,6 +175,7 @@ target_sources(unigui PRIVATE
     core/log.cc
     core/main_thread.cc
     core/accessibility.cc
+    core/a11y_bridge_win.cc
     backend/glfw_platform.cc
     backend/opengl3_renderer.cc
     backend/backend_registry.cc

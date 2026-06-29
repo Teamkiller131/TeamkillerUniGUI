@@ -299,6 +299,10 @@ bool Init(const AppConfig& config) {
     g_initialized = true;
     UNIGUI_LOG_INFO("Init complete: backend={} {}x{} DPI={:.1f}", (int) g_backend, config.width,
                     config.height, dpi);
+    // Opt-in accessibility: install the platform screen-reader bridge now that the window
+    // exists (a11y::BeginFrame() already runs each frame; keyboard nav is always on).
+    if (config.accessibility)
+        a11y::InstallSystemBridge(g_platform ? g_platform->GetNativeWindowHandle() : nullptr);
 #ifdef UNIGUI_HAS_EVENTS
     events::Bus::Instance().Publish("app.init", std::make_pair(config.width, config.height));
 #endif

@@ -129,4 +129,11 @@ void DrawInspector(bool* open = nullptr);
 /// way. Also calls SetEnabled(true).
 void InstallLoggingBridge();
 
+/// Install the platform screen-reader bridge and enable a11y. On Windows this raises
+/// UI Automation notification events (spoken by Narrator / NVDA / JAWS) for focus
+/// changes + announcements; on other platforms it currently falls back to
+/// InstallLoggingBridge(). Pass the native window handle (HWND on Windows, from
+/// `unigui::GetNativeWindowHandle()`); pass nullptr to force the logging fallback.
+void InstallSystemBridge(void* nativeWindowHandle);
+
 } // namespace unigui::a11y
