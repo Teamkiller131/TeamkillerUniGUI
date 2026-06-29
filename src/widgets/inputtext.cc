@@ -40,12 +40,14 @@ void InputText::Render() {
         changed = ImGui::InputText(label_.c_str(), buffer_.data(), buffer_.size(), flags_);
     }
 
+    const bool inputFocused = ImGui::IsItemFocused();
     if (disabled)
         ImGui::EndDisabled();
     if (changed) {
         value_ = buffer_.data();
         NotifyChange(oldVal);
     }
+    ReportAccessible(a11y::Role::Input, inputFocused, value_, disabled);
     ImGui::PopID();
 }
 

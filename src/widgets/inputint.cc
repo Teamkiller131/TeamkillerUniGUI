@@ -16,12 +16,14 @@ void InputInt::Render() {
     if (disabled)
         ImGui::BeginDisabled();
     ImGui::InputInt(label_.c_str(), &value_, 0, 0, ImGuiInputTextFlags_None);
+    const bool inputFocused = ImGui::IsItemFocused(); // capture before the suffix Text steals it
     if (!suffix_.empty()) {
         ImGui::SameLine();
         ImGui::TextUnformatted(suffix_.c_str());
     }
     if (disabled)
         ImGui::EndDisabled();
+    ReportAccessible(a11y::Role::Input, inputFocused, std::to_string(value_), disabled);
     ImGui::PopID();
     if (value_ < min_)
         value_ = min_;

@@ -39,9 +39,10 @@ ReportAccessible(a11y::Role::CheckBox, ImGui::IsItemFocused(), value_ ? "checked
 `Widget::ReportAccessible(role, focused, value, disabled)` registers the element in the
 tree **and**, when focused, drives the focus-changed announcement. The accessible name
 comes from `WithAccessibleName(...)` (falling back to the widget id); the description from
-`WithAccessibleDescription(...)`. Button, CheckBox, ToggleSwitch, and LineEdit are wired
-today; more follow. Raw `unigui::im` / `ImGui::` calls can register directly with
-`a11y::AddNode(...)`.
+`WithAccessibleDescription(...)`. Wired today: Button, CheckBox, ToggleSwitch, LineEdit,
+RadioGroup, InputInt, InputFloat, InputText, Selectable, Hyperlink, and PasswordInput
+(which reports presence only — `"(hidden)"` / `"empty"` — never the secret value); more
+follow. Raw `unigui::im` / `ImGui::` calls can register directly with `a11y::AddNode(...)`.
 
 ## Announcements
 

@@ -15,6 +15,7 @@ void Selectable::Render() {
         return;
     ImGui::PushID(GetName().c_str());
     clicked_ = ImGui::Selectable(label_.c_str(), &selected_);
+    ReportAccessible(a11y::Role::ListItem, ImGui::IsItemFocused(), selected_ ? "selected" : "");
     if (clicked_ && onClick_)
         onClick_();
     ImGui::PopID();

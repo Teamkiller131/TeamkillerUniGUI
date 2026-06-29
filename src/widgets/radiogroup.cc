@@ -10,12 +10,17 @@ void RadioGroup::Render() {
     if (!IsVisible())
         return;
     ImGui::PushID(GetName().c_str());
+    bool grpFocused = false;
     for (int i = 0; i < (int) options_.size(); i++) {
         if (ImGui::RadioButton(options_[i].c_str(), &selected_, i)) {
             if (on_change_)
                 on_change_(selected_);
         }
+        grpFocused |= ImGui::IsItemFocused();
     }
+    ReportAccessible(a11y::Role::Radio, grpFocused,
+                     (selected_ >= 0 && selected_ < (int) options_.size()) ? options_[selected_]
+                                                                           : std::string{});
     ImGui::PopID();
 }
 int RadioGroup::GetSelected() const {

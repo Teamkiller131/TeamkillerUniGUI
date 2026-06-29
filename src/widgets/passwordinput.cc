@@ -63,6 +63,8 @@ void PasswordInput::Render() {
         value_ = buf_;
         NotifyChange(oldValue);
     }
+    // Never expose the secret value to the a11y tree — report presence only.
+    ReportAccessible(a11y::Role::Input, ImGui::IsItemFocused(), value_.empty() ? "empty" : "(hidden)");
     ImGui::SameLine();
     if (ImGui::Button(showPassword_ ? "Hide" : "Show"))
         showPassword_ = !showPassword_;

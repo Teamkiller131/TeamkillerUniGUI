@@ -16,12 +16,14 @@ void InputFloat::Render() {
     if (disabled)
         ImGui::BeginDisabled();
     ImGui::InputFloat(label_.c_str(), &value_, 0, 0, fmt_);
+    const bool inputFocused = ImGui::IsItemFocused(); // capture before the suffix Text steals it
     if (!suffix_.empty()) {
         ImGui::SameLine();
         ImGui::TextUnformatted(suffix_.c_str());
     }
     if (disabled)
         ImGui::EndDisabled();
+    ReportAccessible(a11y::Role::Input, inputFocused, std::to_string(value_), disabled);
     ImGui::PopID();
     if (value_ < min_)
         value_ = min_;

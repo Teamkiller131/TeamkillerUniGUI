@@ -29,6 +29,7 @@ void Hyperlink::Render() {
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
     clicked_ = ImGui::SmallButton(label_.c_str());
+    ReportAccessible(a11y::Role::Link, ImGui::IsItemFocused(), url_);
     ImGui::PopStyleColor(4);
     if (clicked_ && !url_.empty()) {
 #ifdef _WIN32

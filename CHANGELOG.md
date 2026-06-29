@@ -11,8 +11,11 @@
   reference **`InstallLoggingBridge()`** that routes focus + announcements to the logger
   (the seam a real UIA / NSAccessibility / AT-SPI / ARIA bridge plugs into). The app loop
   now enables **`ImGuiConfigFlags_NavEnableKeyboard`** (Tab/arrow keyboard navigation) and
-  resets the tree each frame; Button/CheckBox/ToggleSwitch/LineEdit report into it via the
-  new `Widget::ReportAccessible(role, focused, value, disabled)`. Disabled by default
+  resets the tree each frame; eleven widgets report into it via the new
+  `Widget::ReportAccessible(role, focused, value, disabled)` — Button, CheckBox,
+  ToggleSwitch, LineEdit, RadioGroup, InputInt, InputFloat, InputText, Selectable,
+  Hyperlink, and PasswordInput (the last reports presence only, never the secret).
+  Disabled by default
   (zero per-frame cost). The web `web_demo` gains an **Accessibility** tab demoing it.
 
 ### Fixed
