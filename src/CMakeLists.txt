@@ -385,15 +385,20 @@ embed_font(unigui
 target_include_directories(unigui PRIVATE ${FONT_GEN_DIR})
 
 # ── Install ───────────────────────────────────────────────────────────────────
-install(TARGETS unigui
-    EXPORT unigui-targets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+# Skipped on Emscripten: the wasm lib links the FetchContent dep targets PUBLIC-ly,
+# so install(EXPORT) would demand they be exported too. There is no downstream
+# find_package(unigui) story for wasm, so we don't install at all.
+if(NOT EMSCRIPTEN)
+    install(TARGETS unigui
+        EXPORT unigui-targets
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
 
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/unigui_export.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unigui
-)
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/unigui_export.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unigui
+    )
+endif()

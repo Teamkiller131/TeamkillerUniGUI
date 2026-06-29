@@ -97,6 +97,10 @@ if(UNIGUI_BUILD_EXAMPLES)
 endif()
 
 # ── Installation ─────────────────────────────────────────────────────────────
+# The whole packaging path is desktop-only. On Emscripten the lib links FetchContent
+# dep targets that aren't in the export set (and there's no find_package(unigui) wasm
+# consumer), so install(EXPORT)/configure_package_config_file are skipped entirely.
+if(NOT EMSCRIPTEN)
 include(CMakePackageConfigHelpers)
 
 install(DIRECTORY include/
@@ -164,6 +168,7 @@ install(EXPORT unigui-targets
     NAMESPACE unigui::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/unigui
 )
+endif() # NOT EMSCRIPTEN — packaging/install is desktop-only
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Lint — run clang-tidy on all UniGUI sources (standalone, outside build)
