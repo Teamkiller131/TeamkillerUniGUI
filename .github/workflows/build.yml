@@ -212,11 +212,25 @@ jobs:
         version: 3.1.74
     - name: Verify emsdk
       run: emcc -v
-    - name: Configure (wasm, library only)
+    - name: Configure (wasm + web demo)
       run: |
         emcmake cmake -B build_web -S . -G Ninja -DCMAKE_BUILD_TYPE=Release \
-          -DUNIGUI_BUILD_TESTS=OFF -DUNIGUI_BUILD_EXAMPLES=OFF \
+          -DUNIGUI_BUILD_TESTS=OFF -DUNIGUI_BUILD_EXAMPLES=ON \
           -DUNIGUI_MODULE_PLUGIN=OFF -DUNIGUI_MODULE_EVENTS=OFF \
           -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
-    - name: Build the wasm library
-      run: cmake --build build_web --target unigui
+    - name: Build the wasm library + web demo (.html/.js/.wasm)
+      run: cmake --build build_web --target web_demo
+    - name: Verify the web artifact was produced
+      run: |
+        ls -la build_web/examples/web_demo/
+        test -f build_web/examples/web_demo/web_demo.html
+        test -f build_web/examples/web_demo/web_demo.wasm
+        test -f build_web/examples/web_demo/web_demo.js
+    - name: Upload web demo artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: unigui-web-demo
+        path: |
+          build_web/examples/web_demo/web_demo.html
+          build_web/examples/web_demo/web_demo.js
+          build_web/examples/web_demo/web_demo.wasm

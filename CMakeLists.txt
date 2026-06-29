@@ -70,7 +70,11 @@ if(UNIGUI_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-if(UNIGUI_BUILD_EXAMPLES)
+if(UNIGUI_BUILD_EXAMPLES AND EMSCRIPTEN)
+    # The desktop examples assume native backends (DX11/GLFW windowing, --frames CLI,
+    # blocking loops); on the web only the dedicated wasm demo applies.
+    add_subdirectory(examples/web_demo)
+elseif(UNIGUI_BUILD_EXAMPLES)
     add_subdirectory(examples/hello_unigui)
     if(UNIGUI_MODULE_WIDGETS)
         add_subdirectory(examples/widget_gallery)
