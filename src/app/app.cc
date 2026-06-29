@@ -12,7 +12,12 @@
 #ifdef UNIGUI_HAS_EVENTS
 #include <unigui/events/eventbus.h>
 #endif
+#ifdef __EMSCRIPTEN__
+#include <GLES3/gl3.h>
+#include <emscripten.h>
+#else
 #include <glad/glad.h>
+#endif
 #include <imgui.h>
 #include <implot.h>
 
@@ -397,6 +402,26 @@ float GetContentScale() {
 void SetContentScaleFromMonitor(float rawScale, bool snap) {
     SetContentScale(snap ? dpi::NormalizeContentScale(rawScale) : rawScale);
 }
+#ifdef __EMSCRIPTEN__
+namespace {
+std::function<void()> g_emFrameCb;
+void EmscriptenFrame() {
+    if (!NewFrame())
+        return;
+    if (g_emFrameCb)
+        g_emFrameCb();
+    Render();
+}
+} // namespace
+void Run(const std::function<void()>& cb, int /*maxFrames*/) {
+    // The browser owns the event loop — register a per-frame callback and hand control
+    // back to it. A blocking while-loop would freeze the page. `maxFrames` is ignored
+    // on the web (the page runs until the tab closes), and this never returns, so the
+    // app lives for the process lifetime (no Shutdown).
+    g_emFrameCb = cb;
+    emscripten_set_main_loop(EmscriptenFrame, 0, /*simulate_infinite_loop=*/true);
+}
+#else
 void Run(const std::function<void()>& cb, int maxFrames) {
     int frame = 0;
     // NewFrame() already polls platform events; do not poll again here.
@@ -411,6 +436,7 @@ void Run(const std::function<void()>& cb, int maxFrames) {
     }
     Shutdown();
 }
+#endif
 int RunApp(const AppConfig& config, const std::function<void()>& cb, int maxFrames) {
     if (!Init(config)) {
         UNIGUI_LOG_ERROR("App init failed; cannot start main loop");

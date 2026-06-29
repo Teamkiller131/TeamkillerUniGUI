@@ -2,8 +2,13 @@
 #include <unigui/core/log.h>
 
 // clang-format off
+#ifdef __EMSCRIPTEN__
+#include <GLES3/gl3.h>  // WebGL2 / GLES3 — emscripten provides GL; no loader needed
+#include <GLFW/glfw3.h>
+#else
 #include <glad/glad.h> // glad must precede GLFW / any GL header
 #include <GLFW/glfw3.h>
+#endif
 // clang-format on
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
@@ -29,16 +34,21 @@ public:
             context = ImGui::GetCurrentContext();
         }
 
+#ifndef __EMSCRIPTEN__
         if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
             UNIGUI_LOG_ERROR("gladLoadGLLoader() failed");
             return false;
         }
-
         // The platform requests a 3.3 CORE context on every OS. GLSL 1.30 is
         // compatibility-profile and macOS' strict core driver rejects it; 1.50 is
         // valid on every GL >= 3.2 core context (Linux/Mesa accepted 130 leniently,
         // which is why this slipped through).
         const char* glsl = "#version 150";
+#else
+        // Emscripten/WebGL2: GL is provided by the runtime (no glad loader). ImGui's
+        // OpenGL3 backend compiles for GLES3, which requires a GLSL-ES shader header.
+        const char* glsl = "#version 300 es";
+#endif
         if (!ImGui_ImplOpenGL3_Init(glsl)) {
             UNIGUI_LOG_ERROR("ImGui_ImplOpenGL3_Init({}) failed", glsl);
             return false;
