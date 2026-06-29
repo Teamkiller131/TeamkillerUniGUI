@@ -20,6 +20,7 @@ void ToggleSwitch::Render() {
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.7f + 0.3f * t);
     ImGui::PushID(GetName().c_str());
     ImGui::Checkbox(label_.c_str(), &value_);
+    ReportAccessible(a11y::Role::Toggle, ImGui::IsItemFocused(), value_ ? "on" : "off");
     ImGui::PopID();
     ImGui::PopStyleVar();
 

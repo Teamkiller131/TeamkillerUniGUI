@@ -244,6 +244,35 @@ static void DrawGallery() {
             ImGui::EndTabItem();
         }
 
+        if (ImGui::BeginTabItem("Accessibility")) {
+            namespace a11y = unigui::a11y;
+            ImGui::TextWrapped("UniGUI exposes a semantic accessibility layer over Dear ImGui: a "
+                               "per-frame element tree, focus tracking, and ARIA-style live "
+                               "announcements that a screen-reader bridge can consume. Keyboard "
+                               "navigation (Tab / arrows) is on by default.");
+            ImGui::Spacing();
+
+            bool enabled = a11y::IsEnabled();
+            if (ImGui::Checkbox("Enable accessibility", &enabled))
+                a11y::SetEnabled(enabled);
+            ImGui::SameLine();
+            if (ImGui::SmallButton("Log to console"))
+                a11y::InstallLoggingBridge(); // reference bridge → browser console
+
+            if (ImGui::Button("Announce (polite)"))
+                a11y::Announce("Polite announcement from UniGUI", a11y::Live::Polite);
+            ImGui::SameLine();
+            if (ImGui::Button("Announce (assertive)"))
+                a11y::Announce("Assertive announcement!", a11y::Live::Assertive);
+
+            ImGui::TextDisabled("Tab through the Widgets tab, then watch the inspector below.");
+            static bool show_inspector = true;
+            ImGui::Checkbox("Show the accessibility inspector window", &show_inspector);
+            if (show_inspector)
+                a11y::DrawInspector(&show_inspector);
+            ImGui::EndTabItem();
+        }
+
         if (ImGui::BeginTabItem("About")) {
             ImGui::TextWrapped("This gallery is the examples/web_demo target, built with "
                                "`emcmake cmake -DUNIGUI_WEB_WEBGPU=ON/OFF` and "

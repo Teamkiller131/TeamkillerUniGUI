@@ -11,6 +11,7 @@ void CheckBox::Render() {
     bool prev = value_;
     ImGui::PushID(GetName().c_str());
     ImGui::Checkbox(label_.c_str(), &value_);
+    ReportAccessible(a11y::Role::CheckBox, ImGui::IsItemFocused(), value_ ? "checked" : "unchecked");
     ImGui::PopID();
     NotifyChange(prev);
 }

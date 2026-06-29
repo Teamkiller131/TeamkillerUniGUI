@@ -42,6 +42,13 @@ public:
     /// `if (ImGui::IsItemFocused()) AnnounceAccessible(a11y::Role::Button);`.
     /// Uses the accessible name (falling back to the widget id) + description.
     void AnnounceAccessible(a11y::Role role, const std::string& value = "");
+    /// Register this widget in the per-frame accessibility tree (and, when
+    /// `focused`, drive the focus-changed announcement). Call once per Render()
+    /// right after submitting the widget's ImGui item, passing
+    /// `ImGui::IsItemFocused()`. No-op unless a11y is enabled. Prefer this over
+    /// AnnounceAccessible: it covers both the tree and focus in one call.
+    void ReportAccessible(a11y::Role role, bool focused, const std::string& value = "",
+                          bool disabled = false);
     virtual void SetMinSize(float w, float h);
     virtual void SetMaxSize(float w, float h);
     ImVec2 GetMinSize() const { return minSize_; }

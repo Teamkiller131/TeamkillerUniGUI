@@ -412,9 +412,16 @@ Goal: broaden what apps can build without leaving the toolkit.
   and the declarative DSL gained a **`dsl::Flex`** node rendered through it.
   _Remaining (optional):_ a wrapping container (FlexRow currently lays out a
   single line); per-child cross-size ergonomics in the DSL; nested-flex polish.
-- **P1 · M — Accessibility.** Surface the existing `AccessibleName`/`Description`
-  fields through a real a11y tree / screen-reader bridge where the platform
-  allows; keyboard-only navigation audit.
+- **P1 · M — Accessibility.** _Started._ The `unigui::a11y` module now provides a real
+  **per-frame accessibility tree** (`BeginFrame`/`AddNode`/`Tree`) on top of the focus
+  tracker, **ARIA-style live announcements** (`Announce` + `Live` politeness, callback or
+  drain), richer `Node` state/roles, an in-app **`DrawInspector()`**, and a reference
+  **`InstallLoggingBridge()`** — the seam a platform AT bridge (UIA / NSAccessibility /
+  AT-SPI / web ARIA) implements. The app loop enables **keyboard navigation**
+  (`NavEnableKeyboard`) and Button/CheckBox/ToggleSwitch/LineEdit report into the tree via
+  `Widget::ReportAccessible`. _Remaining:_ wire the rest of the widget set; a real platform
+  screen-reader bridge (the logging bridge is the reference); a focused keyboard-only nav
+  audit; and ARIA emission on the web build.
 - ~~**P1 · M — Theming authoring tools.**~~ **Done.** Theme export/import
   (`ExportThemeJSON`/`ImportThemeJSON`, round-trip tested), **CSS hot-reload from
   disk** (`styling::Engine::LoadFile()` + `ReloadIfChanged()`/`Clear()`/

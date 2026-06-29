@@ -1,6 +1,7 @@
 #include <unigui/app/app.h>
 #include <unigui/backend/backend_factory.h>
 #include <unigui/core/dpi.h>
+#include <unigui/core/accessibility.h>
 #include <unigui/core/main_thread.h>
 #include <unigui/theme/presets/registry.h>
 #include <unigui/theme/theme.h>
@@ -256,6 +257,9 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
     ApplyTheme(tc);
     if (g_backend != BackendType::DX11)
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    // Keyboard navigation (Tab / Shift-Tab / arrows / Space-Enter to activate) — the
+    // foundation for keyboard-only operation, and what the a11y focus tracker rides on.
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.DisplaySize = ImVec2((float) config.width, (float) config.height);
 
     dpiOut = dpi;
@@ -363,6 +367,7 @@ bool NewFrame() {
     g_renderer->NewFrame();
     g_platform->NewFrame();
     ImGui::NewFrame();
+    a11y::BeginFrame(); // reset the per-frame accessibility tree before widgets render
     ProcessMainThreadTasks();
     // Check for window resize (DX11 needs swapchain resize)
 #ifdef UNIGUI_HAS_DX11

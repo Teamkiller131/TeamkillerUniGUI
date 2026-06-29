@@ -45,6 +45,7 @@ void LineEdit::Render() {
         changed =
             ImGui::InputTextWithHint(label_.c_str(), hint ? hint : "", buffer_, max_length_, flags);
     }
+    ReportAccessible(a11y::Role::Input, ImGui::IsItemFocused(), value_);
     im::DrawActiveInputCaret();
     if (changed) {
         value_ = buffer_;

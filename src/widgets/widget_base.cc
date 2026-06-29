@@ -54,6 +54,15 @@ void Widget::AnnounceAccessible(a11y::Role role, const std::string& value) {
     a11y::SetFocused(
         {accessibleName_.empty() ? name_ : accessibleName_, accessibleDesc_, value, role});
 }
+void Widget::ReportAccessible(a11y::Role role, bool focused, const std::string& value,
+                              bool disabled) {
+    if (!a11y::IsEnabled())
+        return; // zero cost when a11y is off
+    // AddNode registers the element in this frame's tree and, when focused, forwards it
+    // to SetFocused() (which fires the focus-changed announcement only on change).
+    a11y::AddNode({accessibleName_.empty() ? name_ : accessibleName_, accessibleDesc_, value, role,
+                   focused, disabled});
+}
 void Widget::SetMinSize(float w, float h) {
     minSize_ = ImVec2(w, h);
 }

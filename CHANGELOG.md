@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+### Added
+- **Accessibility: a real a11y tree + live announcements + keyboard nav** (`unigui::a11y`).
+  The focus tracker now backs a fuller accessibility layer: a **per-frame element tree**
+  (`BeginFrame`/`AddNode`/`Tree`) so a bridge, inspector, or test can enumerate the whole
+  UI; **ARIA-style live announcements** (`Announce` with `Live::Polite`/`Assertive`,
+  drainable or callback-driven) for focus-independent status/validation messages; richer
+  `Node` state (`focused`/`disabled`) and roles (Toggle/Progress/Window/Group/Status/…);
+  an in-app **`a11y::DrawInspector()`** (tree + focus + recent announcements) and a
+  reference **`InstallLoggingBridge()`** that routes focus + announcements to the logger
+  (the seam a real UIA / NSAccessibility / AT-SPI / ARIA bridge plugs into). The app loop
+  now enables **`ImGuiConfigFlags_NavEnableKeyboard`** (Tab/arrow keyboard navigation) and
+  resets the tree each frame; Button/CheckBox/ToggleSwitch/LineEdit report into it via the
+  new `Widget::ReportAccessible(role, focused, value, disabled)`. Disabled by default
+  (zero per-frame cost). The web `web_demo` gains an **Accessibility** tab demoing it.
+
 ### Fixed
 - **Font manager probed a Linux-only path on the web.** The emoji loader fell through to
   `/usr/share/fonts/.../NotoColorEmoji.ttf` under Emscripten and logged a misleading "not

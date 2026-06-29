@@ -33,6 +33,7 @@ networking, trading).
 | [DSL.md](DSL.md) | The declarative DSL (view language): builders, nodes, `Render`, `Custom` |
 | [THEMING.md](THEMING.md) | Theme engine (presets, surface styles, tokens) + the CSS styling engine & hot-reload |
 | [BACKENDS.md](BACKENDS.md) | The backend abstraction (platforms × renderers) and the application loop (`AppConfig`/`Init`/`Run`) |
+| [ACCESSIBILITY.md](ACCESSIBILITY.md) | The `unigui::a11y` layer — focus tracking, per-frame element tree, live announcements, keyboard nav, inspector, and writing a screen-reader bridge |
 
 ## Widgets & API reference
 
