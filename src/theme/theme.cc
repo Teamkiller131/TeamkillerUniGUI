@@ -115,6 +115,9 @@ void LoadDefaultFont(float size_pixels, [[maybe_unused]] const char* ttf_path) {
     const char* cjk_paths[] = {"/System/Library/Fonts/PingFang.ttc",
                                "/System/Library/Fonts/STHeiti Light.ttc",
                                "/System/Library/Fonts/AppleSDGothicNeo.ttc", nullptr};
+#elif defined(__EMSCRIPTEN__)
+    // Web build: no system fonts to merge (MEMFS is empty) — load CJK explicitly instead.
+    const char* cjk_paths[] = {nullptr};
 #else // Linux
     const char* cjk_paths[] = {"/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
                                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",

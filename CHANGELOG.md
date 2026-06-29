@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+### Fixed
+- **Font manager probed a Linux-only path on the web.** The emoji loader fell through to
+  `/usr/share/fonts/.../NotoColorEmoji.ttf` under Emscripten and logged a misleading "not
+  found" warning (the wasm MEMFS has no system fonts). It now skips the probe on the web
+  with a debug note; the CJK loader likewise no longer does futile `fopen`s there. Desktop
+  behavior (Windows/macOS/Linux system-font merge) is unchanged. To get CJK/emoji on the
+  web, load a font explicitly via the font manager.
+
 ### Added
 - **Pixel-level render verification in CI.** Setting `UNIGUI_RENDER_VERIFY=1` makes the
   app read the GL framebuffer back after `RenderDrawData` and log
