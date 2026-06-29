@@ -378,11 +378,17 @@ void Render() {
         ImVec4 bg = GetBackdropColor();
         g_renderer->SetClearColor(bg.x, bg.y, bg.z, bg.w);
     }
-    if (g_backend == BackendType::GLFW_GL3) {
+    // The Emscripten/WebGL backend renders through the same OpenGL3 renderer as the
+    // desktop GLFW_GL3 backend, so it needs the identical GL clear + buffer swap (the
+    // ImGui GL impl doesn't clear; on the web glfwSwapBuffers is a harmless no-op that
+    // mirrors the reference imgui emscripten loop).
+    const bool gl_backend =
+        (g_backend == BackendType::GLFW_GL3 || g_backend == BackendType::Emscripten);
+    if (gl_backend) {
         glClear(GL_COLOR_BUFFER_BIT);
     }
     g_renderer->RenderDrawData(dd);
-    if (g_backend == BackendType::GLFW_GL3)
+    if (gl_backend)
         g_platform->SwapBuffers();
 }
 

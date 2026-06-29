@@ -25,17 +25,17 @@ set(UNIGUI_EM_SETTINGS
 set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+# spdlog 1.15.x bundles fmt 11, which fixes a consteval bug that fmt 10 (shipped with
+# spdlog 1.14) trips on Emscripten's Clang 19: "call to consteval function
+# fmt::basic_format_string<…> is not a constant expression" in logger.h, failing every
+# TU that includes <spdlog> (all of them, via core/log.h). fmt 10 ignored the
+# FMT_USE_CONSTEVAL=0 escape hatch on that compiler, so the version bump is the real
+# fix; the define stays as belt-and-suspenders (forces the constexpr ctor path). The
+# project's format strings are already validated against fmt by the desktop builds.
 FetchContent_Declare(spdlog_em
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.14.1)
+    GIT_TAG v1.15.3)
 FetchContent_MakeAvailable(spdlog_em)
-# The fmt bundled by spdlog 1.14 (fmt 10.x) trips a consteval bug on Emscripten's
-# Clang: "call to consteval function fmt::basic_format_string<…> is not a constant
-# expression" in logger.h, which fails every TU that includes <spdlog> (i.e. all of
-# them, via core/log.h). Forcing FMT_USE_CONSTEVAL=0 makes the format_string
-# constructor constexpr instead of consteval — compile-time checks degrade to the
-# runtime path, which is harmless here since the desktop builds already validate every
-# format string. PUBLIC so it propagates to the unigui lib's own TUs.
 if(TARGET spdlog)
     target_compile_definitions(spdlog PUBLIC FMT_USE_CONSTEVAL=0)
 endif()
