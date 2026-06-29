@@ -78,17 +78,23 @@ a11y::SetOnFocusChanged([](const a11y::Node& n) { /* UIA / NSAccessibility / AT-
 a11y::SetOnAnnounce([](const a11y::Announcement& a) { /* live region */ });
 ```
 
-- **`InstallSystemBridge(hwnd)`** picks the right bridge per platform. On **Windows** it
-  raises **UI Automation notification events** (`UiaRaiseNotificationEvent`) for focus
-  changes and announcements — spoken by **Narrator / NVDA / JAWS** — backed by a minimal
-  UIA provider on the window. (`AppConfig::accessibility` calls this for you.)
-- On macOS / Linux / web it currently falls back to the logging bridge; NSAccessibility,
-  AT-SPI, and web-ARIA bridges are the next implementations (same two callbacks).
+- **`InstallSystemBridge(handle)`** picks the right bridge per platform (and
+  `AppConfig::accessibility` calls it for you):
+  - **Windows** — UI Automation notification events (`UiaRaiseNotificationEvent`) via a
+    minimal UIA provider on the window → **Narrator / NVDA / JAWS**.
+  - **Web (wasm)** — mirrors focus/announcements into a hidden **ARIA live region** in the
+    page DOM → any browser screen reader.
+  - **macOS** — `NSAccessibilityPostNotificationWithUserInfo` announcement notifications →
+    **VoiceOver**.
+  - **Linux** — logging fallback for now (AT-SPI is the remaining native bridge).
 - **`InstallLoggingBridge()`** is the reference implementation (logger output) — useful
   for development and headless testing.
 
 ## Try it
 
-The `web_demo` gallery has an **Accessibility** tab: toggle a11y on, open the inspector,
-Tab through the *Widgets* tab, and watch the tree + focus update live; the *Announce*
-buttons exercise the live region.
+- **Desktop:** `examples/a11y_demo` sets `cfg.accessibility = true`. Run it with a screen
+  reader active (Windows: Narrator via Win+Ctrl+Enter; macOS: VoiceOver via Cmd+F5) and
+  Tab through the widgets — each focused control is spoken, and the two buttons fire
+  live-region announcements. The on-screen inspector mirrors the focus + tree.
+- **Web:** the `web_demo` gallery has an **Accessibility** tab — toggle a11y on, open the
+  inspector, Tab through the *Widgets* tab, and watch the tree + focus update live.

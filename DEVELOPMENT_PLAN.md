@@ -412,19 +412,19 @@ Goal: broaden what apps can build without leaving the toolkit.
   and the declarative DSL gained a **`dsl::Flex`** node rendered through it.
   _Remaining (optional):_ a wrapping container (FlexRow currently lays out a
   single line); per-child cross-size ergonomics in the DSL; nested-flex polish.
-- **P1 · M — Accessibility.** _Substantially landed._ The `unigui::a11y` module provides a
-  real **per-frame accessibility tree** (`BeginFrame`/`AddNode`/`Tree`) on top of the focus
+- **P1 · M — Accessibility.** _Largely complete._ The `unigui::a11y` module provides a real
+  **per-frame accessibility tree** (`BeginFrame`/`AddNode`/`Tree`) on top of the focus
   tracker, **ARIA-style live announcements** (`Announce` + `Live` politeness, callback or
-  drain), richer `Node` state/roles, an in-app **`DrawInspector()`**, and bridges: the
-  reference **`InstallLoggingBridge()`** and a real **`InstallSystemBridge()`** that on
-  **Windows raises UI Automation notification events** (Narrator/NVDA/JAWS) via a minimal
-  UIA provider. The app loop enables **keyboard navigation** (`NavEnableKeyboard`),
-  **`AppConfig::accessibility`** opts the whole layer in, and **11 widgets** report into the
-  tree (Button/CheckBox/ToggleSwitch/LineEdit/RadioGroup/InputInt/InputFloat/InputText/
-  Selectable/Hyperlink/PasswordInput) via `Widget::ReportAccessible`. _Remaining:_
-  **macOS NSAccessibility / Linux AT-SPI / web-ARIA** bridges (Windows UIA is the template);
-  wire the composite widgets (Combo/Slider/TabWidget/TreeView/Table/DatePicker); a focused
-  keyboard-only nav audit.
+  drain), richer `Node` state/roles, an in-app **`DrawInspector()`**, and a logging
+  reference bridge plus a real **`InstallSystemBridge()`** with per-platform backends:
+  **Windows** UI Automation (Narrator/NVDA/JAWS), **web** ARIA live regions (any browser
+  screen reader), and **macOS** NSAccessibility (VoiceOver). The app loop enables **keyboard
+  navigation** (`NavEnableKeyboard`), **`AppConfig::accessibility`** opts the whole layer in
+  with one flag, and **~39 widgets** report into the tree via `Widget::ReportAccessible`
+  (buttons, all inputs incl. password-presence-only, selections, sliders, combos,
+  tabs/tree/table/collapsing-header, color/date pickers, and chrome). _Remaining:_ a native
+  **Linux AT-SPI** bridge (logging fallback today); a focused keyboard-only nav audit; and
+  in-the-wild screen-reader runtime validation.
 - ~~**P1 · M — Theming authoring tools.**~~ **Done.** Theme export/import
   (`ExportThemeJSON`/`ImportThemeJSON`, round-trip tested), **CSS hot-reload from
   disk** (`styling::Engine::LoadFile()` + `ReloadIfChanged()`/`Clear()`/

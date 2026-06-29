@@ -122,7 +122,7 @@ endif()
 # ── DX11 + DX12 (Windows, optional) ───────────────────────────────────────────
 if(WIN32)
     # UI Automation for the a11y screen-reader bridge (UiaRaiseNotificationEvent /
-    # UiaHostProviderFromHwnd in core/a11y_bridge_win.cc) — always linked on Windows.
+    # UiaHostProviderFromHwnd in core/a11y_bridge.cc) — always linked on Windows.
     list(APPEND UNIGUI_LIBS uiautomationcore)
     if(UNIGUI_BACKEND_DX11)
         list(APPEND UNIGUI_LIBS d3d11 d3dcompiler dxgi dxguid)
@@ -138,11 +138,12 @@ endif()
 
 # ── macOS-specific: Objective-C++ flags for Metal backend ──────────────────────
 if(APPLE)
-    set_source_files_properties(backend/metal_renderer.cc PROPERTIES
+    # metal_renderer + the a11y bridge (NSAccessibility) are Objective-C++ on macOS.
+    set_source_files_properties(backend/metal_renderer.cc core/a11y_bridge.cc PROPERTIES
         COMPILE_FLAGS "-x objective-c++ -fobjc-arc")
     find_library(METAL_LIBRARY Metal REQUIRED)
     find_library(QUARTZCORE_LIBRARY QuartzCore REQUIRED)
-    find_library(COCOA_LIBRARY Cocoa REQUIRED) # NSWindow/NSView for the CAMetalLayer
+    find_library(COCOA_LIBRARY Cocoa REQUIRED) # NSWindow/NSView + NSAccessibility
     list(APPEND UNIGUI_LIBS ${METAL_LIBRARY} ${QUARTZCORE_LIBRARY} ${COCOA_LIBRARY})
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_METAL)
     message(STATUS "Metal backend enabled (macOS)")
@@ -175,7 +176,7 @@ target_sources(unigui PRIVATE
     core/log.cc
     core/main_thread.cc
     core/accessibility.cc
-    core/a11y_bridge_win.cc
+    core/a11y_bridge.cc
     backend/glfw_platform.cc
     backend/opengl3_renderer.cc
     backend/backend_registry.cc

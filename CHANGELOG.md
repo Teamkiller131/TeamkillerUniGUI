@@ -9,9 +9,11 @@
   `Node` state (`focused`/`disabled`) and roles (Toggle/Progress/Window/Group/Status/…);
   an in-app **`a11y::DrawInspector()`** (tree + focus + recent announcements) and bridges:
   the reference **`InstallLoggingBridge()`** (logger) and a real **`InstallSystemBridge()`**
-  that on **Windows raises UI Automation notification events** — spoken by Narrator / NVDA /
-  JAWS — for focus changes and announcements (logging fallback on other platforms, pending
-  NSAccessibility / AT-SPI / web-ARIA bridges). The new **`AppConfig::accessibility`** flag
+  with a per-platform implementation: **Windows** raises UI Automation notification events
+  (Narrator / NVDA / JAWS); the **web** build mirrors focus/announcements into an ARIA
+  live region in the page DOM (any browser screen reader); **macOS** posts NSAccessibility
+  announcement notifications (VoiceOver); Linux falls back to logging (AT-SPI is the
+  remaining native bridge). The new **`AppConfig::accessibility`** flag
   opts the whole layer in with one line (installs the bridge once the window is up). The app loop
   now enables **`ImGuiConfigFlags_NavEnableKeyboard`** (Tab/arrow keyboard navigation) and
   resets the tree each frame; **~39 widgets** report into it via the new
