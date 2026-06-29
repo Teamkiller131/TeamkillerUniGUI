@@ -53,6 +53,15 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerWarnings.cmake)
 # clean prefix). Setting it here makes the dirs available to every subdirectory.
 include(GNUInstallDirs)
 
+# ── Emscripten (WebAssembly) dependency mode ─────────────────────────────────
+# A wasm build can't use the vcpkg find_package() path (glad is desktop-GL-only;
+# GLFW/WebGL2/freetype come from Emscripten ports). Source imgui/implot/spdlog via
+# FetchContent and expose the same target names src/ expects. Must precede
+# add_subdirectory(src) so the targets exist before the lib links them.
+if(EMSCRIPTEN)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Emscripten.cmake)
+endif()
+
 # ── Subdirectories ───────────────────────────────────────────────────────────
 add_subdirectory(src)
 

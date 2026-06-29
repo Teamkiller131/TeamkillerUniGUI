@@ -196,3 +196,27 @@ jobs:
           -DCMAKE_PREFIX_PATH="$PWD/_pkg"
         cmake --build build_consumer
         ./build_consumer/consumer
+
+  # WebAssembly (Emscripten) build. Proves the library cross-compiles to wasm with
+  # the WebGL2/GLES3 renderer path. No vcpkg: imgui/implot/spdlog come from
+  # FetchContent and GLFW/WebGL2/freetype from Emscripten ports (cmake/Emscripten.cmake).
+  # The plugin (dlopen) and events (std::thread) modules don't apply to a
+  # single-threaded wasm build, so they're disabled here.
+  emscripten:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Emscripten
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: 3.1.74
+    - name: Verify emsdk
+      run: emcc -v
+    - name: Configure (wasm, library only)
+      run: |
+        emcmake cmake -B build_web -S . -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          -DUNIGUI_BUILD_TESTS=OFF -DUNIGUI_BUILD_EXAMPLES=OFF \
+          -DUNIGUI_MODULE_PLUGIN=OFF -DUNIGUI_MODULE_EVENTS=OFF \
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+    - name: Build the wasm library
+      run: cmake --build build_web --target unigui

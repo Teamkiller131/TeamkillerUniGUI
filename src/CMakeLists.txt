@@ -39,12 +39,18 @@ generate_export_header(unigui
 )
 
 # ── Dependencies (always) ─────────────────────────────────────────────────────
-find_package(imgui CONFIG REQUIRED)
-find_package(glfw3 CONFIG REQUIRED)
-find_package(glad CONFIG REQUIRED)
-find_package(Freetype REQUIRED)
-find_package(implot CONFIG REQUIRED)
-find_package(spdlog CONFIG REQUIRED)
+# On Emscripten these targets are pre-created by cmake/Emscripten.cmake (FetchContent
+# + Emscripten ports), so the vcpkg find_package() path is skipped — but the SAME
+# target names (imgui::imgui, implot::implot, glfw, glad::glad, Freetype::Freetype,
+# spdlog::spdlog) exist, so everything below links unchanged.
+if(NOT EMSCRIPTEN)
+    find_package(imgui CONFIG REQUIRED)
+    find_package(glfw3 CONFIG REQUIRED)
+    find_package(glad CONFIG REQUIRED)
+    find_package(Freetype REQUIRED)
+    find_package(implot CONFIG REQUIRED)
+    find_package(spdlog CONFIG REQUIRED)
+endif()
 
 set(UNIGUI_LIBS
     imgui::imgui
