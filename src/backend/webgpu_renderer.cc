@@ -1,11 +1,14 @@
 // WebGPU renderer backend.
 //
-// Real implementation on Emscripten (built with `-sUSE_WEBGPU=1` + UNIGUI_HAS_WEBGPU):
-// renders to the HTML5 `#canvas` through the browser's WebGPU and drives
-// imgui_impl_wgpu. WebGPU device acquisition is asynchronous, so BringUp() starts the
-// adapter/device request and returns immediately; the per-frame calls stay inert until
-// the device callback fires (Ready()), which fits the browser RAF main loop. Off the
-// web (or without UNIGUI_HAS_WEBGPU) this stays a clean {nullptr} stub.
+// Real implementation on Emscripten (built with `--use-port=emdawnwebgpu` +
+// UNIGUI_HAS_WEBGPU): renders to the HTML5 `#canvas` through the browser's WebGPU and
+// drives imgui_impl_wgpu (imgui 1.92 targets the modern webgpu.h — WGPUStringView, the
+// surface API, CallbackInfo structs — which the emdawnwebgpu port provides). WebGPU
+// device acquisition is asynchronous; BringUp() kicks off the adapter/device request
+// with AllowSpontaneous callbacks (which fire from the browser event loop) and returns
+// immediately. The per-frame calls stay inert until OnDeviceReady configures the surface
+// and runs ImGui_ImplWGPU_Init — early frames simply draw nothing, which fits the browser
+// RAF loop. Off the web (or without UNIGUI_HAS_WEBGPU) this stays a clean {nullptr} stub.
 #if defined(__EMSCRIPTEN__) && defined(UNIGUI_HAS_WEBGPU)
 
 #include <unigui/backend/webgpu_renderer.h>
@@ -19,15 +22,14 @@
 namespace unigui {
 namespace {
 
-// Namespace-level so the C-API request callbacks (which receive a void* userdata) can
-// name and access it — a private nested type couldn't be referenced from free functions.
+// Namespace-level so the C-API request callbacks (which receive void* userdata) can name
+// and access it — a private nested type couldn't be referenced from free functions.
 struct WgpuState {
     WGPUInstance instance = nullptr;
     WGPUSurface surface = nullptr;
     WGPUAdapter adapter = nullptr;
     WGPUDevice device = nullptr;
     WGPUQueue queue = nullptr;
-    WGPUSwapChain swapchain = nullptr;
     WGPUTextureFormat format = WGPUTextureFormat_BGRA8Unorm;
     WGPUTextureView currentView = nullptr;
 
@@ -37,32 +39,36 @@ struct WgpuState {
     double clearR = 0.10, clearG = 0.10, clearB = 0.12, clearA = 1.00;
 };
 
-void ConfigureSwapChain(WgpuState* s, int w, int h) {
-    if (s->swapchain) {
-        wgpuSwapChainRelease(s->swapchain);
-        s->swapchain = nullptr;
-    }
-    WGPUSwapChainDescriptor d = {};
-    d.usage = WGPUTextureUsage_RenderAttachment;
-    d.format = s->format;
-    d.width = static_cast<uint32_t>(w);
-    d.height = static_cast<uint32_t>(h);
-    d.presentMode = WGPUPresentMode_Fifo;
-    s->swapchain = wgpuDeviceCreateSwapChain(s->device, s->surface, &d);
+void ConfigureSurface(WgpuState* s, int w, int h) {
+    WGPUSurfaceConfiguration cfg = {};
+    cfg.device = s->device;
+    cfg.format = s->format;
+    cfg.usage = WGPUTextureUsage_RenderAttachment;
+    cfg.width = static_cast<uint32_t>(w);
+    cfg.height = static_cast<uint32_t>(h);
+    cfg.presentMode = WGPUPresentMode_Fifo;
+    cfg.alphaMode = WGPUCompositeAlphaMode_Auto;
+    wgpuSurfaceConfigure(s->surface, &cfg);
     s->width = w;
     s->height = h;
 }
 
-void OnDeviceReady(WGPURequestDeviceStatus status, WGPUDevice device, const char* message,
-                   void* userdata) {
-    auto* s = static_cast<WgpuState*>(userdata);
+void OnDeviceReady(WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView /*message*/,
+                   void* userdata1, void* /*userdata2*/) {
+    auto* s = static_cast<WgpuState*>(userdata1);
     if (status != WGPURequestDeviceStatus_Success || !device) {
-        UNIGUI_LOG_ERROR("WebGPU: requestDevice failed: {}", message ? message : "(no message)");
+        UNIGUI_LOG_ERROR("WebGPU: requestDevice failed");
         return;
     }
     s->device = device;
     s->queue = wgpuDeviceGetQueue(device);
-    ConfigureSwapChain(s, s->width, s->height);
+
+    // Pick a surface format from the adapter capabilities (fall back to BGRA8Unorm).
+    WGPUSurfaceCapabilities caps = {};
+    if (wgpuSurfaceGetCapabilities(s->surface, s->adapter, &caps) == WGPUStatus_Success &&
+        caps.formatCount > 0)
+        s->format = caps.formats[0];
+    ConfigureSurface(s, s->width, s->height);
 
     ImGui_ImplWGPU_InitInfo info = {};
     info.Device = s->device;
@@ -75,18 +81,24 @@ void OnDeviceReady(WGPURequestDeviceStatus status, WGPUDevice device, const char
     }
     s->imguiInited = true;
     s->ready = true;
-    UNIGUI_LOG_INFO("WebGPU: device ready, swap chain configured ({}x{})", s->width, s->height);
+    UNIGUI_LOG_INFO("WebGPU: device ready, surface configured ({}x{})", s->width, s->height);
 }
 
-void OnAdapterReady(WGPURequestAdapterStatus status, WGPUAdapter adapter, const char* message,
-                    void* userdata) {
-    auto* s = static_cast<WgpuState*>(userdata);
+void OnAdapterReady(WGPURequestAdapterStatus status, WGPUAdapter adapter,
+                    WGPUStringView /*message*/, void* userdata1, void* /*userdata2*/) {
+    auto* s = static_cast<WgpuState*>(userdata1);
     if (status != WGPURequestAdapterStatus_Success || !adapter) {
-        UNIGUI_LOG_ERROR("WebGPU: requestAdapter failed: {}", message ? message : "(no message)");
+        UNIGUI_LOG_ERROR("WebGPU: requestAdapter failed");
         return;
     }
     s->adapter = adapter;
-    wgpuAdapterRequestDevice(adapter, nullptr, OnDeviceReady, s);
+
+    WGPURequestDeviceCallbackInfo cbInfo = {};
+    cbInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    cbInfo.callback = OnDeviceReady;
+    cbInfo.userdata1 = s;
+    WGPUDeviceDescriptor devDesc = {};
+    wgpuAdapterRequestDevice(adapter, &devDesc, cbInfo);
 }
 
 } // anonymous namespace
@@ -103,19 +115,18 @@ bool WebGPURenderer::BringUp(int width, int height) {
     p_->width = width > 0 ? width : 1280;
     p_->height = height > 0 ? height : 720;
 
-    WGPUInstanceDescriptor idesc = {};
-    p_->instance = wgpuCreateInstance(&idesc);
+    p_->instance = wgpuCreateInstance(nullptr);
     if (!p_->instance) {
         UNIGUI_LOG_ERROR("WebGPU: wgpuCreateInstance returned null (no WebGPU in this browser?)");
         return false;
     }
 
     // Surface bound to the Emscripten HTML5 canvas.
-    WGPUSurfaceDescriptorFromCanvasHTMLSelector canvasDesc = {};
-    canvasDesc.chain.sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
-    canvasDesc.selector = "#canvas";
+    WGPUEmscriptenSurfaceSourceCanvasHTMLSelector canvasSource = {};
+    canvasSource.chain.sType = WGPUSType_EmscriptenSurfaceSourceCanvasHTMLSelector;
+    canvasSource.selector = WGPUStringView{"#canvas", WGPU_STRLEN};
     WGPUSurfaceDescriptor sdesc = {};
-    sdesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&canvasDesc);
+    sdesc.nextInChain = &canvasSource.chain;
     p_->surface = wgpuInstanceCreateSurface(p_->instance, &sdesc);
     if (!p_->surface) {
         UNIGUI_LOG_ERROR("WebGPU: failed to create surface for #canvas");
@@ -125,8 +136,11 @@ bool WebGPURenderer::BringUp(int width, int height) {
     // Kick off async adapter -> device. Renderer is not Ready() until OnDeviceReady fires.
     WGPURequestAdapterOptions opts = {};
     opts.compatibleSurface = p_->surface;
-    wgpuInstanceRequestAdapter(p_->instance, &opts, OnAdapterReady,
-                               static_cast<WgpuState*>(p_.get()));
+    WGPURequestAdapterCallbackInfo cbInfo = {};
+    cbInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    cbInfo.callback = OnAdapterReady;
+    cbInfo.userdata1 = static_cast<WgpuState*>(p_.get());
+    wgpuInstanceRequestAdapter(p_->instance, &opts, cbInfo);
     UNIGUI_LOG_INFO("WebGPU: instance + surface up, awaiting async device");
     return true;
 }
@@ -152,8 +166,13 @@ void WebGPURenderer::NewFrameWGPU(int width, int height) {
     if (!p_->ready)
         return; // device still pending — draw nothing this frame
     if (width > 0 && height > 0 && (width != p_->width || height != p_->height))
-        ConfigureSwapChain(p_.get(), width, height);
-    p_->currentView = wgpuSwapChainGetCurrentTextureView(p_->swapchain);
+        ConfigureSurface(p_.get(), width, height);
+
+    WGPUSurfaceTexture st = {};
+    wgpuSurfaceGetCurrentTexture(p_->surface, &st);
+    if (!st.texture)
+        return;
+    p_->currentView = wgpuTextureCreateView(st.texture, nullptr);
     ImGui_ImplWGPU_NewFrame();
 }
 
@@ -163,10 +182,10 @@ void WebGPURenderer::RenderDrawData(ImDrawData* draw_data) {
 
     WGPURenderPassColorAttachment color = {};
     color.view = p_->currentView;
+    color.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
     color.loadOp = WGPULoadOp_Clear;
     color.storeOp = WGPUStoreOp_Store;
-    color.clearValue = WGPUColor{p_->clearR * p_->clearA, p_->clearG * p_->clearA,
-                                 p_->clearB * p_->clearA, p_->clearA};
+    color.clearValue = WGPUColor{p_->clearR, p_->clearG, p_->clearB, p_->clearA};
 
     WGPURenderPassDescriptor pass = {};
     pass.colorAttachmentCount = 1;
@@ -199,10 +218,6 @@ void WebGPURenderer::Shutdown() {
     if (p_->currentView) {
         wgpuTextureViewRelease(p_->currentView);
         p_->currentView = nullptr;
-    }
-    if (p_->swapchain) {
-        wgpuSwapChainRelease(p_->swapchain);
-        p_->swapchain = nullptr;
     }
     p_->ready = false;
 }

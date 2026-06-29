@@ -61,11 +61,14 @@ target_include_directories(unigui_imgui PUBLIC
 target_compile_definitions(unigui_imgui PUBLIC IMGUI_ENABLE_FREETYPE)
 # Emscripten provides GLFW3 headers + freetype headers when these settings are active.
 target_compile_options(unigui_imgui PUBLIC ${UNIGUI_EM_SETTINGS})
-# WebGPU build: compile imgui's wgpu backend and pull in the WebGPU port (-sUSE_WEBGPU
-# provides <webgpu/webgpu.h> + the JS implementation). The WebGL2 build omits both.
+# WebGPU build: compile imgui's wgpu backend and pull in the emdawnwebgpu port. imgui
+# 1.92's imgui_impl_wgpu requires the modern webgpu.h (WGPUStringView, surface API, …)
+# that `--use-port=emdawnwebgpu` provides — the legacy `-sUSE_WEBGPU=1` binding no longer
+# compiles. The flag is needed at both compile (headers) and link (JS impl). The WebGL2
+# build omits both.
 if(UNIGUI_WEB_WEBGPU)
     target_sources(unigui_imgui PRIVATE ${imgui_em_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp)
-    target_compile_options(unigui_imgui PUBLIC "SHELL:-sUSE_WEBGPU=1")
+    target_compile_options(unigui_imgui PUBLIC "SHELL:--use-port=emdawnwebgpu")
 endif()
 add_library(imgui::imgui ALIAS unigui_imgui)
 
@@ -102,9 +105,9 @@ add_library(glad::glad ALIAS unigui_glad_stub)
 
 # Make the GLFW/WebGL/freetype link settings apply to the final wasm link.
 add_link_options(${UNIGUI_EM_SETTINGS})
-# WebGPU build also needs the WebGPU JS implementation linked in.
+# WebGPU build also needs the emdawnwebgpu JS implementation linked in.
 if(UNIGUI_WEB_WEBGPU)
-    add_link_options("SHELL:-sUSE_WEBGPU=1")
+    add_link_options("SHELL:--use-port=emdawnwebgpu")
 endif()
 
 message(STATUS "Emscripten dependency mode: imgui/implot/spdlog via FetchContent; "
