@@ -102,9 +102,9 @@ unigui:: API
     │   ├── SDL3 + Vulkan 1.3 ★ (production)
     │   ├── GLFW + DX11 ★ (production, Windows default)
     │   ├── GLFW + DX12 ★ (production)
-    │   ├── Metal          (macOS, stub — not yet implemented)
+    │   ├── Metal          (macOS, stub — fails cleanly, falls back to GL3)
     │   ├── WebGPU         (cross-platform, stub)
-    │   └── Emscripten     (Web/HTML5, stub)
+    │   └── Emscripten     (Web/HTML5 — platform compiles, renderer pending)
     └── App Bootstrap (Init / Run / NewFrame / Render)
     ↓
 ImGui (v1.92.8, docking + multi-viewport)
@@ -470,9 +470,9 @@ cfg.backend = BackendType::Vulkan;        // GLFW + Vulkan 1.3 (cross-platform) 
 cfg.backend = BackendType::SDL3_Vulkan;   // SDL3 + Vulkan 1.3 (opt-in, see below)
 cfg.backend = BackendType::DX11;          // GLFW + DirectX 11 ★
 cfg.backend = BackendType::DX12;          // GLFW + DirectX 12 ★
-cfg.backend = BackendType::Metal;         // macOS Metal (stub, not yet implemented)
-cfg.backend = BackendType::WebGPU;        // Dawn/WGPU (stub)
-cfg.backend = BackendType::Emscripten;    // Web/HTML5 (stub)
+cfg.backend = BackendType::Metal;         // macOS Metal — stub (Init fails cleanly → falls back to GLFW+OpenGL3)
+cfg.backend = BackendType::WebGPU;        // Dawn/WGPU — stub (no renderer linked yet)
+cfg.backend = BackendType::Emscripten;    // Web/HTML5 — platform compiles; WebGPU/WebGL renderer still pending
 ```
 
 | Backend | Platform | Graphics API | Status | MSAA |
@@ -482,9 +482,9 @@ cfg.backend = BackendType::Emscripten;    // Web/HTML5 (stub)
 | SDL3+Vulkan | Win/Lin/Mac | Vulkan 1.3 | Opt-in (needs SDL3) | Config |
 | GLFW+DX11 | Windows | DirectX 11 | ★ Production | 4x |
 | GLFW+DX12 | Windows | DirectX 12 | ★ Production | Config |
-| Metal | macOS | Metal 2 | Stub | Native |
+| Metal | macOS | Metal 2 | Stub (clean fallback → GL3) | Native |
 | WebGPU | Cross | Dawn/WGPU | Stub | Native |
-| Emscripten | Web | WebGL/WebGPU | Stub | Browser |
+| Emscripten | Web | WebGL/WebGPU | Platform compiles; renderer pending | Browser |
 
 **Vulkan is backend-agnostic.** There is a single, platform-independent `VulkanRenderer`
 (built on Dear ImGui's `imgui_impl_vulkan`). The one OS-specific step — creating the
