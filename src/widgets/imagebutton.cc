@@ -17,7 +17,9 @@ void ImageButton::Render() {
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, framePadding_);
     clicked_ = ImGui::ImageButton(GetName().c_str(), texture_, ImVec2(imgW_, imgH_), ImVec2(0, 0),
                                   ImVec2(1, 1), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
+    const bool itemFocused = ImGui::IsItemFocused();
     ImGui::PopStyleVar();
+    ReportAccessible(a11y::Role::Button, itemFocused, label_);
     if (!label_.empty()) {
         ImGui::SameLine();
         ImGui::AlignTextToFramePadding();

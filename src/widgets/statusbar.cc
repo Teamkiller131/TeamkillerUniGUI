@@ -11,6 +11,7 @@ void StatusBar::Render() {
     ImGui::PushID(GetName().c_str());
     ImGui::Separator();
     ImGui::TextUnformatted(text_.c_str());
+    ReportAccessible(a11y::Role::Status, ImGui::IsItemFocused(), text_);
     ImGui::PopID();
 }
 void StatusBar::SetText(std::string text) {

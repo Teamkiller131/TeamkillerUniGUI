@@ -12,6 +12,8 @@ void MenuBar::Render() {
         return;
     ImGui::PushID(GetName().c_str());
     if (ImGui::BeginMainMenuBar()) {
+        const bool itemFocused = ImGui::IsItemFocused();
+        ReportAccessible(a11y::Role::Menu, itemFocused, "");
         for (auto& menu : menus_) {
             if (ImGui::BeginMenu(menu.label.c_str())) {
                 for (auto& item : menu.items) {

@@ -26,6 +26,9 @@ void ProgressBar::Render() {
     ImVec2 size(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight());
     ImVec2 pos = ImGui::GetCursorScreenPos();
     ImGui::InvisibleButton((GetName() + "##progress").c_str(), size);
+    const bool itemFocused = ImGui::IsItemFocused();
+    ReportAccessible(a11y::Role::Progress, itemFocused,
+                     std::to_string(static_cast<int>(displayFraction * 100.f + 0.5f)) + "%");
     auto* dl = ImGui::GetWindowDrawList();
     ImU32 bg = ImGui::GetColorU32(ImGuiCol_FrameBg);
     dl->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), bg,

@@ -45,7 +45,9 @@ void CascadingCombo::Render() {
         const char* preview =
             level.options.empty() ? "" : level.options[level.selectedIndex].c_str();
         ImGui::SetNextItemWidth(width > 0.f ? width : CalcComboWidth(level.options, preview));
-        if (ImGui::BeginCombo(lbl, preview, ImGuiComboFlags_NoArrowButton)) {
+        const bool comboOpen = ImGui::BeginCombo(lbl, preview, ImGuiComboFlags_NoArrowButton);
+        const bool comboFocused = ImGui::IsItemFocused(); // capture before tooltip/items steal it
+        if (comboOpen) {
             for (int i = 0; i < (int) level.options.size(); ++i) {
                 bool isSel = (i == level.selectedIndex);
                 if (ImGui::Selectable(level.options[i].c_str(), isSel))
@@ -59,6 +61,7 @@ void CascadingCombo::Render() {
             ImGui::SetTooltip("%s", level.label.c_str());
         if (level.selectedIndex != prev && onChanged_)
             onChanged_(lvl, level.selectedIndex);
+        ReportAccessible(a11y::Role::Combo, comboFocused, preview ? std::string(preview) : std::string());
     }
     ImGui::PopID();
 }

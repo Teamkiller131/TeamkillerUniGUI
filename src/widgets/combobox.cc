@@ -45,7 +45,9 @@ void ComboBox::Render() {
     else
         ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
     // NoArrowButton：去掉右侧那个突兀的下拉三角，整个预览框仍可点击展开
-    if (ImGui::BeginCombo(label_.c_str(), preview, ImGuiComboFlags_NoArrowButton)) {
+    const bool comboOpen = ImGui::BeginCombo(label_.c_str(), preview, ImGuiComboFlags_NoArrowButton);
+    const bool comboFocused = ImGui::IsItemFocused(); // capture before dropdown items steal it
+    if (comboOpen) {
         if (allowEmpty_) {
             const char* none = placeholder_.empty() ? "(none)" : placeholder_.c_str();
             if (ImGui::Selectable(none, !hasSel)) {
@@ -89,6 +91,7 @@ void ComboBox::Render() {
     }
     if (disabled)
         ImGui::EndDisabled();
+    ReportAccessible(a11y::Role::Combo, comboFocused, hasSel ? items_[selected_] : std::string());
     ImGui::PopID();
 }
 int ComboBox::GetSelectedIndex() const {

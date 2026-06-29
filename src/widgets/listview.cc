@@ -28,6 +28,7 @@ void ListView::Render() {
             if (on_select_)
                 on_select_(i);
         }
+        ReportAccessible(a11y::Role::ListItem, ImGui::IsItemFocused(), items_[i]);
     }
     ImGui::PopID();
 }

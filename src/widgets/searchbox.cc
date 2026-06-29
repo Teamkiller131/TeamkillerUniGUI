@@ -17,6 +17,8 @@ void SearchBox::Render() {
     ImGui::PushID(GetName().c_str());
     ImGui::SetNextItemWidth(-1);
     bool changed = ImGui::InputTextWithHint(GetName().c_str(), hint_.c_str(), buf_, sizeof(buf_));
+    const bool itemFocused = ImGui::IsItemFocused();
+    ReportAccessible(a11y::Role::Input, itemFocused, query_);
     if (changed) {
         query_ = buf_;
         if (onChange_)

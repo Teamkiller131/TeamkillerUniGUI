@@ -26,6 +26,7 @@ void ListBox::Render() {
     };
 
     ImGui::ListBox(label_.c_str(), &selected_, getter, &items_, static_cast<int>(items_.size()));
+    ReportAccessible(a11y::Role::ListItem, ImGui::IsItemFocused(), GetSelectedValue());
 
     if (selected_ != prev_selected_) {
         prev_selected_ = selected_;

@@ -17,6 +17,8 @@ void TreeView::Render() {
     } else {
         RenderNode(root_, 0);
     }
+    // Register the tree container; IsItemFocused() reflects the last rendered node.
+    ReportAccessible(a11y::Role::Tree, ImGui::IsItemFocused(), root_.label);
     ImGui::PopID();
 }
 void TreeView::SetRoot(TreeNode root) {

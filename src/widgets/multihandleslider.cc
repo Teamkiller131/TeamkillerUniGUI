@@ -53,6 +53,7 @@ void MultiHandleSlider::Render() {
     ImGui::SetCursorScreenPos(ImVec2(barX, barY - 16.f));
     ImGui::SetNextItemAllowOverlap();
     ImGui::InvisibleButton(GetName().c_str(), ImVec2(barW, 32.f));
+    ReportAccessible(a11y::Role::Slider, ImGui::IsItemFocused(), std::to_string(ticks_.size()));
 
     bool hovered = ImGui::IsItemHovered();
     bool active = ImGui::IsItemActive();

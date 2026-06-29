@@ -20,6 +20,7 @@ void DragInt::Render() {
         value_ = min_;
     if (value_ > max_)
         value_ = max_;
+    ReportAccessible(a11y::Role::Slider, ImGui::IsItemFocused(), std::to_string(value_));
     NotifyChange(prev);
 }
 bool DragInt::WasChanged() const {

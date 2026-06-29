@@ -12,6 +12,7 @@ void CollapsingHeader::Render() {
     ImGui::PushID(GetName().c_str());
     bool was_open = open_;
     ImGui::CollapsingHeader(label_.c_str(), &open_);
+    ReportAccessible(a11y::Role::Group, ImGui::IsItemFocused(), open_ ? "expanded" : "collapsed");
     if (open_ != was_open && onToggle_)
         onToggle_(open_);
     if (open_ && content_callback_)

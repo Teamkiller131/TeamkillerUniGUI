@@ -365,6 +365,9 @@ void Table::Render() {
         }
         ImGui::EndTable();
     }
+    // Register the table container with its dimensions (e.g. "3x12").
+    ReportAccessible(a11y::Role::Table, ImGui::IsItemFocused(),
+                     std::to_string(columns_.size()) + "x" + std::to_string(rows_.size()));
     ImGui::PopID();
 }
 

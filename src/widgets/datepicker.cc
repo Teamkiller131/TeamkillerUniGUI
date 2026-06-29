@@ -36,6 +36,8 @@ void DatePicker::Render() {
         day_ = 31;
     if ((year_ != prev[0] || month_ != prev[1] || day_ != prev[2]) && on_change_)
         on_change_(year_, month_, day_);
+    ReportAccessible(a11y::Role::Input, ImGui::IsItemFocused(),
+                     std::to_string(year_) + "-" + std::to_string(month_) + "-" + std::to_string(day_));
     ImGui::PopID();
 }
 } // namespace unigui

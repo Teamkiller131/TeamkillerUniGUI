@@ -28,6 +28,7 @@ void IconButton::Render() {
         display += " " + label_;
     clicked_ = ImGui::Button(display.c_str());
     ImGui::EndDisabled();
+    ReportAccessible(a11y::Role::Button, ImGui::IsItemFocused(), "");
     ImGui::PopID();
 }
 } // namespace unigui

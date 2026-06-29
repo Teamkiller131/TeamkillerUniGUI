@@ -73,6 +73,7 @@ void MultiLine::Render() {
         text_ = buf_;
         PushUndo();
     }
+    ReportAccessible(a11y::Role::Input, ImGui::IsItemFocused(), "");
     ImGui::PopID();
 }
 } // namespace unigui

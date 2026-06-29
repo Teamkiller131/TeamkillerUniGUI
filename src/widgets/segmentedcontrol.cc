@@ -80,6 +80,7 @@ void SegmentedControl::Render() {
     const bool enabled = IsEnabled();
     float x = origin.x;
     int clicked = -1;
+    bool anyFocused = false;
     for (std::size_t i = 0; i < n; ++i) {
         const float w = widths[i];
         const ImVec2 segMin(x, origin.y);
@@ -89,6 +90,7 @@ void SegmentedControl::Render() {
         ImGui::SetCursorScreenPos(segMin);
         const bool pressed = ImGui::InvisibleButton("##seg", ImVec2(w, h)) && enabled;
         const bool hovered = ImGui::IsItemHovered();
+        anyFocused = anyFocused || ImGui::IsItemFocused();
         ImGui::PopID();
 
         const bool isSel = (static_cast<int>(i) == selected_);
@@ -128,6 +130,8 @@ void SegmentedControl::Render() {
         if (onChange_)
             onChange_(selected_, segments_[selected_]);
     }
+
+    ReportAccessible(a11y::Role::Tab, anyFocused, GetSelectedLabel());
 
     RenderTooltip();
     ImGui::PopID();

@@ -44,6 +44,7 @@ void ButtonGroup::Render() {
     if (align_ == Align::Right && avail > totalW)
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (avail - totalW));
 
+    bool anyFocused = false;
     for (int i = 0; i < n; ++i) {
         const Item& it = items_[static_cast<std::size_t>(i)];
         if (i > 0)
@@ -64,6 +65,7 @@ void ButtonGroup::Render() {
             ImGui::BeginDisabled();
         const bool pressed = ImGui::Button(it.label.c_str(),
                                            ImVec2(widths[static_cast<std::size_t>(i)], 0.f));
+        anyFocused = anyFocused || ImGui::IsItemFocused();
         if (!it.enabled)
             ImGui::EndDisabled();
         if (pushed)
@@ -73,6 +75,8 @@ void ButtonGroup::Render() {
         if (pressed && it.enabled && it.onClick)
             it.onClick();
     }
+
+    ReportAccessible(a11y::Role::Group, anyFocused, "");
 
     ImGui::PopID();
 }

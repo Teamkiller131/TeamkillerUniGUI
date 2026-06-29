@@ -19,6 +19,7 @@ void ColorEdit::Render() {
         return;
     ImGui::PushID(GetName().c_str());
     changed_ = ImGui::ColorEdit4(label_.c_str(), color_);
+    ReportAccessible(a11y::Role::Input, ImGui::IsItemFocused(), "");
     if (changed_ && onChange_)
         onChange_(GetColor());
     ImGui::PopID();

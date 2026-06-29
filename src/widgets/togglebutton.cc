@@ -31,6 +31,7 @@ void ToggleButton::Render() {
         ImGui::BeginDisabled();
     // ## keeps the ImGui id stable as the visible label flips off/on.
     const bool pressed = ImGui::Button((label + "##tb").c_str(), size_);
+    const bool itemFocused = ImGui::IsItemFocused();
     if (!enabled)
         ImGui::EndDisabled();
 
@@ -47,6 +48,8 @@ void ToggleButton::Render() {
         if (onToggle_)
             onToggle_(on_);
     }
+
+    ReportAccessible(a11y::Role::Toggle, itemFocused, on_ ? "on" : "off");
 
     ImGui::PopID();
 }

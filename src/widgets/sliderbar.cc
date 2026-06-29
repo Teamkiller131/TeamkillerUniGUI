@@ -117,6 +117,7 @@ void SliderBar::Render() {
 
         // Invisible button for the entire bar interaction zone
         ImGui::InvisibleButton((GetName() + "##sliderbar_zone").c_str(), barSize);
+        ReportAccessible(a11y::Role::Slider, ImGui::IsItemFocused(), std::to_string(currentLots_));
 
         auto* dl = ImGui::GetWindowDrawList();
 

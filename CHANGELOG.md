@@ -14,11 +14,15 @@
   NSAccessibility / AT-SPI / web-ARIA bridges). The new **`AppConfig::accessibility`** flag
   opts the whole layer in with one line (installs the bridge once the window is up). The app loop
   now enables **`ImGuiConfigFlags_NavEnableKeyboard`** (Tab/arrow keyboard navigation) and
-  resets the tree each frame; eleven widgets report into it via the new
-  `Widget::ReportAccessible(role, focused, value, disabled)` — Button, CheckBox,
-  ToggleSwitch, LineEdit, RadioGroup, InputInt, InputFloat, InputText, Selectable,
-  Hyperlink, and PasswordInput (the last reports presence only, never the secret).
-  Disabled by default
+  resets the tree each frame; **~39 widgets** report into it via the new
+  `Widget::ReportAccessible(role, focused, value, disabled)` — buttons (Button, IconButton,
+  ImageButton, ToggleButton, ButtonGroup), inputs (LineEdit, InputText/Int/Float,
+  PasswordInput [presence only, never the secret], Multiline, SearchBox), selections
+  (CheckBox, RadioGroup, ToggleSwitch, ComboBox, MultiCombo, CascadingCombo, ListBox,
+  ListView, Selectable, SegmentedControl), sliders (DragInt/Float, SliderBar,
+  MultiHandleSlider), containers (TabWidget, TreeView, Table, CollapsingHeader), color
+  (ColorEdit, ColorPicker), DatePicker, Hyperlink, and chrome (MenuBar, ToolBar, Label,
+  StatusBar, ProgressBar). Disabled by default
   (zero per-frame cost). The web `web_demo` gains an **Accessibility** tab demoing it.
 
 ### Fixed

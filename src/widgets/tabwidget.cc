@@ -65,6 +65,9 @@ void TabWidget::Render() {
             active_ = (int) tabs_.size() - 1;
         if (active_ < 0)
             active_ = 0;
+        const std::string activeLabel =
+            (active_ >= 0 && active_ < (int) tabs_.size()) ? tabs_[active_].label : std::string();
+        ReportAccessible(a11y::Role::Tab, ImGui::IsItemFocused(), activeLabel);
     }
     ImGui::PopID();
 }

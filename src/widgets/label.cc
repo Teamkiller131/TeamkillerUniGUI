@@ -13,6 +13,7 @@ void Label::Render() {
         return;
     ImGui::PushID(GetName().c_str());
     ImGui::TextUnformatted(text_.c_str());
+    ReportAccessible(a11y::Role::Text, ImGui::IsItemFocused(), text_);
     ImGui::PopID();
 }
 

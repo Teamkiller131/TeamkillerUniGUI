@@ -24,6 +24,7 @@ void ColorPicker::Render() {
         if (color_ != prev && on_change_)
             on_change_(color_);
     }
+    ReportAccessible(a11y::Role::Input, ImGui::IsItemFocused(), "");
     ImGui::PopID();
 }
 std::array<float, 3> ColorPicker::GetColor() const {
