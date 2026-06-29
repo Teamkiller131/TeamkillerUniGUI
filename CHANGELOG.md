@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+### Added
+- **Pixel-level render verification in CI.** Setting `UNIGUI_RENDER_VERIFY=1` makes the
+  app read the GL framebuffer back after `RenderDrawData` and log
+  `[render-verify] glError=… nonClear=N/total drawn=true|false` — proving the UI actually
+  drew pixels rather than just clearing. The Linux headless smoke now asserts `drawn=true`
+  after a clean run, so a "renders nothing" regression (like the 4.3.1 black screen) fails
+  CI instead of slipping past a log-only check. Inert (zero cost) unless the env var is set,
+  and GL-backends only.
+
 ## [4.3.1] - 2026-06-29
 
 ### Fixed

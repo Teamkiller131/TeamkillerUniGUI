@@ -42,28 +42,44 @@ jobs:
           -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
     - name: Build
       run: cmake --build build
-    - name: Headless backend smoke (GLFW+OpenGL3 must actually RUN, not just compile)
-      # Proves the GLFW+OpenGL3 backend brings up a real 3.3-core software GL context
-      # and renders. NOTE: the software GL rasterizers (llvmpipe/softpipe) sometimes
-      # crash INSIDE libgallium during ImGui_ImplOpenGL3_RenderDrawData — a driver bug,
-      # NOT the UniGUI backend (a gdb backtrace put the fault in libgallium, with our
-      # frames just Render()->RenderDrawData); it does not occur on real hardware GL.
-      # So: prefer a full clean render under either driver; only if BOTH crash in the
-      # driver do we fall back to asserting the backend reached a working GL state.
+    - name: Headless backend smoke (GLFW+OpenGL3 must actually RENDER, not just run)
+      # Proves the GLFW+OpenGL3 backend brings up a real 3.3-core software GL context AND
+      # draws pixels. UNIGUI_RENDER_VERIFY=1 makes the app read the framebuffer back after
+      # RenderDrawData and log `[render-verify] … drawn=true|false`; we assert drawn=true
+      # so a "renders nothing" regression (e.g. the 4.3.1 missing-ImGui_ImplOpenGL3_NewFrame
+      # black screen) fails here instead of passing a log-only check.
+      # NOTE: the software GL rasterizers (llvmpipe/softpipe) sometimes crash INSIDE
+      # libgallium during RenderDrawData — a driver bug, NOT the UniGUI backend (a gdb
+      # backtrace put the fault in libgallium); it does not occur on hardware GL. So:
+      # prefer a full clean render under either driver and assert it drew; only if BOTH
+      # crash in the driver do we fall back to asserting the backend reached a working GL
+      # state (we can't read pixels back if the driver crashed mid-render).
       run: |
         sudo apt-get install -y xvfb libgl1-mesa-dri libglu1-mesa
         export LIBGL_ALWAYS_SOFTWARE=1
+        export UNIGUI_RENDER_VERIFY=1
         run() {
           xvfb-run -a -s "-screen 0 1280x720x24" \
             ./build/examples/hello_unigui/hello_unigui --frames 10 2>&1 | tee smoke.log
           return ${PIPESTATUS[0]}
         }
+        assert_drawn() {
+          if grep -q "render-verify.*drawn=true" smoke.log; then
+            echo "Pixel readback: the UI actually rendered (drawn=true)."
+          else
+            echo "::error::render-verify never reported drawn=true — the GL backend cleared but drew nothing (a black-screen regression)."
+            grep "render-verify" smoke.log || echo "(no render-verify line found)"
+            exit 1
+          fi
+        }
         if GALLIUM_DRIVER=llvmpipe run; then
           echo "Backend ran clean under llvmpipe."
+          assert_drawn
         elif GALLIUM_DRIVER=softpipe run; then
           echo "Backend ran clean under softpipe."
+          assert_drawn
         else
-          echo "::warning::Both software GL drivers crashed inside libgallium during RenderDrawData (a Mesa driver bug, not the UniGUI backend). Verifying backend bring-up instead."
+          echo "::warning::Both software GL drivers crashed inside libgallium during RenderDrawData (a Mesa driver bug, not the UniGUI backend). Verifying backend bring-up instead (can't read pixels back after a driver crash)."
           grep -q "OpenGL3 renderer initialized" smoke.log
           grep -q "Init complete" smoke.log
         fi

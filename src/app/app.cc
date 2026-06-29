@@ -22,6 +22,8 @@
 #include <implot.h>
 
 #include <cstdio>
+#include <cstdlib>
+#include <vector>
 #ifdef UNIGUI_HAS_DX11
 #include <unigui/backend/dx11_renderer.h>
 
@@ -399,6 +401,55 @@ bool NewFrame() {
     return true;
 }
 
+// Optional render verification for CI. When UNIGUI_RENDER_VERIFY=1, read the GL
+// framebuffer back after RenderDrawData and report whether the UI actually drew pixels
+// (vs. just a clear). This catches "renders nothing" regressions a log-only smoke can't
+// see — e.g. a missing ImGui_ImplOpenGL3_NewFrame() leaves no shader/buffers bound, so
+// the screen stays the clear colour (the 4.3.1 black-screen bug). GL backends only; inert
+// unless the env var is set, so zero cost in normal runs. Must be called after
+// RenderDrawData and before SwapBuffers (it reads the rendered back buffer).
+static void VerifyRenderIfEnabled() {
+    static const bool verify = [] {
+        const char* e = std::getenv("UNIGUI_RENDER_VERIFY");
+        return e && e[0] == '1';
+    }();
+    if (!verify)
+        return;
+
+    const GLenum err = glGetError();
+
+    GLint vp[4] = {0, 0, 0, 0};
+    glGetIntegerv(GL_VIEWPORT, vp);
+    const int w = vp[2], h = vp[3];
+    if (w <= 0 || h <= 0) {
+        UNIGUI_LOG_INFO("[render-verify] glError=0x{:X} viewport=0x0 — skipped", (unsigned) err);
+        return;
+    }
+
+    std::vector<unsigned char> buf((size_t) w * (size_t) h * 4u);
+    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, buf.data());
+
+    const ImVec4 bg = GetBackdropColor();
+    auto to8 = [](float v) { return (int) (v * 255.0f + 0.5f); };
+    const int cr = to8(bg.x), cg = to8(bg.y), cb = to8(bg.z);
+
+    // Sample a coarse grid (cheap) and count pixels that differ from the clear colour.
+    const int step = 16;
+    int total = 0, nonClear = 0;
+    for (int y = 0; y < h; y += step) {
+        for (int x = 0; x < w; x += step) {
+            const size_t i = ((size_t) y * (size_t) w + (size_t) x) * 4u;
+            ++total;
+            if (std::abs((int) buf[i] - cr) > 8 || std::abs((int) buf[i + 1] - cg) > 8 ||
+                std::abs((int) buf[i + 2] - cb) > 8)
+                ++nonClear;
+        }
+    }
+    const bool drawn = nonClear >= 4;
+    UNIGUI_LOG_INFO("[render-verify] glError=0x{:X} nonClear={}/{} drawn={}", (unsigned) err,
+                    nonClear, total, drawn ? "true" : "false");
+}
+
 void Render() {
     if (!g_initialized)
         return;
@@ -424,8 +475,10 @@ void Render() {
         glClear(GL_COLOR_BUFFER_BIT);
     }
     g_renderer->RenderDrawData(dd);
-    if (gl_backend)
+    if (gl_backend) {
+        VerifyRenderIfEnabled(); // reads the back buffer; no-op unless UNIGUI_RENDER_VERIFY=1
         g_platform->SwapBuffers();
+    }
 }
 
 bool ShouldClose() {
