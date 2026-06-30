@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [4.4.1] - 2026-06-30
+
 ### Fixed
 - **Accessibility correctness pass** (found by an adversarial review of the 4.4.0 a11y code):
   - **Linux AT-SPI bridge emitted a malformed signal** — the `Announcement` body used
