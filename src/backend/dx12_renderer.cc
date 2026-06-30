@@ -298,12 +298,25 @@ bool DX12Renderer::Init(ImGuiContext* context) {
     return true;
 }
 
-void DX12Renderer::Shutdown() {
-    if (!initialized_)
-        return;
-    FlushGpu();
+DX12Renderer::~DX12Renderer() {
+    Shutdown();
+}
 
-    ImGui_ImplDX12_Shutdown();
+void DX12Renderer::Shutdown() {
+    // Release everything we own even when Init() never completed (initialized_ == false).
+    // A failed bring-up still leaves the device/queue/swapchain/heaps owned here (they were
+    // detached from CreateDX12DeviceAndSwapChain, which also ran ImGui_ImplDX12_Init), plus
+    // any command allocators / command list / fence created before Init() failed. Early-
+    // returning on !initialized_ leaked the entire device chain on every failed bring-up or
+    // backend fallback. Each release below is individually guarded, so this is idempotent
+    // (a second call after the explicit Shutdown in ResetBackendOnly is a no-op).
+    FlushGpu(); // self-guards on fence_/cmdQueue_; no-op if the GPU was never set up
+
+    // A non-null device_ means CreateDX12DeviceAndSwapChain succeeded — which is also where
+    // ImGui_ImplDX12_Init ran — so the DX12 ImGui backend is live and must be shut down.
+    // Calling ImGui_ImplDX12_Shutdown when it was never initialized would assert.
+    if (device_)
+        ImGui_ImplDX12_Shutdown();
     CleanupRenderTargets();
 
     if (cmdList_) {

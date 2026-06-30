@@ -170,9 +170,27 @@ void WebGPURenderer::NewFrameWGPU(int width, int height) {
 
     WGPUSurfaceTexture st = {};
     wgpuSurfaceGetCurrentTexture(p_->surface, &st);
-    if (!st.texture)
+
+    // Only SuccessOptimal/SuccessSuboptimal yield a texture we should draw into. On
+    // Timeout/Outdated/Lost (typically right after a resize) reconfigure the surface and skip
+    // the frame rather than render into a stale/expired texture. Any texture handed back must
+    // be released either way (see below).
+    const bool usable = st.texture != nullptr &&
+                        (st.status == WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal ||
+                         st.status == WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal);
+    if (!usable) {
+        if (st.texture)
+            wgpuTextureRelease(st.texture);
+        if (width > 0 && height > 0)
+            ConfigureSurface(p_.get(), width, height);
         return;
+    }
+
     p_->currentView = wgpuTextureCreateView(st.texture, nullptr);
+    // wgpuSurfaceGetCurrentTexture hands the caller an owned reference to st.texture; the view
+    // we just created holds its own independent reference, so release ours now. Without this
+    // the renderer leaks one WGPUTexture per frame (~60/s under the browser RAF loop).
+    wgpuTextureRelease(st.texture);
     ImGui_ImplWGPU_NewFrame();
 }
 
@@ -218,6 +236,30 @@ void WebGPURenderer::Shutdown() {
     if (p_->currentView) {
         wgpuTextureViewRelease(p_->currentView);
         p_->currentView = nullptr;
+    }
+    // Release the owned WebGPU object chain in reverse acquisition order. Shutdown can run more
+    // than once per process (backend teardown/recreate via ResetBackendOnly, plus the
+    // destructor), so null each handle to keep a second pass a no-op. Without this every
+    // bring-up/teardown cycle leaks the device/queue/adapter/surface/instance.
+    if (p_->queue) {
+        wgpuQueueRelease(p_->queue);
+        p_->queue = nullptr;
+    }
+    if (p_->device) {
+        wgpuDeviceRelease(p_->device);
+        p_->device = nullptr;
+    }
+    if (p_->adapter) {
+        wgpuAdapterRelease(p_->adapter);
+        p_->adapter = nullptr;
+    }
+    if (p_->surface) {
+        wgpuSurfaceRelease(p_->surface);
+        p_->surface = nullptr;
+    }
+    if (p_->instance) {
+        wgpuInstanceRelease(p_->instance);
+        p_->instance = nullptr;
     }
     p_->ready = false;
 }

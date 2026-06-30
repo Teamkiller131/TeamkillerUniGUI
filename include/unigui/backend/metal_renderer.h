@@ -20,6 +20,12 @@ public:
     void RenderDrawData(ImDrawData* draw_data) override;
     void SetClearColor(float r, float g, float b, float a) override;
 
+    /// Brackets the whole frame in an `@autoreleasepool` so the per-frame autoreleased
+    /// Metal objects (drawable, command buffer, encoder) are drained every frame instead
+    /// of piling up until the never-draining top-level pool is freed — which would exhaust
+    /// the `CAMetalLayer`'s drawable pool and stall the app. See the base-class doc.
+    void RunFrameInScope(const std::function<void()>& body) override;
+
     /// Create the Metal device + command queue and attach a `CAMetalLayer` to
     /// `nsWindow` (an `NSWindow*`, type-erased to `void*` — from
     /// `PlatformBackend::GetNativeWindowHandle()`). Returns false if Metal is

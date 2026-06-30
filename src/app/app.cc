@@ -1,7 +1,7 @@
 #include <unigui/app/app.h>
 #include <unigui/backend/backend_factory.h>
-#include <unigui/core/dpi.h>
 #include <unigui/core/accessibility.h>
+#include <unigui/core/dpi.h>
 #include <unigui/core/main_thread.h>
 #include <unigui/theme/presets/registry.h>
 #include <unigui/theme/theme.h>
@@ -530,11 +530,22 @@ void Run(const std::function<void()>& cb, int maxFrames) {
     int frame = 0;
     // NewFrame() already polls platform events; do not poll again here.
     while (!ShouldClose()) {
-        if (!NewFrame())
+        bool broke = false;
+        // RunFrameInScope wraps the whole frame in the backend's per-frame scope. For most
+        // backends this just invokes the body; the Metal backend brackets it in an
+        // @autoreleasepool so each frame's drawable/command buffer/encoder are drained
+        // (otherwise the drawable pool is exhausted and the app stalls).
+        g_renderer->RunFrameInScope([&] {
+            if (!NewFrame()) {
+                broke = true;
+                return;
+            }
+            if (cb)
+                cb();
+            Render();
+        });
+        if (broke)
             break;
-        if (cb)
-            cb();
-        Render();
         if (maxFrames > 0 && ++frame >= maxFrames)
             break;
     }

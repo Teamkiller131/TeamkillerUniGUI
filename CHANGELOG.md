@@ -1,5 +1,34 @@
 ## [Unreleased]
 
+## [4.4.2] - 2026-06-30
+
+### Fixed
+- **Backend GPU-lifecycle pass** (found by an adversarial review of the blind-written
+  Metal/WebGPU/wasm/DX12 backend code, the same treatment that produced 4.4.1):
+  - **WebGPU per-frame texture leak (critical)** — `NewFrameWGPU` released only the texture
+    *view*, never the `WGPUTexture` that `wgpuSurfaceGetCurrentTexture` hands back as an
+    owned reference. That leaked one texture allocation per rendered frame — unbounded under
+    the browser's ~60 fps RAF loop. The surface texture is now released each frame once its
+    view is created.
+  - **WebGPU surface-status handling** — `NewFrameWGPU` now inspects
+    `WGPUSurfaceTexture::status` and, on a non-optimal status (Timeout/Outdated/Lost, e.g.
+    just after a resize), reconfigures the surface and skips the frame instead of rendering
+    into a stale/expired texture.
+  - **WebGPU device chain never released** — `Shutdown()` freed only the ImGui state and the
+    current view, leaking the device/queue/adapter/surface/instance on every backend
+    teardown or fallback. It now releases the whole chain in reverse order, idempotently.
+  - **Metal drawable-pool exhaustion (high)** — the manual render loop never drained an
+    autorelease pool, so each frame's `CAMetalDrawable`/command-buffer/encoder piled up and
+    `CAMetalLayer`'s small drawable pool was exhausted within a few frames — `nextDrawable`
+    then blocks/returns nil and the app stalls. Each frame is now bracketed in an
+    `@autoreleasepool` via a new `RendererBackend::RunFrameInScope` hook (no-op for other
+    backends), and the render pass no longer pins the presented drawable across frames.
+  - **DX12 bring-up leak (medium)** — `Shutdown()` early-returned on `!initialized_`, so a
+    `DX12Renderer::Init()` that failed *after* `CreateDX12DeviceAndSwapChain` had already
+    handed over the device/queue/swapchain/heaps (and run `ImGui_ImplDX12_Init`) leaked the
+    entire D3D12 object chain on every failed bring-up/fallback. Cleanup is now unconditional
+    (guarded per-handle, idempotent) and a destructor guarantees release.
+
 ## [4.4.1] - 2026-06-30
 
 ### Fixed

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 struct ImDrawData;
 struct ImGuiContext;
 
@@ -24,6 +26,16 @@ public:
     /// buffer" and draws nothing. (DX/Vulkan/Metal drive their per-frame setup through
     /// their own typed calls in the app loop.)
     virtual void NewFrame() {}
+
+    /// Run one whole frame (the app's NewFrame → user callback → Render) inside any
+    /// per-frame scope the backend requires. The default just invokes `body()`; the Metal
+    /// backend overrides it to bracket the frame in an `@autoreleasepool` so the
+    /// autoreleased `CAMetalDrawable`/command-buffer/encoder are drained every frame. On a
+    /// manual (non-NSApp-driven) loop nothing else drains them, so the layer's small
+    /// drawable pool is exhausted within a few frames and `nextDrawable` starts blocking /
+    /// returning nil — the app stalls. Keeping this on the renderer (rather than putting
+    /// `@autoreleasepool` in app.cc) keeps app.cc plain C++.
+    virtual void RunFrameInScope(const std::function<void()>& body) { body(); }
 
     /// Shut down and release renderer resources.
     virtual void Shutdown() = 0;

@@ -30,6 +30,8 @@ public:
     ID3D12DescriptorHeap* rtvHeap_ = nullptr;
     ID3D12DescriptorHeap* srvHeap_ = nullptr;
 
+    ~DX12Renderer() override;
+
     bool Init(ImGuiContext*) override;
     void Shutdown() override;
     void RenderDrawData(ImDrawData* dd) override;

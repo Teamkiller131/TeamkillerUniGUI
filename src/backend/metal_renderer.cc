@@ -86,6 +86,18 @@ void MetalRenderer::SetClearColor(float r, float g, float b, float a) {
     p_->clearA = a;
 }
 
+void MetalRenderer::RunFrameInScope(const std::function<void()>& body) {
+    // Drain the frame's autoreleased drawable/command-buffer/encoder here. Without this,
+    // on a manual render loop (no NSApplication run loop draining a pool each iteration)
+    // the CAMetalLayer's drawable pool is exhausted after a few frames and [layer
+    // nextDrawable] blocks/returns nil — the app stalls. Mirrors the Dear ImGui
+    // GLFW+Metal example, which wraps each frame body in @autoreleasepool.
+    @autoreleasepool {
+        if (body)
+            body();
+    }
+}
+
 void MetalRenderer::NewFrameMetal(int width, int height) {
     if (!p_->layer)
         return;
@@ -117,6 +129,9 @@ void MetalRenderer::RenderDrawData(ImDrawData* drawData) {
     p_->encoder = nil;
     p_->commandBuffer = nil;
     p_->drawable = nil;
+    // Release the render pass's strong reference to the just-presented drawable's texture so
+    // it isn't pinned across the inter-frame gap (the descriptor is reused next frame).
+    p_->pass.colorAttachments[0].texture = nil;
 }
 
 void MetalRenderer::Shutdown() {
