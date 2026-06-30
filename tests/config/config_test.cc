@@ -71,3 +71,54 @@ TEST_F(StoreTest, LoadJSON_Valid_Succeeds) {
     EXPECT_EQ(Store::Instance().GetString("city"), "NYC");
     std::filesystem::remove(p);
 }
+
+// ── Save round-trips (regressions for the module review) ────────────────────
+
+// An empty value used to serialize as `key = ` (invalid TOML), which made the WHOLE
+// file fail to re-parse — one empty value lost all config.
+TEST_F(StoreTest, SaveTOML_EmptyValue_RoundTrips) {
+    auto& s = Store::Instance();
+    s.SetString("empty", "");
+    s.SetString("name", "hello");
+    const auto p = std::filesystem::temp_directory_path() / "unigui_cfg_empty.toml";
+    ASSERT_TRUE(s.SaveTOML(p.string()));
+    s.Clear();
+    ASSERT_TRUE(Store::Instance().LoadTOML(p.string()).has_value()); // must still parse
+    EXPECT_EQ(Store::Instance().GetString("name"), "hello");
+    EXPECT_EQ(Store::Instance().GetString("empty"), "");
+    std::filesystem::remove(p);
+}
+
+// Keys with TOML-significant characters (spaces, '=', quotes) reach SaveTOML via LoadINI
+// and must be quoted+escaped so the file still round-trips.
+TEST_F(StoreTest, SaveTOML_SpecialCharKey_RoundTrips) {
+    auto& s = Store::Instance();
+    s.SetString("a key with spaces", "v1");
+    s.SetString("has\"quote", "v2");
+    const auto p = std::filesystem::temp_directory_path() / "unigui_cfg_keys.toml";
+    ASSERT_TRUE(s.SaveTOML(p.string()));
+    s.Clear();
+    ASSERT_TRUE(Store::Instance().LoadTOML(p.string()).has_value());
+    EXPECT_EQ(Store::Instance().GetString("a key with spaces"), "v1");
+    EXPECT_EQ(Store::Instance().GetString("has\"quote"), "v2");
+    std::filesystem::remove(p);
+}
+
+// A value above 32-bit INT range was truncated by strtol+static_cast<int> on save
+// (Windows `long` is 32-bit). It must survive a JSON round-trip intact.
+TEST_F(StoreTest, SaveJSON_LargeInt_RoundTrips) {
+    auto& s = Store::Instance();
+    s.SetString("big", "3000000000"); // > INT_MAX, fits in int64
+    const auto p = std::filesystem::temp_directory_path() / "unigui_cfg_big.json";
+    ASSERT_TRUE(s.SaveJSON(p.string()));
+    s.Clear();
+    ASSERT_TRUE(Store::Instance().LoadJSON(p.string()).has_value());
+    EXPECT_EQ(Store::Instance().GetString("big"), "3000000000");
+    std::filesystem::remove(p);
+}
+
+// SaveJSON used to return true even when the file could not be opened.
+TEST_F(StoreTest, SaveJSON_BadPath_ReturnsFalse) {
+    Store::Instance().SetString("k", "v");
+    EXPECT_FALSE(Store::Instance().SaveJSON("/no_such_dir_unigui/nested/out.json"));
+}

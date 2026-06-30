@@ -4,7 +4,10 @@
 
 // Third-party parser backends — kept out of the public config.h so they do not leak
 // into every consumer translation unit.
+#include <cctype>
+#include <cerrno>
 #include <cpptoml.h>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -98,20 +101,70 @@ Result<void> Store::LoadTOML(const std::string& path) {
     }
 }
 
+namespace {
+// Escape a string as the body of a TOML basic string (no surrounding quotes).
+std::string TomlEscape(const std::string& s) {
+    std::string out;
+    out.reserve(s.size() + 2);
+    for (char c : s) {
+        switch (c) {
+        case '"':
+            out += "\\\"";
+            break;
+        case '\\':
+            out += "\\\\";
+            break;
+        case '\n':
+            out += "\\n";
+            break;
+        case '\r':
+            out += "\\r";
+            break;
+        case '\t':
+            out += "\\t";
+            break;
+        default:
+            out += c;
+            break;
+        }
+    }
+    return out;
+}
+
+// A TOML key: emitted bare when it is a non-empty run of [A-Za-z0-9_-], otherwise as a
+// quoted+escaped basic string. Keys with spaces/'='/'"'/newlines reach here via LoadINI
+// (everything left of the first '=') and LoadJSON, and would otherwise produce
+// unparseable output that fails the whole LoadTOML on round-trip.
+std::string TomlKey(const std::string& k) {
+    bool bare = !k.empty();
+    for (char c : k) {
+        if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-')) {
+            bare = false;
+            break;
+        }
+    }
+    return bare ? k : ("\"" + TomlEscape(k) + "\"");
+}
+} // namespace
+
 bool Store::SaveTOML(const std::string& path) const {
     FILE* f = fopen(path.c_str(), "w");
     if (!f)
         return false;
     for (auto& [k, v] : data_) {
-        if (v == "true" || v == "false")
-            std::fprintf(f, "%s = %s\n", k.c_str(), v.c_str());
-        else {
-            char* end;
+        const std::string key = TomlKey(k);
+        if (v == "true" || v == "false") {
+            std::fprintf(f, "%s = %s\n", key.c_str(), v.c_str());
+        } else {
+            char* end = nullptr;
             std::strtod(v.c_str(), &end);
-            if (*end == 0)
-                std::fprintf(f, "%s = %s\n", k.c_str(), v.c_str());
+            // Emit bare (unquoted numeric) ONLY when the entire non-empty value is a
+            // number. An empty value must be quoted ("") — `key = ` is invalid TOML and
+            // makes the whole file fail to re-parse (one empty value would lose all config).
+            if (!v.empty() && *end == 0)
+                std::fprintf(f, "%s = %s\n", key.c_str(), v.c_str());
             else
-                std::fprintf(f, "%s = \"%s\"\n", k.c_str(), v.c_str());
+                std::fprintf(f, "%s = \"%s\"\n", key.c_str(), TomlEscape(v).c_str());
         }
     }
     fclose(f);
@@ -152,22 +205,31 @@ bool Store::SaveJSON(const std::string& path) const {
         else if (v == "false")
             j[k] = false;
         else {
+            // Integer first, at full int64 width with errno range-checking, so a large
+            // but valid value (e.g. "3000000000") is not silently truncated to a wrong,
+            // possibly negative int. LoadJSON round-trips integers as int64, so this keeps
+            // Save/Load lossless. strtoll/strtod are the non-throwing C functions (the
+            // banned forms are std::stoi/stoll/stod, which throw).
+            errno = 0;
             char* end = nullptr;
-            long ival = std::strtol(v.c_str(), &end, 10);
-            if (end != v.c_str() && *end == 0) {
-                j[k] = static_cast<int>(ival);
+            long long ival = std::strtoll(v.c_str(), &end, 10);
+            if (errno == 0 && end != v.c_str() && *end == 0) {
+                j[k] = static_cast<std::int64_t>(ival);
             } else {
+                errno = 0;
                 double dval = std::strtod(v.c_str(), &end);
-                if (end != v.c_str() && *end == 0)
+                if (errno == 0 && end != v.c_str() && *end == 0)
                     j[k] = dval;
                 else
-                    j[k] = v;
+                    j[k] = v; // overflow / non-numeric: preserve the original string verbatim
             }
         }
     }
     std::ofstream o(path);
+    if (!o)
+        return false; // open failed (bad dir / read-only / etc.)
     o << j.dump(2);
-    return true;
+    return static_cast<bool>(o); // false if the write/flush failed (disk full / I/O error)
 }
 
 // ── INI ─────────────────────────────────────────────────────────────────────

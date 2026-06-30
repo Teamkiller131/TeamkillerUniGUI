@@ -1,6 +1,8 @@
 #include <unigui/sqlite/database.h>
 
 #include <gtest/gtest.h>
+#include <type_traits>
+#include <utility>
 using namespace unigui::sqlite;
 
 class DBTest : public ::testing::Test {
@@ -52,6 +54,28 @@ TEST_F(DBTest, Migrate_EmptyQueryValue_DoesNotCrash) {
     EXPECT_NO_THROW(db.Migrate(1, "CREATE TABLE t1 (id INT)"));
     EXPECT_TRUE(db.Migrate(1, "CREATE TABLE t1 (id INT)")); // idempotent
 }
+
+// ── Move semantics: Database owns a raw sqlite3*, so copy is deleted and move must
+//    transfer the handle, leaving the source closed (no double-close on destruction). ──
+TEST(DBMove, MoveConstruct_TransfersHandle) {
+    Database a;
+    ASSERT_TRUE(a.Open(":memory:").has_value());
+    Database b(std::move(a));
+    EXPECT_TRUE(b.IsOpen());
+    EXPECT_FALSE(a.IsOpen()); // moved-from handle was nulled, won't be double-closed
+    EXPECT_EQ(b.Execute("CREATE TABLE t (x INT)"), 0);
+}
+TEST(DBMove, MoveAssign_ClosesOwnHandleThenTransfers) {
+    Database a, b;
+    ASSERT_TRUE(a.Open(":memory:").has_value());
+    ASSERT_TRUE(b.Open(":memory:").has_value());
+    b = std::move(a); // b's own handle is closed, then a's is transferred in
+    EXPECT_TRUE(b.IsOpen());
+    EXPECT_FALSE(a.IsOpen());
+}
+static_assert(!std::is_copy_constructible_v<Database>, "Database copy must be deleted");
+static_assert(!std::is_copy_assignable_v<Database>, "Database copy-assign must be deleted");
+static_assert(std::is_move_constructible_v<Database>, "Database must be movable");
 
 // ── Row::Get(const char*): name-based column access (was declared but never
 //    defined — a guaranteed linker error for any caller). This test references the

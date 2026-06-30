@@ -12,9 +12,11 @@
 #endif
 
 #include <unigui/core/log.h>
+#include <unigui/core/strutil.h>
 #include <unigui/network/network.h>
 
 #include <httplib.h>
+#include <string>
 
 namespace unigui::network {
 
@@ -37,13 +39,64 @@ ParsedUrl SplitUrl(const std::string& url) {
         r.host = rest;
         r.path = "/";
     }
+    // Split an optional :port off the authority, validating it WITHOUT throwing — httplib's
+    // single-arg "scheme://host:port" Client ctor std::stoi's the port and crashes the caller
+    // on a malformed/overflow value. For a bracketed IPv6 literal ("[::1]") a port can only
+    // follow the closing ']'; otherwise it follows the last ':'. Only an all-digit suffix
+    // (≤5 digits, in 1..65535) is taken; anything else leaves the host intact and port 0.
+    std::string::size_type portColon = std::string::npos;
+    if (!r.host.empty() && r.host.front() == '[') {
+        const auto rb = r.host.find(']');
+        if (rb != std::string::npos && rb + 1 < r.host.size() && r.host[rb + 1] == ':')
+            portColon = rb + 1; // the ':' immediately after ']' (host keeps its brackets)
+    } else {
+        portColon = r.host.rfind(':');
+    }
+    if (portColon != std::string::npos) {
+        const std::string portStr = r.host.substr(portColon + 1);
+        bool digits = !portStr.empty() && portStr.size() <= 5;
+        for (char c : portStr)
+            if (c < '0' || c > '9') {
+                digits = false;
+                break;
+            }
+        if (digits) {
+            const int p = ToIntOr(portStr, 0); // non-throwing; ≤5 digits can't overflow int
+            if (p > 0 && p <= 65535) {
+                r.port = p;
+                r.host = r.host.substr(0, portColon);
+            }
+            // else: out-of-range — leave host intact, port stays 0 → scheme default. No throw.
+        }
+    }
     return r;
 }
 
 // ── HTTP ────────────────────────────────────────────────────────────────────
 
+// Build an httplib client for the parsed URL. Returns nullptr (a logged failure the callers
+// turn into HttpResponse.status==0) when HTTPS is requested but this build has no TLS.
 static httplib::Client* makeClient(const ParsedUrl& u) {
-    auto* cli = new httplib::Client(u.host.c_str());
+    const int port = u.port != 0 ? u.port : (u.https ? 443 : 80);
+    if (u.https) {
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+        // TLS available: a scheme-qualified address makes httplib build an SSL client. The
+        // port here is our own validated integer, so httplib's internal parse sees no garbage.
+        auto* cli = new httplib::Client("https://" + u.host + ":" + std::to_string(port));
+        cli->set_follow_location(true);
+        return cli;
+#else
+        // No TLS in this build: refuse rather than silently downgrade an https:// request to
+        // cleartext (which the dead `https` flag previously did).
+        UNIGUI_LOG_ERROR("network: HTTPS requested for '{}' but this build has no TLS support "
+                         "(OpenSSL off); refusing to send in cleartext",
+                         u.host);
+        return nullptr;
+#endif
+    }
+    // Plain HTTP via the explicit host+int-port ctor: httplib does NO string parsing here, so a
+    // malformed port can never reach its throwing std::stoi.
+    auto* cli = new httplib::Client(u.host, port);
     cli->set_follow_location(true);
     return cli;
 }
@@ -53,6 +106,8 @@ HttpResponse HttpClient::Get(const std::string& url,
     HttpResponse resp;
     const ParsedUrl u = SplitUrl(url);
     auto* cli = makeClient(u);
+    if (!cli)
+        return resp; // resp.status stays 0 == failure (e.g. https with no TLS support)
     httplib::Headers hdrs;
     for (auto& [k, v] : headers)
         hdrs.emplace(k, v);
@@ -71,6 +126,8 @@ HttpResponse HttpClient::Post(const std::string& url, const std::string& body,
     HttpResponse resp;
     const ParsedUrl u = SplitUrl(url);
     auto* cli = makeClient(u);
+    if (!cli)
+        return resp; // resp.status stays 0 == failure (e.g. https with no TLS support)
     httplib::Headers hdrs;
     hdrs.emplace("Content-Type", contentType);
     for (auto& [k, v] : headers)

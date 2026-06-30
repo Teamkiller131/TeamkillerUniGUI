@@ -24,8 +24,9 @@ namespace unigui::network {
 /// Result of splitting a URL into its scheme/host/path. Pure, IO-free, and unit-
 /// testable independent of the live HTTP stack.
 struct ParsedUrl {
-    std::string host; ///< "example.com" or "host:port" (no scheme, no path)
+    std::string host; ///< "example.com" (no scheme, no path, NO port)
     std::string path; ///< Leading-'/' path; "/" when the URL has none
+    int port = 0;     ///< Explicit port if the URL had one, else 0 ("use the scheme default")
     bool https = false;
 };
 

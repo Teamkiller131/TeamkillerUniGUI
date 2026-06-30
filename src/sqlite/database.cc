@@ -22,6 +22,9 @@ Database::~Database() {
 Result<void> Database::Open(const std::string& path) {
     if (sqlite3_open(path.c_str(), &db_) != SQLITE_OK) {
         UNIGUI_LOG_ERROR("SQLite open failed: {} ({})", path, sqlite3_errmsg(db_));
+        // sqlite3_open allocates a usable handle even on failure (so sqlite3_errmsg works,
+        // read above); per the C API it must still be closed or the connection leaks.
+        sqlite3_close(db_);
         db_ = nullptr;
         return Err(ErrorCode::OpenFailed);
     }
@@ -65,7 +68,12 @@ int Database::Execute(const std::string& sql, const std::vector<Param>& params) 
         return -1;
     }
     BindParams(stmt, params);
-    sqlite3_step(stmt);
+    int rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
+        UNIGUI_LOG_ERROR("SQL step failed: {}", sqlite3_errmsg(db_));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
     int changes = sqlite3_changes(db_);
     sqlite3_finalize(stmt);
     return changes;
@@ -136,8 +144,19 @@ bool Database::Migrate(int version, const std::string& sql) {
             Execute("ROLLBACK");
             return false;
         }
-        Execute("INSERT OR REPLACE INTO _migrations VALUES(?)", {version});
-        Execute("COMMIT");
+        // The DDL succeeded; record + commit it. If the bookkeeping INSERT or the COMMIT
+        // fails (locked DB / busy / disk full), roll back and report failure rather than
+        // claiming success for a migration that did not durably land.
+        if (Execute("INSERT OR REPLACE INTO _migrations VALUES(?)", {version}) < 0) {
+            UNIGUI_LOG_ERROR("Migration {} bookkeeping insert failed", version);
+            Execute("ROLLBACK");
+            return false;
+        }
+        if (Execute("COMMIT") < 0) {
+            UNIGUI_LOG_ERROR("Migration {} commit failed", version);
+            Execute("ROLLBACK");
+            return false;
+        }
         UNIGUI_LOG_INFO("Migration {} applied", version);
     }
     return true;

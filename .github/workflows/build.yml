@@ -216,6 +216,39 @@ jobs:
         cmake --build build_consumer
         ./build_consumer/consumer
 
+  # Optional-module coverage (Linux). The sqlite/config/ipc/network modules default OFF
+  # and are built by NO other CI job, so their sources — including the POSIX shared-memory
+  # mmap path that only compiles off-Windows — had zero CI coverage and could rot until
+  # someone built the windows-msvc-debug-modules preset by hand. This job turns them all ON
+  # (with the matching vcpkg manifest features that supply sqlite3/zeromq/cpp-httplib/
+  # ixwebsocket) and runs their headless-safe unit suites, so a module regression fails CI.
+  linux-modules:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install deps
+      run: |
+        sudo apt-get update && sudo apt-get install -y ninja-build libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+        ~/vcpkg/bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+    - name: Configure (all optional modules ON + their vcpkg features)
+      run: |
+        cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=x64-linux -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+          -DVCPKG_MANIFEST_FEATURES="sqlite;config;ipc;network" \
+          -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
+          -DUNIGUI_MODULE_IPC=ON -DUNIGUI_MODULE_NETWORK=ON \
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+    - name: Build (compiles the module sources incl. the POSIX shmem path)
+      run: cmake --build build
+    - name: Test the module suites (headless-safe; module failures gate CI)
+      run: |
+        ctest --test-dir build --output-on-failure \
+          -R "^DBOpen|^DBTest|^DBMove|^StoreTest|^IPCTest|^ShmemTest|^UrlParseTest|^WebSocketClientTest"
+
   # WebAssembly (Emscripten) build. Proves the library cross-compiles to wasm with
   # the WebGL2/GLES3 renderer path. No vcpkg: imgui/implot/spdlog come from
   # FetchContent and GLFW/WebGL2/freetype from Emscripten ports (cmake/Emscripten.cmake).

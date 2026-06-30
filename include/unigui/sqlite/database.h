@@ -25,6 +25,25 @@ public:
     Database() = default;
     ~Database();
 
+    // Owns a raw sqlite3* (closed in the destructor), so copying would double-close the
+    // same handle (double free / use-after-free) and a moved-from copy would close a
+    // handle it no longer owns. Forbid copy; provide a handle-transferring move so the
+    // common factory-return / container-store patterns still work with single ownership.
+    Database(const Database&) = delete;
+    Database& operator=(const Database&) = delete;
+    Database(Database&& other) noexcept
+            : db_(other.db_) {
+        other.db_ = nullptr;
+    }
+    Database& operator=(Database&& other) noexcept {
+        if (this != &other) {
+            Close(); // release any handle we currently own (null-safe + idempotent)
+            db_ = other.db_;
+            other.db_ = nullptr;
+        }
+        return *this;
+    }
+
     /// Open (or create) the database at `path`. Returns a value result on success,
     /// or `Err(ErrorCode::OpenFailed)` if sqlite could not open it (the detailed
     /// sqlite message is logged).

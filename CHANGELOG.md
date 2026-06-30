@@ -1,5 +1,49 @@
 ## [Unreleased]
 
+## [4.4.3] - 2026-06-30
+
+### Fixed
+- **Optional-module hardening pass** (found by an adversarial review of the sqlite/config/
+  ipc/network modules — the same find→verify treatment behind 4.4.1/4.4.2). These modules
+  default OFF and were built by **no CI job**, so the bugs had accumulated unseen:
+  - **IPC: ZeroMQ receive buffer overflow (critical)** — `Client::Poll` used the size
+    `zmq_recv` returns (the *full* message length) to index a 64 KB stack buffer, so a frame
+    larger than 64 KB wrote `buf[n]` and read past the buffer (stack OOB). The copy length is
+    now clamped to the buffer capacity.
+  - **Network: throwing port parse (critical)** — a malformed/out-of-range port made httplib's
+    single-arg client constructor call `std::stoi` and crash the calling thread (the banned
+    throwing-parser-on-untrusted-input pattern). `SplitUrl` now parses the port itself with
+    the non-throwing `ToIntOr` (IPv6-literal aware), and the client is built with the explicit
+    host+port constructor so no string parse runs.
+  - **Network: silent HTTPS→HTTP downgrade (high)** — the parsed `https` flag was dead, so
+    `https://` requests were sent in cleartext. The client now fails closed (logged, no
+    request) when TLS isn't compiled in, and uses a real SSL client when it is.
+  - **SQLite: handle leak on open failure (high)** — `Open()` dropped the `sqlite3*` on
+    failure without `sqlite3_close`; sqlite allocates the handle even on error, so every
+    failed open leaked it. Now closed before nulling.
+  - **SQLite: rule-of-three double-free (high)** — `Database` owns a raw `sqlite3*` with a
+    closing destructor but left copy enabled, so a by-value copy double-closed the handle.
+    Copy is now deleted and a handle-transferring move added.
+  - **IPC: shared-memory failure paths (high/medium)** — a failed POSIX `mmap` returns
+    `MAP_FAILED` ((void*)-1), not null, so it passed the `if (data_)` guards and `Read`/`Write`
+    would `memcpy` through a wild pointer; an unchecked `ftruncate` could map a short region
+    (SIGBUS); and the Windows destructor leaked the file-mapping `HANDLE` when `MapViewOfFile`
+    failed. All failure paths now release cleanly and leave `data_` null.
+  - **Config: save corruption (high)** — `SaveTOML` wrote empty values as `key = ` (invalid
+    TOML that failed the whole file on reload) and emitted keys unquoted (keys with spaces/
+    `=`/quotes from INI/JSON broke the output); `SaveJSON` never reported write failure and
+    truncated large integers to 32-bit. Empty values and special keys are now quoted/escaped,
+    `SaveJSON` returns the stream state and round-trips integers at full int64 width.
+  - **SQLite: unchecked migration commit (low)** — `Migrate` ignored the INSERT/COMMIT
+    results, so a failed commit still reported success. It now rolls back and returns false.
+
+### Added
+- **CI: `linux-modules` job** builds the optional modules (sqlite/config/ipc/network) with
+  their vcpkg features and runs their unit suites on Linux — giving the module sources (and
+  the POSIX shared-memory path that compiles nowhere else) real CI coverage so they can't
+  silently rot again. New sqlite move-semantics, config save round-trip, and URL port-parse
+  regression tests back the fixes above.
+
 ## [4.4.2] - 2026-06-30
 
 ### Fixed

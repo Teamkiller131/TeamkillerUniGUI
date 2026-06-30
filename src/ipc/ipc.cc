@@ -130,8 +130,13 @@ bool Client::Poll(int timeoutMs) {
         char buf[65536];
         int n = zmq_recv(socket_, buf, sizeof(buf) - 1, 0);
         if (n > 0) {
-            buf[n] = 0;
-            onRecv_(std::string(buf, n));
+            // zmq_recv returns the FULL message size, which can exceed the buffer when the
+            // frame was truncated. Clamp to the bytes we actually copied so buf[copied] and
+            // the std::string never index past the stack buffer (OOB write + read).
+            const int copied =
+                n < static_cast<int>(sizeof(buf)) - 1 ? n : static_cast<int>(sizeof(buf)) - 1;
+            buf[copied] = 0;
+            onRecv_(std::string(buf, copied));
             return true;
         }
     }
