@@ -63,8 +63,18 @@ set(UNIGUI_LIBS
 
 # ── Optional module deps ──────────────────────────────────────────────────────
 if(UNIGUI_MODULE_SQLITE)
-    find_package(SQLite3 REQUIRED)
-    list(APPEND UNIGUI_LIBS SQLite3::SQLite3)
+    # vcpkg's sqlite3 port exports `unofficial::sqlite3::sqlite3` (via the
+    # unofficial-sqlite3 CONFIG package); a system / CMake-module SQLite3 exports
+    # `SQLite3::SQLite3`. Prefer the vcpkg config (so the build works on every vcpkg
+    # triplet — the CMake FindSQLite3 module does not create its target under the vcpkg
+    # x64-linux layout), then fall back to the module for non-vcpkg system installs.
+    find_package(unofficial-sqlite3 CONFIG QUIET)
+    if(TARGET unofficial::sqlite3::sqlite3)
+        list(APPEND UNIGUI_LIBS unofficial::sqlite3::sqlite3)
+    else()
+        find_package(SQLite3 REQUIRED)
+        list(APPEND UNIGUI_LIBS SQLite3::SQLite3)
+    endif()
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_SQLITE)
 endif()
 if(UNIGUI_MODULE_CONFIG)
