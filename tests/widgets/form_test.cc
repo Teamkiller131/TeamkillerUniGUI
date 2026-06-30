@@ -350,8 +350,40 @@ TEST_F(FormTest, InvalidValidatorRegex_DoesNotCrash) {
     unigui::Form form("frm_bad_re", "Bad Regex");
     form.AddTextField("x", "X");
     form.SetFieldValue("x", "anything");
-    form.SetFieldValidatorRegex("x", "(unbalanced", "bad pattern"); // throws in std::regex
+    // Invalid pattern now fails to compile at set-time (disabling the validator) instead of
+    // throwing on every Validate(); neither call may propagate.
+    EXPECT_NO_THROW({ form.SetFieldValidatorRegex("x", "(unbalanced", "bad pattern"); });
     EXPECT_NO_THROW({ (void) form.Validate(); });
+}
+
+// The regex is compiled once at set-time; a valid pattern keeps matching correctly across
+// repeated Validate() calls (no per-call recompile).
+TEST_F(FormTest, RegexValidator_CompiledOnce_StillMatches) {
+    unigui::Form form("frm_re_once", "Once");
+    form.AddTextField("code", "Code");
+    form.SetFieldValidatorRegex("code", "[A-Z]{3}", "Need 3 caps");
+    form.SetFieldValue("code", "ABC");
+    EXPECT_EQ(form.Validate().size(), 0u); // matches
+    form.SetFieldValue("code", "ab");
+    EXPECT_GE(form.Validate().size(), 1u); // rejects, same compiled regex
+}
+
+// A value longer than the regex input cap is rejected without invoking the matcher — this
+// bounds polynomial backtracking and rejects implausibly long inputs (ReDoS mitigation).
+TEST_F(FormTest, RegexValidator_OverLongValue_Rejected) {
+    unigui::Form form("frm_long", "Long");
+    form.AddTextField("blob", "Blob");
+    form.SetFieldValidatorRegex("blob", "a*", "rejected"); // a* would otherwise match any run
+    form.SetFieldValue("blob", std::string(5000, 'a'));    // > kMaxRegexInputLen (4096)
+    EXPECT_GE(form.Validate().size(), 1u);
+}
+
+TEST_F(FormTest, RegexValidator_AtCapLength_StillMatches) {
+    unigui::Form form("frm_cap", "Cap");
+    form.AddTextField("blob", "Blob");
+    form.SetFieldValidatorRegex("blob", "a*", "bad");
+    form.SetFieldValue("blob", std::string(4096, 'a')); // == cap, allowed and matches a*
+    EXPECT_EQ(form.Validate().size(), 0u);
 }
 
 TEST_F(FormTest, Deserialize_MalformedJson_DoesNotCrash) {

@@ -28,13 +28,11 @@ inline bool ParseNumericSortKey(const std::string& text, double& out) {
         ++i;
     if (i >= text.size())
         return false;
-    try {
-        size_t pos = 0;
-        out = std::stod(text.substr(i), &pos);
-        if (pos == 0)
-            return false;
-        return true;
-    } catch (...) { return false; }
+    // Non-throwing leading-numeric parse — the project bans std::stoi/stof/stod (they throw
+    // on non-numeric input, here as control flow on every text cell during a sort).
+    // TryToDouble reads the leading numeric prefix like strtod and returns false when no
+    // digit parses, so "100手" -> 100 and "abc" -> false, matching the old std::stod(&pos).
+    return TryToDouble(text.substr(i), out);
 }
 
 inline int CompareSortCells(const std::string& a, const std::string& b, bool ascending) {

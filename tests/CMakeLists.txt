@@ -195,6 +195,14 @@ if(UNIGUI_MODULE_WIDGETS)
         target_compile_features(test_${_widget} PRIVATE cxx_std_23)
         gtest_discover_tests(test_${_widget})
     endforeach()
+
+    # DataTable's numeric-sort helpers (detail::ParseNumericSortKey/CompareSortCells) are
+    # inline in the header; this pins the non-throwing-parser behaviour after the std::stod
+    # → strutil::TryToDouble fix.
+    add_executable(test_datatable_sort widgets/datatable_sort_test.cc)
+    target_link_libraries(test_datatable_sort PRIVATE GTest::gtest GTest::gtest_main unigui)
+    target_compile_features(test_datatable_sort PRIVATE cxx_std_23)
+    gtest_discover_tests(test_datatable_sort)
 endif()
 
 # Core tests

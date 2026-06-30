@@ -3,6 +3,7 @@
 #include <unigui/widgets/widget_base.h>
 
 #include <functional>
+#include <memory>
 #include <regex>
 #include <string>
 #include <unordered_map>
@@ -57,6 +58,10 @@ private:
     struct FieldValidator {
         std::string pattern;
         std::string errorMsg;
+        // Compiled once when the pattern is set (see SetFieldValidatorRegex), so Validate()
+        // never recompiles per call and an invalid pattern is rejected at config time.
+        // shared_ptr keeps the struct cheaply copyable/movable inside the validators_ map.
+        std::shared_ptr<const std::regex> compiled;
         double min = 0, max = 0;
         bool hasRange = false;
         bool hasRegex = false;

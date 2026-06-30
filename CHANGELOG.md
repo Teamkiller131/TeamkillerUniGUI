@@ -1,5 +1,24 @@
 ## [Unreleased]
 
+## [4.4.5] - 2026-06-30
+
+### Fixed
+- **DataTable: banned throwing parser in a public header** (found by a full-project audit).
+  `detail::ParseNumericSortKey` parsed sort cells with `std::stod` inside a try/catch — a
+  throwing parser the project bans, used as control flow on every non-numeric cell during a
+  sort. Replaced with the non-throwing `strutil::TryToDouble` (already included by the
+  header); leading-prefix + no-throw behaviour pinned by new tests.
+- **Form: ReDoS-prone `std::regex` validator hardened.** Field validators compiled a fresh
+  `std::regex` on **every** `Validate()` call and ran `std::regex_match` on user input;
+  `std::regex` has no backtracking governor on libstdc++/libc++, so a pathological pattern +
+  crafted value could hang the UI thread. The pattern is now compiled **once** at set-time
+  (an invalid pattern disables the validator instead of throwing every frame), the matched
+  value length is **bounded** (caps polynomial backtracking and rejects implausibly long
+  inputs), and the regex *pattern* is documented as a host-controlled trust boundary. Note:
+  exponential catastrophic backtracking from a host-authored pathological pattern is not
+  fully eliminated without a non-backtracking engine — hosts sourcing patterns from
+  untrusted input must pre-vet them.
+
 ## [4.4.4] - 2026-06-30
 
 ### Fixed

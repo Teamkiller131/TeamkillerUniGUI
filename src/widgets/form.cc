@@ -12,6 +12,13 @@
 namespace unigui {
 
 namespace {
+// Upper bound on the value length a regex validator will run against. Form fields hold
+// short inputs (names, emails, codes), so anything longer is rejected without invoking the
+// matcher — this caps polynomial backtracking to sub-millisecond and prevents pathological
+// time/memory on huge inputs. (Exponential catastrophic backtracking from a host-authored
+// pattern is a host trust-boundary concern; see SetFieldValidatorRegex.)
+constexpr std::size_t kMaxRegexInputLen = 4096;
+
 std::string EscapeJsonString(const std::string& value) {
     std::string out;
     out.reserve(value.size() + 8);
@@ -154,15 +161,25 @@ std::vector<FormError> Form::Validate() const {
         }
         auto it = validators_.find(f.name);
         if (it != validators_.end()) {
-            if (it->second.hasRegex && !f.value.empty()) {
-                try {
-                    std::regex re(it->second.pattern);
-                    if (!std::regex_match(f.value, re)) {
-                        errors.push_back({f.name, it->second.errorMsg});
+            if (it->second.hasRegex && it->second.compiled && !f.value.empty()) {
+                // Match against the regex compiled once at set-time (no per-call recompile).
+                // std::regex has no complexity governor, so bound the matched length: form
+                // field values aren't documents, and capping the input keeps polynomial
+                // backtracking sub-millisecond and rejects implausibly long inputs outright.
+                if (f.value.size() > kMaxRegexInputLen) {
+                    errors.push_back({f.name, it->second.errorMsg});
+                } else {
+                    bool matched = false;
+                    try {
+                        matched = std::regex_match(f.value, *it->second.compiled);
+                    } catch (const std::exception& e) {
+                        // MSVC's std::regex raises error_complexity when backtracking gets
+                        // too deep; treat that as a failed match rather than propagating.
+                        UNIGUI_LOG_WARN("Form '{}' field '{}': regex match aborted: {}", GetName(),
+                                        f.name, e.what());
                     }
-                } catch (const std::exception& e) {
-                    UNIGUI_LOG_WARN("Form '{}' field '{}': invalid validator regex '{}': {}",
-                                    GetName(), f.name, it->second.pattern, e.what());
+                    if (!matched)
+                        errors.push_back({f.name, it->second.errorMsg});
                 }
             }
             if (it->second.hasRange &&
@@ -188,7 +205,22 @@ void Form::SetFieldValidatorRegex(const std::string& name, std::string pattern,
     auto& v = validators_[name];
     v.pattern = std::move(pattern);
     v.errorMsg = std::move(errorMsg);
-    v.hasRegex = true;
+    // Compile the pattern ONCE here rather than on every Validate() call. An invalid
+    // pattern disables the validator (hasRegex stays false) instead of being recompiled
+    // and logged every frame. NOTE: the pattern is a host-controlled trust boundary —
+    // std::regex on libstdc++/libc++ has no backtracking governor, so a host sourcing a
+    // pattern from untrusted input must pre-vet it (Validate() additionally bounds the
+    // matched value length, which caps polynomial blow-up and huge inputs).
+    try {
+        v.compiled = std::make_shared<const std::regex>(v.pattern, std::regex::ECMAScript |
+                                                                       std::regex::optimize);
+        v.hasRegex = true;
+    } catch (const std::exception& e) {
+        v.compiled.reset();
+        v.hasRegex = false;
+        UNIGUI_LOG_WARN("Form '{}' field '{}': invalid validator regex '{}': {}", GetName(), name,
+                        v.pattern, e.what());
+    }
 }
 void Form::SetFieldMinMax(const std::string& name, double min, double max) {
     auto& v = validators_[name];
