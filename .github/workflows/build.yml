@@ -28,18 +28,21 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install deps
+      # libglib2.0-dev provides gio-2.0 for the opt-in Linux AT-SPI a11y bridge.
       run: |
-        sudo apt-get update && sudo apt-get install -y ninja-build libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+        sudo apt-get update && sudo apt-get install -y ninja-build libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev libglib2.0-dev pkg-config
     - name: Setup vcpkg
       run: |
         git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
         ~/vcpkg/bootstrap-vcpkg.sh
         echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
     - name: Configure
+      # -DUNIGUI_A11Y_ATSPI=ON compile-verifies the native Linux AT-SPI bridge.
       run: |
         cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
           -DVCPKG_TARGET_TRIPLET=x64-linux -G Ninja -DCMAKE_BUILD_TYPE=Release \
-          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF \
+          -DUNIGUI_A11Y_ATSPI=ON
     - name: Build
       run: cmake --build build
     - name: Headless backend smoke (GLFW+OpenGL3 must actually RENDER, not just run)

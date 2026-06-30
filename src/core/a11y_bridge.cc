@@ -4,7 +4,8 @@
 //   • Windows    — UI Automation notification events (Narrator / NVDA / JAWS).
 //   • Web (wasm) — an ARIA live region in the page DOM (any browser screen reader).
 //   • macOS      — NSAccessibility announcement notifications (VoiceOver).
-//   • Linux/other — logging fallback (AT-SPI is the remaining native bridge).
+//   • Linux      — AT-SPI2 Announcement events over the a11y D-Bus (Orca), opt-in via
+//                  -DUNIGUI_A11Y_ATSPI=ON; otherwise the logging fallback.
 //
 // Notifications are fire-and-forget, so no full element tree is exposed (which
 // immediate-mode ImGui can't cheaply provide). All branches enable a11y and subscribe to
@@ -230,12 +231,90 @@ void InstallSystemBridge(void* nsWindow) {
 } // namespace unigui::a11y
 
 // ─────────────────────────────────────────────────────────────────────────────
-#else // Linux / other — logging fallback (AT-SPI is the remaining native bridge)
+#elif defined(UNIGUI_HAS_ATSPI) // Linux AT-SPI (opt-in, -DUNIGUI_A11Y_ATSPI=ON)
+
+#include <gio/gio.h>
+
+namespace unigui::a11y {
+namespace {
+GDBusConnection* g_a11yBus = nullptr;
+bool g_tried = false;
+
+// The a11y D-Bus is a private bus whose address is published on the session bus by
+// org.a11y.Bus. Connect once (lazily); if anything fails (no a11y stack running), the
+// bridge silently no-ops — exactly when no screen reader would be listening.
+GDBusConnection* A11yBus() {
+    if (g_tried)
+        return g_a11yBus;
+    g_tried = true;
+    GError* err = nullptr;
+    GDBusConnection* session = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &err);
+    if (!session) {
+        g_clear_error(&err);
+        return nullptr;
+    }
+    GVariant* res = g_dbus_connection_call_sync(
+        session, "org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus", "GetAddress", nullptr,
+        G_VARIANT_TYPE("(s)"), G_DBUS_CALL_FLAGS_NONE, 500, nullptr, &err);
+    g_object_unref(session);
+    if (!res) {
+        g_clear_error(&err);
+        return nullptr;
+    }
+    const char* addr = nullptr;
+    g_variant_get(res, "(&s)", &addr);
+    g_a11yBus = g_dbus_connection_new_for_address_sync(
+        addr,
+        static_cast<GDBusConnectionFlags>(G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT |
+                                          G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION),
+        nullptr, nullptr, &err);
+    g_variant_unref(res);
+    g_clear_error(&err);
+    return g_a11yBus;
+}
+
+// Emit an AT-SPI "Announcement" event. Body is the standard AT-SPI event tuple
+// (siiv(so)): detail, detail1 (politeness: 1=polite, 2=assertive), detail2, any_data
+// (the text, as a variant), and the source (sender unique name, accessible path).
+void EmitAnnouncement(const std::string& text, int politeness) {
+    if (text.empty())
+        return;
+    GDBusConnection* bus = A11yBus();
+    if (!bus)
+        return;
+    const char* unique = g_dbus_connection_get_unique_name(bus);
+    GVariant* body = g_variant_new("(siiv(so))", "", politeness, 0,
+                                   g_variant_new_string(text.c_str()), unique ? unique : ":0.0",
+                                   "/org/a11y/atspi/accessible/root");
+    g_dbus_connection_emit_signal(bus, nullptr, "/org/a11y/atspi/accessible/root",
+                                  "org.a11y.atspi.Event.Object", "Announcement", body, nullptr);
+}
+} // namespace
+
+void InstallSystemBridge(void* /*nativeWindowHandle*/) {
+    SetEnabled(true);
+    SetOnFocusChanged([](const Node& n) {
+        if (n.role == Role::Unknown && n.name.empty())
+            return;
+        std::string text = std::string(RoleName(n.role)) + " " + n.name;
+        if (!n.value.empty())
+            text += ", " + n.value;
+        EmitAnnouncement(text, /*polite=*/1);
+    });
+    SetOnAnnounce([](const Announcement& a) {
+        EmitAnnouncement(a.message, a.politeness == Live::Assertive ? 2 : 1);
+    });
+    UNIGUI_LOG_INFO("[a11y] Linux AT-SPI announcement bridge installed");
+}
+
+} // namespace unigui::a11y
+
+// ─────────────────────────────────────────────────────────────────────────────
+#else // Linux / other — logging fallback (build with -DUNIGUI_A11Y_ATSPI=ON for AT-SPI)
 
 namespace unigui::a11y {
 void InstallSystemBridge(void* /*nativeWindowHandle*/) {
-    // No native AT bridge wired on this platform yet; the logging bridge is the reference
-    // implementation an AT-SPI bridge would replace (same SetOnFocusChanged/SetOnAnnounce).
+    // No native AT bridge compiled in; the logging bridge is the reference implementation.
     InstallLoggingBridge();
 }
 } // namespace unigui::a11y

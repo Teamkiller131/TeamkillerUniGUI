@@ -422,9 +422,11 @@ Goal: broaden what apps can build without leaving the toolkit.
   navigation** (`NavEnableKeyboard`), **`AppConfig::accessibility`** opts the whole layer in
   with one flag, and **~39 widgets** report into the tree via `Widget::ReportAccessible`
   (buttons, all inputs incl. password-presence-only, selections, sliders, combos,
-  tabs/tree/table/collapsing-header, color/date pickers, and chrome). _Remaining:_ a native
-  **Linux AT-SPI** bridge (logging fallback today); a focused keyboard-only nav audit; and
-  in-the-wild screen-reader runtime validation.
+  tabs/tree/table/collapsing-header, color/date pickers, and chrome). A native **Linux
+  AT-SPI** bridge (AT-SPI2 `Announcement` events over the a11y D-Bus, opt-in via
+  `-DUNIGUI_A11Y_ATSPI=ON`, compile-verified in CI) rounds out all four platforms.
+  _Remaining:_ a focused keyboard-only nav audit and in-the-wild screen-reader runtime
+  validation (Narrator/VoiceOver/Orca/browser SRs) of the bridges.
 - ~~**P1 · M — Theming authoring tools.**~~ **Done.** Theme export/import
   (`ExportThemeJSON`/`ImportThemeJSON`, round-trip tested), **CSS hot-reload from
   disk** (`styling::Engine::LoadFile()` + `ReloadIfChanged()`/`Clear()`/

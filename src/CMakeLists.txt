@@ -159,6 +159,18 @@ if(EMSCRIPTEN AND UNIGUI_WEB_WEBGPU)
     message(STATUS "Emscripten WebGPU renderer enabled (-sUSE_WEBGPU)")
 endif()
 
+# ── Linux AT-SPI screen-reader bridge (opt-in) ────────────────────────────────
+# The a11y_bridge.cc Linux branch emits AT-SPI2 Announcement events over the a11y D-Bus
+# via GLib/GIO. Needs glib-2.0 + gio-2.0 (libglib2.0-dev). Off by default so the stock
+# Linux build (and its CI) has no new dependency; the bridge falls back to logging.
+if(UNIGUI_A11Y_ATSPI AND UNIX AND NOT APPLE AND NOT EMSCRIPTEN)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GIO REQUIRED IMPORTED_TARGET gio-2.0 glib-2.0)
+    list(APPEND UNIGUI_LIBS PkgConfig::GIO)
+    target_compile_definitions(unigui PUBLIC UNIGUI_HAS_ATSPI)
+    message(STATUS "Linux AT-SPI a11y bridge enabled (gio-2.0)")
+endif()
+
 target_link_libraries(unigui PUBLIC ${UNIGUI_LIBS})
 
 # ═══════════════════════════════════════════════════════════════════════════════

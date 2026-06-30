@@ -86,7 +86,9 @@ a11y::SetOnAnnounce([](const a11y::Announcement& a) { /* live region */ });
     page DOM → any browser screen reader.
   - **macOS** — `NSAccessibilityPostNotificationWithUserInfo` announcement notifications →
     **VoiceOver**.
-  - **Linux** — logging fallback for now (AT-SPI is the remaining native bridge).
+  - **Linux** — AT-SPI2 `Announcement` events over the a11y D-Bus via GLib/GIO → **Orca**,
+    when built with `-DUNIGUI_A11Y_ATSPI=ON` (needs `libglib2.0-dev`); else the logging
+    fallback.
 - **`InstallLoggingBridge()`** is the reference implementation (logger output) — useful
   for development and headless testing.
 
