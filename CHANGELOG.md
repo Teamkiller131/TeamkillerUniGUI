@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+## [4.4.0] - 2026-06-30
+
+> **Accessibility across all four platforms, plus CI that verifies pixels.** UniGUI gains a
+> real accessibility layer — a per-frame element tree, ARIA-style live announcements,
+> keyboard navigation, an inspector, and screen-reader bridges for **Windows** (UI
+> Automation), the **web** (ARIA live regions), **macOS** (NSAccessibility), and **Linux**
+> (AT-SPI) — with **~39 widgets** wired and a one-flag opt-in (`AppConfig::accessibility`).
+> A new framebuffer-readback CI gate catches "renders nothing" regressions the old log-only
+> smoke missed; the GLFW+OpenGL3/WebGL black-screen bug it would have caught is fixed.
+
 ### Added
 - **Accessibility: a real a11y tree + live announcements + keyboard nav** (`unigui::a11y`).
   The focus tracker now backs a fuller accessibility layer: a **per-frame element tree**
