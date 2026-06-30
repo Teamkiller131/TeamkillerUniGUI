@@ -18,12 +18,14 @@ FocusFn g_onChanged;
 
 // Per-frame tree
 std::vector<Node> g_tree;
+bool g_focusSeenThisFrame = false; ///< set when a focused element is reported in a frame
 
 // Announcements
 std::vector<Announcement> g_queue;  ///< drainable by pollers
 std::vector<Announcement> g_recent; ///< capped ring for the inspector
 AnnounceFn g_onAnnounce;
 constexpr size_t kRecentMax = 12;
+constexpr size_t kQueueMax = 256; ///< bound g_queue so a subscribe-only app can't grow it forever
 
 bool Same(const Node& a, const Node& b) {
     return a.role == b.role && a.name == b.name && a.description == b.description &&
@@ -91,6 +93,7 @@ bool IsEnabled() {
 void SetFocused(const Node& node) {
     if (!g_enabled)
         return;
+    g_focusSeenThisFrame = true; // a focused element was reported this frame (even if unchanged)
     if (g_hasFocus && Same(g_focused, node))
         return; // unchanged — don't re-announce
     g_focused = node;
@@ -126,6 +129,12 @@ void SetOnFocusChanged(FocusFn fn) {
 void BeginFrame() {
     if (!g_enabled)
         return;
+    // If the frame that just finished reported no focused element, focus has left the UI —
+    // clear it (fires the focus-changed callback once; a no-op thereafter) so Focused()
+    // doesn't go stale. ClearFocus() self-guards on g_hasFocus.
+    if (!g_focusSeenThisFrame)
+        ClearFocus();
+    g_focusSeenThisFrame = false;
     g_tree.clear();
 }
 
@@ -148,6 +157,11 @@ void Announce(std::string message, Live politeness) {
         return;
     Announcement a{std::move(message), politeness};
     g_queue.push_back(a);
+    // Bound the drainable queue: nothing in the app loop or the bridges calls
+    // DrainAnnouncements(), so a subscribe-only (or no-consumer) app would otherwise grow
+    // it without limit. Pollers still see the most recent kQueueMax.
+    if (g_queue.size() > kQueueMax)
+        g_queue.erase(g_queue.begin(), g_queue.begin() + (g_queue.size() - kQueueMax));
     g_recent.push_back(a);
     if (g_recent.size() > kRecentMax)
         g_recent.erase(g_recent.begin(), g_recent.begin() + (g_recent.size() - kRecentMax));

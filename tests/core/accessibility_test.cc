@@ -138,6 +138,26 @@ TEST_F(A11yTest, Announce_NoOpWhenDisabledOrEmpty) {
     EXPECT_TRUE(a11y::DrainAnnouncements().empty());
 }
 
+TEST_F(A11yTest, BeginFrame_AutoClearsFocusAfterNoneReported) {
+    int fires = 0;
+    a11y::SetOnFocusChanged([&](const a11y::Node&) { ++fires; });
+    a11y::AddNode({"A", "", "", a11y::Role::Button, /*focused=*/true}); // report focus this frame
+    EXPECT_TRUE(a11y::HasFocus());
+    EXPECT_EQ(fires, 1);
+    a11y::BeginFrame(); // the frame that just ended had focus → keep it
+    EXPECT_TRUE(a11y::HasFocus());
+    a11y::BeginFrame(); // the frame that just ended reported no focus → auto-clear
+    EXPECT_FALSE(a11y::HasFocus());
+    EXPECT_EQ(fires, 2);
+}
+
+TEST_F(A11yTest, Announce_QueueIsBounded) {
+    // Subscribe-only (never drains): the queue must not grow without limit.
+    for (int i = 0; i < 1000; ++i)
+        a11y::Announce("msg");
+    EXPECT_LE(a11y::DrainAnnouncements().size(), 256u);
+}
+
 TEST_F(A11yTest, InstallSystemBridge_NullHandleEnablesAndFallsBack) {
     // A null window handle forces the logging fallback on every platform; it must still
     // enable a11y. (This also links the platform bridge TU — the Windows build pulls in

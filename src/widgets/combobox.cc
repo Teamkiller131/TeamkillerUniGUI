@@ -91,7 +91,11 @@ void ComboBox::Render() {
     }
     if (disabled)
         ImGui::EndDisabled();
-    ReportAccessible(a11y::Role::Combo, comboFocused, hasSel ? items_[selected_] : std::string());
+    // Re-check bounds: selected_ may have changed to -1 ("(none)") inside the open dropdown
+    // this frame, so the captured hasSel is stale — using it would read items_[-1].
+    ReportAccessible(a11y::Role::Combo, comboFocused,
+                     (selected_ >= 0 && selected_ < (int) items_.size()) ? items_[selected_]
+                                                                         : std::string());
     ImGui::PopID();
 }
 int ComboBox::GetSelectedIndex() const {

@@ -1,5 +1,22 @@
 ## [Unreleased]
 
+### Fixed
+- **Accessibility correctness pass** (found by an adversarial review of the 4.4.0 a11y code):
+  - **Linux AT-SPI bridge emitted a malformed signal** — the `Announcement` body used
+    `(siiv(so))`, but every `org.a11y.atspi.Event.*` signal is `(siiva{sv})` (a properties
+    dict, not a source tuple). Orca/atk-bridge couldn't decode it, so the bridge was a
+    silent no-op. Now matches GTK's emitter `(siiva{sv})` with an empty dict (the daemon
+    supplies the sender in the header).
+  - **ComboBox out-of-bounds read** — the a11y value string reused a `hasSel` captured
+    before the dropdown opened; picking "(none)" the same frame set `selected_ = -1` and
+    `items_[selected_]` read out of bounds. Re-checks bounds at the call site.
+  - **Unbounded announcement queue** — `Announce()` appended to a queue nothing in the app
+    loop drains, so a subscribe-only app grew it forever. The queue is now capped (256).
+  - **Stale focus** — `Focused()` never auto-cleared (`ClearFocus` was only called by
+    tests). `BeginFrame()` now clears focus when the prior frame reported none.
+  - **Windows bridge stale HWND** — re-installing after a window recreate kept the old
+    handle; the provider now re-points to the new HWND on every install (matching macOS).
+
 ## [4.4.0] - 2026-06-30
 
 > **Accessibility across all four platforms, plus CI that verifies pixels.** UniGUI gains a

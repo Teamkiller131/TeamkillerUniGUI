@@ -84,6 +84,8 @@ public:
         return UiaHostProviderFromHwnd(hwnd_, ret);
     }
 
+    void SetHwnd(HWND h) { hwnd_ = h; } // re-point after a window recreate
+
 private:
     LONG ref_ = 1;
     HWND hwnd_ = nullptr;
@@ -120,6 +122,8 @@ void InstallSystemBridge(void* hwnd) {
     }
     if (!g_provider)
         g_provider = new WindowProvider(static_cast<HWND>(hwnd));
+    else
+        g_provider->SetHwnd(static_cast<HWND>(hwnd)); // re-point after a window recreate
     SetOnFocusChanged([](const Node& n) {
         if (n.role == Role::Unknown && n.name.empty())
             return;
@@ -273,19 +277,20 @@ GDBusConnection* A11yBus() {
     return g_a11yBus;
 }
 
-// Emit an AT-SPI "Announcement" event. Body is the standard AT-SPI event tuple
-// (siiv(so)): detail, detail1 (politeness: 1=polite, 2=assertive), detail2, any_data
-// (the text, as a variant), and the source (sender unique name, accessible path).
+// Emit an AT-SPI "Announcement" event. Every org.a11y.atspi.Event.* signal body is
+// (siiva{sv}): detail(s), detail1(i) (politeness: 1=polite, 2=assertive), detail2(i),
+// any_data(v) (the text, as a variant), and an a{sv} properties dict (empty here). The
+// sender is NOT in the body — the D-Bus daemon adds the unique name to the message header.
+// This mirrors GTK's gtk_at_spi_context_announce(); using (so) made the signal undecodable
+// by Orca/atk-bridge.
 void EmitAnnouncement(const std::string& text, int politeness) {
     if (text.empty())
         return;
     GDBusConnection* bus = A11yBus();
     if (!bus)
         return;
-    const char* unique = g_dbus_connection_get_unique_name(bus);
-    GVariant* body = g_variant_new("(siiv(so))", "", politeness, 0,
-                                   g_variant_new_string(text.c_str()), unique ? unique : ":0.0",
-                                   "/org/a11y/atspi/accessible/root");
+    GVariant* body = g_variant_new("(siiva{sv})", "", politeness, 0,
+                                   g_variant_new_string(text.c_str()), nullptr);
     g_dbus_connection_emit_signal(bus, nullptr, "/org/a11y/atspi/accessible/root",
                                   "org.a11y.atspi.Event.Object", "Announcement", body, nullptr);
 }
