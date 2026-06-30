@@ -87,7 +87,12 @@ jobs:
           grep -q "Init complete" smoke.log
         fi
     - name: Test
-      run: ctest --test-dir build --output-on-failure || true  # GL-context ctests may self-skip headless
+      # Hard-gate the suite so a real regression fails CI (was `|| true`, which swallowed
+      # every failure). The GL-context BackendTest cases need a real OpenGL 3.3 driver and
+      # self-skip headless — and software GL (llvmpipe) can crash inside the Mesa driver
+      # mid-render — so they're excluded here; the headless render smoke above is what
+      # verifies the GL backend actually draws. Every other test now gates.
+      run: ctest --test-dir build --output-on-failure -E 'BackendTest'
 
   macos:
     runs-on: macos-latest
@@ -121,7 +126,9 @@ jobs:
         ./build/examples/hello_unigui/hello_unigui --frames 10 \
           || echo "::warning::macOS runner has no headless GL (NSGL pixel format); macOS build verified, GL runtime validated via the Linux llvmpipe smoke."
     - name: Test
-      run: ctest --test-dir build --output-on-failure || true
+      # Hard-gate (was `|| true`). Exclude the GL-context BackendTest (needs a real driver;
+      # macOS CI has no headless GL pixel format — see the smoke step); all else gates.
+      run: ctest --test-dir build --output-on-failure -E 'BackendTest'
 
   # Warnings-as-errors gate (GCC). The whole tree — library, tests, and
   # examples — is warning-clean under -Werror; this job keeps it that way.
@@ -146,7 +153,9 @@ jobs:
     - name: Build (must be warning-clean)
       run: cmake --build build
     - name: Test
-      run: ctest --test-dir build --output-on-failure || true  # headless GL failures expected
+      # Hard-gate (was `|| true`). GL-context BackendTest self-skips headless / can crash
+      # llvmpipe, so it's excluded (covered by the render smoke); every other test gates.
+      run: ctest --test-dir build --output-on-failure -E 'BackendTest'
 
   # Warnings-as-errors gate (MSVC /W4 /WX). Mirrors linux-werror on the other
   # major compiler: the whole tree is warning-clean under /WX, this keeps it so.
