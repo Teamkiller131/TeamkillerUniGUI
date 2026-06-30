@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
+#include <utility>
+#include <vector>
 using namespace unigui::config;
 class StoreTest : public ::testing::Test {
 protected:
@@ -121,4 +123,40 @@ TEST_F(StoreTest, SaveJSON_LargeInt_RoundTrips) {
 TEST_F(StoreTest, SaveJSON_BadPath_ReturnsFalse) {
     Store::Instance().SetString("k", "v");
     EXPECT_FALSE(Store::Instance().SaveJSON("/no_such_dir_unigui/nested/out.json"));
+}
+
+// strtod accepts these, but cpptoml's bare-number grammar does not (or changes them) —
+// emitting them bare made the WHOLE file fail to re-parse, or altered the value. They must
+// be quoted so the file still loads and each value survives verbatim.
+TEST_F(StoreTest, SaveTOML_NonCanonicalNumbers_RoundTripAsStrings) {
+    auto& s = Store::Instance();
+    const std::vector<std::pair<std::string, std::string>> cases = {
+        {"zip", "007"},  {"half", ".5"}, {"huge", "1e9999"},
+        {"hex", "0x10"}, {"plus", "+5"}, {"pi", "3.14"},
+    };
+    for (auto& [k, v] : cases)
+        s.SetString(k, v);
+    const auto p = std::filesystem::temp_directory_path() / "unigui_cfg_nums.toml";
+    ASSERT_TRUE(s.SaveTOML(p.string()));
+    s.Clear();
+    ASSERT_TRUE(Store::Instance().LoadTOML(p.string()).has_value()); // must still parse
+    for (auto& [k, v] : cases)
+        EXPECT_EQ(Store::Instance().GetString(k), v) << "key " << k;
+    std::filesystem::remove(p);
+}
+
+// Canonical integers are still emitted bare and must round-trip to the identical text.
+TEST_F(StoreTest, SaveTOML_CanonicalInt_RoundTrips) {
+    auto& s = Store::Instance();
+    s.SetString("answer", "42");
+    s.SetString("neg", "-7");
+    s.SetString("zero", "0");
+    const auto p = std::filesystem::temp_directory_path() / "unigui_cfg_int.toml";
+    ASSERT_TRUE(s.SaveTOML(p.string()));
+    s.Clear();
+    ASSERT_TRUE(Store::Instance().LoadTOML(p.string()).has_value());
+    EXPECT_EQ(Store::Instance().GetString("answer"), "42");
+    EXPECT_EQ(Store::Instance().GetString("neg"), "-7");
+    EXPECT_EQ(Store::Instance().GetString("zero"), "0");
+    std::filesystem::remove(p);
 }

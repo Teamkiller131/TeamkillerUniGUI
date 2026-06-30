@@ -135,6 +135,8 @@ bool Client::Poll(int timeoutMs) {
             // the std::string never index past the stack buffer (OOB write + read).
             const int copied =
                 n < static_cast<int>(sizeof(buf)) - 1 ? n : static_cast<int>(sizeof(buf)) - 1;
+            if (copied < n)
+                UNIGUI_LOG_WARN("IPC client: frame truncated, {} of {} bytes", copied, n);
             buf[copied] = 0;
             onRecv_(std::string(buf, copied));
             return true;

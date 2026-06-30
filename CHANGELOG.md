@@ -1,5 +1,22 @@
 ## [Unreleased]
 
+## [4.4.4] - 2026-06-30
+
+### Fixed
+- **Config: `SaveTOML` still corrupted the file for non-canonical numeric strings** (found
+  by an adversarial verification of the 4.4.3 fixes). The bare-vs-quoted decision used
+  `std::strtod` acceptance, whose grammar is far wider than TOML's bare-number grammar, so
+  values like `"007"`, `".5"`, `"1e9999"` were emitted unquoted and made cpptoml **throw on
+  reload — losing the entire file** (the exact whole-file-failure class 4.4.3 only partly
+  closed for the empty-value sub-case); others silently changed (`"0x10"`→`"16"`, `"+5"`→`"5"`,
+  `"3.14"`→`"3.140000"`). Bare emission is now restricted to canonical integers whose
+  `std::to_string` round-trips exactly; every other value is quoted+escaped, which always
+  reloads as the identical string. The other 4.4.3 module fixes (sqlite/network/ipc) were
+  re-verified sound.
+- **IPC: oversized ZeroMQ frames are now logged when truncated** — `Client::Poll` clamps a
+  frame larger than its 64 KB buffer (the 4.4.3 overflow fix); it now emits a warning instead
+  of silently mangling the message.
+
 ## [4.4.3] - 2026-06-30
 
 ### Fixed

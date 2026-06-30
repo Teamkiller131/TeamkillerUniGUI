@@ -156,12 +156,20 @@ bool Store::SaveTOML(const std::string& path) const {
         if (v == "true" || v == "false") {
             std::fprintf(f, "%s = %s\n", key.c_str(), v.c_str());
         } else {
+            // Emit a value bare ONLY when it is a canonical integer that re-parses to the
+            // IDENTICAL text — i.e. cpptoml reads it back as the same string. strtod's
+            // grammar is far wider than TOML's bare-number grammar: it accepts "007", ".5",
+            // "+5", "0x10", "1e9999" etc., which either make cpptoml THROW on reload (losing
+            // the WHOLE file — `Store::Load*` wraps the parse in one try/catch) or silently
+            // change the value. Floats also don't round-trip (LoadTOML re-stringifies a
+            // double via std::to_string → "3.14" becomes "3.140000"). So bare emission is
+            // restricted to integers whose std::to_string round-trips exactly; everything
+            // else is quoted+escaped, which always reloads as the identical string.
+            errno = 0;
             char* end = nullptr;
-            std::strtod(v.c_str(), &end);
-            // Emit bare (unquoted numeric) ONLY when the entire non-empty value is a
-            // number. An empty value must be quoted ("") — `key = ` is invalid TOML and
-            // makes the whole file fail to re-parse (one empty value would lose all config).
-            if (!v.empty() && *end == 0)
+            const long long iv = std::strtoll(v.c_str(), &end, 10);
+            const bool bareInt = !v.empty() && errno == 0 && *end == 0 && std::to_string(iv) == v;
+            if (bareInt)
                 std::fprintf(f, "%s = %s\n", key.c_str(), v.c_str());
             else
                 std::fprintf(f, "%s = \"%s\"\n", key.c_str(), TomlEscape(v).c_str());
