@@ -1,6 +1,6 @@
 # TeamkillerUniGUI — Long-Term Development Plan
 
-_Last updated: 2026-06-29 · Current version: 4.3.1_
+_Last updated: 2026-06-30 · Current version: 4.4.4_
 
 This document lays out a long-horizon roadmap for the project. It is meant to be
 a living document: revisit it each release, check off what shipped, and re-scope
@@ -26,9 +26,22 @@ backend (4.2.0), and the **WebGPU** web renderer (4.3.0, emdawnwebgpu) — with 
 builds CI-verified and shipped as downloadable `web_demo` artifacts (a tabbed widget
 gallery). Browser verification of those artifacts also caught and fixed a latent
 black-screen bug in the GLFW+OpenGL3/WebGL path (4.3.1), so the GL backend is now
-confirmed rendering, not just compiling. With backend **completeness** done, the frontier
-moves to backend **performance**, a **visual-regression** harness (the black-screen bug
-slipped through log-only CI), **accessibility**, and **packaging reach**.
+confirmed rendering, not just compiling.
+
+The 4.4.x line then closed two more fronts. **Accessibility landed across all four
+platforms** (4.4.0–4.4.1): a per-frame a11y tree, ARIA-style live announcements, keyboard
+nav, an inspector, ~39 widgets wired, and screen-reader bridges for Windows (UI Automation),
+web (ARIA live regions), macOS (NSAccessibility), and Linux (AT-SPI) — with a
+framebuffer-readback **render-verify CI gate** (`UNIGUI_RENDER_VERIFY`) that would have caught
+the 4.3.1 black screen. And an **adversarial review→fix→verify loop** swept the code written
+without a local runtime: the Metal/WebGPU/wasm/DX12 backends (4.4.2 — a per-frame WebGPU
+texture leak, a Metal autorelease-pool stall, a DX12 bring-up leak) and the optional
+sqlite/config/ipc/network modules (4.4.3–4.4.4 — 13 bugs incl. a zmq >64 KB stack overflow
+and a throwing port parser), which also added a **`linux-modules` CI job** so the
+previously-uncompiled module + POSIX-shmem code can't rot again. With backend **completeness**
+and **accessibility** done, the frontier is now backend **performance**, a fuller
+**visual-regression** harness (GPU-runner + headless-browser + golden-image), and
+**packaging reach**.
 
 ## 1. Vision
 
@@ -82,17 +95,49 @@ Guiding principles:
 - **`Result<T>` is `std::expected<T, ErrorCode>`** (4.0): errors via `Err()`, monadic
   ops, throwing `value()`; adopted in `sqlite::Database::Open` and `config::Store::Load*`.
 - Optional modules — SQLite, config (TOML/JSON/INI), IPC (shmem + ZMQ), network
-  (HTTP/WebSocket) — **now build & test on Windows** via the
-  `windows-msvc-debug-modules` preset (they were bit-rotted/unbuilt before the audit).
-- ~155 GoogleTest files (**1169** default-preset cases), benchmarks (incl. an LTTB
-  perf budget) and fuzz targets (CSV/JSON/CSS/config).
+  (HTTP/WebSocket) — build & test on Windows via the `windows-msvc-debug-modules` preset
+  **and now in CI** via the `linux-modules` job (4.4.3), which compiles every module
+  (incl. the POSIX shmem path that exists nowhere else) and runs their suites. An
+  adversarial review fixed 13 latent bugs across them (4.4.3–4.4.4).
+- **Accessibility** (`unigui::a11y`, 4.4.0–4.4.1): a per-frame element tree, ARIA-style
+  live announcements, keyboard nav, an inspector, ~39 widgets wired, and screen-reader
+  bridges for all four platforms — opt-in via `AppConfig::accessibility`.
+- ~160 GoogleTest files (**1178** default-preset cases; ~1290 with all modules on),
+  benchmarks (incl. an LTTB perf budget) and fuzz targets (CSV/JSON/CSS/config).
 - CI (**all green**): cross-platform build/test (Win/Linux/macOS) + a **headless
-  backend smoke that proves the GL path actually runs** + warnings-as-errors on **both
-  GCC and MSVC** + install-consume packaging + **clang-tidy** (pinned 19) + advisory
-  coverage.
+  backend smoke that proves the GL path actually runs and draws pixels** (`render-verify`)
+  + the **`linux-modules`** optional-module job + the emscripten WebGL2/WebGPU wasm builds
+  + warnings-as-errors on **both GCC and MSVC** + install-consume packaging +
+  **clang-tidy** (pinned 19) + advisory coverage.
 
 ### Recently completed
 
+- **Accessibility across all four platforms (4.4.0–4.4.1).** A real `unigui::a11y` layer:
+  a per-frame element tree (`BeginFrame`/`AddNode`/`Tree`), ARIA-style live announcements
+  (`Announce` + `Live` politeness), richer node state/roles, an in-app `DrawInspector()`,
+  always-on keyboard nav (`NavEnableKeyboard`), and a real `InstallSystemBridge()` with a
+  per-platform backend — **Windows** UI Automation (Narrator/NVDA/JAWS), **web** ARIA live
+  regions, **macOS** NSAccessibility (VoiceOver), and **Linux** AT-SPI2 over the a11y D-Bus
+  (opt-in `-DUNIGUI_A11Y_ATSPI=ON`). ~39 widgets report via `Widget::ReportAccessible`;
+  one-flag opt-in (`AppConfig::accessibility`). Shipped with a **framebuffer-readback
+  render-verify CI gate** (`UNIGUI_RENDER_VERIFY` → `drawn=true`) that catches the
+  "renders nothing" class the 4.3.1 black screen slipped through. An adversarial review of
+  the new a11y code then fixed 5 bugs (4.4.1) — incl. a malformed AT-SPI signal that made
+  the Linux bridge a silent no-op, and a combobox OOB read.
+- **Adversarial review→fix→verify of the blind-written backends (4.4.2).** The
+  Metal/WebGPU/wasm/DX12 code written without a local runtime was swept the same way: found
+  and fixed a **critical per-frame WebGPU `WGPUTexture` leak**, a **Metal autorelease-pool
+  stall** (drawable-pool exhaustion on the manual loop), a WebGPU device-chain leak, and a
+  **DX12 bring-up leak** — each fix then re-verified by an adversarial pass. (DX12 is built
+  by no CI lane, so it's compile-checked locally with `-DUNIGUI_BACKEND_DX12=ON`.)
+- **Optional-module hardening + CI coverage (4.4.3–4.4.4).** The same loop over the
+  sqlite/config/ipc/network modules — built by **no CI job**, so 13 bugs had accumulated:
+  a **critical zmq >64 KB stack-buffer overflow**, a **throwing `std::stoi` on HTTP port**,
+  a sqlite rule-of-three double-free + open-failure leak, POSIX shmem `MAP_FAILED`/HANDLE
+  leaks, a silent HTTPS→cleartext downgrade, and config save-corruption (`SaveTOML` losing
+  the whole file on empty/non-canonical values). Added a **`linux-modules` CI job** (which
+  immediately flushed out a latent `find_package(SQLite3)` Linux break), and a
+  fix-verification pass caught one incomplete fix → 4.4.4.
 - **All 7 backends online — Metal + WebGL2 + WebGPU (4.2.0–4.3.1).** The last three
   stub backends became real: a working **Metal** `imgui_impl_metal` renderer on a
   `CAMetalLayer` (4.2.0, build-verified on the macOS CI runner); the **Emscripten/WebGL2**
@@ -166,6 +211,13 @@ Guiding principles:
   bug, **not** the UniGUI backend (which brings the GL context up cleanly) and absent
   on hardware GL. Consequence: the Linux CI smoke verifies backend *bring-up* rather
   than a full software render.
+- **DX12 backend has no CI lane.** `UNIGUI_BACKEND_DX12` defaults OFF and every CI job
+  passes `-DUNIGUI_BACKEND_DX12=OFF`, so `dx12_renderer.cc` + the `UNIGUI_HAS_DX12` paths
+  in `app.cc` compile **nowhere in CI** (verify DX12 changes locally with
+  `-DUNIGUI_BACKEND_DX12=ON`). The analogous gap for the sqlite/config/ipc/network modules
+  was **closed in 4.4.3** by the `linux-modules` job; a DX12 (or DX11+DX12) Windows CI lane
+  would close this one. The `windows-msvc-debug-no-dx11` preset only exercises the DX11-OFF
+  *link* path, not a DX12-ON build.
 - **Coverage, wrapper-coverage, and clang-tidy gates are still advisory** — flip each
   to a hard gate once its baseline is confirmed stable.
 - **~4,900 clang-tidy *style* warnings** remain (mostly `f`-suffix / brace nits that
@@ -424,7 +476,10 @@ Goal: broaden what apps can build without leaving the toolkit.
   (buttons, all inputs incl. password-presence-only, selections, sliders, combos,
   tabs/tree/table/collapsing-header, color/date pickers, and chrome). A native **Linux
   AT-SPI** bridge (AT-SPI2 `Announcement` events over the a11y D-Bus, opt-in via
-  `-DUNIGUI_A11Y_ATSPI=ON`, compile-verified in CI) rounds out all four platforms.
+  `-DUNIGUI_A11Y_ATSPI=ON`, compile-verified in CI) rounds out all four platforms. The whole
+  layer was then **adversarially reviewed (4.4.1)**, fixing 5 bugs — incl. a malformed AT-SPI
+  signal that made the Linux bridge a silent no-op, a combobox OOB read, and an unbounded
+  announcement queue.
   _Remaining:_ a focused keyboard-only nav audit and in-the-wild screen-reader runtime
   validation (Narrator/VoiceOver/Orca/browser SRs) of the bridges.
 - ~~**P1 · M — Theming authoring tools.**~~ **Done.** Theme export/import
@@ -542,12 +597,15 @@ Track these over time to know the plan is working:
 
 - When picking up work, start from the **highest-priority item in the lowest open
   horizon** unless a release-blocking bug takes precedence. With **Horizons 2 & 3
-  complete**, the audit + backend-hardening arc shipped, and **Horizon 4's backend
-  completeness done** (Metal + WebGL2 + WebGPU, 4.2.0–4.3.0 — all 7 backends real), the
-  open frontier is **Horizon 4's performance work** and
-  **Horizon 5** (**accessibility**; deepening the framework idiom), plus the
-  cross-cutting **visual-regression harness** and flipping the **coverage / clang-tidy**
-  gates from advisory to hard once their baselines are pinned.
+  complete**, the audit + backend-hardening arc shipped, **Horizon 4's backend
+  completeness done** (Metal + WebGL2 + WebGPU, 4.2.0–4.3.1 — all 7 backends real), and
+  **Horizon 5's accessibility largely done** (4.4.0–4.4.1, all four platforms), the open
+  frontier is **Horizon 4's performance work**, the cross-cutting **visual-regression
+  harness** (GPU runner + headless-browser smoke for the wasm artifacts + golden-image
+  diffing), **deepening the Horizon-5 framework idiom**, and the small hardening items —
+  flipping the **coverage / clang-tidy** gates from advisory to hard, the **DX12 CI lane**
+  gap, the **keyboard-only nav audit**, and **platform-aware font fallback** — once their
+  baselines are pinned.
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
 - Re-scope horizons at each release: promote, demote, or split items as reality
