@@ -211,15 +211,20 @@ Guiding principles:
   bug, **not** the UniGUI backend (which brings the GL context up cleanly) and absent
   on hardware GL. Consequence: the Linux CI smoke verifies backend *bring-up* rather
   than a full software render.
-- **DX12 backend has no CI lane.** `UNIGUI_BACKEND_DX12` defaults OFF and every CI job
-  passes `-DUNIGUI_BACKEND_DX12=OFF`, so `dx12_renderer.cc` + the `UNIGUI_HAS_DX12` paths
-  in `app.cc` compile **nowhere in CI** (verify DX12 changes locally with
-  `-DUNIGUI_BACKEND_DX12=ON`). The analogous gap for the sqlite/config/ipc/network modules
-  was **closed in 4.4.3** by the `linux-modules` job; a DX12 (or DX11+DX12) Windows CI lane
-  would close this one. The `windows-msvc-debug-no-dx11` preset only exercises the DX11-OFF
-  *link* path, not a DX12-ON build.
-- **Coverage, wrapper-coverage, and clang-tidy gates are still advisory** — flip each
-  to a hard gate once its baseline is confirmed stable.
+- ~~**DX12 backend has no CI lane.**~~ **Closed.** `UNIGUI_BACKEND_DX12` still defaults OFF,
+  but the new **`windows-dx12`** CI job builds the library with DX12 ON (alongside DX11) on
+  every push, so `dx12_renderer.cc` + the `UNIGUI_HAS_DX12` paths in `app.cc` are now
+  compile-gated (a break fails CI). It's a compile gate — DX12 device creation needs a real
+  GPU the headless runner lacks — mirroring how `linux-modules` covers the module + POSIX-shmem
+  sources. **No CI-uncovered backend/module compile paths remain.**
+- **Runtime backend coverage is still GL-only.** Six of seven renderers (DX11/DX12/Vulkan/
+  SDL3/Metal/WebGPU) are now build-covered but have **no automated runtime render test**; only
+  GLFW+OpenGL3 gets the Linux llvmpipe pixel-readback. Closing this needs a GPU-capable runner
+  (or a WARP software adapter for DX) and a headless-browser smoke for the wasm artifacts.
+- **Coverage and clang-tidy gates are still advisory** — flip each to a hard gate once its
+  baseline is confirmed stable. (The Linux/macOS/werror **ctest** steps now hard-gate, so a
+  broken non-GL test fails CI; the GL-context `BackendTest` self-skips headless and is
+  excluded there, covered by the render smoke instead.)
 - **~4,900 clang-tidy *style* warnings** remain (mostly `f`-suffix / brace nits that
   match the house style); they're tolerated (`WarningsAsErrors` is empty, so only real
   diagnostics fail the step). Curating the check set and driving the count down is
@@ -600,12 +605,14 @@ Track these over time to know the plan is working:
   complete**, the audit + backend-hardening arc shipped, **Horizon 4's backend
   completeness done** (Metal + WebGL2 + WebGPU, 4.2.0–4.3.1 — all 7 backends real), and
   **Horizon 5's accessibility largely done** (4.4.0–4.4.1, all four platforms), the open
-  frontier is **Horizon 4's performance work**, the cross-cutting **visual-regression
-  harness** (GPU runner + headless-browser smoke for the wasm artifacts + golden-image
-  diffing), **deepening the Horizon-5 framework idiom**, and the small hardening items —
-  flipping the **coverage / clang-tidy** gates from advisory to hard, the **DX12 CI lane**
-  gap, the **keyboard-only nav audit**, and **platform-aware font fallback** — once their
-  baselines are pinned.
+  frontier is **runtime backend verification** (a GPU-capable runner + a headless-browser
+  smoke for the wasm artifacts — all 7 backends are now build-covered in CI, but only GL is
+  runtime-verified), the rest of the **visual-regression harness** (golden-image diffing),
+  **Horizon 4's performance work**, **deepening the Horizon-5 framework idiom**, and the small
+  hardening items — an **ASan CI lane** (2 presets sit unused), flipping the **coverage /
+  clang-tidy** gates from advisory to hard, the **keyboard-only nav audit**, and
+  **platform-aware font fallback**. (The `|| true` test-gating hole and the DX12 CI-coverage
+  gap were both closed after the 4.4.5 audit.)
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
 - Re-scope horizons at each release: promote, demote, or split items as reality
