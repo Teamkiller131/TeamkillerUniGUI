@@ -23,6 +23,30 @@ jobs:
     - name: Test
       run: ctest --preset windows-msvc-release --output-on-failure
 
+  # DX12 compile coverage. UNIGUI_BACKEND_DX12 defaults OFF and every other CI lane sets it
+  # OFF, so dx12_renderer.cc (250+ lines of D3D12) and the app.cc UNIGUI_HAS_DX12 paths compile
+  # NOWHERE in CI and could rot until someone builds them by hand. This lane turns DX12 ON
+  # (alongside the default DX11) and builds the library so a break fails CI — mirroring how
+  # linux-modules covers the module + POSIX-shmem sources. It's a COMPILE gate: DX12 device
+  # creation needs a real GPU the headless runner lacks, so the render path isn't run here.
+  windows-dx12:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup MSVC developer command prompt
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+        C:\vcpkg\bootstrap-vcpkg.bat
+        echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
+    - name: Configure (DX11 + DX12 ON)
+      run: cmake --preset windows-msvc-debug -DUNIGUI_BACKEND_DX12=ON
+    - name: Build the library (compiles dx12_renderer.cc + the app.cc DX12 paths)
+      run: cmake --build --preset windows-msvc-debug --target unigui
+
   linux:
     runs-on: ubuntu-latest
     steps:
