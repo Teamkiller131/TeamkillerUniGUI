@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [4.6.0] - 2026-07-02
+
 ### Added
 - **UI presets — a decent app in ~30 lines** (`UNIGUI_MODULE_PRESETS`, default ON;
   namespace `unigui::presets`; `docs/PRESETS.md`). Prefab compositions of the widget layer
