@@ -266,6 +266,16 @@ if(UNIGUI_MODULE_TRADING)
     endforeach()
 endif()
 
+# UI preset scaffolds (headless: state/fluent/a11y assertions + render smoke).
+if(UNIGUI_MODULE_PRESETS AND UNIGUI_MODULE_WIDGETS)
+    foreach(_tp app_shell settings_page dashboard master_detail log_console)
+        add_executable(test_preset_${_tp} presets/${_tp}_test.cc)
+        target_link_libraries(test_preset_${_tp} PRIVATE GTest::gtest GTest::gtest_main unigui)
+        target_compile_features(test_preset_${_tp} PRIVATE cxx_std_23)
+        gtest_discover_tests(test_preset_${_tp})
+    endforeach()
+endif()
+
 # v2.9 benchmark tests (requires widgets for VirtualList)
 if(UNIGUI_MODULE_WIDGETS)
     add_executable(test_bench bench/bench_test.cc)

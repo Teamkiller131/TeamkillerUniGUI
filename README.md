@@ -5,7 +5,7 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-4.5.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-1191-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-1242-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-95-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
@@ -78,6 +78,7 @@ ctest --test-dir build
 | [docs/EXAMPLES.md](docs/EXAMPLES.md) | Cookbook (composition, theme, DSL, threading) |
 | [docs/API_STABILITY.md](docs/API_STABILITY.md) | API contract: semver, stability tiers, deprecation policy |
 | [docs/TRADING.md](docs/TRADING.md) | Trading toolkit: financial formatting + models |
+| [docs/PRESETS.md](docs/PRESETS.md) | UI presets: prefab app scaffolds (AppShell, SettingsPage, Dashboard, MasterDetail, LogConsole) |
 | [INTEGRATION.md](INTEGRATION.md) | Submodule + vcpkg embedding |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Build / CRT / CI FAQ |
 

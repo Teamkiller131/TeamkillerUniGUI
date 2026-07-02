@@ -123,6 +123,14 @@
 #include <unigui/trading/depth_ladder.h>
 #include <unigui/trading/order_ticket.h>
 #endif
+#ifdef UNIGUI_HAS_PRESETS
+// UI preset scaffolds — prefab app compositions (a decent app UI in ~30 lines).
+#include <unigui/presets/app_shell.h>
+#include <unigui/presets/dashboard.h>
+#include <unigui/presets/log_console.h>
+#include <unigui/presets/master_detail.h>
+#include <unigui/presets/settings_page.h>
+#endif
 #include <unigui/app/app.h>
 #include <unigui/fonts/gradient_text.h>
 #include <unigui/fx/animation.h>

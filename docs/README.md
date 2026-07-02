@@ -50,6 +50,7 @@ networking, trading).
 |----------|-------------|
 | [MODULES.md](MODULES.md) | Optional modules — EventBus, plugins, Config (TOML/JSON), SQLite, IPC, networking, fonts |
 | [TRADING.md](TRADING.md) | Trading toolkit: financial formatting + models |
+| [PRESETS.md](PRESETS.md) | UI presets — prefab app scaffolds: a decent app in ~30 lines |
 | [../INTEGRATION.md](../INTEGRATION.md) | Embed as a **Git submodule** + vcpkg (recommended) |
 | [API_STABILITY.md](API_STABILITY.md) | API contract: semver, stability tiers, deprecation policy |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Build / CRT / CI FAQ |

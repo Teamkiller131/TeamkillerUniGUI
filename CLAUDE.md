@@ -156,6 +156,7 @@ Examples accept `--frames N` to render N frames and exit — use this in CI/smok
 | `docs/API_INDEX.md` | Master index (widgets + `im` + DSL + framework + core) |
 | `docs/MODULES.md` | Per-module reference (events/plugin/config/sqlite/ipc/network/fonts) |
 | `docs/TRADING.md` | Trading toolkit (financial formatting, models, widgets: CandlestickChart / DepthLadder / OrderTicket / blotters) |
+| `docs/PRESETS.md` | UI presets (AppShell / SettingsPage / Dashboard / MasterDetail / LogConsole — prefab app scaffolds) |
 | `docs/EXAMPLES.md` | Cookbook (composition, theme, tables, DSL, threading) |
 | `docs/API_STABILITY.md` | **Public-API contract (semver, tiers, deprecation lifecycle)** |
 | `docs/TROUBLESHOOTING.md` | Build / CRT / CI FAQ |

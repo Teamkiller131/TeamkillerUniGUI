@@ -1,6 +1,23 @@
 ## [Unreleased]
 
 ### Added
+- **UI presets — a decent app in ~30 lines** (`UNIGUI_MODULE_PRESETS`, default ON;
+  namespace `unigui::presets`; `docs/PRESETS.md`). Prefab compositions of the widget layer
+  with themed, a11y-wired, zero-config-decent defaults, all fluent (`FluentWidget`):
+  - **AppShell** — full application chrome: menu bar (reuses the `MenuDef` model), optional
+    toolbar slot, sidebar page navigation (announces "<label> page" on switch), content
+    area, live status bar. One widget, full-viewport.
+  - **SettingsPage** — schema-driven settings: `AddToggle/AddInt/AddFloat/AddCombo/AddText/
+    AddAction` rows bound via getter/setter pairs (no config-module dependency), sections
+    with a category list, aligned label/control columns.
+  - **Dashboard** — responsive wrapping card grid; `AddMetric` (MetricCard-backed, optional
+    ▲/▼ delta) + `AddCard` for arbitrary content.
+  - **MasterDetail** — `Splitter` + `ListView` browser with detail-pane callback,
+    empty-state text, selection announcements, clamped live `SetItems`.
+  - **LogConsole** — ring-buffered (2000), severity-colored via theme semantics, substring
+    filter + per-level toggles, clipper-virtualized, sticky auto-scroll.
+  47 headless tests (`tests/presets/`), library builds with the module OFF, and a runnable
+  proof: `examples/preset_demo` assembles all five into a four-page app in ~60 lines.
 - **Interaction coverage grown to 28 behavior tests** (from the initial 5) on the test-engine
   harness, refactored into a shared `tests/interaction_harness.h` (`itest::InteractionFixture`)
   and organised under `tests/interaction/`:

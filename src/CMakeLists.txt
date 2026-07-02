@@ -359,6 +359,25 @@ if(UNIGUI_MODULE_TRADING)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_TRADING)
     message(STATUS "Trading toolkit enabled")
 endif()
+if(UNIGUI_MODULE_PRESETS)
+    # UI preset scaffolds — prefab compositions (app shell, settings page, dashboard,
+    # master-detail, log console) so a decent app UI is ~30 lines. Pure composition of
+    # the widget layer: no external deps, but it needs the extended widgets it composes
+    # (ListView/Splitter/MetricCard live behind UNIGUI_MODULE_WIDGETS).
+    if(NOT UNIGUI_MODULE_WIDGETS)
+        message(WARNING "UNIGUI_MODULE_PRESETS requires UNIGUI_MODULE_WIDGETS — presets disabled")
+    else()
+        target_sources(unigui PRIVATE
+            presets/app_shell.cc
+            presets/settings_page.cc
+            presets/dashboard.cc
+            presets/master_detail.cc
+            presets/log_console.cc
+        )
+        target_compile_definitions(unigui PUBLIC UNIGUI_HAS_PRESETS)
+        message(STATUS "UI presets enabled")
+    endif()
+endif()
 
 # ── fx effects (core — always compiled) ─────────────────────────────────────
 target_sources(unigui PRIVATE     fx/effect_scope.cc fx/animation.cc
