@@ -8,6 +8,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <optional>
 #include <sstream>
 #include <string_view>
@@ -165,6 +166,30 @@ void ApplyTheme(const ThemeConfig& config) {
     using theme::WithAlpha;
     auto& style = ImGui::GetStyle();
     auto& colors = style.Colors;
+
+    // ── 尺寸幂等重置（修复「越用越大」）──────────────────────────────────
+    // ApplyTheme 每次主题/材质/字号变更都会被重复调用，末尾 style.ScaleAllSizes(dpi) 是【就地乘算】。
+    // ApplyStyleTokens 只重置了部分尺寸字段；ScaleAllSizes 触及的其余字段
+    // (SeparatorTextPadding/CellPadding/IndentSpacing/WindowMinSize/ColumnsMinSpacing/TouchExtraPadding/
+    //  DisplayWindow/SafeAreaPadding 等) 未被还原 → 每次调用被反复放大，控件/分隔区背景越用越大。
+    // 故先整体还原到默认 1x 尺寸(覆盖 ScaleAllSizes 涉及的全部字段，含 ImGui 未来新增)，仅保留：
+    //   · 字体缩放三兄弟(FontSizeBase/FontScaleMain/FontScaleDpi)——由 app.cc SetContentScale 管理；
+    //   · 颜色——本函数随后整表重写，保留以防未覆盖项被误清。
+    {
+        const ImGuiStyle base;   // 默认构造 = ImGui 1x 默认尺寸
+        const float fSizeBase  = style.FontSizeBase;
+        const float fScaleMain = style.FontScaleMain;
+        const float fScaleDpi  = style.FontScaleDpi;
+        ImVec4 keepColors[ImGuiCol_COUNT];
+        std::memcpy(keepColors, style.Colors, sizeof keepColors);
+
+        style = base;
+
+        style.FontSizeBase  = fSizeBase;
+        style.FontScaleMain = fScaleMain;
+        style.FontScaleDpi  = fScaleDpi;
+        std::memcpy(style.Colors, keepColors, sizeof keepColors);
+    }
 
     // ── DPI scaling ──────────────────────────────────────────────────────
     float dpi = config.dpi_scale;
