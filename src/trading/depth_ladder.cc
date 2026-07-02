@@ -156,10 +156,20 @@ void DepthLadder::Render() {
         for (const auto& l : bids)
             maxSize = std::max(maxSize, l.size);
 
+        // Announce a click-to-trade level pick (fires only on interaction, so no
+        // per-frame cost; the a11y check inside Announce makes it a no-op when off).
+        auto announceLevel = [this](Side side, const Level& lvl) {
+            a11y::Announce((side == Side::Ask ? "Ask " : "Bid ") +
+                           format::Fixed(lvl.price, priceDecimals_) + " x " +
+                           format::Thousands(static_cast<long long>(lvl.size)) + " clicked");
+        };
+
         int rowIndex = 0;
         for (const auto& lvl : asks) {
-            if (DrawLevelRow(rowIndex++, Side::Ask, lvl, maxSize, totalW) && onLevelClick_)
+            if (DrawLevelRow(rowIndex++, Side::Ask, lvl, maxSize, totalW) && onLevelClick_) {
+                announceLevel(Side::Ask, lvl);
                 onLevelClick_(Side::Ask, lvl.price, lvl.size);
+            }
         }
 
         // Record the inside-market Y for optional centring.
@@ -169,8 +179,10 @@ void DepthLadder::Render() {
             DrawSpreadRow(totalW);
 
         for (const auto& lvl : bids) {
-            if (DrawLevelRow(rowIndex++, Side::Bid, lvl, maxSize, totalW) && onLevelClick_)
+            if (DrawLevelRow(rowIndex++, Side::Bid, lvl, maxSize, totalW) && onLevelClick_) {
+                announceLevel(Side::Bid, lvl);
                 onLevelClick_(Side::Bid, lvl.price, lvl.size);
+            }
         }
 
         if (autoCenter_ || centerRequested_) {
@@ -180,6 +192,23 @@ void DepthLadder::Render() {
         }
     }
     ImGui::EndChild();
+
+    // Register the ladder with the inside market as its value — what a screen-reader
+    // user needs from a DOM at a glance. IsEnabled() keeps the high-refresh render
+    // loop allocation-free when a11y is off.
+    if (a11y::IsEnabled()) {
+        std::string v;
+        if (book_->HasBids() || book_->HasAsks()) {
+            v = "bid " + format::Fixed(book_->BestBid(), priceDecimals_) + " x " +
+                format::Thousands(static_cast<long long>(book_->BestBidSize())) + ", ask " +
+                format::Fixed(book_->BestAsk(), priceDecimals_) + " x " +
+                format::Thousands(static_cast<long long>(book_->BestAskSize())) + ", spread " +
+                format::Fixed(book_->Spread(), priceDecimals_);
+        } else {
+            v = "empty book";
+        }
+        ReportAccessible(a11y::Role::Table, ImGui::IsItemFocused(), v);
+    }
 
     if (pushedColors > 0)
         ImGui::PopStyleColor(pushedColors);

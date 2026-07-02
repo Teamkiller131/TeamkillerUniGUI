@@ -1,10 +1,10 @@
 #pragma once
 
 #define UNIGUI_VERSION_MAJOR 4
-#define UNIGUI_VERSION_MINOR 4
-#define UNIGUI_VERSION_PATCH 5
+#define UNIGUI_VERSION_MINOR 5
+#define UNIGUI_VERSION_PATCH 0
 
-#define UNIGUI_VERSION_STRING "4.4.5"
+#define UNIGUI_VERSION_STRING "4.5.0"
 
 // Single integer encoding the version as major*10000 + minor*100 + patch, so
 // downstream code can compare versions numerically:

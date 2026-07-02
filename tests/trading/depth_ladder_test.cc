@@ -1,3 +1,4 @@
+#include <unigui/core/accessibility.h>
 #include <unigui/trading/depth_ladder.h>
 #include <unigui/trading/order_book.h>
 
@@ -176,4 +177,44 @@ TEST_F(DepthLadderTest, Render_DepthLimited_NoCrash) {
     ImGui::Begin("w");
     dom.Render();
     ImGui::End();
+}
+
+// ── Accessibility: the ladder registers with the inside market as its value ──
+TEST_F(DepthLadderTest, A11y_RegistersInsideMarket) {
+    unigui::a11y::SetEnabled(true);
+    unigui::a11y::BeginFrame();
+    OrderBook b = MakeBook(); // best bid 100.0x100, best ask 100.1x120
+    DepthLadder dom("d_a11y");
+    dom.SetBook(&b);
+    ImGui::Begin("w");
+    dom.Render();
+    ImGui::End();
+    bool saw = false;
+    for (const auto& n : unigui::a11y::Tree()) {
+        if (n.role == unigui::a11y::Role::Table) {
+            saw = true;
+            EXPECT_NE(n.value.find("bid 100.00 x 100"), std::string::npos) << n.value;
+            EXPECT_NE(n.value.find("ask 100.10 x 120"), std::string::npos) << n.value;
+            EXPECT_NE(n.value.find("spread 0.10"), std::string::npos) << n.value;
+        }
+    }
+    EXPECT_TRUE(saw);
+    unigui::a11y::SetEnabled(false);
+}
+
+TEST_F(DepthLadderTest, A11y_EmptyBook_ReportsEmpty) {
+    unigui::a11y::SetEnabled(true);
+    unigui::a11y::BeginFrame();
+    OrderBook b; // no levels
+    DepthLadder dom("d_a11y_empty");
+    dom.SetBook(&b);
+    ImGui::Begin("w");
+    dom.Render();
+    ImGui::End();
+    bool saw = false;
+    for (const auto& n : unigui::a11y::Tree())
+        if (n.role == unigui::a11y::Role::Table && n.value == "empty book")
+            saw = true;
+    EXPECT_TRUE(saw);
+    unigui::a11y::SetEnabled(false);
 }

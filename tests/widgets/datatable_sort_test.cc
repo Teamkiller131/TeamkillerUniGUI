@@ -1,7 +1,11 @@
+#include <unigui/core/accessibility.h>
 #include <unigui/widgets/datatable.h>
+
+#include <imgui.h>
 
 #include <gtest/gtest.h>
 #include <string>
+#include <vector>
 
 using unigui::detail::CompareSortCells;
 using unigui::detail::ParseNumericSortKey;
@@ -47,4 +51,78 @@ TEST(DataTableSort, FallsBackToLexicalForText) {
 
 TEST(DataTableSort, DescendingInverts) {
     EXPECT_GT(CompareSortCells("99", "100", /*ascending=*/false), 0);
+}
+
+// ── Accessibility: the table registers its dimensions / filter / selection ──
+class DataTableA11yTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        ImGui::CreateContext();
+        ImGui::GetIO().DisplaySize = ImVec2(800, 600);
+        ImGui::GetIO().Fonts->Build();
+        ImGui::NewFrame();
+        unigui::a11y::SetEnabled(true);
+        unigui::a11y::BeginFrame();
+        unigui::a11y::DrainAnnouncements();
+    }
+    void TearDown() override {
+        unigui::a11y::SetEnabled(false);
+        ImGui::Render();
+        ImGui::DestroyContext();
+    }
+
+    static unigui::DataTable<int> MakeTable(const char* name, const std::vector<int>* data) {
+        unigui::DataTable<int> t(name, {{"A"}, {"B"}, {"C"}});
+        t.SetDataSource(data);
+        t.SetCellFormatter([](int row, int col, const int& v) {
+            return std::to_string(v * 10 + col) + (row == 0 ? "alpha" : "");
+        });
+        return t;
+    }
+};
+
+TEST_F(DataTableA11yTest, Container_ReportsDimensions_AndVisibleRows) {
+    const std::vector<int> data = {1, 2, 3, 4, 5};
+    auto t = MakeTable("dt_a11y", &data);
+    t.Render();
+    bool sawTable = false;
+    int rowItems = 0;
+    for (const auto& n : unigui::a11y::Tree()) {
+        if (n.role == unigui::a11y::Role::Table) {
+            sawTable = true;
+            EXPECT_EQ(n.value, "3x5 rows");
+        }
+        if (n.role == unigui::a11y::Role::ListItem)
+            ++rowItems;
+    }
+    EXPECT_TRUE(sawTable);
+    EXPECT_EQ(rowItems, 5); // each visible row registered
+}
+
+TEST_F(DataTableA11yTest, Filter_NarrowsShownCount) {
+    const std::vector<int> data = {1, 2, 3, 4, 5};
+    auto t = MakeTable("dt_a11y_f", &data);
+    t.SetFilterText("alpha"); // only row 0's cells contain "alpha"
+    t.Render();
+    bool saw = false;
+    for (const auto& n : unigui::a11y::Tree())
+        if (n.role == unigui::a11y::Role::Table) {
+            saw = true;
+            EXPECT_EQ(n.value, "3x5 rows, 1 shown");
+        }
+    EXPECT_TRUE(saw);
+}
+
+TEST_F(DataTableA11yTest, Selection_AppearsInContainerValue) {
+    const std::vector<int> data = {1, 2, 3};
+    auto t = MakeTable("dt_a11y_s", &data);
+    t.SetSelectedRow(2);
+    t.Render();
+    bool saw = false;
+    for (const auto& n : unigui::a11y::Tree())
+        if (n.role == unigui::a11y::Role::Table) {
+            saw = true;
+            EXPECT_EQ(n.value, "3x3 rows, row 2 selected");
+        }
+    EXPECT_TRUE(saw);
 }

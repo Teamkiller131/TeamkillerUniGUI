@@ -58,6 +58,9 @@ private:
     std::vector<int> selected_;
     int nodeCounter_ = 0;
     bool hideRoot_ = false;
+    // Label of the first selected node this frame, captured during RenderNode's walk —
+    // the a11y container value (what a screen reader should say the tree is "at").
+    std::string a11ySelectedLabel_;
     std::function<void(int, int, const TreeNode&)> nodeRenderer_;
     std::function<void(int, int, const TreeNode&, bool)> rowRenderer_;
     void RenderNode(TreeNode& node, int depth);

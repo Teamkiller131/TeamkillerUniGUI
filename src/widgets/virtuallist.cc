@@ -20,9 +20,14 @@ void VirtualList::Render() {
             std::string label = getter_ ? getter_(i) : ("Item " + std::to_string(i));
             if (ImGui::Selectable(label.c_str(), i == selected_)) {
                 selected_ = i;
+                a11y::Announce(label + " selected");
                 if (onSelect_)
                     onSelect_(i);
             }
+            // Register each visible (clipped) item so a screen reader speaks it as
+            // keyboard focus moves through the list — mirrors ListView's wiring. The
+            // clipper bounds this to the ~screenful of rendered rows, not count_.
+            ReportAccessible(a11y::Role::ListItem, ImGui::IsItemFocused(), label);
         }
     }
     ImGui::EndChild();

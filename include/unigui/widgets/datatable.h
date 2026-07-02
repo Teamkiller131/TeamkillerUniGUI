@@ -428,13 +428,18 @@ public:
                     if (ImGui::Selectable(text.c_str(), isSelected, sflags)) {
                         if (multiSelect_ && ImGui::GetIO().KeyCtrl) {
                             auto it = std::find(selectedRows_.begin(), selectedRows_.end(), idx);
-                            if (it != selectedRows_.end())
+                            if (it != selectedRows_.end()) {
                                 selectedRows_.erase(it);
-                            else
+                                a11y::Announce("Row " + std::to_string(idx) +
+                                               " deselected: " + text);
+                            } else {
                                 selectedRows_.push_back(idx);
+                                a11y::Announce("Row " + std::to_string(idx) + " selected: " + text);
+                            }
                         } else {
                             selectedRows_.clear();
                             selectedRows_.push_back(idx);
+                            a11y::Announce("Row " + std::to_string(idx) + " selected: " + text);
                         }
                         if (onSelect_)
                             onSelect_(idx);
@@ -462,6 +467,12 @@ public:
                             ImGui::EndPopup();
                         }
                     }
+                    // Register the row so a screen reader speaks it as keyboard focus
+                    // moves through the table. The clipper bounds this to the visible
+                    // screenful; IsEnabled() keeps the 100k-row hot path allocation-free
+                    // when a11y is off.
+                    if (a11y::IsEnabled())
+                        ReportAccessible(a11y::Role::ListItem, ImGui::IsItemFocused(), text);
                 } else {
                     // Cell-level styling. A returned color with alpha==0 means
                     // "no override" — keep the default text color instead of
@@ -501,6 +512,7 @@ public:
         };
 
         // ── Render rows ──────────────────────────────────────────────────
+        int a11yShownRows = totalRows; // ungrouped path narrows this to the filtered count
         if (groups_.empty()) {
             auto mapRow = [&](int row) -> int {
                 if (sortColumn_ >= 0 && sortIndices_.size() == srcSize())
@@ -515,6 +527,7 @@ public:
                 if (rowPasses(idx))
                     displayRows.push_back(idx);
             }
+            a11yShownRows = (int) displayRows.size();
 
             if (displayRows.empty() && !emptyText_.empty()) {
                 ImGui::TableNextRow();
@@ -660,6 +673,20 @@ public:
         }
 
         ImGui::EndTable();
+
+        // Register the table container with its dimensions, filter narrowing, and
+        // selection (mirrors Table's "CxR" report; IsEnabled() keeps the hot path
+        // allocation-free when a11y is off).
+        if (a11y::IsEnabled()) {
+            std::string v =
+                std::to_string(columns_.size()) + "x" + std::to_string(totalRows) + " rows";
+            if (a11yShownRows != totalRows)
+                v += ", " + std::to_string(a11yShownRows) + " shown";
+            const int sel = GetSelectedRow();
+            if (sel >= 0)
+                v += ", row " + std::to_string(sel) + " selected";
+            ReportAccessible(a11y::Role::Table, ImGui::IsItemFocused(), v);
+        }
     }
 
 private:

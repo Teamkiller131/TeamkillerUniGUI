@@ -1,3 +1,4 @@
+#include <unigui/core/accessibility.h>
 #include <unigui/unigui.h>
 #include <unigui/widgets/treeview.h>
 
@@ -69,4 +70,36 @@ TEST_F(TreeViewTest, DuplicateLabels_RenderWithCustomRows) {
     });
     tv.Render();
     SUCCEED();
+}
+
+// ── Accessibility: container + per-node registration ─────────────────────────
+class TreeViewA11yTest : public TreeViewTest {
+protected:
+    void SetUp() override {
+        TreeViewTest::SetUp();
+        unigui::a11y::SetEnabled(true);
+        unigui::a11y::BeginFrame();
+        unigui::a11y::DrainAnnouncements();
+    }
+    void TearDown() override {
+        unigui::a11y::SetEnabled(false);
+        TreeViewTest::TearDown();
+    }
+};
+
+TEST_F(TreeViewA11yTest, Container_AndVisibleNodes_Register) {
+    unigui::TreeView tv("tv_a11y");
+    tv.SetRoot({"Root", {{"Child1", {}}, {"Child2", {}}}});
+    tv.Render();
+    bool sawTree = false, sawRootNode = false;
+    for (const auto& n : unigui::a11y::Tree()) {
+        if (n.role == unigui::a11y::Role::Tree) {
+            sawTree = true;
+            EXPECT_EQ(n.value, "Root"); // no selection → container value falls back to root
+        }
+        if (n.role == unigui::a11y::Role::ListItem && n.value == "Root")
+            sawRootNode = true; // the visible (collapsed) root registered as a node
+    }
+    EXPECT_TRUE(sawTree);
+    EXPECT_TRUE(sawRootNode);
 }

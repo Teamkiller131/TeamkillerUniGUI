@@ -39,11 +39,16 @@ ReportAccessible(a11y::Role::CheckBox, ImGui::IsItemFocused(), value_ ? "checked
 `Widget::ReportAccessible(role, focused, value, disabled)` registers the element in the
 tree **and**, when focused, drives the focus-changed announcement. The accessible name
 comes from `WithAccessibleName(...)` (falling back to the widget id); the description from
-`WithAccessibleDescription(...)`. **~39 widgets are wired** — buttons, all text/number
+`WithAccessibleDescription(...)`. **~44 widgets are wired** — buttons, all text/number
 inputs (PasswordInput reports presence only — `"(hidden)"` / `"empty"` — never the secret),
 selections (checkbox/radio/toggle/combos/listbox/listview/selectable/segmented), sliders
 (drag/slider/multi-handle), containers (tabs/tree/table/collapsing-header), color pickers,
-date picker, hyperlink, and chrome (menubar/toolbar/label/statusbar/progressbar). Raw
+date picker, hyperlink, chrome (menubar/toolbar/label/statusbar/progressbar), **and the
+data-dense widgets (4.5.0)**: **DataTable** (container reports dimensions/filter/selection,
+each visible row registers, selection announced), **VirtualList** (visible items register,
+selection announced), **TreeView** (every visible node registers so arrowing speaks each
+node; select/deselect announced), and **DepthLadder** (inside market as value — `"bid
+100.00 x 100, ask 100.10 x 120, spread 0.10"` — click-to-trade picks announced). Raw
 `unigui::im` / `ImGui::` calls can register directly with `a11y::AddNode(...)`.
 
 ## Announcements

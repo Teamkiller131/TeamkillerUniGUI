@@ -1,6 +1,26 @@
 ## [Unreleased]
 
+## [4.5.0] - 2026-07-01
+
 ### Added
+- **Accessibility for the data-dense widgets.** The widgets carrying the most information
+  — previously invisible to screen readers — now report into the a11y tree and announce
+  interactions (the judge-panel "adopter value" pick from the project audit):
+  - **DataTable**: the container reports its dimensions, filter narrowing, and selection
+    (`"3x1200 rows, 45 shown, row 7 selected"`); every *visible* (clipped) row registers as
+    a `ListItem` so keyboard focus speaks each row; row selection/deselection is announced.
+    Guarded by `a11y::IsEnabled()` so the 100k-row hot path stays allocation-free when off
+    (benchmarks confirmed unaffected).
+  - **VirtualList**: each visible (clipped) item registers as a `ListItem` (mirrors
+    ListView); selection is announced.
+  - **TreeView**: every visible node registers (arrowing through the tree speaks each
+    node); the container value now carries the *selection* (falling back to the root
+    label); select/deselect is announced. Focus is captured immediately after each
+    `TreeNodeEx` so the SameLine decorations don't misreport it.
+  - **DepthLadder**: reports the inside market as its value (`"bid 100.00 x 100, ask
+    100.10 x 120, spread 0.10"`, or `"empty book"`), and announces click-to-trade level
+    picks (`"Bid 99.90 x 130 clicked"`). Guarded for the high-refresh render loop.
+  - 7 new headless a11y tree/value tests across the four widgets.
 - **CI: `linux-asan` lane** — the full test suite now runs under GCC
   **ASan + UBSan + LeakSanitizer** on every push (hard-gated), automating the repo's
   dominant confirmed bug class (UAF/OOB/overflow/leaks), which had only ever been caught

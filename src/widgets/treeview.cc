@@ -11,14 +11,18 @@ void TreeView::Render() {
         return;
     ImGui::PushID(GetName().c_str());
     nodeCounter_ = 0;
+    a11ySelectedLabel_.clear(); // (re)captured by RenderNode as it walks the visible nodes
     if (hideRoot_) {
         for (auto& child : root_.children)
             RenderNode(child, 0);
     } else {
         RenderNode(root_, 0);
     }
-    // Register the tree container; IsItemFocused() reflects the last rendered node.
-    ReportAccessible(a11y::Role::Tree, ImGui::IsItemFocused(), root_.label);
+    // Register the tree container. The value carries the SELECTION (what a screen-reader
+    // user needs), falling back to the root label when nothing is selected; per-node
+    // registration happens in RenderNode so arrowing through the tree speaks each node.
+    ReportAccessible(a11y::Role::Tree, ImGui::IsItemFocused(),
+                     a11ySelectedLabel_.empty() ? root_.label : a11ySelectedLabel_);
     ImGui::PopID();
 }
 void TreeView::SetRoot(TreeNode root) {
@@ -46,8 +50,11 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
     int id = nodeCounter_++;
     ImGui::PushID(id);
     bool isSelected = std::find(selected_.begin(), selected_.end(), id) != selected_.end();
-    if (isSelected)
+    if (isSelected) {
         flags |= ImGuiTreeNodeFlags_Selected;
+        if (a11ySelectedLabel_.empty())
+            a11ySelectedLabel_ = node.label; // first selected node names the container value
+    }
 
     // ── background fill (before TreeNodeEx) ───────────────────────────
     if (node.bgColor != 0) {
@@ -65,10 +72,14 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
     bool open = false;
     bool treeItemClicked = false;
     bool treeItemToggled = false;
+    // Captured immediately after each TreeNodeEx — the branches append SameLine text
+    // items afterwards, so a later IsItemFocused() would test the wrong item.
+    bool treeItemFocused = false;
     if (rowRenderer_) {
         open = ImGui::TreeNodeEx("##node", flags);
         treeItemClicked = ImGui::IsItemClicked();
         treeItemToggled = ImGui::IsItemToggledOpen();
+        treeItemFocused = ImGui::IsItemFocused();
         ImGui::SameLine(0.0f, 0.0f);
         rowRenderer_(id, depth, node, isSelected);
         treeItemClicked = treeItemClicked || ImGui::IsItemClicked();
@@ -78,6 +89,7 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
         open = ImGui::TreeNodeEx("##spans", flags);
         treeItemClicked = ImGui::IsItemClicked();
         treeItemToggled = ImGui::IsItemToggledOpen();
+        treeItemFocused = ImGui::IsItemFocused();
         if (!node.icon.empty()) {
             ImGui::SameLine(0.0f, 0.0f);
             ImGui::TextUnformatted((node.icon + " ").c_str());
@@ -104,6 +116,7 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
         open = ImGui::TreeNodeEx(displayLabel.c_str(), flags);
         treeItemClicked = ImGui::IsItemClicked();
         treeItemToggled = ImGui::IsItemToggledOpen();
+        treeItemFocused = ImGui::IsItemFocused();
 
         if (node.labelColor != 0)
             ImGui::PopStyleColor();
@@ -132,15 +145,23 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
     if (isSelected)
         ImGui::PopStyleColor();
 
+    // Register this node so a screen reader speaks it as keyboard focus moves through
+    // the tree (ListItem — the closest role to a selectable tree row).
+    ReportAccessible(a11y::Role::ListItem, treeItemFocused, node.label);
+
     if (treeItemClicked && !treeItemToggled) {
         if (multiSelect_) {
             auto it = std::find(selected_.begin(), selected_.end(), id);
-            if (it != selected_.end())
+            if (it != selected_.end()) {
                 selected_.erase(it);
-            else
+                a11y::Announce(node.label + " deselected");
+            } else {
                 selected_.push_back(id);
+                a11y::Announce(node.label + " selected");
+            }
         } else {
             selected_ = {id};
+            a11y::Announce(node.label + " selected");
         }
     }
 

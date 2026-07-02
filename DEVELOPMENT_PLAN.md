@@ -477,14 +477,18 @@ Goal: broaden what apps can build without leaving the toolkit.
   **Windows** UI Automation (Narrator/NVDA/JAWS), **web** ARIA live regions (any browser
   screen reader), and **macOS** NSAccessibility (VoiceOver). The app loop enables **keyboard
   navigation** (`NavEnableKeyboard`), **`AppConfig::accessibility`** opts the whole layer in
-  with one flag, and **~39 widgets** report into the tree via `Widget::ReportAccessible`
+  with one flag, and **~44 widgets** report into the tree via `Widget::ReportAccessible`
   (buttons, all inputs incl. password-presence-only, selections, sliders, combos,
   tabs/tree/table/collapsing-header, color/date pickers, and chrome). A native **Linux
   AT-SPI** bridge (AT-SPI2 `Announcement` events over the a11y D-Bus, opt-in via
   `-DUNIGUI_A11Y_ATSPI=ON`, compile-verified in CI) rounds out all four platforms. The whole
   layer was then **adversarially reviewed (4.4.1)**, fixing 5 bugs — incl. a malformed AT-SPI
   signal that made the Linux bridge a silent no-op, a combobox OOB read, and an unbounded
-  announcement queue.
+  announcement queue. **The data-dense widgets — previously the biggest hole — were wired in
+  4.5.0**: DataTable (dimensions/filter/selection + per-visible-row registration + selection
+  announcements), VirtualList, TreeView (per-node registration, selection-aware container),
+  and DepthLadder (inside-market value, click-to-trade announcements), all hot-path-guarded
+  by `a11y::IsEnabled()` and covered by headless tree/value tests.
   _Remaining:_ a focused keyboard-only nav audit and in-the-wild screen-reader runtime
   validation (Narrator/VoiceOver/Orca/browser SRs) of the bridges.
 - ~~**P1 · M — Theming authoring tools.**~~ **Done.** Theme export/import
