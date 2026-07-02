@@ -1,0 +1,14 @@
+# LeakSanitizer suppressions for the linux-asan CI lane.
+#
+# Every entry must be a documented, third-party, unfixable-from-here leak. A suppression
+# matches when ANY frame of the leak's stack matches, so keep entries scoped to a specific
+# function — never a whole library — to preserve LSan's coverage of our own code.
+#
+# GLFW 3.4's X11 platform probe (_glfwConnectX11) calls XInitThreads/XrmInitialize inside
+# libX11, which allocate process-lifetime Xlib globals that Xlib never frees — even when
+# XOpenDisplay then fails (headless runner, no DISPLAY) and even after glfwTerminate.
+# Observed as 3 leaks (4096+64 direct, 8176 indirect) under AppTest.Init_WithoutDisplay_
+# ReturnsFalse the first time the suite ran under LSan. Our failed-init path is correct
+# (glfw_platform.cc returns false; glfwInit self-terminates on failure); the residue is
+# Xlib's one-time init state, unreachable from any API we can call.
+leak:_glfwConnectX11

@@ -314,10 +314,14 @@ jobs:
       run: cmake --build build
     - name: Test under ASan/UBSan/LSan (hard gate)
       # halt_on_error makes UBSan findings fail the test instead of printing-and-continuing;
-      # LeakSanitizer is on by default with GCC ASan on Linux.
+      # LeakSanitizer is on by default with GCC ASan on Linux. tests/lsan.supp carries the
+      # documented third-party suppressions (currently one: Xlib's unfreeable one-time init
+      # state reached via GLFW's X11 connect probe) — each entry is function-scoped so our
+      # own code keeps full leak coverage.
       env:
         ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
         UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        LSAN_OPTIONS: suppressions=${{ github.workspace }}/tests/lsan.supp
       run: ctest --test-dir build --output-on-failure -E 'BackendTest'
 
   # WebAssembly (Emscripten) build. Proves the library cross-compiles to wasm with
