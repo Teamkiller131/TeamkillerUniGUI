@@ -609,10 +609,13 @@ Track these over time to know the plan is working:
   smoke for the wasm artifacts — all 7 backends are now build-covered in CI, but only GL is
   runtime-verified), the rest of the **visual-regression harness** (golden-image diffing),
   **Horizon 4's performance work**, **deepening the Horizon-5 framework idiom**, and the small
-  hardening items — an **ASan CI lane** (2 presets sit unused), flipping the **coverage /
-  clang-tidy** gates from advisory to hard, the **keyboard-only nav audit**, and
-  **platform-aware font fallback**. (The `|| true` test-gating hole and the DX12 CI-coverage
-  gap were both closed after the 4.4.5 audit.)
+  hardening items — flipping the **coverage / clang-tidy** gates from advisory to hard, the
+  **keyboard-only nav audit**, and **platform-aware font fallback**. (Closed after the 4.4.5
+  audit: the `|| true` test-gating hole, the DX12 CI-coverage gap, and the **ASan CI lane** —
+  the `linux-asan` job now runs the whole suite under **ASan+UBSan+LeakSanitizer** on every
+  push, hard-gated; its first run found only one third-party Xlib init leak, now documented
+  in `tests/lsan.supp`. The suite is otherwise sanitizer-clean, locally on MSVC ASan and in
+  CI on GCC.)
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
 - Re-scope horizons at each release: promote, demote, or split items as reality
