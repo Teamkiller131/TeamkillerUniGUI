@@ -35,6 +35,14 @@
   feature the target compiles to one *visible skip*, so it can never silently read as
   "integration tested" again.
 
+### Fixed
+- **DragFloat zeroed unbounded values on render.** `DragFloat::Render()` clamped `value_`
+  to `[min_, max_]` unconditionally, but the constructor defaults `vmin == vmax == 0` mean
+  "unbounded" by Dear ImGui convention — so a DragFloat built with a nonzero initial value
+  (or `SetValue`'d to one) and default bounds snapped to 0 on the first render and could
+  never be dragged off 0. The clamp is now guarded by `if (min_ < max_)`, so it only applies
+  to a real range. Regression tests cover the unbounded (min==max==0) case both ends.
+
 ## [4.5.0] - 2026-07-01
 
 ### Added

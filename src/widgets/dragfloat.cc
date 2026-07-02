@@ -16,10 +16,15 @@ void DragFloat::Render() {
     ImGui::PushID(GetName().c_str());
     changed_ = ImGui::DragFloat(label_.c_str(), &value_, speed_, min_, max_, "%.3f");
     ImGui::PopID();
-    if (value_ < min_)
-        value_ = min_;
-    if (value_ > max_)
-        value_ = max_;
+    // Only clamp when there is a real range. By Dear ImGui convention min_ == max_ (the
+    // constructor default 0/0) means "unbounded"; clamping to that degenerate range would
+    // snap every value to 0, so an unbounded DragFloat could never move off 0.
+    if (min_ < max_) {
+        if (value_ < min_)
+            value_ = min_;
+        if (value_ > max_)
+            value_ = max_;
+    }
     ReportAccessible(a11y::Role::Slider, ImGui::IsItemFocused(), std::to_string(value_));
     NotifyChange(prev);
 }
