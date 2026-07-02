@@ -35,6 +35,18 @@
       }
     },
     {
+      "name": "windows-msvc-debug-testengine",
+      "displayName": "Windows MSVC Debug + ImGui test engine",
+      "description": "MSVC debug with the vcpkg imgui[test-engine] feature: imgui is rebuilt with IMGUI_ENABLE_TEST_ENGINE (hooks are no-ops until an engine attaches) and the interaction-test target (test_interaction, tests/integration_test.cc) is compiled. Dev/CI-only — the testengine manifest feature is never pulled by consumers.",
+      "inherits": "windows-msvc-debug",
+      "binaryDir": "${sourceDir}/build/windows-msvc-debug-testengine",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "testengine",
+        "VCPKG_OVERLAY_PORTS": "${sourceDir}/ports",
+        "UNIGUI_TEST_ENGINE": "ON"
+      }
+    },
+    {
       "name": "windows-msvc-debug-no-dx11",
       "displayName": "Windows MSVC Debug (DX11 backend OFF)",
       "description": "Smoke configuration that builds with UNIGUI_BACKEND_DX11=OFF — the documented 'disable DX11' path. Guards the dx11_renderer.cc / app.cc / backend_factory references that previously failed to link with DX11 off.",

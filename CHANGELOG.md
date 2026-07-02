@@ -1,5 +1,21 @@
 ## [Unreleased]
 
+### Added
+- **Interaction-driven tests via the Dear ImGui test engine.** The 0-byte
+  `integration_test.cc` — the audit's biggest structural test gap — is now a real
+  interaction harness: the test engine clicks, types, and navigates actual UniGUI widgets
+  through ImGui's input queue, verifying *behavior* (callback fired, value round-tripped,
+  tab switched, a11y announcement raised) instead of "rendered without crashing". First
+  five tests: Button click→callback, CheckBox click→toggle, LineEdit typing→value,
+  TabWidget tab-click→active-tab (the 3.17 TabWidget UAF was exactly this class of
+  interaction bug), and a cross-subsystem engine-input→VirtualList→a11y-announcement test.
+  Wired as a dev-only `testengine` vcpkg manifest feature (`imgui[test-engine]` — never
+  pulled by consumers), a `windows-msvc-debug-testengine` preset, a hard-gated
+  `linux-testengine` CI lane, and a `ports/imgui` overlay carrying vcpkg master's
+  corrected `imgui_test_engine` v1.92.8 hash (upstream retagged the tarball). Without the
+  feature the target compiles to one *visible skip*, so it can never silently read as
+  "integration tested" again.
+
 ## [4.5.0] - 2026-07-01
 
 ### Added

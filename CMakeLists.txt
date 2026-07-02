@@ -41,6 +41,7 @@ option(UNIGUI_A11Y_ATSPI       "Linux: native AT-SPI screen-reader bridge (needs
 option(UNIGUI_BUILD_SHARED     "Build as DLL"         OFF)
 option(UNIGUI_BUILD_TESTS      "Build test suite"     ON)
 option(UNIGUI_BUILD_EXAMPLES   "Build examples"       ON)
+option(UNIGUI_TEST_ENGINE      "Interaction-driven tests via the Dear ImGui test engine (needs the 'testengine' vcpkg manifest feature: imgui[test-engine])" OFF)
 option(UNIGUI_WARNINGS_AS_ERRORS "Treat compiler warnings as errors (opt-in)" OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile_commands.json for clang-tidy/IDE")
 

@@ -46,6 +46,11 @@ target_link_libraries(test_id_conflict PRIVATE
 target_compile_features(test_id_conflict PRIVATE cxx_std_23)
 gtest_discover_tests(test_id_conflict)
 
+# Interaction-driven integration tests. With UNIGUI_TEST_ENGINE=ON (and the `testengine`
+# vcpkg manifest feature supplying imgui[test-engine]), the Dear ImGui test engine drives
+# real clicks/typing through widgets; otherwise the file compiles to a single visible
+# skip. The engine's sources are compiled INTO the imgui library by the vcpkg feature,
+# so no extra link dependency is needed here.
 add_executable(test_integration
     integration_test.cc
 )
@@ -55,6 +60,9 @@ target_link_libraries(test_integration PRIVATE
     unigui
 )
 target_compile_features(test_integration PRIVATE cxx_std_23)
+if(UNIGUI_TEST_ENGINE)
+    target_compile_definitions(test_integration PRIVATE UNIGUI_TEST_ENGINE=1)
+endif()
 gtest_discover_tests(test_integration)
 
 add_executable(test_backend_interface

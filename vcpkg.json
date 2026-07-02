@@ -56,6 +56,18 @@
     { "name": "implot", "version": "1.0" }
   ],
   "features": {
+    "testengine": {
+      "description": "Dear ImGui test engine — builds imgui with IMGUI_ENABLE_TEST_ENGINE so interaction-driven tests can click/type/navigate widgets. Dev-only: never enabled by consumers.",
+      "dependencies": [
+        {
+          "name": "imgui",
+          "default-features": false,
+          "features": [
+            "test-engine"
+          ]
+        }
+      ]
+    },
     "sqlite": {
       "description": "SQLite database module",
       "dependencies": [

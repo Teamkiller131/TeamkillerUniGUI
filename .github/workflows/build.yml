@@ -282,6 +282,36 @@ jobs:
         ctest --test-dir build --output-on-failure \
           -R "^DBOpen|^DBTest|^DBMove|^StoreTest|^IPCTest|^ShmemTest|^UrlParseTest|^WebSocketClientTest"
 
+  # Interaction-test lane: the Dear ImGui test engine drives real clicks/typing/tab
+  # switches through UniGUI widgets (tests/integration_test.cc) — behavior coverage the
+  # render-only smoke tests can't reach (the 3.17 TabWidget UAF was an interaction bug).
+  # Uses the `testengine` vcpkg manifest feature (imgui[test-engine], compiled into imgui)
+  # + the ports/ overlay (upstream retagged imgui_test_engine v1.92.8; the overlay carries
+  # vcpkg master's corrected hash at the same pinned version). Hard-gated.
+  linux-testengine:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install deps
+      run: |
+        sudo apt-get update && sudo apt-get install -y ninja-build libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+        ~/vcpkg/bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+    - name: Configure (imgui test engine ON)
+      run: |
+        cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=x64-linux -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+          -DVCPKG_MANIFEST_FEATURES=testengine -DVCPKG_OVERLAY_PORTS="$PWD/ports" \
+          -DUNIGUI_TEST_ENGINE=ON \
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+    - name: Build the interaction-test target
+      run: cmake --build build --target test_integration
+    - name: Run the interaction tests (hard gate)
+      run: ctest --test-dir build --output-on-failure -R 'InteractionTest'
+
   # AddressSanitizer + UBSan + LeakSanitizer lane. The repo's dominant confirmed bug class
   # is memory safety (TabWidget UAF, IPC OOB, combobox OOB, zmq stack overflow, sqlite
   # double-free — all found by hand across 3.17-4.4.4, none by CI). This lane runs the whole
