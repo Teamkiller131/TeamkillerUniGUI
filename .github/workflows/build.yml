@@ -282,6 +282,44 @@ jobs:
         ctest --test-dir build --output-on-failure \
           -R "^DBOpen|^DBTest|^DBMove|^StoreTest|^IPCTest|^ShmemTest|^UrlParseTest|^WebSocketClientTest"
 
+  # AddressSanitizer + UBSan + LeakSanitizer lane. The repo's dominant confirmed bug class
+  # is memory safety (TabWidget UAF, IPC OOB, combobox OOB, zmq stack overflow, sqlite
+  # double-free — all found by hand across 3.17-4.4.4, none by CI). This lane runs the whole
+  # suite under GCC ASan+UBSan (which, unlike MSVC ASan, includes LeakSanitizer) so that
+  # class fails CI automatically. Wall-clock perf budgets skip under sanitizers (see
+  # tests/*/bench_test.cc __SANITIZE_ADDRESS__ guard) so the lane fails on memory bugs, not
+  # timing noise. Hard-gated; the GL-context BackendTest self-skips headless and is
+  # excluded like the other Linux lanes (covered by the render smoke).
+  linux-asan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install deps
+      run: |
+        sudo apt-get update && sudo apt-get install -y ninja-build libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+        ~/vcpkg/bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+    - name: Configure (ASan + UBSan)
+      # Mirrors the linux-gcc-debug-asan preset inline, like the other Linux jobs.
+      run: |
+        cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=x64-linux -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined" \
+          -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
+    - name: Build
+      run: cmake --build build
+    - name: Test under ASan/UBSan/LSan (hard gate)
+      # halt_on_error makes UBSan findings fail the test instead of printing-and-continuing;
+      # LeakSanitizer is on by default with GCC ASan on Linux.
+      env:
+        ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
+        UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      run: ctest --test-dir build --output-on-failure -E 'BackendTest'
+
   # WebAssembly (Emscripten) build. Proves the library cross-compiles to wasm with
   # the WebGL2/GLES3 renderer path. No vcpkg: imgui/implot/spdlog come from
   # FetchContent and GLFW/WebGL2/freetype from Emscripten ports (cmake/Emscripten.cmake).

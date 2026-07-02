@@ -9,12 +9,23 @@
 #include <vector>
 
 namespace {
-// Performance budgets are only meaningful in optimized builds. A Debug build is
-// 5-20x slower and varies wildly by CI host, so the wall-clock assertion is
+// Sanitized builds (ASan et al.) run 2-10x slower — instrumented allocator + shadow
+// memory — so budgets must not assert there either or a sanitizer lane fails on
+// timing noise instead of memory bugs. (Same guard as tests/trading/bench_test.cc.)
+#if defined(__SANITIZE_ADDRESS__)
+#define UNIGUI_BENCH_SANITIZED 1
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define UNIGUI_BENCH_SANITIZED 1
+#endif
+#endif
+
+// Performance budgets are only meaningful in optimized, unsanitized builds. A Debug
+// build is 5-20x slower and varies wildly by CI host, so the wall-clock assertion is
 // skipped there — the benchmark still runs the work (catching crashes/UB) but
 // does not flake the build. Release keeps asserting, catching real regressions.
 inline void ExpectUnderBudget(long long actual, long long budget, const std::string& what) {
-#ifdef NDEBUG
+#if defined(NDEBUG) && !defined(UNIGUI_BENCH_SANITIZED)
     EXPECT_LT(actual, budget) << what << ": " << actual << " (budget " << budget << ")";
 #else
     (void) actual;

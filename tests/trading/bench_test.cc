@@ -28,11 +28,23 @@ template <typename Fn> long long TimeUs(Fn&& fn) {
     return duration_cast<microseconds>(high_resolution_clock::now() - t0).count();
 }
 
-// Wall-clock budgets only assert in optimized builds; a Debug build is far
-// slower and host-dependent, so the timing check is skipped there (the work
-// still runs). See tests/bench/bench_test.cc for the same rationale.
+// Sanitized builds (ASan et al.) are 2-10x slower — instrumented allocator + shadow
+// memory — so wall-clock budgets must not assert there either, or the sanitizer lane
+// fails on timing noise instead of memory bugs (the OrderBook_5kSnapshots budget tripped
+// at 4.1s vs 1s the first time the suite ran under MSVC ASan).
+#if defined(__SANITIZE_ADDRESS__)
+#define UNIGUI_BENCH_SANITIZED 1
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define UNIGUI_BENCH_SANITIZED 1
+#endif
+#endif
+
+// Wall-clock budgets only assert in optimized, unsanitized builds; a Debug or
+// sanitizer build is far slower and host-dependent, so the timing check is skipped
+// there (the work still runs). See tests/bench/bench_test.cc for the same rationale.
 inline void ExpectUnderBudget(long long actual, long long budget, const std::string& what) {
-#ifdef NDEBUG
+#if defined(NDEBUG) && !defined(UNIGUI_BENCH_SANITIZED)
     EXPECT_LT(actual, budget) << what << ": " << actual << " (budget " << budget << ")";
 #else
     (void) actual;
@@ -73,7 +85,7 @@ TEST(TradingBench, OrderBook_200kDeltas) {
     EXPECT_EQ(book.AskLevels(), 50u);
     EXPECT_GT(sink, 0);
     // 200k delta+read cycles in well under a second (generous regression floor).
-    EXPECT_LT(us, 1000000) << "OrderBook 200k deltas took " << us << "us";
+    ExpectUnderBudget(us, 1000000, "OrderBook 200k deltas us");
 }
 
 // Snapshot rebuilds (full book replace) are the other hot path — 5k full
@@ -94,7 +106,7 @@ TEST(TradingBench, OrderBook_5kSnapshots) {
         }
     });
     EXPECT_EQ(book.BidLevels(), 100u);
-    EXPECT_LT(us, 1000000) << "OrderBook 5k snapshots took " << us << "us";
+    ExpectUnderBudget(us, 1000000, "OrderBook 5k snapshots us");
 }
 
 // Tick aggregation: 1M ticks folded into 1-minute bars with a rolling window.

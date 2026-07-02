@@ -60,14 +60,13 @@
     {
       "name": "windows-msvc-debug-asan",
       "displayName": "Windows MSVC Debug + ASAN",
-      "description": "MSVC debug with AddressSanitizer. Requires cmake-msvc.cmd wrapper.",
+      "description": "MSVC debug with AddressSanitizer (/fsanitize=address; /Oy- keeps frame pointers for readable stacks). MSVC links the ASan libs via compiler directives, so no linker flag is needed; the old GCC-spelled flags (-fno-omit-frame-pointer/-g) were ignored by cl with D9002. Running the test binaries outside a vcvars shell needs the clang_rt.asan*dynamic DLL dir (VC/Tools/MSVC/<ver>/bin/Hostx64/x64) on PATH. Note: MSVC ASan has no LeakSanitizer — leak coverage comes from the linux-asan CI lane. Requires cmake-msvc.cmd wrapper.",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/windows-msvc-debug-asan",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_STANDARD": "23",
-        "CMAKE_CXX_FLAGS": "-fsanitize=address -fno-omit-frame-pointer -g",
-        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address",
+        "CMAKE_CXX_FLAGS": "/fsanitize=address /Oy-",
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }

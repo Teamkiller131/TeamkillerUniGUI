@@ -1,5 +1,21 @@
 ## [Unreleased]
 
+### Added
+- **CI: `linux-asan` lane** — the full test suite now runs under GCC
+  **ASan + UBSan + LeakSanitizer** on every push (hard-gated), automating the repo's
+  dominant confirmed bug class (UAF/OOB/overflow/leaks), which had only ever been caught
+  by manual adversarial reviews. The first-ever sanitized run of the suite (1186 tests,
+  locally under MSVC ASan) reported **zero memory errors**.
+
+### Fixed
+- **Benchmarks: wall-clock budgets no longer assert under sanitizers.** Two OrderBook
+  benchmark budgets bypassed the Debug-skip helper with raw `EXPECT_LT`s and tripped under
+  ASan's slowdown (4.1 s vs a 1 s budget) — timing noise, not a memory bug. All budgets now
+  route through `ExpectUnderBudget`, which skips under Debug *and* sanitized builds
+  (`__SANITIZE_ADDRESS__`), so the sanitizer lane fails only on real findings. Also fixed
+  the `windows-msvc-debug-asan` preset's GCC-spelled flags that MSVC ignored
+  (now `/fsanitize=address /Oy-`, no bogus linker flag).
+
 ## [4.4.5] - 2026-06-30
 
 ### Fixed
