@@ -104,10 +104,13 @@ Guiding principles:
   bridges for all four platforms — opt-in via `AppConfig::accessibility`.
 - ~160 GoogleTest files (**1178** default-preset cases; ~1290 with all modules on),
   benchmarks (incl. an LTTB perf budget) and fuzz targets (CSV/JSON/CSS/config).
-- CI (**all green**): cross-platform build/test (Win/Linux/macOS) + a **headless
-  backend smoke that proves the GL path actually runs and draws pixels** (`render-verify`)
-  + the **`linux-modules`** optional-module job + the emscripten WebGL2/WebGPU wasm builds
-  + warnings-as-errors on **both GCC and MSVC** + install-consume packaging +
+- CI (**all green**, 11 build jobs): cross-platform build/test (Win/Linux/macOS) + a
+  **headless backend smoke that proves the GL path actually runs and draws pixels**
+  (`render-verify`) + the **`linux-modules`** optional-module job + the **`linux-asan`**
+  sanitizer job (ASan+UBSan+LSan, hard-gated) + the **`linux-testengine`** interaction-test
+  job (the Dear ImGui test engine clicks/types through real widgets — behavior coverage,
+  not render smoke) + the **`windows-dx12`** compile gate + the emscripten WebGL2/WebGPU
+  wasm builds + warnings-as-errors on **both GCC and MSVC** + install-consume packaging +
   **clang-tidy** (pinned 19) + advisory coverage.
 
 ### Recently completed
