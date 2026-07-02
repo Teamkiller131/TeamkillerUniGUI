@@ -77,6 +77,9 @@ Guiding principles:
 - **95 widgets** (100% PushID-safe), the `unigui::im` immediate layer (**201
   functions = 100% of ImGui's practical surface**, A1–A6 complete), declarative DSL,
   CSS styling engine, EventBus, plugin system, font manager.
+- **UI preset scaffolds** (`unigui::presets`, 4.6.0): AppShell / SettingsPage /
+  Dashboard / MasterDetail / LogConsole — prefab, themed, a11y-wired compositions so a
+  decent app is ~30 lines (`docs/PRESETS.md`, `examples/preset_demo`).
 - **Application framework** (`unigui::dsl`): `Component` + reactive `State<T>`,
   `Store<T>`, `Navigator`, `Watch`/`OnCleanup`, the live `DrawInspector()` overlay,
   and the `Custom` escape hatch — see `docs/FRAMEWORK.md`.
