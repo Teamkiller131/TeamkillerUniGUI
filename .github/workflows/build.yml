@@ -307,10 +307,16 @@ jobs:
           -DVCPKG_MANIFEST_FEATURES=testengine -DVCPKG_OVERLAY_PORTS="$PWD/ports" \
           -DUNIGUI_TEST_ENGINE=ON \
           -DUNIGUI_BACKEND_DX11=OFF -DUNIGUI_BACKEND_DX12=OFF
-    - name: Build the interaction-test target
-      run: cmake --build build --target test_integration
+    - name: Build the interaction-test targets
+      run: |
+        cmake --build build --target test_integration test_interaction_widgets \
+          test_interaction_framework test_interaction_keyboard
     - name: Run the interaction tests (hard gate)
-      run: ctest --test-dir build --output-on-failure -R 'InteractionTest'
+      # Covers the base InteractionTest plus the selection/input, data/composite, dsl
+      # framework, and keyboard-nav suites.
+      run: |
+        ctest --test-dir build --output-on-failure \
+          -R 'InteractionTest|SelectionInputTest|DataCompositeInteractionTest|FrameworkDslInteractionTest|KeyboardNavTest'
 
   # AddressSanitizer + UBSan + LeakSanitizer lane. The repo's dominant confirmed bug class
   # is memory safety (TabWidget UAF, IPC OOB, combobox OOB, zmq stack overflow, sqlite

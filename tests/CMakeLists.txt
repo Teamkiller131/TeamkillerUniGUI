@@ -65,6 +65,24 @@ if(UNIGUI_TEST_ENGINE)
 endif()
 gtest_discover_tests(test_integration)
 
+# Extended interaction coverage — selection/input + data/composite widgets, the dsl
+# application framework, and keyboard-only navigation. These targets exist ONLY when
+# the engine is compiled in (unlike test_integration's always-present visible skip).
+if(UNIGUI_TEST_ENGINE)
+    foreach(_itest widgets framework keyboard)
+        add_executable(test_interaction_${_itest} interaction/${_itest}_interaction_test.cc)
+        target_link_libraries(test_interaction_${_itest} PRIVATE
+            GTest::gtest
+            GTest::gtest_main
+            unigui
+        )
+        target_include_directories(test_interaction_${_itest} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        target_compile_features(test_interaction_${_itest} PRIVATE cxx_std_23)
+        target_compile_definitions(test_interaction_${_itest} PRIVATE UNIGUI_TEST_ENGINE=1)
+        gtest_discover_tests(test_interaction_${_itest})
+    endforeach()
+endif()
+
 add_executable(test_backend_interface
     backend/backend_interface_test.cc
 )

@@ -1,8 +1,8 @@
 // Interaction-driven integration tests — the Dear ImGui test engine clicks, types, and
 // navigates real UniGUI widgets through ImGui's input queue, so these verify BEHAVIOR
 // (callback fired, value changed, tab switched, announcement raised), not just
-// "rendered without crashing". This file was a 0-byte placeholder until the test-engine
-// adoption; the audit called that out as the suite's biggest structural gap.
+// "rendered without crashing". Harness: tests/interaction_harness.h. Further coverage
+// lives in tests/interaction/ (compiled only under UNIGUI_TEST_ENGINE).
 //
 // Build requirements: configure with -DUNIGUI_TEST_ENGINE=ON and the `testengine` vcpkg
 // manifest feature (imgui[test-engine] — imgui compiled with IMGUI_ENABLE_TEST_ENGINE;
@@ -13,6 +13,8 @@
 
 #ifdef UNIGUI_TEST_ENGINE
 
+#include "interaction_harness.h"
+
 #include <unigui/core/accessibility.h>
 #include <unigui/widgets/button.h>
 #include <unigui/widgets/checkbox.h>
@@ -20,78 +22,9 @@
 #include <unigui/widgets/tabwidget.h>
 #include <unigui/widgets/virtuallist.h>
 
-#include <imgui.h>
-#include <imgui_te_context.h>
-#include <imgui_te_engine.h>
-
-#include <functional>
 #include <string>
 
-namespace {
-
-// The engine's GuiFunc/TestFunc are plain function pointers (no captures), so the
-// current test's GUI body is bridged through a file-static std::function.
-std::function<void()> g_gui;
-
-void GuiThunk(ImGuiTestContext*) {
-    ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_Appearing);
-    ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_Appearing);
-    ImGui::Begin("TW", nullptr, ImGuiWindowFlags_NoSavedSettings);
-    if (g_gui)
-        g_gui();
-    ImGui::End();
-}
-
-class InteractionTest : public ::testing::Test {
-protected:
-    ImGuiTestEngine* engine_ = nullptr;
-
-    void SetUp() override {
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
-        io.DisplaySize = ImVec2(1280, 720);
-        io.DeltaTime = 1.0f / 60.0f;
-        io.Fonts->Build();
-
-        engine_ = ImGuiTestEngine_CreateContext();
-        ImGuiTestEngineIO& eio = ImGuiTestEngine_GetIO(engine_);
-        eio.ConfigRunSpeed = ImGuiTestRunSpeed_Fast; // no real-time waits, headless
-        eio.ConfigVerboseLevel = ImGuiTestVerboseLevel_Error;
-        eio.ConfigVerboseLevelOnError = ImGuiTestVerboseLevel_Debug;
-        ImGuiTestEngine_Start(engine_, ImGui::GetCurrentContext());
-    }
-
-    void TearDown() override {
-        ImGuiTestEngine_Stop(engine_);
-        // Engine must be destroyed AFTER the ImGui context it hooked (upstream app
-        // examples use exactly this order).
-        ImGui::DestroyContext();
-        ImGuiTestEngine_DestroyContext(engine_);
-        g_gui = nullptr;
-    }
-
-    // Register a test whose GUI is `gui` and whose driver is `test_func`, run it to
-    // completion, and return its status. The engine steps its coroutine one frame at
-    // a time from the NewFrame/PostSwap hooks.
-    ImGuiTestStatus Run(const char* name, std::function<void()> gui,
-                        void (*test_func)(ImGuiTestContext*), int maxFrames = 2000) {
-        g_gui = std::move(gui);
-        ImGuiTest* t = IM_REGISTER_TEST(engine_, "unigui", name);
-        t->GuiFunc = GuiThunk;
-        t->TestFunc = test_func;
-        ImGuiTestEngine_QueueTest(engine_, t, ImGuiTestRunFlags_None);
-        while (!ImGuiTestEngine_IsTestQueueEmpty(engine_) && maxFrames-- > 0) {
-            ImGui::NewFrame();
-            ImGui::Render();
-            ImGuiTestEngine_PostSwap(engine_);
-        }
-        EXPECT_GT(maxFrames, 0) << "engine did not finish within the frame budget";
-        return t->Output.Status;
-    }
-};
-
-} // namespace
+class InteractionTest : public itest::InteractionFixture {};
 
 // ── Button: a driven click fires the callback ────────────────────────────────
 TEST_F(InteractionTest, Button_Click_FiresCallback) {

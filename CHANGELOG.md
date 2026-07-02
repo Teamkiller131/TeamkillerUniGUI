@@ -1,6 +1,25 @@
 ## [Unreleased]
 
 ### Added
+- **Interaction coverage grown to 28 behavior tests** (from the initial 5) on the test-engine
+  harness, refactored into a shared `tests/interaction_harness.h` (`itest::InteractionFixture`)
+  and organised under `tests/interaction/`:
+  - **selection/input** (7): RadioGroup, ToggleSwitch, ComboBox (open+pick), SegmentedControl,
+    InputInt, InputFloat, SearchBox — each drives the real control and asserts the getter +
+    OnChange callback.
+  - **data/composite** (7): DataTable (row-click → selection + callback, and the a11y
+    "Row N selected" announcement), TreeView (node-click → selection + announcement),
+    ListView, ListBox, and Form (valid submit fires OnSubmit; empty required field blocks
+    it with the right error).
+  - **application framework** (4): the audit's under-tested `dsl::Component`/`State`/`Store`/
+    `Navigator` — click→State-write→dirty→rebuild, Store dispatch→subscriber+watching
+    component, Navigator push/pop with mount/unmount lifecycle, and `Host()` per-child dirty
+    isolation.
+  - **keyboard-only** (5, seeding the keyboard-nav audit): Tab traversal between LineEdits,
+    Space/NavActivate on a Button, arrow-key nudging of a DragFloat, Escape closing a
+    ComboBox popup without committing, and nav-focus → `a11y::Focused()` role bridge.
+  New hard-gated CI coverage folds into the `linux-testengine` lane. The harness now surfaces
+  the engine's own log on failure (so a bad ref path is diagnosable from gtest output).
 - **Interaction-driven tests via the Dear ImGui test engine.** The 0-byte
   `integration_test.cc` — the audit's biggest structural test gap — is now a real
   interaction harness: the test engine clicks, types, and navigates actual UniGUI widgets
