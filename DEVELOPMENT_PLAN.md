@@ -1,6 +1,6 @@
 # TeamkillerUniGUI — Long-Term Development Plan
 
-_Last updated: 2026-06-30 · Current version: 4.4.4_
+_Last updated: 2026-07-02 · Current version: 4.6.0_
 
 This document lays out a long-horizon roadmap for the project. It is meant to be
 a living document: revisit it each release, check off what shipped, and re-scope
@@ -38,10 +38,23 @@ without a local runtime: the Metal/WebGPU/wasm/DX12 backends (4.4.2 — a per-fr
 texture leak, a Metal autorelease-pool stall, a DX12 bring-up leak) and the optional
 sqlite/config/ipc/network modules (4.4.3–4.4.4 — 13 bugs incl. a zmq >64 KB stack overflow
 and a throwing port parser), which also added a **`linux-modules` CI job** so the
-previously-uncompiled module + POSIX-shmem code can't rot again. With backend **completeness**
-and **accessibility** done, the frontier is now backend **performance**, a fuller
-**visual-regression** harness (GPU-runner + headless-browser + golden-image), and
-**packaging reach**.
+previously-uncompiled module + POSIX-shmem code can't rot again.
+
+The 4.5–4.6 line turned the audit's findings into structure. **Verification became
+automatic**: every push now runs the suite under **ASan+UBSan+LeakSanitizer**
+(`linux-asan`), the Linux/macOS test suites **hard-gate** (no more `|| true`), DX12 is
+**compile-gated** (`windows-dx12`), doc version stamps are **CI-checked**
+(`docs-version`), and the **Dear ImGui test engine** drives real clicks/typing through
+widgets — 28 interaction-driven behavior tests on a reusable harness (`linux-testengine`).
+**Accessibility reached the data-dense widgets** (4.5.0): DataTable, VirtualList,
+TreeView, and DepthLadder now report and announce (~44 widgets wired). And the toolkit
+gained its highest-leverage capability layer yet: **UI preset scaffolds** (4.6.0,
+`unigui::presets`) — AppShell, SettingsPage, Dashboard, MasterDetail, LogConsole — so a
+decent, themed, screen-reader-visible app is ~30 lines (`examples/preset_demo`). With
+completeness, accessibility, and the verification net in place, the frontier is now
+**runtime proof on the remaining backends** (headless-browser wasm smoke, WARP/GPU
+runners, golden images), **module maturity** (ipc/network functional tests + API fixes),
+**preset/framework depth**, and **packaging reach**.
 
 ## 1. Vision
 
@@ -102,22 +115,56 @@ Guiding principles:
   **and now in CI** via the `linux-modules` job (4.4.3), which compiles every module
   (incl. the POSIX shmem path that exists nowhere else) and runs their suites. An
   adversarial review fixed 13 latent bugs across them (4.4.3–4.4.4).
-- **Accessibility** (`unigui::a11y`, 4.4.0–4.4.1): a per-frame element tree, ARIA-style
-  live announcements, keyboard nav, an inspector, ~39 widgets wired, and screen-reader
-  bridges for all four platforms — opt-in via `AppConfig::accessibility`.
-- ~160 GoogleTest files (**1178** default-preset cases; ~1290 with all modules on),
-  benchmarks (incl. an LTTB perf budget) and fuzz targets (CSV/JSON/CSS/config).
-- CI (**all green**, 11 build jobs): cross-platform build/test (Win/Linux/macOS) + a
-  **headless backend smoke that proves the GL path actually runs and draws pixels**
-  (`render-verify`) + the **`linux-modules`** optional-module job + the **`linux-asan`**
-  sanitizer job (ASan+UBSan+LSan, hard-gated) + the **`linux-testengine`** interaction-test
-  job (the Dear ImGui test engine clicks/types through real widgets — behavior coverage,
-  not render smoke) + the **`windows-dx12`** compile gate + the emscripten WebGL2/WebGPU
+- **Accessibility** (`unigui::a11y`, 4.4.0–4.5.0): a per-frame element tree, ARIA-style
+  live announcements, keyboard nav, an inspector, **~44 widgets wired — including the
+  data-dense ones** (DataTable/VirtualList/TreeView/DepthLadder report dimensions/
+  selection and announce interactions), and screen-reader bridges for all four
+  platforms — opt-in via `AppConfig::accessibility`.
+- ~165 GoogleTest files (**1242** default-preset cases; ~1300 with all modules on) +
+  **28 interaction-driven behavior tests** on the Dear ImGui test engine harness
+  (`tests/interaction_harness.h`), benchmarks (LTTB/100k-row budgets, sanitizer-aware)
+  and fuzz targets (CSV/JSON/CSS/config).
+- CI (**all green**, 11 build jobs + 3 quality jobs): cross-platform build/test
+  (Win/Linux/macOS, **hard-gated** — no `|| true`) + a **headless backend smoke that
+  proves the GL path actually runs and draws pixels** (`render-verify`) + the
+  **`linux-modules`** optional-module job + the **`linux-asan`** sanitizer job
+  (ASan+UBSan+LSan, hard-gated) + the **`linux-testengine`** interaction-test job (the
+  Dear ImGui test engine clicks/types through real widgets — behavior coverage, not
+  render smoke) + the **`windows-dx12`** compile gate + the emscripten WebGL2/WebGPU
   wasm builds + warnings-as-errors on **both GCC and MSVC** + install-consume packaging +
-  **clang-tidy** (pinned 19) + advisory coverage.
+  the **`docs-version`** stamp gate + **clang-tidy** (pinned 19) + advisory coverage.
+  Every backend and module now **compiles in CI**; no silent test-swallowing remains.
 
 ### Recently completed
 
+- **UI preset scaffolds (4.6.0).** `UNIGUI_MODULE_PRESETS` / `unigui::presets`: AppShell
+  (full app chrome), SettingsPage (schema-driven rows via getter/setter pairs), Dashboard
+  (responsive metric/card grid), MasterDetail (splitter browser), LogConsole (ring-buffered,
+  filterable). Themed, a11y-wired, PushID-safe, decent with zero config; 47 headless tests;
+  builds with the module OFF; `examples/preset_demo` = a four-page app in ~60 lines.
+  Drafted by five parallel implementers against the real widget APIs, green across all CI
+  lanes (incl. both werror gates and ASan) on first contact. `docs/PRESETS.md`.
+- **Dear ImGui test engine + 28 interaction-driven tests (4.6.0).** The 0-byte
+  `integration_test.cc` became a real harness: the engine clicks/types/navigates actual
+  widgets through ImGui's input queue — selection/input widgets, data widgets (incl.
+  a11y-announcement round-trips), the dsl framework (Component/State rebuild, Store,
+  Navigator), and keyboard-only navigation. Dev-only vcpkg feature (`imgui[test-engine]`,
+  never pulled by consumers), `windows-msvc-debug-testengine` preset, hard-gated
+  `linux-testengine` lane, `ports/imgui` overlay for the retagged upstream tarball.
+  Found+fixed en route: DragFloat's unbounded-clamp-to-zero bug.
+- **Data-widget accessibility + sanitizer lane (4.5.0).** DataTable/VirtualList/TreeView/
+  DepthLadder now report into the a11y tree (dimensions/filter/selection values,
+  per-visible-row registration) and announce interactions, hot-path-guarded by
+  `a11y::IsEnabled()`. The `linux-asan` lane runs the whole suite under
+  ASan+UBSan+LeakSanitizer on every push — the suite proved sanitizer-clean on both
+  MSVC and GCC toolchains (one documented third-party Xlib suppression); bench budgets
+  now skip under sanitizers so the lane fails on memory bugs, not timing noise.
+- **Verification-gap closures + doc integrity (post-4.4.5 audit).** Hard-gated the
+  Linux/macOS/werror ctest steps (dropped `|| true`), added the `windows-dx12` compile
+  lane (DX12 previously compiled NOWHERE in CI), fixed the audit's two concrete bugs
+  (banned `std::stod` in datatable.h; form-validator regex ReDoS hardening — 4.4.5),
+  re-stamped 11 stale docs (one frozen at 3.8.12), fully resynced `README_zh.md`, and
+  added the `docs-version` CI gate so stamp drift now fails CI in minutes.
 - **Accessibility across all four platforms (4.4.0–4.4.1).** A real `unigui::a11y` layer:
   a per-frame element tree (`BeginFrame`/`AddNode`/`Tree`), ARIA-style live announcements
   (`Announce` + `Live` politeness), richer node state/roles, an in-app `DrawInspector()`,
@@ -199,44 +246,45 @@ Guiding principles:
 
 ### Known gaps / debt
 
-- **All 7 backends are real** (Metal/WebGL2/WebGPU landed 4.2.0–4.3.1) — no stub
-  remains. The wasm backends are build-verified in CI; their in-browser runtime is
-  validated manually (CI has no GPU/browser), and WebGL2 is confirmed rendering as of
-  4.3.1.
-- **Visual / pixel-level CI — partially addressed.** The 4.3.1 black-screen bug (GL drew
-  nothing) passed every CI signal because the Linux smoke grepped *log lines*, not
-  *pixels*. The smoke now reads the framebuffer back and asserts the GL backend actually
-  drew (`UNIGUI_RENDER_VERIFY` → `glError`/`drawn=true`), so that class is caught. Still
-  missing: a GPU-capable runner for a software-free full render, a headless-browser smoke
-  for the WebGL/WebGPU artifacts, and golden-image snapshot diffing — see Horizon 4.
-- **Font manager probes a hardcoded Linux emoji path** (`/usr/share/fonts/.../
-  NotoColorEmoji.ttf`) on every platform — a harmless warning off Linux, but it should
-  be platform-aware; the web build has no system CJK/emoji fonts at all.
-- **Software-GL rendering crashes inside the Mesa driver.** `llvmpipe`/`softpipe`
-  segfault *within* `libgallium` during `ImGui_ImplOpenGL3_RenderDrawData` — a driver
-  bug, **not** the UniGUI backend (which brings the GL context up cleanly) and absent
-  on hardware GL. Consequence: the Linux CI smoke verifies backend *bring-up* rather
-  than a full software render.
-- ~~**DX12 backend has no CI lane.**~~ **Closed.** `UNIGUI_BACKEND_DX12` still defaults OFF,
-  but the new **`windows-dx12`** CI job builds the library with DX12 ON (alongside DX11) on
-  every push, so `dx12_renderer.cc` + the `UNIGUI_HAS_DX12` paths in `app.cc` are now
-  compile-gated (a break fails CI). It's a compile gate — DX12 device creation needs a real
-  GPU the headless runner lacks — mirroring how `linux-modules` covers the module + POSIX-shmem
-  sources. **No CI-uncovered backend/module compile paths remain.**
-- **Runtime backend coverage is still GL-only.** Six of seven renderers (DX11/DX12/Vulkan/
-  SDL3/Metal/WebGPU) are now build-covered but have **no automated runtime render test**; only
-  GLFW+OpenGL3 gets the Linux llvmpipe pixel-readback. Closing this needs a GPU-capable runner
-  (or a WARP software adapter for DX) and a headless-browser smoke for the wasm artifacts.
+_Closed since the 4.4.5 full-project audit (kept here as one line for the record): the
+`|| true` test-swallowing, the DX12/module CI-compile gaps, the ASan-presets-unused gap,
+the 0-byte integration test, doc-stamp drift (now CI-gated), the data-widget a11y hole,
+the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bug._
+
+- **Runtime backend coverage is still GL-only.** Six of seven renderers (DX11/DX12/
+  Vulkan/SDL3/Metal/WebGPU) are build-covered but have **no automated runtime render
+  test**; only GLFW+OpenGL3 gets the Linux llvmpipe pixel-readback. The 4.4.2 leak batch
+  proves this class of bug is real. Closing it, cheapest first: a **headless-browser
+  smoke for the wasm artifacts** (Playwright non-blank-canvas — no GPU needed), a **WARP
+  software adapter** run for DX11/DX12 on the Windows runner, then a GPU-capable runner
+  for the rest + **golden-image diffing** on top.
+- **ipc/network are safe but functionally unverified.** Zero loopback tests for the ZMQ
+  pub/sub channel and HTTP/WebSocket paths; `Server::OnReceive` is a dead API on a
+  PUB socket; the static zmq context is never terminated; `LoadINI` ignores comments/
+  sections. Safe-to-link after 4.4.3–4.4.4, but below the bar the rest of the library sets.
+- **Interaction coverage is young.** 28 behavior tests exist on a proven harness, but
+  ~19% of the suite is still smoke-only and the presets themselves have no driven-input
+  tests yet. The harness makes growth mechanical.
+- **Fluent `With*` API is on ~12% of widgets** (~10/86 + the presets) despite being the
+  documented convention — an API-consistency debt CLAUDE.md currently overstates.
 - **Coverage and clang-tidy gates are still advisory** — flip each to a hard gate once its
-  baseline is confirmed stable. (The Linux/macOS/werror **ctest** steps now hard-gate, so a
-  broken non-GL test fails CI; the GL-context `BackendTest` self-skips headless and is
-  excluded there, covered by the render smoke instead.)
-- **~4,900 clang-tidy *style* warnings** remain (mostly `f`-suffix / brace nits that
-  match the house style); they're tolerated (`WarningsAsErrors` is empty, so only real
-  diagnostics fail the step). Curating the check set and driving the count down is
-  optional future cleanup.
+  baseline is confirmed stable. **~4,900 clang-tidy style warnings** remain tolerated
+  (only real diagnostics fail); curating the check set is optional cleanup.
+- **No multi-context story.** ~9 `::Instance()` singletons (EventBus/StyleEngine/fonts/
+  plugins/Settings/…) assume one UI per process — fine today, a wall for embedding two
+  independent UniGUI surfaces or parallel test isolation.
+- **Keyboard-only nav audit + in-the-wild screen-reader validation** (Narrator/VoiceOver/
+  Orca) remain the last a11y items; the keyboard interaction tests seeded the former.
+- **Font manager probes a hardcoded Linux emoji path** on every platform (harmless
+  warning off-Linux); the web build has no system CJK/emoji fonts at all.
+- **Software-GL renders crash inside Mesa** (`llvmpipe`/`softpipe` segfault in
+  `libgallium` during `RenderDrawData` — a driver bug, absent on hardware GL), so the
+  Linux smoke verifies bring-up + pixel-readback on the frames that survive.
+- **`docs/WIDGET_API.md` depth is uneven** (16 deep sections vs 95 widgets; the one-line
+  catalog lives in WIDGET_EXAMPLES.md).
 - Optional trading follow-ups: a `PriceTicker` marquee and in-cell mini sparkline/bar
-  renderers (the latter needs a custom-draw cell hook in `DataTable`).
+  renderers (needs a custom-draw cell hook in `DataTable` — now partially available via
+  `SetCellRenderer`).
 
 ## 3. Roadmap by horizon
 
@@ -428,11 +476,13 @@ _**Landed (4.2.0–4.3.1) — every backend is now real and online.**_
   back after `RenderDrawData` (post-frame `glGetError()` + a clear-vs-drawn pixel-grid
   count → `[render-verify] … drawn=true|false`), and the Linux smoke asserts `drawn=true`
   after a clean run — so the black-screen class now fails CI (verified: `glError=0x0
-  nonClear=2100/3600 drawn=true`). _Remaining:_ a **GPU-capable CI runner** so the
-  Linux/macOS smoke can verify a *full* render without the software-GL fallback (today it
-  reverts to asserting bring-up when the Mesa driver crashes inside `RenderDrawData`), a
-  **headless-browser smoke** for the WebGL/WebGPU artifacts, and **golden-image snapshot
-  diffing** for regressions beyond "is the frame blank".
+  nonClear=2100/3600 drawn=true`). _Remaining, cheapest first:_ **(a) P1 · S — a
+  headless-browser smoke** for the wasm artifacts (Playwright loads `web_demo`, asserts a
+  non-blank canvas — no GPU needed; today the wasm runtime is verified manually, the only
+  platform with zero automated runtime signal); **(b) P2 · M — a WARP software-adapter
+  run** for DX11/DX12 on the Windows runner (real device creation + render without a
+  GPU); **(c) P2 · L — a GPU-capable runner** for full renders on the rest, with
+  **golden-image snapshot diffing** on top for regressions beyond "is the frame blank".
 - **P3 · S — Platform-aware font fallback.** The font manager probes a hardcoded Linux
   emoji path (`/usr/share/fonts/.../NotoColorEmoji.ttf`) on every OS; make it
   platform-aware, and offer an opt-in CJK font merge for the web build (which has no
@@ -464,6 +514,23 @@ Goal: broaden what apps can build without leaving the toolkit.
   **`dsl::DrawInspector()`** component/state inspector. _Next:_ deepen the idiom
   (forms/validation as components, a routing/URL story, devtools beyond the
   inspector) as real apps drive requirements.
+- **P1 · M — UI presets v2.** _v1 landed (4.6.0: AppShell / SettingsPage / Dashboard /
+  MasterDetail / LogConsole — see above)._ Grow the preset layer where it multiplies
+  adoption: **LoginPage/ConnectPage** (credentials + status + retry), a **WizardFlow**
+  scaffold, **CommandPalette integration in AppShell** (Ctrl+P out of the box),
+  preset-level theming knobs (accent/density), driven-input interaction tests for the
+  presets themselves, and a README **screenshot** of `preset_demo` so the layer sells
+  itself visually. Let real usage pick the next scaffolds.
+- **P2 · M — Module maturity (ipc/network).** The 4.4.3–4.4.4 hardening made them safe;
+  make them *dependable*: loopback functional tests (ZMQ pub/sub round-trip, HTTP
+  GET/POST against an in-process httplib server, a WebSocket echo), fix the dead
+  `Server::OnReceive` API (PUB sockets can't receive — split or document the Channel
+  contract), terminate the static zmq context on shutdown, and teach `LoadINI`
+  comments/sections/trimming.
+- **P2 · M — Fluent `With*` rollout.** The documented convention covers ~12% of widgets.
+  Sweep the retained layer: derive from `FluentWidget<T>` where missing and add `With*`
+  parity for existing `Set*` config (mechanical, additive, semver-minor), then fix the
+  CascadingCombo-style chains that break by returning `Widget&` mid-chain.
 
 - **P1 · L — Layout system.** _Started._ A header-only CSS-flexbox solver landed
   (`core/flex_layout.h`: `SolveFlex`) — pure and fully unit-tested. It now handles
@@ -549,9 +616,12 @@ Goal: make UniGUI easy to adopt and contribute to at scale.
 
 These run in parallel with every horizon:
 
-- **Quality:** keep all CI green — Build & Test (Win/Linux/macOS + both `-Werror`/`/WX`
-  gates + install-consume + the headless backend smoke) and Quality (`clang-tidy`
-  pinned to 19, coverage). Grow coverage; expand fuzz/bench; keep `clang-tidy` free of
+- **Quality:** keep all CI green — Build & Test (11 lanes: Win/Linux/macOS + both
+  `-Werror`/`/WX` gates + install-consume + the headless backend smoke + `linux-asan` +
+  `linux-modules` + `linux-testengine` + `windows-dx12`) and Quality (`clang-tidy`
+  pinned to 19, coverage, `docs-version`). **Grow interaction coverage** on the test-engine
+  harness — every new widget/preset should get a driven-input behavior test, and the ~19%
+  smoke-only tail converts opportunistically; expand fuzz/bench; keep `clang-tidy` free of
   real diagnostics (the ~4,900-warning advisory style backlog is separate). **Actually
   watch the gates:** two (`windows-werror`, `clang-tidy`) silently regressed for several
   releases while unobserved — an unwatched gate is no gate.
@@ -597,14 +667,19 @@ Track these over time to know the plan is working:
 - **Trading toolkit:** completeness — 4/4 widget families (ticket, OHLC chart,
   DOM ladder, blotters) + models + a runnable example shipped.
 - **Stability:** CI green rate; count of experimental vs. stable public headers;
-  `v2` duplicate code paths remaining (target met: 0).
-- **Quality:** test count & coverage %; fuzz targets; open P0/P1 bug count.
+  `v2` duplicate code paths remaining (target met: 0); **sanitizer-clean** under
+  ASan+UBSan+LSan (currently: yes, one documented third-party suppression).
+- **Quality:** test count (**1242** default / ~1300 all-modules) & coverage %;
+  **interaction-driven tests** (28 today — should grow with every widget/preset);
+  smoke-only share of the suite (~19% — should shrink); fuzz targets; open P0/P1 bug count.
+- **Ease of adoption:** lines of code for a decent app (**~30–60** via `unigui::presets`
+  today — keep it there as presets grow); a11y-wired widgets (**~44**, target: every
+  interactive widget).
 - **Performance:** frame time for `DataTable`/`VirtualList`/DOM at 100k rows and
   high update rates; parser throughput (CSV/JSON).
-- **Reach:** functional backends (**7/7** today — GLFW+GL3 **CI-verified to run on
-  Linux**, Vulkan, DX11, DX12, Metal, plus the **WebGL2 and WebGPU** wasm paths,
-  CI-build-verified); platforms with a passing test suite (**Win/Linux/macOS all
-  green**); packaging channels available.
+- **Reach:** functional backends (**7/7** real; **all compile in CI**; runtime-verified:
+  **1/7** — the GL path; target: wasm browser-smoke next, then WARP for DX); platforms
+  with a passing test suite (**Win/Linux/macOS all green**); packaging channels available.
 - **Adoption:** examples that build on web; external plugins; downstream
   embedders.
 
@@ -612,22 +687,21 @@ Track these over time to know the plan is working:
 
 - When picking up work, start from the **highest-priority item in the lowest open
   horizon** unless a release-blocking bug takes precedence. With **Horizons 2 & 3
-  complete**, the audit + backend-hardening arc shipped, **Horizon 4's backend
-  completeness done** (Metal + WebGL2 + WebGPU, 4.2.0–4.3.1 — all 7 backends real), and
-  **Horizon 5's accessibility largely done** (4.4.0–4.4.1, all four platforms), the open
-  frontier is **runtime backend verification** (a GPU-capable runner + a headless-browser
-  smoke for the wasm artifacts — all 7 backends are now build-covered in CI, but only GL is
-  runtime-verified), the rest of the **visual-regression harness** (golden-image diffing),
-  **Horizon 4's performance work**, **deepening the Horizon-5 framework idiom**, and the small
-  hardening items — flipping the **coverage / clang-tidy** gates from advisory to hard, the
-  **keyboard-only nav audit**, and **platform-aware font fallback**. (Closed after the 4.4.5
-  audit: the `|| true` test-gating hole, the DX12 CI-coverage gap, and the **ASan CI lane** —
-  the `linux-asan` job now runs the whole suite under **ASan+UBSan+LeakSanitizer** on every
-  push, hard-gated; its first run found only one third-party Xlib init leak, now documented
-  in `tests/lsan.supp`. The suite is otherwise sanitizer-clean, locally on MSVC ASan and in
-  CI on GCC.)
+  complete**, all 7 backends **real and compile-gated in CI**, **accessibility done
+  through the data-dense widgets** (4.4.0–4.5.0), the **verification net installed**
+  (sanitizers, hard gates, interaction tests, doc-stamp gate — 4.5.0–4.6.0 + the audit
+  closures), and the **UI preset layer shipped** (4.6.0), the recommended order for the
+  open frontier is:
+  1. **Headless-browser wasm smoke** (H4a — P1·S): the only platform with zero automated
+     runtime signal, and the cheapest runtime-verification win on the board.
+  2. **UI presets v2** (H5 — P1·M): the adoption multiplier — more scaffolds, preset
+     interaction tests, a README screenshot; let real usage steer.
+  3. **Module maturity** (H5 — P2·M) and the **WARP DX run** (H4b — P2·M), in either
+     order — both convert "safe" into "proven".
+  4. The standing small items as opportunity allows: **coverage/clang-tidy hard gates**,
+     **keyboard-only nav audit**, **fluent `With*` rollout**, **platform-aware font
+     fallback**, and the **framework-idiom deepening** driven by real apps.
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
 - Re-scope horizons at each release: promote, demote, or split items as reality
   dictates. Keep the vision (§1) stable; let the tactics move.
-</content>
