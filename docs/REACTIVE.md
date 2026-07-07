@@ -14,7 +14,7 @@ extensions (`State`, `Store`) live in `unigui::dsl`
 `ValueWidget<T>` ([`<unigui/widgets/value_widget.h>`](../include/unigui/widgets/value_widget.h))
 and `Label` ([`<unigui/widgets/label.h>`](../include/unigui/widgets/label.h)).
 
-> Version: this document tracks UniGUI **3.16.0**.
+> Version: this document tracks UniGUI **4.6.0**.
 
 ## The pieces at a glance
 

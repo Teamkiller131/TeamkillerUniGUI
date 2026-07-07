@@ -1,6 +1,6 @@
 # API Index
 
-Master lookup for the **entire public surface** of TeamkillerUniGUI 3.16.0.
+Master lookup for the **entire public surface** of TeamkillerUniGUI 4.6.0.
 
 | Category | Count | Primary doc |
 |----------|------:|-------------|

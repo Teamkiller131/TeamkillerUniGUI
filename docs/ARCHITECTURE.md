@@ -1,6 +1,6 @@
 # UniGUI Architecture
 
-A big-picture tour of how **TeamkillerUniGUI** (v3.16.0) is put together — the
+A big-picture tour of how **TeamkillerUniGUI** (v4.6.0) is put together — the
 layers that sit between your application code and [Dear ImGui](https://github.com/ocornut/imgui),
 and how to choose the right one for any given piece of UI.
 
@@ -626,8 +626,8 @@ A typical UniGUI app:
 | Trading toolkit | [docs/TRADING.md](TRADING.md) |
 | Public-API stability contract | [docs/API_STABILITY.md](API_STABILITY.md) |
 
-*Reactive, layout, immediate-API, DSL, theming, and backend deep-dives
-(`REACTIVE.md`, `LAYOUT.md`, `IM_API.md`, `DSL.md`, `THEMING.md`, `BACKENDS.md`)
-are planned; until they land, the authoritative reference for each is the
-correspondingly documented header — `core/observable.h`, `core/flex_layout.h`,
-`im/im.h`, `dsl/dsl.h`, `theme/theme.h`, and `backend/*.h`.*
+*Per-layer deep-dives: [REACTIVE.md](REACTIVE.md), [LAYOUT.md](LAYOUT.md),
+[IM_API.md](IM_API.md), [DSL.md](DSL.md), [THEMING.md](THEMING.md),
+[BACKENDS.md](BACKENDS.md), [ACCESSIBILITY.md](ACCESSIBILITY.md), and
+[PRESETS.md](PRESETS.md). Each is header-verified; when in doubt, the documented
+header itself remains authoritative.*

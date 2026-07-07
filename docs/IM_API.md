@@ -1,6 +1,6 @@
 # Immediate-Mode API Reference — `unigui::im`
 
-> Reference for TeamkillerUniGUI **3.16.0** · header: [`include/unigui/im/im.h`](../include/unigui/im/im.h)
+> Reference for TeamkillerUniGUI **4.6.0** · header: [`include/unigui/im/im.h`](../include/unigui/im/im.h)
 
 The `unigui::im` namespace is TeamkillerUniGUI's **immediate-mode layer**: a
 thin, themed, allocation-light set of free functions that wrap Dear ImGui so the
@@ -210,7 +210,7 @@ manage a fixed `char[]` buffer. `maxLength` caps the resulting string length.
 
 | Signature | Note |
 |-----------|------|
-| `bool Combo(std::string_view label, int* current, const std::vector<std::string>& items)` | High-level dropdown bound to an index into `items`; true when the selection changes. |
+| `bool Combo(std::string_view label, int* current, const std::vector<std::string>& items)` | High-level dropdown bound to an index into `items`; true when the selection changes. Draws the slim, hover-reactive chevron indicator (the library-wide combo look) and supports **mouse-wheel quick-select**: scrolling over the *closed* combo cycles the selection in place (clamped; the item claims the wheel, so a surrounding scroll region doesn't also move). |
 | `bool BeginCombo(std::string_view label, std::string_view preview, ImGuiComboFlags flags = 0)` | Low-level combo; emit `Selectable()` items inside, then `EndCombo()` when true. |
 | `void EndCombo()` | Close a `BeginCombo`. |
 | `bool BeginListBox(std::string_view label, const ImVec2& size = ImVec2(0,0))` | Scrolling list region; emit `Selectable()` items, then `EndListBox()` when true. |

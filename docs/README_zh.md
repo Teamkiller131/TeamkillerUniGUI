@@ -1,6 +1,6 @@
 # TeamkillerUniGUI 文档索引
 
-> **3.16.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
+> **4.6.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
 
 ## 入门与总览
 
@@ -31,6 +31,8 @@
 | [API_INDEX.md](API_INDEX.md) | 总索引：Widget + `im` + DSL + 核心 API |
 | [MODULES.md](MODULES.md) | CMake 可选模块（EventBus / 插件 / SQLite / IPC / 网络 …） |
 | [TRADING.md](TRADING.md) | 交易工具箱 |
+| [PRESETS.md](PRESETS.md) | UI 预设脚手架（AppShell / SettingsPage / Dashboard / MasterDetail / LogConsole）— 约 30 行代码搭出一个像样的应用 |
+| [ACCESSIBILITY.md](ACCESSIBILITY.md) | 无障碍层 `unigui::a11y` — 焦点追踪、元素树、朗读通告与屏幕阅读器桥 |
 | [../INTEGRATION.md](../INTEGRATION.md) | 子模块 + vcpkg 集成 |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | 构建排障 FAQ |
 

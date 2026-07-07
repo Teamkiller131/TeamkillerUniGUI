@@ -1,6 +1,6 @@
 # Backends & the Application Loop
 
-TeamkillerUniGUI (v3.16.0) runs Dear ImGui on top of a **pluggable backend
+TeamkillerUniGUI (v4.6.0) runs Dear ImGui on top of a **pluggable backend
 abstraction**: every window/input system is a `PlatformBackend` and every GPU
 API is a `RendererBackend`, and the two are combined into a backend *pair* by a
 single factory. The high-level application loop in `unigui::Init` / `Run` /
