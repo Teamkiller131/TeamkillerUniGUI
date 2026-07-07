@@ -319,7 +319,29 @@ bool Combo(std::string_view label, int* current, const std::vector<std::string>&
         *current = 0;
     const char* preview = (*current >= 0 && *current < n) ? items[*current].c_str() : "";
     bool changed = false;
-    if (ImGui::BeginCombo(Z(label).c_str(), preview)) {
+    // BeginCombo draws the preview frame plus the default down-arrow (▼) dropdown
+    // indicator (we intentionally do NOT pass ImGuiComboFlags_NoArrowButton), so every
+    // im::Combo advertises itself as a dropdown.
+    const bool open = ImGui::BeginCombo(Z(label).c_str(), preview);
+    const bool hovered = ImGui::IsItemHovered();
+    // Mouse-wheel quick-select (trader request 2026-07-07): while hovering the CLOSED
+    // combo, scrolling cycles the selection in place without opening the popup — wheel
+    // up = previous item, wheel down = next, clamped to range. SetItemKeyOwner claims
+    // the vertical wheel for this item so a surrounding scroll region (e.g. the pod
+    // table) does not also scroll. When the popup is open the wheel scrolls its list.
+    if (!open && hovered && n > 1) {
+        ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
+        const float wheel = ImGui::GetIO().MouseWheel;
+        if (wheel != 0.0f) {
+            int next = *current + (wheel > 0.0f ? -1 : 1);
+            next = next < 0 ? 0 : (next >= n ? n - 1 : next);
+            if (next != *current) {
+                *current = next;
+                changed = true;
+            }
+        }
+    }
+    if (open) {
         for (int i = 0; i < n; ++i) {
             ImGui::PushID(i);
             const bool selected = (i == *current);

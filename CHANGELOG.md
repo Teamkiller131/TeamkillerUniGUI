@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+### Added
+- **`im::Combo` mouse-wheel quick-select** — hovering the *closed* combo and
+  scrolling now cycles the selection in place (wheel up = previous item, wheel
+  down = next, clamped to range) without opening the popup, so dense forms of
+  dropdowns can be adjusted with the wheel alone. The item claims the vertical
+  wheel via `SetItemKeyOwner(ImGuiKey_MouseWheelY)` so a surrounding scroll
+  region does not also move; an open popup keeps normal list scrolling. The
+  dropdown ▼ indicator is unchanged. Applies to every `im::Combo` call site.
+
 ## [4.6.0] - 2026-07-02
 
 ### Added
