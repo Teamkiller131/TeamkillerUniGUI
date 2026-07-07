@@ -6,8 +6,14 @@
   down = next, clamped to range) without opening the popup, so dense forms of
   dropdowns can be adjusted with the wheel alone. The item claims the vertical
   wheel via `SetItemKeyOwner(ImGuiKey_MouseWheelY)` so a surrounding scroll
-  region does not also move; an open popup keeps normal list scrolling. The
-  dropdown ▼ indicator is unchanged. Applies to every `im::Combo` call site.
+  region does not also move; an open popup keeps normal list scrolling. Applies
+  to every `im::Combo` call site.
+
+### Changed
+- **`im::Combo` dropdown indicator restyled** — replaced ImGui's bulky
+  full-height square arrow *button* with a slim, softened, DPI-scaled chevron
+  painted in the right padding (`NoArrowButton` + custom draw). Smaller and
+  tidier in dense tables; also frees horizontal space for the preview text.
 
 ## [4.6.0] - 2026-07-02
 

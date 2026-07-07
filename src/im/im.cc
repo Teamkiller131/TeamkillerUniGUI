@@ -319,10 +319,32 @@ bool Combo(std::string_view label, int* current, const std::vector<std::string>&
         *current = 0;
     const char* preview = (*current >= 0 && *current < n) ? items[*current].c_str() : "";
     bool changed = false;
-    // BeginCombo draws the preview frame plus the default down-arrow (▼) dropdown
-    // indicator (we intentionally do NOT pass ImGuiComboFlags_NoArrowButton), so every
-    // im::Combo advertises itself as a dropdown.
-    const bool open = ImGui::BeginCombo(Z(label).c_str(), preview);
+    // ImGui's default combo arrow is a bulky full-frame-height square button that reads
+    // as too big/clunky in dense trading tables. Suppress it (NoArrowButton) and paint
+    // our own slim chevron in the right padding instead. Capture the frame geometry + the
+    // parent window's draw list BEFORE BeginCombo, because when the popup opens BeginCombo
+    // switches the current window to the popup — using the captured list keeps the chevron
+    // on the preview frame regardless.
+    ImDrawList* const frameDrawList = ImGui::GetWindowDrawList();
+    const ImVec2 framePos = ImGui::GetCursorScreenPos();
+    const float frameW = ImGui::CalcItemWidth();
+    const float frameH = ImGui::GetFrameHeight();
+    const bool open =
+        ImGui::BeginCombo(Z(label).c_str(), preview, ImGuiComboFlags_NoArrowButton);
+    {
+        // Slim, wide-ish ˅ — small, unobtrusive, theme-aware, DPI-scaled. Softened alpha
+        // so it's a hint, not a heavy control.
+        const float fs = ImGui::GetFontSize();
+        const float halfW = fs * 0.22f;
+        const float halfH = fs * 0.12f;
+        const float rightPad = ImGui::GetStyle().FramePadding.x + halfW + 1.0f;
+        const float cx = framePos.x + frameW - rightPad;
+        const float cy = framePos.y + frameH * 0.5f;
+        const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text, 0.70f);
+        const float thick = ImMax(1.0f, fs * 0.07f);
+        frameDrawList->AddLine(ImVec2(cx - halfW, cy - halfH), ImVec2(cx, cy + halfH), col, thick);
+        frameDrawList->AddLine(ImVec2(cx, cy + halfH), ImVec2(cx + halfW, cy - halfH), col, thick);
+    }
     const bool hovered = ImGui::IsItemHovered();
     // Mouse-wheel quick-select (trader request 2026-07-07): while hovering the CLOSED
     // combo, scrolling cycles the selection in place without opening the popup — wheel
