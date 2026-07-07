@@ -331,21 +331,23 @@ bool Combo(std::string_view label, int* current, const std::vector<std::string>&
     const float frameH = ImGui::GetFrameHeight();
     const bool open =
         ImGui::BeginCombo(Z(label).c_str(), preview, ImGuiComboFlags_NoArrowButton);
+    const bool hovered = ImGui::IsItemHovered();
     {
-        // Slim, wide-ish ˅ — small, unobtrusive, theme-aware, DPI-scaled. Softened alpha
-        // so it's a hint, not a heavy control.
+        // Slim ˅ — a hint, not a control: tiny, dim by default, brightens on hover/open.
+        // Single polyline stroke keeps the vertex joint clean (two AddLine segments leave
+        // a notch there at >1px thickness). Theme-aware, DPI-scaled.
         const float fs = ImGui::GetFontSize();
-        const float halfW = fs * 0.22f;
-        const float halfH = fs * 0.12f;
+        const float halfW = fs * 0.20f;
+        const float halfH = fs * 0.11f;
         const float rightPad = ImGui::GetStyle().FramePadding.x + halfW + 1.0f;
         const float cx = framePos.x + frameW - rightPad;
         const float cy = framePos.y + frameH * 0.5f;
-        const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text, 0.70f);
-        const float thick = ImMax(1.0f, fs * 0.07f);
-        frameDrawList->AddLine(ImVec2(cx - halfW, cy - halfH), ImVec2(cx, cy + halfH), col, thick);
-        frameDrawList->AddLine(ImVec2(cx, cy + halfH), ImVec2(cx + halfW, cy - halfH), col, thick);
+        const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text, (hovered || open) ? 0.85f : 0.45f);
+        const float thick = ImMax(1.0f, fs * 0.075f);
+        const ImVec2 pts[3] = {ImVec2(cx - halfW, cy - halfH), ImVec2(cx, cy + halfH),
+                               ImVec2(cx + halfW, cy - halfH)};
+        frameDrawList->AddPolyline(pts, 3, col, ImDrawFlags_None, thick);
     }
-    const bool hovered = ImGui::IsItemHovered();
     // Mouse-wheel quick-select (trader request 2026-07-07): while hovering the CLOSED
     // combo, scrolling cycles the selection in place without opening the popup — wheel
     // up = previous item, wheel down = next, clamped to range. SetItemKeyOwner claims
