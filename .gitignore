@@ -27,3 +27,8 @@ unigui_settings.ini
 
 # Local planning / working notes — internal only, not part of the public project
 .notes/
+
+# Node (browser-smoke tooling: playwright + pngjs, installed --no-save in CI)
+node_modules/
+package.json
+package-lock.json

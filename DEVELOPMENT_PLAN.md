@@ -476,13 +476,17 @@ _**Landed (4.2.0–4.3.1) — every backend is now real and online.**_
   back after `RenderDrawData` (post-frame `glGetError()` + a clear-vs-drawn pixel-grid
   count → `[render-verify] … drawn=true|false`), and the Linux smoke asserts `drawn=true`
   after a clean run — so the black-screen class now fails CI (verified: `glError=0x0
-  nonClear=2100/3600 drawn=true`). _Remaining, cheapest first:_ **(a) P1 · S — a
-  headless-browser smoke** for the wasm artifacts (Playwright loads `web_demo`, asserts a
-  non-blank canvas — no GPU needed; today the wasm runtime is verified manually, the only
-  platform with zero automated runtime signal); **(b) P2 · M — a WARP software-adapter
-  run** for DX11/DX12 on the Windows runner (real device creation + render without a
-  GPU); **(c) P2 · L — a GPU-capable runner** for full renders on the rest, with
-  **golden-image snapshot diffing** on top for regressions beyond "is the frame blank".
+  nonClear=2100/3600 drawn=true`). _Remaining, cheapest first:_ ~~**(a) P1 · S — a
+  headless-browser smoke** for the wasm artifacts~~ **Done.** `scripts/web_smoke.mjs`
+  (Playwright + SwiftShader ANGLE) loads the artifact, screenshots the **canvas element**,
+  and asserts real pixels in the emscripten CI job — WebGL2 hard-gated, WebGPU
+  best-effort until the runner provides an adapter. Building it caught two verdict traps
+  (page-chrome false-pass; headless GL virtualization black-screening a healthy
+  artifact — fixed with canvas-only + swiftshader). **(b) P2 · M — a WARP
+  software-adapter run** for DX11/DX12 on the Windows runner (real device creation +
+  render without a GPU); **(c) P2 · L — a GPU-capable runner** for full renders on the
+  rest, with **golden-image snapshot diffing** on top for regressions beyond "is the
+  frame blank".
 - **P3 · S — Platform-aware font fallback.** The font manager probes a hardcoded Linux
   emoji path (`/usr/share/fonts/.../NotoColorEmoji.ttf`) on every OS; make it
   platform-aware, and offer an opt-in CJK font merge for the web build (which has no

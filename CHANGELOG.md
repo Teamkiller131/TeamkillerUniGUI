@@ -1,6 +1,18 @@
 ## [Unreleased]
 
 ### Added
+- **CI: headless-browser render smoke for the wasm artifacts** (roadmap H4a — the first
+  item of the re-scoped plan). `scripts/web_smoke.mjs` loads `web_demo` in headless
+  Chromium (Playwright + SwiftShader ANGLE for a deterministic software render), waits
+  for boot, screenshots the **canvas element**, and asserts the UI drew real pixels —
+  the browser twin of the native `UNIGUI_RENDER_VERIFY` gate. WebGL2 is a **hard gate**;
+  WebGPU runs best-effort (headless Chromium provided no GPU adapter locally — the app
+  degrades gracefully; the step flips hard once the runner proves an adapter). Building
+  the smoke validated its own design twice: a full-page screenshot *passed on a black
+  canvas* (the emscripten shell chrome faked the verdict — hence canvas-only), and
+  headless Chromium's default GL virtualization black-screened an artifact that renders
+  perfectly headed (hence SwiftShader). The wasm runtime was previously the only
+  platform with zero automated runtime signal.
 - **`im::Combo` mouse-wheel quick-select** — hovering the *closed* combo and
   scrolling now cycles the selection in place (wheel up = previous item, wheel
   down = next, clamped to range) without opening the popup, so dense forms of
