@@ -4,6 +4,8 @@
 
 #include <imgui.h>
 
+#include "detail/combo_chevron.h"
+
 #include <algorithm>
 #include <cctype>
 #include <regex>
@@ -273,7 +275,11 @@ void Form::Render() {
                     idx = parsed;
             }
             const char* preview = f.options.empty() ? "" : f.options[idx].c_str();
-            if (ImGui::BeginCombo(f.label.c_str(), preview)) {
+            const auto comboFrame = detail::CaptureComboFrame();
+            const bool comboOpen =
+                ImGui::BeginCombo(f.label.c_str(), preview, ImGuiComboFlags_NoArrowButton);
+            detail::DrawComboChevron(comboFrame, comboOpen || ImGui::IsItemHovered());
+            if (comboOpen) {
                 for (int i = 0; i < (int) f.options.size(); ++i) {
                     bool selected = (i == idx);
                     if (ImGui::Selectable(f.options[i].c_str(), selected))

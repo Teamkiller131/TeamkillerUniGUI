@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include "detail/combo_chevron.h"
+
 #include <algorithm>
 #include <cstdio>
 
@@ -45,8 +47,10 @@ void CascadingCombo::Render() {
         const char* preview =
             level.options.empty() ? "" : level.options[level.selectedIndex].c_str();
         ImGui::SetNextItemWidth(width > 0.f ? width : CalcComboWidth(level.options, preview));
+        const auto comboFrame = detail::CaptureComboFrame();
         const bool comboOpen = ImGui::BeginCombo(lbl, preview, ImGuiComboFlags_NoArrowButton);
         const bool comboFocused = ImGui::IsItemFocused(); // capture before tooltip/items steal it
+        detail::DrawComboChevron(comboFrame, comboOpen || ImGui::IsItemHovered());
         if (comboOpen) {
             for (int i = 0; i < (int) level.options.size(); ++i) {
                 bool isSel = (i == level.selectedIndex);

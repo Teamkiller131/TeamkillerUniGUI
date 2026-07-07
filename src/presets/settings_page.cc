@@ -3,6 +3,8 @@
 
 #include <imgui.h>
 
+#include "detail/combo_chevron.h"
+
 #include <algorithm>
 #include <cfloat>
 #include <cstdio>
@@ -228,7 +230,11 @@ void SettingsPage::RenderRow(int rowIndex, float controlColumnX) {
         int cur = row.getInt ? row.getInt() : 0;
         cur = std::clamp(cur, 0, count > 0 ? count - 1 : 0);
         const char* preview = count > 0 ? row.options[static_cast<size_t>(cur)].c_str() : "";
-        if (ImGui::BeginCombo("##combo", preview)) {
+        const auto comboFrame = detail::CaptureComboFrame();
+        const bool comboOpen =
+            ImGui::BeginCombo("##combo", preview, ImGuiComboFlags_NoArrowButton);
+        detail::DrawComboChevron(comboFrame, comboOpen || ImGui::IsItemHovered());
+        if (comboOpen) {
             for (int i = 0; i < count; ++i) {
                 ImGui::PushID(i);
                 if (ImGui::Selectable(row.options[static_cast<size_t>(i)].c_str(), i == cur) &&

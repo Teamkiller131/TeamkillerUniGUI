@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include "detail/combo_chevron.h"
+
 #include <cstdio>
 
 namespace unigui {
@@ -64,7 +66,11 @@ void PropertyGrid::RenderProp(PropertyDef& prop) {
         int idx = std::get<int>(prop.value);
         std::string preview =
             (idx >= 0 && idx < (int) prop.options.size()) ? prop.options[idx] : "";
-        if (ImGui::BeginCombo(("##" + prop.name).c_str(), preview.c_str())) {
+        const auto comboFrame = detail::CaptureComboFrame();
+        const bool comboOpen = ImGui::BeginCombo(("##" + prop.name).c_str(), preview.c_str(),
+                                                 ImGuiComboFlags_NoArrowButton);
+        detail::DrawComboChevron(comboFrame, comboOpen || ImGui::IsItemHovered());
+        if (comboOpen) {
             for (int i = 0; i < (int) prop.options.size(); i++) {
                 if (ImGui::Selectable(prop.options[i].c_str(), i == idx)) {
                     prop.value = i;

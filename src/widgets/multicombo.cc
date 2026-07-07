@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include "detail/combo_chevron.h"
+
 #include <algorithm>
 #include <sstream>
 
@@ -31,8 +33,10 @@ void MultiCombo::Render() {
     ImGui::PushID(GetName().c_str());
     std::string preview = GetPreview();
     ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
+    const auto comboFrame = detail::CaptureComboFrame();
     const bool comboOpen = ImGui::BeginCombo(label_.c_str(), preview.c_str(), ImGuiComboFlags_NoArrowButton);
     const bool comboFocused = ImGui::IsItemFocused(); // capture before dropdown items steal it
+    detail::DrawComboChevron(comboFrame, comboOpen || ImGui::IsItemHovered());
     if (comboOpen) {
         for (int i = 0; i < (int) items_.size(); i++) {
             bool sel = selected_.count(i) > 0;

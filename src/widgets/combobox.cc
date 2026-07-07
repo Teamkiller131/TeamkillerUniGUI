@@ -4,6 +4,8 @@
 
 #include <algorithm>
 
+#include "detail/combo_chevron.h"
+
 namespace unigui {
 
 namespace {
@@ -44,9 +46,12 @@ void ComboBox::Render() {
         ImGui::SetNextItemWidth(fixedWidth_);
     else
         ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
-    // NoArrowButton：去掉右侧那个突兀的下拉三角，整个预览框仍可点击展开
+    // NoArrowButton：去掉右侧那个突兀的下拉三角，整个预览框仍可点击展开；
+    // 统一的 UniGUI 下拉指示 = 右侧内边距里的细 ˅（见 detail/combo_chevron.h）。
+    const auto comboFrame = detail::CaptureComboFrame();
     const bool comboOpen = ImGui::BeginCombo(label_.c_str(), preview, ImGuiComboFlags_NoArrowButton);
     const bool comboFocused = ImGui::IsItemFocused(); // capture before dropdown items steal it
+    detail::DrawComboChevron(comboFrame, comboOpen || ImGui::IsItemHovered());
     if (comboOpen) {
         if (allowEmpty_) {
             const char* none = placeholder_.empty() ? "(none)" : placeholder_.c_str();

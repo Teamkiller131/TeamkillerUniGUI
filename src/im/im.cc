@@ -3,6 +3,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "detail/combo_chevron.h"
+
 #include <algorithm>
 #include <cstring>
 
@@ -319,35 +321,13 @@ bool Combo(std::string_view label, int* current, const std::vector<std::string>&
         *current = 0;
     const char* preview = (*current >= 0 && *current < n) ? items[*current].c_str() : "";
     bool changed = false;
-    // ImGui's default combo arrow is a bulky full-frame-height square button that reads
-    // as too big/clunky in dense trading tables. Suppress it (NoArrowButton) and paint
-    // our own slim chevron in the right padding instead. Capture the frame geometry + the
-    // parent window's draw list BEFORE BeginCombo, because when the popup opens BeginCombo
-    // switches the current window to the popup — using the captured list keeps the chevron
-    // on the preview frame regardless.
-    ImDrawList* const frameDrawList = ImGui::GetWindowDrawList();
-    const ImVec2 framePos = ImGui::GetCursorScreenPos();
-    const float frameW = ImGui::CalcItemWidth();
-    const float frameH = ImGui::GetFrameHeight();
+    // The unified UniGUI combo look: no stock arrow button, slim ˅ chevron in the right
+    // padding (see detail/combo_chevron.h for the full rationale).
+    const auto frame = detail::CaptureComboFrame();
     const bool open =
         ImGui::BeginCombo(Z(label).c_str(), preview, ImGuiComboFlags_NoArrowButton);
     const bool hovered = ImGui::IsItemHovered();
-    {
-        // Slim ˅ — a hint, not a control: tiny, dim by default, brightens on hover/open.
-        // Single polyline stroke keeps the vertex joint clean (two AddLine segments leave
-        // a notch there at >1px thickness). Theme-aware, DPI-scaled.
-        const float fs = ImGui::GetFontSize();
-        const float halfW = fs * 0.20f;
-        const float halfH = fs * 0.11f;
-        const float rightPad = ImGui::GetStyle().FramePadding.x + halfW + 1.0f;
-        const float cx = framePos.x + frameW - rightPad;
-        const float cy = framePos.y + frameH * 0.5f;
-        const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text, (hovered || open) ? 0.85f : 0.45f);
-        const float thick = ImMax(1.0f, fs * 0.075f);
-        const ImVec2 pts[3] = {ImVec2(cx - halfW, cy - halfH), ImVec2(cx, cy + halfH),
-                               ImVec2(cx + halfW, cy - halfH)};
-        frameDrawList->AddPolyline(pts, 3, col, ImDrawFlags_None, thick);
-    }
+    detail::DrawComboChevron(frame, hovered || open);
     // Mouse-wheel quick-select (trader request 2026-07-07): while hovering the CLOSED
     // combo, scrolling cycles the selection in place without opening the popup — wheel
     // up = previous item, wheel down = next, clamped to range. SetItemKeyOwner claims
@@ -811,7 +791,13 @@ void EndDisabled() {
 // ── A6: Combo (low-level) ─────────────────────────────────────────────────────
 bool BeginCombo(std::string_view label, std::string_view preview, ImGuiComboFlags flags) {
     std::string p(preview);
-    return ImGui::BeginCombo(Z(label).c_str(), preview.empty() ? nullptr : p.c_str(), flags);
+    // Apply the unified UniGUI combo look (slim chevron instead of the stock
+    // arrow button) so custom BeginCombo/EndCombo call sites match im::Combo.
+    const auto frame = detail::CaptureComboFrame();
+    const bool open = ImGui::BeginCombo(Z(label).c_str(), preview.empty() ? nullptr : p.c_str(),
+                                        flags | ImGuiComboFlags_NoArrowButton);
+    detail::DrawComboChevron(frame, open || ImGui::IsItemHovered());
+    return open;
 }
 void EndCombo() {
     ImGui::EndCombo();

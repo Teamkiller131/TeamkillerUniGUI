@@ -14,6 +14,16 @@
   full-height square arrow *button* with a slim, softened, DPI-scaled chevron
   painted in the right padding (`NoArrowButton` + custom draw). Smaller and
   tidier in dense tables; also frees horizontal space for the preview text.
+- **Slim chevron is now the default combo look library-wide** — the indicator
+  moved into a shared internal helper (`src/detail/combo_chevron.h`: single
+  polyline stroke for a clean vertex joint, 45% text alpha at rest brightening
+  to 85% on hover/open) and is applied to every combo UniGUI renders:
+  `im::Combo`, `im::BeginCombo` (now also suppresses the stock arrow button),
+  the retained `ComboBox` / `MultiCombo` / `CascadingCombo` (previously
+  arrow-less with *no* indicator at all), and the combo rows in `Form`,
+  `PropertyGrid`, the `SettingsPage` preset and the trading `OrderTicket`.
+  Custom `im::BeginCombo`/`EndCombo` call sites inherit the look with no code
+  change.
 
 ## [4.6.0] - 2026-07-02
 

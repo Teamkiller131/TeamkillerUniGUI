@@ -4,6 +4,8 @@
 
 #include <imgui.h>
 
+#include "detail/combo_chevron.h"
+
 #include <algorithm>
 #include <cfloat>
 #include <cstdio>
@@ -92,7 +94,11 @@ void OrderTicket::DrawSideToggle() {
 
 void OrderTicket::DrawTypeAndTif() {
     ImGui::SetNextItemWidth(-FLT_MIN);
-    if (ImGui::BeginCombo("##type", OrderTypeName(draft_.type))) {
+    const auto typeFrame = detail::CaptureComboFrame();
+    const bool typeOpen =
+        ImGui::BeginCombo("##type", OrderTypeName(draft_.type), ImGuiComboFlags_NoArrowButton);
+    detail::DrawComboChevron(typeFrame, typeOpen || ImGui::IsItemHovered());
+    if (typeOpen) {
         for (auto t :
              {OrderType::Market, OrderType::Limit, OrderType::Stop, OrderType::StopLimit}) {
             if (ImGui::Selectable(OrderTypeName(t), draft_.type == t))
@@ -101,7 +107,11 @@ void OrderTicket::DrawTypeAndTif() {
         ImGui::EndCombo();
     }
     ImGui::SetNextItemWidth(-FLT_MIN);
-    if (ImGui::BeginCombo("##tif", TimeInForceName(draft_.tif))) {
+    const auto tifFrame = detail::CaptureComboFrame();
+    const bool tifOpen =
+        ImGui::BeginCombo("##tif", TimeInForceName(draft_.tif), ImGuiComboFlags_NoArrowButton);
+    detail::DrawComboChevron(tifFrame, tifOpen || ImGui::IsItemHovered());
+    if (tifOpen) {
         for (auto t : {TimeInForce::Day, TimeInForce::GTC, TimeInForce::IOC, TimeInForce::FOK}) {
             if (ImGui::Selectable(TimeInForceName(t), draft_.tif == t))
                 draft_.tif = t;
