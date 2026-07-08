@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [4.8.0] - 2026-07-08
+
 ### Added
 - **Forms & validation in the component idiom** (roadmap — framework-idiom deepening).
   New `dsl::FormComponent` + `dsl::FormField<T>` (`<unigui/dsl/form_component.h>`,
