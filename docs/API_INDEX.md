@@ -161,6 +161,8 @@ The opinionated way to build apps — see [FRAMEWORK.md](FRAMEWORK.md).
 | `Host(child)`, `Custom(draw)` | `dsl/component.h`, `dsl/dsl.h` | Compose a child component / immediate-mode escape hatch |
 | `Component::Watch`, `OnCleanup` | `dsl/component.h` | React to shared state; effect-teardown lifecycle |
 | `DrawInspector`, `Component::BuildCount` | `dsl/component.h` | Live component inspector overlay |
+| `FormComponent` | `dsl/form_component.h` | Component with form plumbing: `FormValid()`, `Submit()` gate, `OnSubmit`/`OnSubmitRejected` |
+| `FormField<T>` | `dsl/form_component.h` | Validated `State` cell: rule chain (`Required`/`MinLength`/`Range`/`Rule`), touched flag, `Error()`, ready-made `Node()` row |
 | `Store<T>` | `dsl/app.h` | Shared, app-wide reactive state |
 | `Navigator` | `dsl/app.h` | Stack of screens: `Push`/`Pop`/`Replace`/`Render` |
 
