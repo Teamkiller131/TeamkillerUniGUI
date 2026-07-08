@@ -22,6 +22,7 @@
 #include <imgui.h>
 #include <implot.h>
 
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
@@ -439,7 +440,7 @@ static void VerifyRenderIfEnabled() {
     glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, buf.data());
 
     const ImVec4 bg = GetBackdropColor();
-    auto to8 = [](float v) { return (int) (v * 255.0f + 0.5f); };
+    auto to8 = [](float v) { return (int) std::lround(v * 255.0f); };
     const int cr = to8(bg.x), cg = to8(bg.y), cb = to8(bg.z);
 
     // Sample a coarse grid (cheap) and count pixels that differ from the clear colour.

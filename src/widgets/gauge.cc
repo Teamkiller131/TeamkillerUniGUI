@@ -74,7 +74,8 @@ void Gauge::Render() {
     std::string label = centerLabel_;
     if (label.empty() && showPercent_) {
         char buf[16];
-        std::snprintf(buf, sizeof(buf), "%d%%", static_cast<int>(GetFraction() * 100.f + 0.5f));
+        std::snprintf(buf, sizeof(buf), "%d%%",
+                      static_cast<int>(std::lround(GetFraction() * 100.f)));
         label = buf;
     }
     if (!label.empty()) {

@@ -277,9 +277,15 @@ the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bu
   tests yet. The harness makes growth mechanical.
 - **Fluent `With*` API is on ~12% of widgets** (~10/86 + the presets) despite being the
   documented convention — an API-consistency debt CLAUDE.md currently overstates.
-- **Coverage and clang-tidy gates are still advisory** — flip each to a hard gate once its
-  baseline is confirmed stable. **~4,900 clang-tidy style warnings** remain tolerated
-  (only real diagnostics fail); curating the check set is optional cleanup.
+- **clang-tidy is now a hard gate on `bugprone-*`** (post-4.6.0): `.clang-tidy` sets
+  `WarningsAsErrors: 'bugprone-*'` and the CI job dropped `continue-on-error`, so a new
+  bugprone finding fails CI. The pre-existing bugprone findings were cleared first (four
+  `(int)(x+0.5f)`→`std::lround`, two `Form::Deserialize` inc-in-condition lifts, `MasterDetail`
+  optional guards) with two sub-checks excluded by rationale (branch-clone false positive,
+  crtp-accessibility stylistic). **Still advisory:** ~4,900 style warnings across the other
+  families (deliberate lowercase-suffix / brace-less-statement deviations — not bugs) and the
+  **coverage** gate (add `--threshold N`). Promote another family into the gate as the tree is
+  cleaned under it.
 - **No multi-context story.** ~9 `::Instance()` singletons (EventBus/StyleEngine/fonts/
   plugins/Settings/…) assume one UI per process — fine today, a wall for embedding two
   independent UniGUI surfaces or parallel test isolation.
@@ -724,9 +730,11 @@ Track these over time to know the plan is working:
      runtime backend coverage to 4/7. Remaining backend-proof tail: a GPU-capable runner for
      Vulkan/SDL3/Metal + golden-image diffing, and a windowed/swapchain WARP pass (offscreen
      → present).
-  3. The standing small items are now the lead frontier: **coverage/clang-tidy hard gates**,
-     **keyboard-only nav audit**, **fluent `With*` rollout**, **platform-aware font
-     fallback**, and the **framework-idiom deepening** driven by real apps.
+  3. The standing small items are now the lead frontier: **coverage/clang-tidy hard gates**
+     (clang-tidy `bugprone-*` is now enforced — remaining: a coverage `--threshold`, and
+     promoting more tidy families as the tree is cleaned), **keyboard-only nav audit**,
+     **fluent `With*` rollout**, **platform-aware font fallback**, and the **framework-idiom
+     deepening** driven by real apps.
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
 - Re-scope horizons at each release: promote, demote, or split items as reality

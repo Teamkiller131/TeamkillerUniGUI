@@ -4,12 +4,12 @@
 
 #include <imgui.h>
 
-#include "detail/combo_chevron.h"
-
 #include <algorithm>
 #include <cctype>
 #include <regex>
 #include <sstream>
+
+#include "detail/combo_chevron.h"
 
 namespace unigui {
 
@@ -343,8 +343,10 @@ std::string Form::Serialize() const {
 bool Form::Deserialize(const std::string& json) {
     size_t pos = 0;
     SkipJsonWhitespace(json, pos);
-    if (pos >= json.size() || json[pos++] != '{')
+    if (pos >= json.size() || json[pos] != '{')
         return false;
+    ++pos; // consume '{' (kept out of the condition: mutating pos inside a && chain is a
+           // bugprone-inc-dec-in-conditions footgun even though short-circuit makes it safe)
     SkipJsonWhitespace(json, pos);
     bool any = false;
     if (pos < json.size() && json[pos] == '}')
@@ -354,8 +356,9 @@ bool Form::Deserialize(const std::string& json) {
         if (!ParseJsonString(json, pos, key))
             return false;
         SkipJsonWhitespace(json, pos);
-        if (pos >= json.size() || json[pos++] != ':')
+        if (pos >= json.size() || json[pos] != ':')
             return false;
+        ++pos; // consume ':' (see the '{' note above)
         SkipJsonWhitespace(json, pos);
         if (!ParseJsonString(json, pos, value))
             return false;

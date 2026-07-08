@@ -78,6 +78,22 @@
   opened a real connection.
 
 ### Changed
+- **clang-tidy is now a hard gate on the bug-catching family** (roadmap — the standing
+  quality-gate item). `.clang-tidy` sets `WarningsAsErrors: 'bugprone-*'` and the CI
+  `clang-tidy` job dropped its `continue-on-error`, so any *new* `bugprone-*` finding now
+  fails the pipeline. The other enabled families (readability/modernize/performance/
+  cppcoreguidelines/misc) stay advisory — the tree carries thousands of deliberate style
+  deviations (lowercase literal suffixes, brace-less statements, …) that aren't bugs, so
+  enforcing them would be gratuitous churn; families can be promoted into the gate as the
+  tree is cleaned under them. To reach a clean `bugprone-*` baseline, the pre-existing
+  findings were resolved: four `(int)(x + 0.5f)` truncations became `std::lround` (correct
+  rounding — `fx::elevation` alpha clamp, `Gauge`/`ProgressBar` percent labels, the app
+  backdrop clear colour); the two `Form::Deserialize` `json[pos++]` reads were lifted out
+  of their `&&` conditions (order-of-evaluation footgun, though short-circuit made them
+  safe); and `MasterDetail` gained guards on its always-emplaced `splitter_` optional. Two
+  sub-checks are excluded with rationale: `bugprone-branch-clone` (a conditional-compilation
+  false positive in `CreateBackend`) and `bugprone-crtp-constructor-accessibility` (stylistic
+  hardening not worth touching every fluent widget for).
 - **`ipc::Server::OnReceive` is now a documented no-op.** A `Server` is a ZMQ `PUB`
   (broadcast) socket and can never receive, so passing it a callback now logs a
   `UNIGUI_LOG_WARN` (pointing you at a `Client`/`SUB`) instead of silently accepting a

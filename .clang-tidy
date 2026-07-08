@@ -12,6 +12,14 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -bugprone-narrowing-conversions,
   -bugprone-implicit-widening-of-multiplication-result,
+  # False positive under conditional compilation: with backends disabled, every
+  # switch case in CreateBackend() collapses to `return {nullptr, nullptr}`, which
+  # only looks like cloned branches in the lint build (they diverge when a backend
+  # is enabled). Design is intentional, so this one stays advisory.
+  -bugprone-branch-clone,
+  # Stylistic hardening on FluentWidget<Derived> — making the CRTP base ctor private
+  # + friending each Derived would touch every fluent widget for no correctness gain.
+  -bugprone-crtp-constructor-accessibility,
   performance-*,
   -performance-avoid-endl,
   modernize-*,
@@ -34,7 +42,13 @@ Checks: >
   -misc-const-correctness,
   -misc-no-recursion
 
-WarningsAsErrors: ''
+# Hard gate: the bug-catching family is enforced as errors (CI fails on any new
+# bugprone finding). The rest of the enabled checks — readability/modernize/
+# performance/cppcoreguidelines/misc — stay advisory (reported, non-fatal) because
+# the tree carries thousands of deliberate style deviations (lowercase literal
+# suffixes, brace-less single statements, …) that are not bugs. Curate more families
+# into this list as the tree is cleaned under them.
+WarningsAsErrors: 'bugprone-*'
 
 HeaderFilterRegex: 'include/unigui/.*\.h$'
 
