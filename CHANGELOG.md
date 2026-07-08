@@ -1,3 +1,33 @@
+## [Unreleased]
+
+### Added
+- **Platform-aware system font fallback** (roadmap — the standing font item). The font
+  manager's system-font probing grew from "one hardcoded path + one Linux retry" into
+  per-platform candidate lists: `LoadSystemEmoji` now probes the common Noto Color Emoji
+  install locations across Debian/Ubuntu, Arch, Fedora and BSD layouts, and honors
+  `%WINDIR%` on Windows instead of assuming `C:/Windows`. New **`LoadSystemCJK()`** merges
+  a system CJK font (Microsoft YaHei/SimSun on Windows, PingFang/Hiragino on macOS,
+  Noto Sans CJK/WenQuanYi on Linux) into the default font as a glyph fallback — covering
+  CJK ideographs, kana, Hangul, CJK punctuation and full-width forms — and returns the
+  font (nullptr when no candidate exists; registered as `"cjk"`, idempotent). Both remain
+  documented no-ops on the web build (no system fonts on MEMFS).
+- **README hero screenshot** — `docs/assets/preset_demo.png`, a real capture of
+  `examples/preset_demo` (AppShell + Dashboard preset, dark theme), embedded in both
+  READMEs and `docs/PRESETS.md` so the preset layer sells itself visually (the last
+  presets-v2 tail item).
+
+### Fixed
+- **`fonts::Manager::Unload` no longer double-frees font data.** Every file-loaded font
+  is registered with `FontDataOwnedByAtlas=true` (the atlas frees the buffer at
+  `DestroyContext`/rebuild), yet `Unload` also `IM_FREE`d it — an access violation
+  waiting in `DestroyContext` for any app that ever unloaded a file-loaded font.
+  Surfaced by the new system-font tests.
+- **`LoadSystemEmoji`/`LoadSystemCJK` no longer assert on an empty font atlas.** Calling
+  them before any font was loaded tripped imgui's "Cannot use MergeMode for the first
+  font"; the manager now seeds the atlas with the default font first (the same font
+  `NewFrame` would add lazily). An explicit merge size is also reconciled with imgui
+  1.92's implicit-reference-size fonts instead of asserting.
+
 ## [4.7.0] - 2026-07-08
 
 ### Added
