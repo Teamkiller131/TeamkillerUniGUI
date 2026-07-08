@@ -33,6 +33,14 @@ void Splitter::Render() {
         ImGui::PopStyleColor();
         if (ImGui::IsItemActive()) {
             float delta = ImGui::GetIO().MouseDelta.y;
+            // Keyboard path: nav-activate the divider (hold Space/Enter), then
+            // Up/Down move it. While the item is active, nav movement is
+            // suspended, so the arrows are free (key repeat gives continuous
+            // resize). Mouse drag was previously the only way to move it.
+            if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+                delta -= avail.y * 0.02f;
+            if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+                delta += avail.y * 0.02f;
             split_ += (delta / avail.y);
             if (split_ < 0.1f)
                 split_ = 0.1f;
@@ -55,6 +63,11 @@ void Splitter::Render() {
         ImGui::PopStyleColor();
         if (ImGui::IsItemActive()) {
             float delta = ImGui::GetIO().MouseDelta.x;
+            // Keyboard path — see the horizontal branch above.
+            if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+                delta -= avail.x * 0.02f;
+            if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+                delta += avail.x * 0.02f;
             split_ += (delta / avail.x);
             if (split_ < 0.1f)
                 split_ = 0.1f;

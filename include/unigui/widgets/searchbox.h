@@ -42,6 +42,8 @@ private:
     std::string query_;
     std::vector<std::string> items_;
     char buf_[256] = {};
+    int selIdx_ = -1; // keyboard-highlighted suggestion (-1 = none)
+    void Accept(const std::string& m);
     std::function<void(const std::string&)> onSelect_;
     std::function<void(const std::string&)> onChange_;
 };

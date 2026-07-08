@@ -2,6 +2,8 @@
 #include <unigui/fx/effect_scope.h>
 #include <unigui/widgets/timeseries_chart.h>
 
+#include <imgui_internal.h> // SetKeyOwner (key ownership while nav-focused)
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -189,8 +191,30 @@ void TimeSeriesChart::Render() {
     ImPlot::PushStyleColor(ImPlotCol_LegendBg,
                            ImVec4(bgCol.x * 0.85f, bgCol.y * 0.85f, bgCol.z * 0.85f, 0.60f));
 
+    // One-frame keyboard requests from the previous frame (Home = re-fit).
+    if (fitPending_) {
+        ImPlot::SetNextAxesToFit();
+        fitPending_ = false;
+    }
+
     bool plotHovered = false;
+    bool plotFocused = false;
+    ImVec2 plotRectMin, plotRectMax;
     if (ImPlot::BeginPlot(GetName().c_str(), ImVec2(-1, -1), plotFlags)) {
+        // The plot frame is the last-added item here — capture nav focus + rect
+        // for the keyboard layer and the focus ring.
+        plotFocused = ImGui::IsItemFocused();
+        const ImGuiID plotId = ImGui::GetItemID();
+        plotRectMin = ImGui::GetItemRectMin();
+        plotRectMax = ImGui::GetItemRectMax();
+        if (plotFocused) {
+            // Own the arrows while focused so nav doesn't move focus away —
+            // they pan/zoom the viewport instead (keyboard parity with drag/wheel).
+            ImGui::SetKeyOwner(ImGuiKey_LeftArrow, plotId);
+            ImGui::SetKeyOwner(ImGuiKey_RightArrow, plotId);
+            ImGui::SetKeyOwner(ImGuiKey_UpArrow, plotId);
+            ImGui::SetKeyOwner(ImGuiKey_DownArrow, plotId);
+        }
 
         // ── Axis labels ───────────────────────────────────────────────
         if (!xLabel_.empty())
@@ -215,6 +239,12 @@ void TimeSeriesChart::Render() {
         else
             ImPlot::SetupAxisLimits(ImAxis_X1, 0, frameCounter_ > 0 ? frameCounter_ : 1,
                                     ImPlotCond_Once);
+        // Apply a keyboard pan/zoom computed last frame (one-frame override, the
+        // same mechanism as the min-span floor below).
+        if (xLimPending_) {
+            ImPlot::SetupAxisLimits(ImAxis_X1, pendXMin_, pendXMax_, ImPlotCond_Always);
+            xLimPending_ = false;
+        }
 
         // Y axis behavior:
         //  • auto-fit + range-fit (default): Y rescales to data inside the visible
@@ -304,9 +334,134 @@ void TimeSeriesChart::Render() {
         ImPlotRect lim = ImPlot::GetPlotLimits(ImAxis_X1, ImAxis_Y1);
         lastXMin_ = lim.X.Min;
         lastXMax_ = lim.X.Max;
+
+        // ── Keyboard pan/zoom + value readout (plot nav-focused) ─────────
+        if (plotFocused) {
+            const double span = lim.X.Max - lim.X.Min;
+            const bool ctrl = ImGui::GetIO().KeyCtrl;
+            if (ctrl && crosshairFmt_) {
+                // Ctrl+Left/Right: step the keyboard cursor across the primary
+                // series' data points for an exact-value readout (below).
+                if (!series_.empty() && !series_[0].points.empty()) {
+                    const auto& pts = series_[0].points;
+                    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+                        kbCursorActive_ = true;
+                        double next = kbCursorX_;
+                        for (auto& [ts, v] : pts)
+                            if (ts > kbCursorX_ && (next <= kbCursorX_ || ts < next))
+                                next = ts;
+                        kbCursorX_ = next > kbCursorX_ ? next : kbCursorX_;
+                    }
+                    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
+                        kbCursorActive_ = true;
+                        double prev = kbCursorX_;
+                        for (auto& [ts, v] : pts)
+                            if (ts < kbCursorX_ && (prev >= kbCursorX_ || ts > prev))
+                                prev = ts;
+                        kbCursorX_ = prev < kbCursorX_ ? prev : kbCursorX_;
+                    }
+                    if (kbCursorActive_ && kbCursorX_ == 0.0 && !pts.empty())
+                        kbCursorX_ = pts.front().first;
+                }
+            } else {
+                // Left/Right pan 10% of the visible span; Up/Down zoom ±10%
+                // about the centre; Home re-fits both axes.
+                if (panEnabled_) {
+                    double shift = 0.0;
+                    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+                        shift += span * 0.1;
+                    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+                        shift -= span * 0.1;
+                    if (shift != 0.0) {
+                        pendXMin_ = lim.X.Min + shift;
+                        pendXMax_ = lim.X.Max + shift;
+                        xLimPending_ = true;
+                    }
+                }
+                if (zoomEnabled_) {
+                    double zoom = 0.0;
+                    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+                        zoom = -0.1; // zoom in
+                    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+                        zoom = 0.1; // zoom out
+                    if (zoom != 0.0) {
+                        const double mid = 0.5 * (lim.X.Min + lim.X.Max);
+                        const double half = 0.5 * span * (1.0 + zoom);
+                        pendXMin_ = mid - half;
+                        pendXMax_ = mid + half;
+                        xLimPending_ = true;
+                    }
+                }
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_Home))
+                fitPending_ = true;
+            if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+                kbCursorActive_ = false;
+        }
+
+        // Exact-value readout at the keyboard cursor (crosshair parity for
+        // keyboard users): a tag on the X axis plus an annotation with the same
+        // formatted text the hover tooltip shows.
+        if (kbCursorActive_ && crosshairFmt_) {
+            std::vector<double> values;
+            for (auto& s : series_) {
+                if (s.points.empty()) {
+                    values.push_back(0);
+                    continue;
+                }
+                double best = s.points[0].second;
+                double bestDist = std::abs(s.points[0].first - kbCursorX_);
+                for (auto& [ts, v] : s.points) {
+                    double d = std::abs(ts - kbCursorX_);
+                    if (d < bestDist) {
+                        bestDist = d;
+                        best = v;
+                    }
+                }
+                values.push_back(best);
+            }
+            const std::string tip = crosshairFmt_(kbCursorX_, values);
+            const ImVec4 accent = ImGui::GetStyleColorVec4(ImGuiCol_NavCursor);
+            ImPlot::TagX(kbCursorX_, accent, "%s", "");
+            ImPlot::Annotation(kbCursorX_, 0.5 * (lim.Y.Min + lim.Y.Max), accent, ImVec2(10, 0),
+                               true, "%s", tip.c_str());
+        }
+
+        // Hover readout — moved inside the plot scope: IsPlotHovered/
+        // GetPlotMousePos are only valid between BeginPlot and EndPlot (the old
+        // post-EndPlot call was an API misuse hidden by short-circuiting).
+        if (crosshairFmt_ && plotHovered) {
+            ImPlotPoint mouse = ImPlot::GetPlotMousePos();
+            std::vector<double> values;
+            for (auto& s : series_) {
+                if (s.points.empty()) {
+                    values.push_back(0);
+                    continue;
+                }
+                double best = s.points[0].second;
+                double bestDist = std::abs(s.points[0].first - mouse.x);
+                for (auto& [ts, v] : s.points) {
+                    double d = std::abs(ts - mouse.x);
+                    if (d < bestDist) {
+                        bestDist = d;
+                        best = v;
+                    }
+                }
+                values.push_back(best);
+            }
+            std::string tip = crosshairFmt_(mouse.x, values);
+            ImGui::SetTooltip("%s", tip.c_str());
+        }
+
         ImPlot::EndPlot();
     }
     ImPlot::PopStyleColor(4);
+
+    // Visible focus ring: ImPlot draws no nav highlight, so a keyboard user
+    // otherwise cannot tell the plot has focus.
+    if (plotFocused)
+        ImGui::GetWindowDrawList()->AddRect(plotRectMin, plotRectMax,
+                                            ImGui::GetColorU32(ImGuiCol_NavCursor), 0.f, 0, 2.f);
 
     // ImPlotFlags_Crosshairs draws the guide lines but also sets the OS cursor to
     // None (hiding it). Restore the arrow while hovering so the user keeps both the
@@ -314,29 +469,6 @@ void TimeSeriesChart::Render() {
     // after ImPlot's EndPlot for this frame.
     if (crosshair_ && plotHovered)
         ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
-
-    if (crosshairFmt_ && ImPlot::IsPlotHovered()) {
-        ImPlotPoint mouse = ImPlot::GetPlotMousePos();
-        std::vector<double> values;
-        for (auto& s : series_) {
-            if (s.points.empty()) {
-                values.push_back(0);
-                continue;
-            }
-            double best = s.points[0].second;
-            double bestDist = std::abs(s.points[0].first - mouse.x);
-            for (auto& [ts, v] : s.points) {
-                double d = std::abs(ts - mouse.x);
-                if (d < bestDist) {
-                    bestDist = d;
-                    best = v;
-                }
-            }
-            values.push_back(best);
-        }
-        std::string tip = crosshairFmt_(mouse.x, values);
-        ImGui::SetTooltip("%s", tip.c_str());
-    }
 
     // NOTE: the legend is now rendered by ImPlot inside the plot (draggable);
     // the old static bottom legend strip was removed in favor of it.

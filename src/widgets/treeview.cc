@@ -149,7 +149,14 @@ void TreeView::RenderNode(TreeNode& node, int depth) {
     // the tree (ListItem — the closest role to a selectable tree row).
     ReportAccessible(a11y::Role::ListItem, treeItemFocused, node.label);
 
-    if (treeItemClicked && !treeItemToggled) {
+    // Keyboard selection: Enter on the nav-focused row selects (Space keeps ImGui's
+    // built-in expand/collapse on branches — Windows-Explorer semantics). Key state
+    // is frame-global, so pairing it with the row's captured focus flag is exact.
+    const bool treeItemNavSelected =
+        treeItemFocused && (ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
+                            ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false));
+
+    if ((treeItemClicked && !treeItemToggled) || treeItemNavSelected) {
         if (multiSelect_) {
             auto it = std::find(selected_.begin(), selected_.end(), id);
             if (it != selected_.end()) {

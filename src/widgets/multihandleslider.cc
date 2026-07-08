@@ -1,6 +1,8 @@
 #include <unigui/fx/animation.h>
 #include <unigui/widgets/multihandleslider.h>
 
+#include <imgui_internal.h> // SetKeyOwner (key ownership while nav-focused)
+
 #include <cmath>
 
 namespace unigui {
@@ -52,12 +54,47 @@ void MultiHandleSlider::Render() {
     // ── Tick handles ─────────────────────────────────────────────────────
     ImGui::SetCursorScreenPos(ImVec2(barX, barY - 16.f));
     ImGui::SetNextItemAllowOverlap();
-    ImGui::InvisibleButton(GetName().c_str(), ImVec2(barW, 32.f));
-    ReportAccessible(a11y::Role::Slider, ImGui::IsItemFocused(), std::to_string(ticks_.size()));
+    // EnableNav makes the slider Tab-reachable — it was keyboard-dead before.
+    ImGui::InvisibleButton(GetName().c_str(), ImVec2(barW, 32.f), ImGuiButtonFlags_EnableNav);
+    const bool zoneFocused = ImGui::IsItemFocused();
+    ReportAccessible(a11y::Role::Slider, zoneFocused, std::to_string(ticks_.size()));
 
     bool hovered = ImGui::IsItemHovered();
     bool active = ImGui::IsItemActive();
     float mouseX = ImGui::GetIO().MousePos.x;
+
+    // ── Keyboard editing ─────────────────────────────────────────────────
+    // While focused, own the arrows so nav doesn't move focus away: Up/Down
+    // cycle the selected handle, Left/Right move it (Ctrl = ×10 step); the
+    // selected handle gets a nav-colored ring below.
+    if (zoneFocused && !ticks_.empty()) {
+        const ImGuiID zoneId = ImGui::GetItemID();
+        ImGui::SetKeyOwner(ImGuiKey_LeftArrow, zoneId);
+        ImGui::SetKeyOwner(ImGuiKey_RightArrow, zoneId);
+        ImGui::SetKeyOwner(ImGuiKey_UpArrow, zoneId);
+        ImGui::SetKeyOwner(ImGuiKey_DownArrow, zoneId);
+
+        navTick_ = navTick_ < 0 ? 0 : navTick_ % (int) ticks_.size();
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+            navTick_ = (navTick_ + 1) % (int) ticks_.size();
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+            navTick_ = navTick_ == 0 ? (int) ticks_.size() - 1 : navTick_ - 1;
+
+        const float step = (range / 100.f) * (ImGui::GetIO().KeyCtrl ? 10.f : 1.f);
+        float move = 0.f;
+        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+            move += step;
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+            move -= step;
+        if (move != 0.f) {
+            auto& t = ticks_[navTick_];
+            t.position = t.position + move;
+            t.position = t.position < rangeMin_ ? rangeMin_
+                                                : (t.position > rangeMax_ ? rangeMax_ : t.position);
+            if (onChange_)
+                onChange_(t.id, t.position);
+        }
+    }
 
     for (int i = 0; i < (int) ticks_.size(); ++i) {
         auto& t = ticks_[i];
@@ -84,6 +121,9 @@ void MultiHandleSlider::Render() {
         // ── Draw handle ──────────────────────────────────────────────
         dl->AddCircleFilled(ImVec2(tx, barY), 8.f, t.color);
         dl->AddCircle(ImVec2(tx, barY), 8.f, IM_COL32_WHITE, 0, 2.f);
+        // Ring on the keyboard-selected handle while the slider has nav focus.
+        if (zoneFocused && i == navTick_)
+            dl->AddCircle(ImVec2(tx, barY), 11.f, ImGui::GetColorU32(ImGuiCol_NavCursor), 0, 2.f);
 
         // ── Index label ──────────────────────────────────────────────
         char label[16];

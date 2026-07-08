@@ -233,6 +233,12 @@ private:
     double minYSpan_ = 0.0;    // 0 = disabled; else Y-axis height floor (auto-fit only)
     double lastXMin_ = -1e300; // visible X window cached from the previous frame,
     double lastXMax_ = 1e300;  // used to scope the min-span Y fit (see Render)
+    // Keyboard layer (nav-focused plot): one-frame pan/zoom overrides + readout cursor.
+    bool fitPending_ = false;  // Home pressed -> SetNextAxesToFit next frame
+    bool xLimPending_ = false; // arrow pan/zoom -> SetupAxisLimits(Always) next frame
+    double pendXMin_ = 0.0, pendXMax_ = 0.0;
+    bool kbCursorActive_ = false; // Ctrl+arrows readout cursor (Esc clears)
+    double kbCursorX_ = 0.0;
     bool xRangeSet_ = false;
     double xMin_ = 0, xMax_ = 1;
     std::string xLabel_, yLabel_;

@@ -90,11 +90,15 @@ void Markdown::RenderInline(const std::string& text) {
             if (endBracket != std::string::npos && endParen != std::string::npos) {
                 std::string linkText = text.substr(i + 1, endBracket - i - 1);
                 std::string url = text.substr(endBracket + 2, endParen - endBracket - 2);
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.5f, 1.0f, 1.0f));
-                ImGui::TextUnformatted(linkText.c_str());
-                ImGui::PopStyleColor();
-                if (ImGui::IsItemClicked() && linkCallback_)
+                // TextLink is a real focusable item: keyboard nav can Tab to it and
+                // activate with Space/Enter (colored text + IsItemClicked was
+                // keyboard-dead). Returns true for both mouse click and nav-activate.
+                ImGui::PushID(static_cast<int>(i)); // identical link texts need distinct IDs
+                ImGui::PushStyleColor(ImGuiCol_TextLink, ImVec4(0.3f, 0.5f, 1.0f, 1.0f));
+                if (ImGui::TextLink(linkText.c_str()) && linkCallback_)
                     linkCallback_(url);
+                ImGui::PopStyleColor();
+                ImGui::PopID();
                 ImGui::SameLine(0, 0);
                 i = endParen + 1;
                 continue;

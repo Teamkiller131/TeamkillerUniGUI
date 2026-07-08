@@ -117,6 +117,7 @@ private:
     int activeFrom_ = -1, activeTo_ = -1;
     ImU32 fillColor_ = 0;
     int draggingIndex_ = -1;
+    int focusIndex_ = 0; // keyboard-selected handle (Up/Down cycles)
     float barWidth_ = 0;
     float barLocalX_ = 0;
     float leftPanelWidth_ = 120.0f;

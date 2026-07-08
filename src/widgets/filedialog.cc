@@ -227,12 +227,17 @@ void FileDialog::Render() {
             const std::string label = (e.isDir ? "[DIR]  " : "       ") + e.name;
             if (ImGui::Selectable(label.c_str(), isSel, ImGuiSelectableFlags_AllowDoubleClick)) {
                 const bool dbl = ImGui::IsMouseDoubleClicked(0);
+                // Keyboard nav-activation (Space/Enter on the focused row) reports
+                // pressed with the mouse elsewhere — there is no nav double-click, so
+                // treat it as "open": descend into a directory / confirm a file.
+                // Mouse behavior is unchanged (single-click selects, double opens).
+                const bool navActivated = !ImGui::IsItemHovered();
                 if (e.isDir) {
-                    if (dbl)
+                    if (dbl || navActivated)
                         enterDir = e.name;
                 } else {
                     SelectFile(e.name);
-                    if (dbl)
+                    if (dbl || navActivated)
                         doConfirm = true;
                 }
             }

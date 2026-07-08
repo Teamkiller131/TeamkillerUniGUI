@@ -77,6 +77,7 @@ private:
     float rangeMin_ = 0.f, rangeMax_ = 100.f;
     float barHeight_ = 8.f;
     int activeTick_ = -1;
+    int navTick_ = 0; // keyboard-selected handle (Up/Down cycles)
     TickChangedFn onChange_;
     TickOverlayFn overlayFn_;
     float markerPos_ = 0.f;

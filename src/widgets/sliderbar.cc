@@ -115,9 +115,50 @@ void SliderBar::Render() {
         float totalHeight = barHeight + handleRadius * 2.0f + 8.0f;
         ImVec2 barSize(barAreaWidth, totalHeight);
 
-        // Invisible button for the entire bar interaction zone
-        ImGui::InvisibleButton((GetName() + "##sliderbar_zone").c_str(), barSize);
-        ReportAccessible(a11y::Role::Slider, ImGui::IsItemFocused(), std::to_string(currentLots_));
+        // Invisible button for the entire bar interaction zone. EnableNav makes it
+        // Tab-reachable (the built-in nav cursor draws the focus ring), unlocking
+        // the keyboard path below — the bar was previously keyboard-dead.
+        ImGui::InvisibleButton((GetName() + "##sliderbar_zone").c_str(), barSize,
+                               ImGuiButtonFlags_EnableNav);
+        const bool zoneFocused = ImGui::IsItemFocused();
+        ReportAccessible(a11y::Role::Slider, zoneFocused, std::to_string(currentLots_));
+
+        // ── Keyboard editing ───────────────────────────────────────────────
+        // While the zone is focused, own the arrows so nav doesn't move focus
+        // away — they edit the slider instead: Up/Down cycle the handle,
+        // Left/Right adjust its lots (Ctrl = ×10), Home/End jump to 0/max.
+        if (zoneFocused && !ticks_.empty()) {
+            const ImGuiID zoneId = ImGui::GetItemID();
+            ImGui::SetKeyOwner(ImGuiKey_LeftArrow, zoneId);
+            ImGui::SetKeyOwner(ImGuiKey_RightArrow, zoneId);
+            ImGui::SetKeyOwner(ImGuiKey_UpArrow, zoneId);
+            ImGui::SetKeyOwner(ImGuiKey_DownArrow, zoneId);
+
+            focusIndex_ = std::clamp(focusIndex_, 0, static_cast<int>(ticks_.size()) - 1);
+            if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+                focusIndex_ = (focusIndex_ + 1) % static_cast<int>(ticks_.size());
+            if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+                focusIndex_ =
+                    focusIndex_ == 0 ? static_cast<int>(ticks_.size()) - 1 : focusIndex_ - 1;
+
+            const int step = ImGui::GetIO().KeyCtrl ? 10 : 1;
+            int target = ticks_[focusIndex_].futuresLots;
+            if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+                target += step;
+            if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+                target -= step;
+            if (ImGui::IsKeyPressed(ImGuiKey_Home))
+                target = 0;
+            if (ImGui::IsKeyPressed(ImGuiKey_End))
+                target = maxValue_;
+            target = std::clamp(target, 0, maxValue_);
+            if (target != ticks_[focusIndex_].futuresLots) {
+                ticks_[focusIndex_].futuresLots = target;
+                unsaved_ = true;
+                if (onChanged_)
+                    onChanged_(ticks_);
+            }
+        }
 
         auto* dl = ImGui::GetWindowDrawList();
 
@@ -240,6 +281,10 @@ void SliderBar::Render() {
             // White border when dragging
             if (i == draggingIndex_) {
                 dl->AddCircle(hPos, radius, IM_COL32(0xFF, 0xFF, 0xFF, 0xFF), 0, 2.0f);
+            }
+            // Ring on the keyboard-selected handle while the zone has nav focus.
+            if (i == focusIndex_ && zoneFocused) {
+                dl->AddCircle(hPos, radius + 3.0f, ImGui::GetColorU32(ImGuiCol_NavCursor), 0, 2.0f);
             }
         }
     }

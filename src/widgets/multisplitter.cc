@@ -176,8 +176,16 @@ void MultiSplitter::Render() {
                 ImGui::Button(handleID, ImVec2(avail.x, kHandleThickness));
                 ImGui::PopStyleColor();
                 if (ImGui::IsItemActive()) {
-                    float deltaRatio =
-                        panelSpace > 0.0f ? ImGui::GetIO().MouseDelta.y / panelSpace : 0.0f;
+                    float deltaPx = ImGui::GetIO().MouseDelta.y;
+                    // Keyboard path: nav-activate the handle (hold Space/Enter),
+                    // then Up/Down resize; nav movement is suspended while the
+                    // item is active so the arrows are free. Mouse drag was the
+                    // only resize path before.
+                    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+                        deltaPx -= panelSpace * 0.02f;
+                    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+                        deltaPx += panelSpace * 0.02f;
+                    float deltaRatio = panelSpace > 0.0f ? deltaPx / panelSpace : 0.0f;
                     panels_[i].ratio += deltaRatio;
                     panels_[i + 1].ratio -= deltaRatio;
                     if (panels_[i].ratio < minRatio) {
@@ -196,8 +204,13 @@ void MultiSplitter::Render() {
                 ImGui::Button(handleID, ImVec2(kHandleThickness, avail.y));
                 ImGui::PopStyleColor();
                 if (ImGui::IsItemActive()) {
-                    float deltaRatio =
-                        panelSpace > 0.0f ? ImGui::GetIO().MouseDelta.x / panelSpace : 0.0f;
+                    float deltaPx = ImGui::GetIO().MouseDelta.x;
+                    // Keyboard path — see the horizontal branch above.
+                    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+                        deltaPx -= panelSpace * 0.02f;
+                    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+                        deltaPx += panelSpace * 0.02f;
+                    float deltaRatio = panelSpace > 0.0f ? deltaPx / panelSpace : 0.0f;
                     panels_[i].ratio += deltaRatio;
                     panels_[i + 1].ratio -= deltaRatio;
                     if (panels_[i].ratio < minRatio) {

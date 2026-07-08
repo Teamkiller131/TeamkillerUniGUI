@@ -1,6 +1,39 @@
 ## [Unreleased]
 
 ### Added
+- **Forms & validation in the component idiom** (roadmap — framework-idiom deepening).
+  New `dsl::FormComponent` + `dsl::FormField<T>` (`<unigui/dsl/form_component.h>`,
+  header-only like the rest of the component layer): a `FormField` is a validated
+  `State` cell — value, chainable rule list (`Required`/`MinLength`/`Range`/custom
+  `Rule`), a *touched* flag, and a reactive error message (first failing rule wins).
+  The component exposes `FormValid()` and the `Submit()` gate: touch everything (so
+  errors become visible — the standard appear-on-submit UX), revalidate, and call
+  `OnSubmit()` only when the whole form passes. `field.Node()` renders a ready-made
+  bound row (InputText/CheckBox + danger-coloured error line) for string/bool fields.
+  Field writes flow through the normal `State` dirty tracking, so the form re-Builds
+  exactly when needed. Documented in `docs/FRAMEWORK.md` §8; 10 headless tests.
+- **Keyboard-only navigation audit — all 86 retained widgets, 11 confirmed gaps fixed**
+  (roadmap — the last a11y item). A full adversarially-verified sweep classified every
+  widget (49 keyboard-OK by construction, 26 display-only) and confirmed 11 real gaps,
+  now all fixed:
+  - **keyboard-dead → operable**: `Tag` (activation now fires on nav-activate, not just
+    mouse click), `SegmentedControl` (segments are Tab-reachable via nav-enabled items
+    + focus ring), `Markdown` links (real `TextLink` items — focusable, Space/Enter
+    activates, underline + focus ring), `Splitter`/`MultiSplitter` (nav-activate the
+    divider, then arrows resize), `SliderBar` and `MultiHandleSlider` (Tab reaches the
+    bar; Up/Down cycle the handle — ring marks it; Left/Right adjust, Ctrl = fast step;
+    Home/End jump on SliderBar).
+  - **partial → complete**: `FileDialog` (Space/Enter on a focused row now enters a
+    directory / confirms a file — subfolders were unreachable in SelectFolder mode),
+    `SearchBox` (Down/Up move a highlight through the suggestions, Enter accepts;
+    the list is now a real window, which also makes mouse clicks work — tooltips
+    carry `NoInputs`, so clicking a suggestion NEVER worked), `TreeView` (Enter
+    selects the focused row through the same single/multi-select state machine;
+    Space keeps ImGui's expand/collapse), `TimeSeriesChart` (arrows pan, Up/Down zoom,
+    Home re-fits, Ctrl+arrows step an exact-value readout cursor across data points
+    with an in-plot annotation, plus a visible focus ring).
+  - 4 new driven keyboard tests on the test-engine harness (Tag, SegmentedControl,
+    TreeView, Splitter) alongside the existing 5; test-engine suite 1315/1315.
 - **Platform-aware system font fallback** (roadmap — the standing font item). The font
   manager's system-font probing grew from "one hardcoded path + one Linux retry" into
   per-platform candidate lists: `LoadSystemEmoji` now probes the common Noto Color Emoji
@@ -17,6 +50,15 @@
   presets-v2 tail item).
 
 ### Fixed
+- **`SearchBox` suggestions are now clickable at all.** The autocomplete list rendered
+  in a tooltip window — and tooltips carry `NoInputs`, so the `Selectable` rows never
+  received a click: picking a suggestion by mouse silently did nothing. The list is
+  now a real (input-participating) window; found by the keyboard-nav audit while
+  adding the keyboard path.
+- **`TimeSeriesChart` no longer calls `IsPlotHovered`/`GetPlotMousePos` after
+  `EndPlot()`.** The crosshair readout block ran outside the plot scope — an ImPlot
+  API misuse (debug assert) that stayed hidden only because the short-circuiting
+  `crosshairFmt_` guard rarely held. The readout moved inside the plot.
 - **`fonts::Manager::Unload` no longer double-frees font data.** Every file-loaded font
   is registered with `FontDataOwnedByAtlas=true` (the atlas frees the buffer at
   `DestroyContext`/rebuild), yet `Unload` also `IM_FREE`d it — an access violation

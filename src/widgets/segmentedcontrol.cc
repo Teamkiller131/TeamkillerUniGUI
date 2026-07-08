@@ -88,7 +88,12 @@ void SegmentedControl::Render() {
 
         ImGui::PushID(static_cast<int>(i));
         ImGui::SetCursorScreenPos(segMin);
-        const bool pressed = ImGui::InvisibleButton("##seg", ImVec2(w, h)) && enabled;
+        // EnableNav opts the segment into keyboard nav: Tab/arrows reach it,
+        // Space/Enter activates through the same `pressed` path as a click, and
+        // the built-in nav cursor draws a focus ring. Without it the control
+        // was keyboard-dead.
+        const bool pressed =
+            ImGui::InvisibleButton("##seg", ImVec2(w, h), ImGuiButtonFlags_EnableNav) && enabled;
         const bool hovered = ImGui::IsItemHovered();
         anyFocused = anyFocused || ImGui::IsItemFocused();
         ImGui::PopID();

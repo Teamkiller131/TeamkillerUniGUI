@@ -294,10 +294,11 @@ the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bu
 - **No multi-context story.** ~9 `::Instance()` singletons (EventBus/StyleEngine/fonts/
   plugins/Settings/…) assume one UI per process — fine today, a wall for embedding two
   independent UniGUI surfaces or parallel test isolation.
-- **Keyboard-only nav audit + in-the-wild screen-reader validation** (Narrator/VoiceOver/
-  Orca) remain the last a11y items; the keyboard interaction tests seeded the former.
-- **Font manager probes a hardcoded Linux emoji path** on every platform (harmless
-  warning off-Linux); the web build has no system CJK/emoji fonts at all.
+- ~~Keyboard-only nav audit~~ **done** (86 widgets audited, 11 gaps fixed, driven
+  keyboard tests); **in-the-wild screen-reader validation** (Narrator/VoiceOver/Orca)
+  remains the last a11y item — it needs a human at a real screen reader.
+- ~~Font manager hardcoded-path probe~~ **done** (per-distro candidates + `LoadSystemCJK`;
+  the web build intentionally skips system fonts — load one explicitly there).
 - **Software-GL renders crash inside Mesa** (`llvmpipe`/`softpipe` segfault in
   `libgallium` during `RenderDrawData` — a driver bug, absent on hardware GL), so the
   Linux smoke verifies bring-up + pixel-readback on the frames that survive.
@@ -508,10 +509,12 @@ _**Landed (4.2.0–4.3.1) — every backend is now real and online.**_
   render without a GPU); **(c) P2 · L — a GPU-capable runner** for full renders on the
   rest, with **golden-image snapshot diffing** on top for regressions beyond "is the
   frame blank".
-- **P3 · S — Platform-aware font fallback.** The font manager probes a hardcoded Linux
-  emoji path (`/usr/share/fonts/.../NotoColorEmoji.ttf`) on every OS; make it
-  platform-aware, and offer an opt-in CJK font merge for the web build (which has no
-  system fonts).
+- ~~**P3 · S — Platform-aware font fallback.**~~ **Done.** Per-platform candidate lists
+  (Debian/Arch/Fedora/BSD Noto locations; `%WINDIR%` on Windows) + a new
+  `LoadSystemCJK()` glyph-fallback merge (YaHei/PingFang/Noto-CJK/WenQuanYi; CJK
+  ideographs, kana, Hangul, punctuation, full-width forms). The web build documents
+  the skip (no system fonts on MEMFS — load a font explicitly). Fixed en route:
+  `Manager::Unload` double-free, empty-atlas MergeMode assert.
 - **P1 · M — Performance budget & benchmarks.** _In progress._ Trading-model
   benchmarks landed (`tests/trading/bench_test.cc`): `OrderBook` under 200k
   price deltas + 5k full-book snapshots, and `OhlcSeries` over 1M ticks +
@@ -743,8 +746,15 @@ Track these over time to know the plan is working:
      (done: clang-tidy `bugprone-*` enforced + wrapper-coverage `--threshold 95`; remaining
      tail: promote more tidy families as the tree is cleaned, lcov job stays advisory),
      ~~fluent `With*` rollout~~ (done: 63 classes → `FluentWidget<T>`, +250 `With*`,
-     compile-time pinned), **keyboard-only nav audit**, **platform-aware font fallback**,
-     and the **framework-idiom deepening** driven by real apps.
+     compile-time pinned), ~~keyboard-only nav audit~~ (done: all 86 widgets audited —
+     49 OK, 26 display-only, 11 confirmed gaps all fixed + 4 driven keyboard tests;
+     in-the-wild screen-reader validation remains the human-in-the-loop tail),
+     ~~platform-aware font fallback~~ (done: per-distro emoji candidates + new
+     `LoadSystemCJK`, %WINDIR% honored, web no-op; killed an `Unload` double-free
+     en route), and ~~framework-idiom deepening~~ (first increment done:
+     `FormComponent`/`FormField<T>` — forms/validation as components, FRAMEWORK.md §8;
+     next: the routing/URL story and devtools beyond the inspector, as real apps
+     drive requirements).
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
 - Re-scope horizons at each release: promote, demote, or split items as reality

@@ -21,27 +21,59 @@ void SearchBox::Render() {
     ReportAccessible(a11y::Role::Input, itemFocused, query_);
     if (changed) {
         query_ = buf_;
+        selIdx_ = -1; // new query -> new match list, drop the old highlight
         if (onChange_)
             onChange_(query_);
     }
 
-    if (!query_.empty() && ImGui::IsItemActive()) {
-        auto matches = GetMatches();
+    // Suggestion list. A real window (not a tooltip: tooltips carry NoInputs, so
+    // clicks never reached the Selectables) driven from the InputText's keyboard
+    // state: Down/Up move a highlight while typing (a single-line InputText does
+    // not consume the vertical arrows), Enter accepts the highlighted match on
+    // the deactivation frame, Esc just closes (deactivate without Enter).
+    const bool active = ImGui::IsItemActive();
+    const bool deactivated = ImGui::IsItemDeactivated();
+    if (!query_.empty() && (active || deactivated)) {
+        const auto matches = GetMatches();
         if (!matches.empty()) {
-            ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y));
-            ImGui::BeginTooltip();
-            for (auto& m : matches) {
-                if (ImGui::Selectable(m.c_str())) {
-                    query_ = m;
-                    snprintf(buf_, sizeof(buf_), "%s", m.c_str());
-                    if (onSelect_)
-                        onSelect_(m);
+            const int n = (int) matches.size();
+            if (selIdx_ >= n)
+                selIdx_ = n - 1;
+            if (active) {
+                if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+                    selIdx_ = (selIdx_ + 1) % n;
+                if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+                    selIdx_ = selIdx_ <= 0 ? n - 1 : selIdx_ - 1;
+
+                ImGui::SetNextWindowPos(
+                    ImVec2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y));
+                ImGui::Begin("##sbsuggest", nullptr,
+                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_AlwaysAutoResize |
+                                 ImGuiWindowFlags_NoFocusOnAppearing);
+                for (int i = 0; i < n; ++i) {
+                    if (ImGui::Selectable(matches[i].c_str(), i == selIdx_))
+                        Accept(matches[i]);
                 }
+                ImGui::End();
             }
-            ImGui::EndTooltip();
+            if (deactivated && ImGui::IsKeyPressed(ImGuiKey_Enter) && selIdx_ >= 0 && selIdx_ < n) {
+                Accept(matches[selIdx_]);
+            }
         }
     }
+    if (!active && !deactivated)
+        selIdx_ = -1; // list closed
     ImGui::PopID();
+}
+
+void SearchBox::Accept(const std::string& m) {
+    query_ = m;
+    snprintf(buf_, sizeof(buf_), "%s", m.c_str());
+    selIdx_ = -1;
+    if (onSelect_)
+        onSelect_(m);
 }
 
 std::vector<std::string> SearchBox::GetMatches() const {
