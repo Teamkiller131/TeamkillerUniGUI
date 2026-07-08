@@ -379,6 +379,18 @@ if(UNIGUI_MODULE_NETWORK)
     target_link_libraries(test_url_parse PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_url_parse PRIVATE cxx_std_23)
     gtest_discover_tests(test_url_parse)
+
+    # Live loopback transport tests: httplib + ixwebsocket propagate transitively from
+    # unigui (linked PUBLIC), so no extra find_package is needed here.
+    add_executable(test_http_loopback network/http_loopback_test.cc)
+    target_link_libraries(test_http_loopback PRIVATE GTest::gtest GTest::gtest_main unigui)
+    target_compile_features(test_http_loopback PRIVATE cxx_std_23)
+    gtest_discover_tests(test_http_loopback)
+
+    add_executable(test_ws_loopback network/ws_loopback_test.cc)
+    target_link_libraries(test_ws_loopback PRIVATE GTest::gtest GTest::gtest_main unigui)
+    target_compile_features(test_ws_loopback PRIVATE cxx_std_23)
+    gtest_discover_tests(test_ws_loopback)
 endif()
 
 # v3.0 fx tests

@@ -16,6 +16,7 @@
 #include <unigui/network/network.h>
 
 #include <httplib.h>
+#include <ixwebsocket/IXNetSystem.h>
 #include <string>
 
 namespace unigui::network {
@@ -182,6 +183,12 @@ WebSocketClient::~WebSocketClient() {
 }
 
 bool WebSocketClient::Connect(const std::string& url) {
+    // IXWebSocket needs the platform net stack initialised (WSAStartup on Windows; a
+    // no-op elsewhere) before any socket is opened. Do it once per process via a
+    // function-local static — thread-safe, idempotent, and paid only when a client is
+    // actually used. Without it, ws_.start() silently fails to connect on Windows.
+    static const bool netInit = ix::initNetSystem();
+    (void) netInit;
     ws_.setUrl(url);
     ws_.start();
     return true;

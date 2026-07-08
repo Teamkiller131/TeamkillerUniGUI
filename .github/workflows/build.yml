@@ -278,9 +278,12 @@ jobs:
     - name: Build (compiles the module sources incl. the POSIX shmem path)
       run: cmake --build build
     - name: Test the module suites (headless-safe; module failures gate CI)
+      # Includes the live loopback round-trips (ZMQ inproc PUB/SUB, HTTP GET/POST, WS echo)
+      # so the transport paths are proven on Linux, not just compiled — they bind an
+      # OS-assigned free loopback port, so they're safe on the shared runner.
       run: |
         ctest --test-dir build --output-on-failure \
-          -R "^DBOpen|^DBTest|^DBMove|^StoreTest|^IPCTest|^ShmemTest|^UrlParseTest|^WebSocketClientTest"
+          -R "^DBOpen|^DBTest|^DBMove|^StoreTest|^IPCTest|^IPCChannelTest|^ShmemTest|^UrlParseTest|^WebSocketClientTest|^HttpLoopbackTest|^WebSocketLoopbackTest"
 
   # Interaction-test lane: the Dear ImGui test engine drives real clicks/typing/tab
   # switches through UniGUI widgets (tests/integration_test.cc) — behavior coverage the

@@ -1,7 +1,7 @@
 ## [Unreleased]
 
 ### Added
-- **Config / IPC module maturity** (roadmap #2 — hardening the optional modules).
+- **Config / IPC / network module maturity** (roadmap #2 — hardening the optional modules).
   - **`config::Store::LoadINI` now parses real-world INI**, not just bare `key=value`:
     `;`- and `#`-prefixed comment lines and blank lines are skipped, keys and values are
     whitespace-trimmed on both sides, and `[section]` headers namespace the keys that
@@ -15,6 +15,12 @@
     `Server`→`Client` publish/subscribe round-trip test (the channel classes had *zero*
     behavioural tests before), plus LoadINI comment/section/trim tests and a
     Shutdown-then-reuse cycle test.
+  - **Live loopback transport tests for the network module** — an in-process httplib
+    server drives `HttpClient::Get`/`Post` (GET body, POST echo, a real 404), and an
+    in-process `ix::WebSocketServer` echo proves `WebSocketClient` completes a genuine
+    handshake and round-trips a frame. These are the module's first end-to-end transport
+    tests — it previously had only URL-splitting and callback-thread-safety coverage.
+    Both bind an OS-assigned free loopback port, so parallel CI jobs never collide.
 - **UI presets v2** (roadmap H5 · P1 — the adoption multiplier). Two new scaffolds plus a
   built-in command palette, all on the existing `unigui::presets` module:
   - **LoginPage** — a centred sign-in/connect card (logo slot, username, password with the
@@ -48,6 +54,14 @@
   wheel via `SetItemKeyOwner(ImGuiKey_MouseWheelY)` so a surrounding scroll
   region does not also move; an open popup keeps normal list scrolling. Applies
   to every `im::Combo` call site.
+
+### Fixed
+- **`network::WebSocketClient` now connects on Windows out of the box.** The client never
+  initialised IXWebSocket's platform net stack (WSAStartup), so `Connect()` silently
+  failed on Windows unless the host app happened to call `ix::initNetSystem()` by hand.
+  `Connect()` now does it lazily on first use (once per process, thread-safe; a no-op on
+  POSIX). Surfaced by the new live WebSocket loopback test — the first code path that ever
+  opened a real connection.
 
 ### Changed
 - **`ipc::Server::OnReceive` is now a documented no-op.** A `Server` is a ZMQ `PUB`
