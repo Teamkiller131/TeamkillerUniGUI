@@ -23,12 +23,15 @@ jobs:
     - name: Test
       run: ctest --preset windows-msvc-release --output-on-failure
 
-  # DX12 compile coverage. UNIGUI_BACKEND_DX12 defaults OFF and every other CI lane sets it
-  # OFF, so dx12_renderer.cc (250+ lines of D3D12) and the app.cc UNIGUI_HAS_DX12 paths compile
-  # NOWHERE in CI and could rot until someone builds them by hand. This lane turns DX12 ON
-  # (alongside the default DX11) and builds the library so a break fails CI — mirroring how
-  # linux-modules covers the module + POSIX-shmem sources. It's a COMPILE gate: DX12 device
-  # creation needs a real GPU the headless runner lacks, so the render path isn't run here.
+  # DX12 compile + WARP-render coverage. UNIGUI_BACKEND_DX12 defaults OFF and every other
+  # CI lane sets it OFF, so dx12_renderer.cc (250+ lines of D3D12) and the app.cc
+  # UNIGUI_HAS_DX12 paths compile NOWHERE else in CI and could rot until someone builds them
+  # by hand. This lane turns DX12 ON (alongside the default DX11) and builds the library so a
+  # break fails CI — mirroring how linux-modules covers the module sources. It is ALSO a
+  # render gate: the headless runner has no GPU, but WARP (Microsoft's software rasteriser)
+  # creates a real D3D11/D3D12 device without one, so the test_dx_warp smoke actually creates
+  # a device, renders to an offscreen target, and reads the pixels back — proving the
+  # device/command-list/fence path executes, not merely that it compiles.
   windows-dx12:
     runs-on: windows-latest
     steps:
@@ -46,6 +49,10 @@ jobs:
       run: cmake --preset windows-msvc-debug -DUNIGUI_BACKEND_DX12=ON
     - name: Build the library (compiles dx12_renderer.cc + the app.cc DX12 paths)
       run: cmake --build --preset windows-msvc-debug --target unigui
+    - name: Build the WARP render smoke (DX11 + DX12)
+      run: cmake --build --preset windows-msvc-debug --target test_dx_warp
+    - name: Run the WARP render smoke (real device + offscreen render + readback, no GPU)
+      run: ctest --preset windows-msvc-debug --output-on-failure -R DXWarpSmoke
 
   linux:
     runs-on: ubuntu-latest

@@ -254,15 +254,16 @@ _Closed since the 4.4.5 full-project audit (kept here as one line for the record
 the 0-byte integration test, doc-stamp drift (now CI-gated), the data-widget a11y hole,
 the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bug._
 
-- **Runtime backend coverage: 2 of 7.** GLFW+OpenGL3 (Linux llvmpipe pixel-readback) and
-  the wasm/WebGL2 path (headless-browser smoke: Playwright + SwiftShader, canvas-only
-  pixel verdict, hard-gated) are runtime-verified on every push. The other five (DX11/
-  DX12/Vulkan/SDL3/Metal) remain build-only, and WebGPU's browser runtime stays a
-  best-effort step (blank under the runner's SwiftShader — flips to a hard gate when the
-  runner grows an adapter). The 4.4.2 leak batch proves this class of bug is real.
-  Next, cheapest first: a **WARP software-adapter** run for DX11/DX12 on the Windows
-  runner (real device creation + render, no GPU needed), then a GPU-capable runner for
-  the rest + **golden-image diffing** on top.
+- **Runtime backend coverage: 4 of 7.** GLFW+OpenGL3 (Linux llvmpipe pixel-readback), the
+  wasm/WebGL2 path (headless-browser smoke: Playwright + SwiftShader, canvas-only pixel
+  verdict, hard-gated), and now **DX11 + DX12** (WARP software rasteriser: real device
+  create → offscreen render → GPU pixel readback, no GPU, in the `windows` / `windows-dx12`
+  lanes — post-4.6.0) are runtime-verified on every push. The remaining three
+  (Vulkan/SDL3/Metal) stay build-only, and WebGPU's browser runtime stays a best-effort
+  step (blank under the runner's SwiftShader — flips to a hard gate when the runner grows
+  an adapter). The 4.4.2 leak batch proves this class of bug is real. Next: a GPU-capable
+  runner for the rest + **golden-image diffing** on top, and a **windowed/swapchain** WARP
+  pass to extend the DX smoke from offscreen render to actual present.
 - ~~**ipc/network are safe but functionally unverified.**~~ **Resolved (c0cc2c5 + b22015a,
   post-4.6.0).** Loopback functional tests now cover all three paths — ZMQ pub/sub
   round-trip (`inproc://`), HTTP GET/POST against an in-process httplib server, and a
@@ -716,11 +717,14 @@ Track these over time to know the plan is working:
      the proven harness. Remaining tail: a README **screenshot** of `preset_demo` (best cut
      from a Playwright shot of the wasm build, reusing the smoke infra) and preset-level
      theming knobs (accent/density) — let real usage steer which scaffold comes next.
-  2. ~~**Module maturity**~~ **(done, c0cc2c5 + b22015a):** ipc/network now have loopback
-     functional tests gating CI. Remaining in this tier: the **WARP DX run** (H4b — P2·M) — a
-     software-adapter DX11/DX12 device-create + render on the Windows runner, converting the
-     last "safe but unproven" backend surface into "proven".
-  3. The standing small items as opportunity allows: **coverage/clang-tidy hard gates**,
+  2. ~~**Module maturity**~~ **(done, c0cc2c5 + b22015a)** and ~~**the WARP DX run**~~
+     **(done, post-4.6.0):** ipc/network now have loopback functional tests gating CI, and
+     DX11/DX12 now create a real WARP software device + render + read pixels back headlessly
+     in the `windows` / `windows-dx12` lanes (`tests/backend/dx_warp_smoke_test.cc`) — moving
+     runtime backend coverage to 4/7. Remaining backend-proof tail: a GPU-capable runner for
+     Vulkan/SDL3/Metal + golden-image diffing, and a windowed/swapchain WARP pass (offscreen
+     → present).
+  3. The standing small items are now the lead frontier: **coverage/clang-tidy hard gates**,
      **keyboard-only nav audit**, **fluent `With*` rollout**, **platform-aware font
      fallback**, and the **framework-idiom deepening** driven by real apps.
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and

@@ -1,6 +1,20 @@
 ## [Unreleased]
 
 ### Added
+- **CI: WARP headless render smoke for the DX11/DX12 backends** (roadmap H4b — the last
+  unproven-backend surface). The DX backends previously only *compiled* in CI — the
+  assumption was that a D3D device needs a GPU the headless runner lacks. WARP
+  (Microsoft's software rasteriser, present on every supported Windows) disproves that:
+  the new `tests/backend/dx_warp_smoke_test.cc` creates a **real** D3D11 and D3D12 device on
+  the WARP adapter with **no GPU**, renders to an offscreen RGBA8 target, and reads the
+  pixels back off the GPU — asserting the cleared colour survived the round trip. It
+  exercises the same primitives the renderers use (`D3D11CreateDevice` /
+  `ClearRenderTargetView` / `Map` for DX11; DXGI factory → `EnumWarpAdapter` →
+  `D3D12CreateDevice` → command-list clear → `ExecuteCommandLists` → fence → texture→buffer
+  readback for DX12). The `windows-dx12` CI lane grew from a compile gate into a compile
+  **+ render** gate; the DX11 half also runs in the default `windows` lane. Each half
+  self-gates on `UNIGUI_HAS_DX11` / `UNIGUI_HAS_DX12`, so the file is empty when the backend
+  is off.
 - **Config / IPC / network module maturity** (roadmap #2 — hardening the optional modules).
   - **`config::Store::LoadINI` now parses real-world INI**, not just bare `key=value`:
     `;`- and `#`-prefixed comment lines and blank lines are skipped, keys and values are
