@@ -1,6 +1,6 @@
 # CMake Modules & Optional Sub-systems
 
-TeamkillerUniGUI (v4.6.0) is built as a **single library target** (`unigui`) whose
+TeamkillerUniGUI (v4.7.0) is built as a **single library target** (`unigui`) whose
 feature surface is sliced into **modules**. Each module is a `UNIGUI_MODULE_*`
 CMake option that toggles a group of source files in `src/CMakeLists.txt` and,
 where relevant, pulls in extra [vcpkg](https://vcpkg.io) dependencies. Modules

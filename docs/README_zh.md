@@ -1,6 +1,6 @@
 # TeamkillerUniGUI 文档索引
 
-> **4.6.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
+> **4.7.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
 
 ## 入门与总览
 

@@ -1,6 +1,6 @@
 # Theming & CSS Styling Guide
 
-TeamkillerUniGUI (v4.6.0) ships a layered theming system on top of Dear ImGui's
+TeamkillerUniGUI (v4.7.0) ships a layered theming system on top of Dear ImGui's
 `ImGuiStyle`. It is built from four composable layers:
 
 1. **Geometry tokens** — unified rounding / spacing / border sizes shared by every theme (`theme::StyleTokens`).

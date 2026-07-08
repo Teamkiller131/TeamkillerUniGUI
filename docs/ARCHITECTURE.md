@@ -1,6 +1,6 @@
 # UniGUI Architecture
 
-A big-picture tour of how **TeamkillerUniGUI** (v4.6.0) is put together — the
+A big-picture tour of how **TeamkillerUniGUI** (v4.7.0) is put together — the
 layers that sit between your application code and [Dear ImGui](https://github.com/ocornut/imgui),
 and how to choose the right one for any given piece of UI.
 

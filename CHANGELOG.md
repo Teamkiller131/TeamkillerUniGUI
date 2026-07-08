@@ -1,4 +1,4 @@
-## [Unreleased]
+## [4.7.0] - 2026-07-08
 
 ### Added
 - **Fluent `With*` API across the entire retained widget layer** (roadmap — the fluent

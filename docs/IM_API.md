@@ -1,6 +1,6 @@
 # Immediate-Mode API Reference — `unigui::im`
 
-> Reference for TeamkillerUniGUI **4.6.0** · header: [`include/unigui/im/im.h`](../include/unigui/im/im.h)
+> Reference for TeamkillerUniGUI **4.7.0** · header: [`include/unigui/im/im.h`](../include/unigui/im/im.h)
 
 The `unigui::im` namespace is TeamkillerUniGUI's **immediate-mode layer**: a
 thin, themed, allocation-light set of free functions that wrap Dear ImGui so the
