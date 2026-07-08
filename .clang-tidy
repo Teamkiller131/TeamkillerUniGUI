@@ -6,19 +6,22 @@
 #   cmake --build build/... --target lint  # lint only (fast)
 #   run-clang-tidy -p build/...            # manual run
 
+# NB: `Checks` below is a YAML `>` folded block scalar — `#` does NOT start a comment
+# inside it (a `#` line would be folded into the check string and silently break the
+# list). Keep the block bare; rationale for the non-obvious exclusions lives here:
+#   -bugprone-branch-clone  — false positive under conditional compilation: with
+#       backends disabled, every CreateBackend() switch case collapses to
+#       `return {nullptr, nullptr}`; the branches diverge once a backend is enabled.
+#   -bugprone-crtp-constructor-accessibility — stylistic hardening on
+#       FluentWidget<Derived>; making the CRTP base ctor private + friending each
+#       Derived would touch every fluent widget for no correctness gain.
 Checks: >
   -*,
   bugprone-*,
   -bugprone-easily-swappable-parameters,
   -bugprone-narrowing-conversions,
   -bugprone-implicit-widening-of-multiplication-result,
-  # False positive under conditional compilation: with backends disabled, every
-  # switch case in CreateBackend() collapses to `return {nullptr, nullptr}`, which
-  # only looks like cloned branches in the lint build (they diverge when a backend
-  # is enabled). Design is intentional, so this one stays advisory.
   -bugprone-branch-clone,
-  # Stylistic hardening on FluentWidget<Derived> — making the CRTP base ctor private
-  # + friending each Derived would touch every fluent widget for no correctness gain.
   -bugprone-crtp-constructor-accessibility,
   performance-*,
   -performance-avoid-endl,
