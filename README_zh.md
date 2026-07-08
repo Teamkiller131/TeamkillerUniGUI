@@ -5,11 +5,15 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-4.7.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-1268-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-1270-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-95-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
 C++23 Dear ImGui 封装库——提供统一的明暗主题引擎、高层组件、声明式 DSL、CSS 样式引擎、插件系统与 EventBus。支持 7 种渲染后端：GLFW+OpenGL3、SDL3+Vulkan、DX11、DX12、Metal、WebGPU 和 Emscripten。
+
+![preset_demo — AppShell 脚手架承载 Dashboard 预设（暗色主题）](docs/assets/preset_demo.png)
+
+*[`examples/preset_demo`](examples/preset_demo/main.cc)：[AppShell](docs/PRESETS.md) 脚手架（菜单栏、侧边导航、状态栏、Ctrl+P 命令面板）承载 Dashboard 预设，入口由 LoginPage 登录页守卫——应用代码约六十行。*
 
 ## 快速开始
 

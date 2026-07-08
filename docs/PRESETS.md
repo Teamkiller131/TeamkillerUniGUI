@@ -2,6 +2,10 @@
 
 _Module: `UNIGUI_MODULE_PRESETS` (default **ON**) · namespace `unigui::presets` · headers `<unigui/presets/*.h>`_
 
+![preset_demo — AppShell scaffold hosting the Dashboard preset (dark theme)](assets/preset_demo.png)
+
+*`examples/preset_demo`: AppShell (menu bar, sidebar, status bar, Ctrl+P command palette) hosting Dashboard behind a LoginPage gate — about sixty lines of application code.*
+
 The preset layer sits **above** the widget library: prefab compositions of existing
 widgets with sensible theming, layout, and accessibility defaults, so a complete,
 decent-looking application takes minutes, not days. Every preset:

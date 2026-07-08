@@ -5,11 +5,15 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-4.7.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-1268-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-1270-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-95-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
 A C++23 Dear ImGui wrapper providing a unified dark+light theme engine, high-level widget components, declarative DSL, CSS styling, plugin system, and EventBus. Supports 7 backends: GLFW+OpenGL3, SDL3+Vulkan, DX11, DX12, Metal, WebGPU, and Emscripten.
+
+![preset_demo — AppShell scaffold hosting the Dashboard preset (dark theme)](docs/assets/preset_demo.png)
+
+*[`examples/preset_demo`](examples/preset_demo/main.cc): an [AppShell](docs/PRESETS.md) scaffold (menu bar, sidebar navigation, status bar, Ctrl+P command palette) hosting the Dashboard preset behind a LoginPage gate — about sixty lines of application code.*
 
 ## Quick Start
 
