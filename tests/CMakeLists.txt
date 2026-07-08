@@ -69,7 +69,7 @@ gtest_discover_tests(test_integration)
 # application framework, and keyboard-only navigation. These targets exist ONLY when
 # the engine is compiled in (unlike test_integration's always-present visible skip).
 if(UNIGUI_TEST_ENGINE)
-    foreach(_itest widgets framework keyboard)
+    foreach(_itest widgets framework keyboard presets)
         add_executable(test_interaction_${_itest} interaction/${_itest}_interaction_test.cc)
         target_link_libraries(test_interaction_${_itest} PRIVATE
             GTest::gtest
@@ -268,7 +268,7 @@ endif()
 
 # UI preset scaffolds (headless: state/fluent/a11y assertions + render smoke).
 if(UNIGUI_MODULE_PRESETS AND UNIGUI_MODULE_WIDGETS)
-    foreach(_tp app_shell settings_page dashboard master_detail log_console)
+    foreach(_tp app_shell settings_page dashboard master_detail log_console login_page wizard_flow)
         add_executable(test_preset_${_tp} presets/${_tp}_test.cc)
         target_link_libraries(test_preset_${_tp} PRIVATE GTest::gtest GTest::gtest_main unigui)
         target_compile_features(test_preset_${_tp} PRIVATE cxx_std_23)

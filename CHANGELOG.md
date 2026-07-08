@@ -1,6 +1,20 @@
 ## [Unreleased]
 
 ### Added
+- **UI presets v2** (roadmap H5 · P1 — the adoption multiplier). Two new scaffolds plus a
+  built-in command palette, all on the existing `unigui::presets` module:
+  - **LoginPage** — a centred sign-in/connect card (logo slot, username, password with the
+    visibility toggle + strength meter, remember-me, full-width submit, status/error line).
+    Enter submits; a `SetBusy` state disables the form during auth; the password value never
+    reaches the a11y layer or announcements; error status announces assertively.
+  - **WizardFlow** — a validated multi-step flow: step indicator, `[Cancel] [Back]
+    [Next | Finish]` row, **per-step validation gating** (`Next()`/Finish disabled while a
+    step's `canAdvance` gate fails), localizable labels, and a11y announcements per step.
+  - **AppShell command palette** — `WithCommandPalette()` adds a built-in **Ctrl+P** palette;
+    every page auto-registers as "Go to <label>" and app commands attach via `AddCommand`.
+  - **Interaction tests for the presets** on the test-engine harness (driven clicks/typing
+    through AppShell sidebar, SettingsPage toggle, LoginPage submit, WizardFlow gating), plus
+    headless state/a11y tests. `examples/preset_demo` grew a login gate + a setup-wizard page.
 - **CI: headless-browser render smoke for the wasm artifacts** (roadmap H4a — the first
   item of the re-scoped plan). `scripts/web_smoke.mjs` loads `web_demo` in headless
   Chromium (Playwright + SwiftShader ANGLE for a deterministic software render), waits

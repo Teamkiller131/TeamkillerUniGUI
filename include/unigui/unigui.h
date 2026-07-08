@@ -128,8 +128,10 @@
 #include <unigui/presets/app_shell.h>
 #include <unigui/presets/dashboard.h>
 #include <unigui/presets/log_console.h>
+#include <unigui/presets/login_page.h>
 #include <unigui/presets/master_detail.h>
 #include <unigui/presets/settings_page.h>
+#include <unigui/presets/wizard_flow.h>
 #endif
 #include <unigui/app/app.h>
 #include <unigui/fonts/gradient_text.h>

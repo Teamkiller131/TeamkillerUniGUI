@@ -373,6 +373,8 @@ if(UNIGUI_MODULE_PRESETS)
             presets/dashboard.cc
             presets/master_detail.cc
             presets/log_console.cc
+            presets/login_page.cc
+            presets/wizard_flow.cc
         )
         target_compile_definitions(unigui PUBLIC UNIGUI_HAS_PRESETS)
         message(STATUS "UI presets enabled")
