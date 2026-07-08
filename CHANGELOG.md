@@ -1,6 +1,20 @@
 ## [Unreleased]
 
 ### Added
+- **Config / IPC module maturity** (roadmap #2 — hardening the optional modules).
+  - **`config::Store::LoadINI` now parses real-world INI**, not just bare `key=value`:
+    `;`- and `#`-prefixed comment lines and blank lines are skipped, keys and values are
+    whitespace-trimmed on both sides, and `[section]` headers namespace the keys that
+    follow them as `section.key` (keys before any section stay flat). Previously every
+    non-`=` line, comment, and stray whitespace was folded into the key/value verbatim.
+  - **`ipc::Shutdown()`** — a new free function that cleanly terminates the process-wide
+    ZMQ context (for a graceful exit or before unloading the module as a DLL). Idempotent,
+    and a fresh context is created lazily for any channel constructed afterward. The
+    context previously leaked until process teardown with no way to tear it down early.
+  - **First functional coverage of the ZMQ PUB/SUB path** — an in-process (`inproc://`)
+    `Server`→`Client` publish/subscribe round-trip test (the channel classes had *zero*
+    behavioural tests before), plus LoadINI comment/section/trim tests and a
+    Shutdown-then-reuse cycle test.
 - **UI presets v2** (roadmap H5 · P1 — the adoption multiplier). Two new scaffolds plus a
   built-in command palette, all on the existing `unigui::presets` module:
   - **LoginPage** — a centred sign-in/connect card (logo slot, username, password with the
@@ -36,6 +50,11 @@
   to every `im::Combo` call site.
 
 ### Changed
+- **`ipc::Server::OnReceive` is now a documented no-op.** A `Server` is a ZMQ `PUB`
+  (broadcast) socket and can never receive, so passing it a callback now logs a
+  `UNIGUI_LOG_WARN` (pointing you at a `Client`/`SUB`) instead of silently accepting a
+  handler that could never fire. The `Channel` one-way PUB→SUB topology is now documented
+  in the header.
 - **`im::Combo` dropdown indicator restyled** — replaced ImGui's bulky
   full-height square arrow *button* with a slim, softened, DPI-scaled chevron
   painted in the right padding (`NoArrowButton` + custom draw). Smaller and
