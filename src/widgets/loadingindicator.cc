@@ -5,7 +5,7 @@
 #include <imgui_internal.h>
 namespace unigui {
 LoadingIndicator::LoadingIndicator(std::string n, float r)
-        : Widget(std::move(n))
+        : FluentWidget<LoadingIndicator>(std::move(n))
         , radius_(r) {}
 void LoadingIndicator::SetActive(bool a) {
     active_ = a;

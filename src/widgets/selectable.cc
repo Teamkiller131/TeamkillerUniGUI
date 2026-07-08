@@ -5,7 +5,7 @@
 namespace unigui {
 
 Selectable::Selectable(std::string name, std::string label, bool selected)
-        : Widget(std::move(name))
+        : FluentWidget<Selectable>(std::move(name))
         , label_(std::move(label))
         , selected_(selected)
         , clicked_(false) {}

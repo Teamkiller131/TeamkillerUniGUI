@@ -6,7 +6,7 @@
 namespace unigui {
 
 Panel::Panel(std::string name, std::string title)
-        : Widget(std::move(name))
+        : FluentWidget<Panel>(std::move(name))
         , title_(std::move(title))
         , wrap_(true) {}
 

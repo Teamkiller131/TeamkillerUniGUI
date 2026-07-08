@@ -15,7 +15,7 @@
 namespace unigui {
 
 DirPath::DirPath(std::string name, std::string label)
-        : Widget(std::move(name))
+        : FluentWidget<DirPath>(std::move(name))
         , label_(std::move(label)) {}
 std::string DirPath::GetPath() const {
     return path_;

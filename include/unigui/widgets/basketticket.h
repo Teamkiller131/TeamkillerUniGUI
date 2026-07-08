@@ -22,10 +22,11 @@ namespace unigui {
 /// and the host calls `SetRows()` with parsed rows), and order routing /
 /// replenish-liquidate logic stays in the controller (`onSubmit` hands back the
 /// rows). Column editors are configured through `Grid()`.
-template <class T> class BasketTicket : public Widget {
+template <class T> class BasketTicket : public FluentWidget<BasketTicket<T>> {
 public:
     BasketTicket(std::string name, std::vector<typename DataTable<T>::ColumnDef> columns)
-            : Widget(std::move(name)), grid_(GetName() + "_grid", std::move(columns)) {
+            : FluentWidget<BasketTicket<T>>(std::move(name))
+            , grid_(this->GetName() + "_grid", std::move(columns)) {
         grid_.SetMultiSelect(true);
     }
 
@@ -48,8 +49,8 @@ public:
     std::size_t ValidCount() const {
         if (!validator_)
             return rows_.size();
-        return static_cast<std::size_t>(
-            std::count_if(rows_.begin(), rows_.end(), [this](const T& r) { return validator_(r); }));
+        return static_cast<std::size_t>(std::count_if(
+            rows_.begin(), rows_.end(), [this](const T& r) { return validator_(r); }));
     }
     bool AllValid() const { return !rows_.empty() && ValidCount() == rows_.size(); }
 
@@ -76,10 +77,16 @@ public:
         return *this;
     }
 
+    // ── Fluent (chainable) helpers — return BasketTicket& via CRTP base ──
+    BasketTicket& WithRows(std::vector<T> rows) {
+        SetRows(std::move(rows));
+        return *this;
+    }
+
     void Render() override {
-        if (!IsVisible())
+        if (!this->IsVisible())
             return;
-        ImGui::PushID(GetName().c_str());
+        ImGui::PushID(this->GetName().c_str());
 
         // ── Toolbar ─────────────────────────────────────────────────────
         if (ImGui::Button("+ Add") && rowFactory_)

@@ -9,7 +9,7 @@
 
 namespace unigui {
 
-class SliderBar : public Widget {
+class SliderBar : public FluentWidget<SliderBar> {
 public:
     struct Tick {
         int futuresLots = 0; // hand count
@@ -50,6 +50,64 @@ public:
     /// want to position widgets under handles).
     float GetBarLocalX() const { return barLocalX_; }
     float GetBarWidth() const { return barWidth_; }
+
+    // ── Fluent (chainable) helpers — return SliderBar& via CRTP base ───────
+    SliderBar& WithMaxValue(int maxLots) {
+        SetMaxValue(maxLots);
+        return *this;
+    }
+    SliderBar& WithTickColors(std::vector<ImU32> colors) {
+        SetTickColors(std::move(colors));
+        return *this;
+    }
+    SliderBar& WithTicks(std::vector<Tick> ticks) {
+        SetTicks(std::move(ticks));
+        return *this;
+    }
+    SliderBar& WithCurrentLots(int lots) {
+        SetCurrentLots(lots);
+        return *this;
+    }
+    SliderBar& WithActiveFill(int from, int to, ImU32 color) {
+        SetActiveFill(from, to, color);
+        return *this;
+    }
+    SliderBar& WithOnChanged(OnChanged fn) {
+        SetOnChanged(std::move(fn));
+        return *this;
+    }
+    SliderBar& WithLeftLabel(std::string label) {
+        SetLeftLabel(std::move(label));
+        return *this;
+    }
+    SliderBar& WithLeftSubLabel(std::string sub) {
+        SetLeftSubLabel(std::move(sub));
+        return *this;
+    }
+    SliderBar& WithOnAdd(std::function<void()> fn) {
+        SetOnAdd(std::move(fn));
+        return *this;
+    }
+    SliderBar& WithOnConfirm(std::function<void()> fn) {
+        SetOnConfirm(std::move(fn));
+        return *this;
+    }
+    SliderBar& WithOnRollback(std::function<void()> fn) {
+        SetOnRollback(std::move(fn));
+        return *this;
+    }
+    SliderBar& WithOnSubmit(std::function<void()> fn) {
+        SetOnSubmit(std::move(fn));
+        return *this;
+    }
+    SliderBar& WithLeftPanelWidth(float w) {
+        SetLeftPanelWidth(w);
+        return *this;
+    }
+    SliderBar& WithWarnRatio(float r) {
+        SetWarnRatio(r);
+        return *this;
+    }
 
 private:
     std::vector<Tick> ticks_;

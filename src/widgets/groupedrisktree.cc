@@ -1,6 +1,5 @@
-#include <unigui/widgets/groupedrisktree.h>
-
 #include <unigui/theme/color_tokens.h>
+#include <unigui/widgets/groupedrisktree.h>
 #include <unigui/widgets/pnltext.h> // GradedRole
 
 #include <imgui.h>
@@ -11,7 +10,7 @@
 namespace unigui {
 
 GroupedRiskTree::GroupedRiskTree(std::string name)
-        : Widget(std::move(name))
+        : FluentWidget<GroupedRiskTree>(std::move(name))
         , tree_(GetName() + "_tree") {}
 
 double GroupedRiskTree::ComputeRatio(const RiskNode& n, Rollup r) {
@@ -44,7 +43,8 @@ TreeNode GroupedRiskTree::BuildNode(const RiskNode& rn) const {
     const double ratio = ComputeRatio(rn, rollup_);
     const float clamped = static_cast<float>(ratio < 0.0 ? 0.0 : (ratio > 1.0 ? 1.0 : ratio));
     tn.progress = clamped;
-    tn.progressColor = ImGui::GetColorU32(theme::GetSemanticColor(GradedRole(ratio, warn_, danger_)));
+    tn.progressColor =
+        ImGui::GetColorU32(theme::GetSemanticColor(GradedRole(ratio, warn_, danger_)));
 
     char buf[16];
     std::snprintf(buf, sizeof(buf), "%.0f%%", ratio * 100.0);

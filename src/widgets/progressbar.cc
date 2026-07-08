@@ -7,7 +7,7 @@
 #include <cmath>
 namespace unigui {
 ProgressBar::ProgressBar(std::string name, float fraction)
-        : Widget(std::move(name))
+        : FluentWidget<ProgressBar>(std::move(name))
         , fraction_(fraction) {}
 void ProgressBar::Render() {
     if (!IsVisible())

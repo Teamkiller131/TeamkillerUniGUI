@@ -5,7 +5,7 @@
 namespace unigui {
 
 Label::Label(std::string name, std::string text)
-        : Widget(std::move(name))
+        : FluentWidget<Label>(std::move(name))
         , text_(std::move(text)) {}
 
 void Label::Render() {

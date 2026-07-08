@@ -2,10 +2,10 @@
 
 #include <imgui.h>
 
-#include "detail/combo_chevron.h"
-
 #include <algorithm>
 #include <cstdio>
+
+#include "detail/combo_chevron.h"
 
 namespace unigui {
 
@@ -23,7 +23,7 @@ float CalcComboWidth(const std::vector<std::string>& options, const char* previe
 } // namespace
 
 CascadingCombo::CascadingCombo(std::string name, std::vector<Level> levels)
-        : Widget(std::move(name))
+        : FluentWidget<CascadingCombo>(std::move(name))
         , levels_(std::move(levels)) {}
 
 void CascadingCombo::Render() {
@@ -65,7 +65,8 @@ void CascadingCombo::Render() {
             ImGui::SetTooltip("%s", level.label.c_str());
         if (level.selectedIndex != prev && onChanged_)
             onChanged_(lvl, level.selectedIndex);
-        ReportAccessible(a11y::Role::Combo, comboFocused, preview ? std::string(preview) : std::string());
+        ReportAccessible(a11y::Role::Combo, comboFocused,
+                         preview ? std::string(preview) : std::string());
     }
     ImGui::PopID();
 }

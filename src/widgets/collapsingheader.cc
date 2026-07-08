@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 CollapsingHeader::CollapsingHeader(std::string name, std::string label, bool default_open)
-        : Widget(std::move(name))
+        : FluentWidget<CollapsingHeader>(std::move(name))
         , label_(std::move(label))
         , open_(default_open) {}
 void CollapsingHeader::Render() {

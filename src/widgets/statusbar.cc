@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 StatusBar::StatusBar(std::string name, std::string text)
-        : Widget(std::move(name))
+        : FluentWidget<StatusBar>(std::move(name))
         , text_(std::move(text)) {}
 void StatusBar::Render() {
     if (!IsVisible())

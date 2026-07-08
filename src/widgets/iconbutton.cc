@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 IconButton::IconButton(std::string n, std::string i, std::string l)
-        : Widget(std::move(n))
+        : FluentWidget<IconButton>(std::move(n))
         , icon_(std::move(i))
         , label_(std::move(l)) {}
 void IconButton::SetIcon(std::string i) {

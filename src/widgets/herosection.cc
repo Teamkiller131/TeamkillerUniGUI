@@ -6,7 +6,7 @@
 namespace unigui {
 
 HeroSection::HeroSection(std::string name, std::string title, std::string subtitle)
-        : Widget(std::move(name))
+        : FluentWidget<HeroSection>(std::move(name))
         , title_(std::move(title))
         , subtitle_(std::move(subtitle)) {}
 

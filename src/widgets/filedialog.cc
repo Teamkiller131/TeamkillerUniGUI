@@ -88,7 +88,7 @@ std::string currentPathOr(const std::string& fallback) {
 } // namespace
 
 FileDialog::FileDialog(std::string name)
-        : Widget(std::move(name)) {
+        : FluentWidget<FileDialog>(std::move(name)) {
     dir_ = currentPathOr(".");
 }
 

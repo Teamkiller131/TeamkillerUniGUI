@@ -21,7 +21,7 @@ struct TimeSeriesDef {
 
 /// TimeSeriesChart — real-time time-series plot via implot.
 /// Supports sliding window, auto-fit Y axis, crosshair, legend.
-class TimeSeriesChart : public Widget {
+class TimeSeriesChart : public FluentWidget<TimeSeriesChart> {
 public:
     TimeSeriesChart(std::string name);
 
@@ -124,6 +124,90 @@ public:
     void SetRubberBandZoom(bool on) { rubberBandZoom_ = on; }
     int AddRefLine(std::string label, double value, ImU32 color);
     void RemoveRefLine(int id);
+
+    // ── Fluent (chainable) helpers — return TimeSeriesChart& via CRTP base ──────────
+    TimeSeriesChart& WithSeriesData(int seriesId, const std::vector<double>& xs,
+                                    const std::vector<double>& ys) {
+        SetSeriesData(seriesId, xs, ys);
+        return *this;
+    }
+    TimeSeriesChart& WithSlidingWindow(int maxPoints) {
+        SetSlidingWindow(maxPoints);
+        return *this;
+    }
+    TimeSeriesChart& WithMaxRenderPoints(int n) {
+        SetMaxRenderPoints(n);
+        return *this;
+    }
+    TimeSeriesChart& WithYAxisAutoFit(bool on) {
+        SetYAxisAutoFit(on);
+        return *this;
+    }
+    TimeSeriesChart& WithYRangeFit(bool on) {
+        SetYRangeFit(on);
+        return *this;
+    }
+    TimeSeriesChart& WithYAxisMinSpan(double span) {
+        SetYAxisMinSpan(span);
+        return *this;
+    }
+    TimeSeriesChart& WithYAxisRange(double min, double max) {
+        SetYAxisRange(min, max);
+        return *this;
+    }
+    TimeSeriesChart& WithXAxisRange(double min, double max) {
+        SetXAxisRange(min, max);
+        return *this;
+    }
+    TimeSeriesChart& WithXAxisLabel(const std::string& label) {
+        SetXAxisLabel(label);
+        return *this;
+    }
+    TimeSeriesChart& WithYAxisLabel(const std::string& label) {
+        SetYAxisLabel(label);
+        return *this;
+    }
+    TimeSeriesChart& WithCrosshairEnabled(bool on) {
+        SetCrosshairEnabled(on);
+        return *this;
+    }
+    TimeSeriesChart& WithLegendEnabled(bool on) {
+        SetLegendEnabled(on);
+        return *this;
+    }
+    TimeSeriesChart& WithPanEnabled(bool on) {
+        SetPanEnabled(on);
+        return *this;
+    }
+    TimeSeriesChart& WithZoomEnabled(bool on) {
+        SetZoomEnabled(on);
+        return *this;
+    }
+    TimeSeriesChart& WithGridColor(ImU32 c) {
+        SetGridColor(c);
+        return *this;
+    }
+    TimeSeriesChart& WithThemeBackground(bool on) {
+        SetThemeBackground(on);
+        return *this;
+    }
+    TimeSeriesChart& WithCrosshairFormatter(
+        std::function<std::string(double, const std::vector<double>&)> fn) {
+        SetCrosshairFormatter(std::move(fn));
+        return *this;
+    }
+    TimeSeriesChart& WithXAxisFormatter(std::function<int(double, char*, int, void*)> fn) {
+        SetXAxisFormatter(std::move(fn));
+        return *this;
+    }
+    TimeSeriesChart& WithSessionAxis(SessionAxis axis) {
+        SetSessionAxis(std::move(axis));
+        return *this;
+    }
+    TimeSeriesChart& WithRubberBandZoom(bool on) {
+        SetRubberBandZoom(on);
+        return *this;
+    }
 
 private:
     struct Series {

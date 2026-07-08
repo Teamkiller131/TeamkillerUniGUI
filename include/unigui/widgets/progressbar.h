@@ -7,7 +7,7 @@
 #include <string>
 
 namespace unigui {
-class ProgressBar : public Widget {
+class ProgressBar : public FluentWidget<ProgressBar> {
 public:
     enum State { Normal, Warning, Error };
     ProgressBar(std::string name, float fraction = 0.0f);
@@ -17,6 +17,24 @@ public:
     void SetState(State s);
     void SetOverlayText(std::string text);
     void SetGradient(float t1, ImU32 c1, float t2, ImU32 c2, ImU32 c3);
+
+    // ── Fluent (chainable) helpers — return ProgressBar& via CRTP base ──────────
+    ProgressBar& WithFraction(float f) {
+        SetFraction(f);
+        return *this;
+    }
+    ProgressBar& WithState(State s) {
+        SetState(s);
+        return *this;
+    }
+    ProgressBar& WithOverlayText(std::string text) {
+        SetOverlayText(std::move(text));
+        return *this;
+    }
+    ProgressBar& WithGradient(float t1, ImU32 c1, float t2, ImU32 c2, ImU32 c3) {
+        SetGradient(t1, c1, t2, c2, c3);
+        return *this;
+    }
 
 private:
     float fraction_;

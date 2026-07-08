@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 Separator::Separator(std::string n, std::string l)
-        : Widget(std::move(n))
+        : FluentWidget<Separator>(std::move(n))
         , label_(std::move(l)) {}
 void Separator::Render() {
     if (!IsVisible())

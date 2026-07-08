@@ -12,7 +12,7 @@ Toast& Toast::Instance() {
 }
 
 Toast::Toast(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<Toast>(std::move(name)) {}
 
 void Toast::SetPosition(int anchor, float offsetX, float offsetY) {
     anchor_ = anchor;

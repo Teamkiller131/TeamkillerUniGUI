@@ -5,7 +5,7 @@
 #include <algorithm>
 namespace unigui {
 TabWidget::TabWidget(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<TabWidget>(std::move(name)) {}
 void TabWidget::Render() {
     if (!IsVisible())
         return;

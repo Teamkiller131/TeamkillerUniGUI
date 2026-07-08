@@ -275,17 +275,22 @@ the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bu
 - **Interaction coverage is young.** 28 behavior tests exist on a proven harness, but
   ~19% of the suite is still smoke-only and the presets themselves have no driven-input
   tests yet. The harness makes growth mechanical.
-- **Fluent `With*` API is on ~12% of widgets** (~10/86 + the presets) despite being the
-  documented convention — an API-consistency debt CLAUDE.md currently overstates.
+- ~~**Fluent `With*` API is on ~12% of widgets.**~~ **Resolved (post-4.6.0).** The rollout
+  swept the whole retained layer: all 63 remaining direct-`Widget` classes (incl. the
+  `DataTable<T>`/`BasketTicket<T>` templates) now derive `FluentWidget<T>`, +250 `With*`
+  helpers landed for existing `Set*` config, and the CascadingCombo-style mid-chain
+  type-degradation is gone. `tests/widgets/fluent_rollout_test.cc` pins it with a
+  compile-time `static_assert` per class (base chainers must return `X&`).
 - **clang-tidy is now a hard gate on `bugprone-*`** (post-4.6.0): `.clang-tidy` sets
   `WarningsAsErrors: 'bugprone-*'` and the CI job dropped `continue-on-error`, so a new
   bugprone finding fails CI. The pre-existing bugprone findings were cleared first (four
   `(int)(x+0.5f)`→`std::lround`, two `Form::Deserialize` inc-in-condition lifts, `MasterDetail`
   optional guards) with two sub-checks excluded by rationale (branch-clone false positive,
-  crtp-accessibility stylistic). **Still advisory:** ~4,900 style warnings across the other
-  families (deliberate lowercase-suffix / brace-less-statement deviations — not bugs) and the
-  **coverage** gate (add `--threshold N`). Promote another family into the gate as the tree is
-  cleaned under it.
+  crtp-accessibility stylistic). The **wrapper-coverage** metric is also gated now
+  (`--threshold 95`, current 98.5%). **Still advisory:** ~4,900 style warnings across the
+  other tidy families (deliberate lowercase-suffix / brace-less-statement deviations — not
+  bugs) and the lcov line-coverage job. Promote another tidy family into the gate as the
+  tree is cleaned under it.
 - **No multi-context story.** ~9 `::Instance()` singletons (EventBus/StyleEngine/fonts/
   plugins/Settings/…) assume one UI per process — fine today, a wall for embedding two
   independent UniGUI surfaces or parallel test isolation.
@@ -551,10 +556,13 @@ Goal: broaden what apps can build without leaving the toolkit.
   with the channel-reuse constraint documented in the public header); and `LoadINI` now skips
   `;`/`#` comments, maps `[section]` headers to dotted keys, and trims key/value whitespace.
   An adversarial review→verify pass over the diff confirmed 0 defects.
-- **P2 · M — Fluent `With*` rollout.** The documented convention covers ~12% of widgets.
-  Sweep the retained layer: derive from `FluentWidget<T>` where missing and add `With*`
-  parity for existing `Set*` config (mechanical, additive, semver-minor), then fix the
-  CascadingCombo-style chains that break by returning `Widget&` mid-chain.
+- ~~**P2 · M — Fluent `With*` rollout.**~~ **Done (post-4.6.0).** Swept the retained layer
+  in one pass: 63 direct-`Widget` classes → `FluentWidget<T>` (incl. the `DataTable<T>`/
+  `BasketTicket<T>` templates via CRTP-on-template), +250 `With*` helpers for existing
+  `Set*` config, and the CascadingCombo-style `Widget&` mid-chain break fixed layer-wide.
+  Verified by `tests/widgets/fluent_rollout_test.cc`: a compile-time `static_assert` per
+  class (base chainer must return `X&` — fails on any plain-`Widget` regression) plus
+  runtime chain tests; full suite 1268/1268 green.
 
 - **P1 · L — Layout system.** _Started._ A header-only CSS-flexbox solver landed
   (`core/flex_layout.h`: `SolveFlex`) — pure and fully unit-tested. It now handles
@@ -655,9 +663,10 @@ These run in parallel with every horizon:
   `windows-msvc-debug-no-dx11` presets exercise the off-by-default module/backend code
   paths that the default build never touches.
 - **Wrapper-coverage tracking:** `scripts/coverage_vs_imgui.py` (_landed_)
-  reports the first-class-wrapped % of the ImGui practical surface each CI run
-  (advisory in `quality.yml`); the trend should move up, never down. Currently
-  **100%** of the practical surface. _Next: flip to a hard `--threshold` gate._
+  reports the first-class-wrapped % of the ImGui practical surface each CI run,
+  now enforced as a **hard `--threshold 95` gate** in `quality.yml` (currently
+  98.5% — headroom exists so a deliberate vcpkg imgui bump can land before the
+  wrapping catch-up, while a real regression fails CI).
 - **Trading module hygiene:** the library must build and pass tests with
   `UNIGUI_MODULE_TRADING=OFF`; trading widgets stay presentation-only; the
   models are header-light and unit-tested.
@@ -730,11 +739,12 @@ Track these over time to know the plan is working:
      runtime backend coverage to 4/7. Remaining backend-proof tail: a GPU-capable runner for
      Vulkan/SDL3/Metal + golden-image diffing, and a windowed/swapchain WARP pass (offscreen
      → present).
-  3. The standing small items are now the lead frontier: **coverage/clang-tidy hard gates**
-     (clang-tidy `bugprone-*` is now enforced — remaining: a coverage `--threshold`, and
-     promoting more tidy families as the tree is cleaned), **keyboard-only nav audit**,
-     **fluent `With*` rollout**, **platform-aware font fallback**, and the **framework-idiom
-     deepening** driven by real apps.
+  3. The standing small items are now the lead frontier: ~~coverage/clang-tidy hard gates~~
+     (done: clang-tidy `bugprone-*` enforced + wrapper-coverage `--threshold 95`; remaining
+     tail: promote more tidy families as the tree is cleaned, lcov job stays advisory),
+     ~~fluent `With*` rollout~~ (done: 63 classes → `FluentWidget<T>`, +250 `With*`,
+     compile-time pinned), **keyboard-only nav audit**, **platform-aware font fallback**,
+     and the **framework-idiom deepening** driven by real apps.
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
 - Re-scope horizons at each release: promote, demote, or split items as reality

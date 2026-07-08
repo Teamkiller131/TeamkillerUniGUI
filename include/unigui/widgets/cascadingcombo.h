@@ -7,7 +7,7 @@
 
 namespace unigui {
 
-class CascadingCombo : public Widget {
+class CascadingCombo : public FluentWidget<CascadingCombo> {
 public:
     // Arrangement of the per-level combo boxes.
     enum class Layout {
@@ -52,12 +52,24 @@ public:
     bool GetShowLabels() const { return showLabels_; }
 
     // ── Fluent configuration (chainable) ───────────────────────────────
+    CascadingCombo& WithLevels(std::vector<Level> levels) {
+        SetLevels(std::move(levels));
+        return *this;
+    }
+    CascadingCombo& WithOptions(int level, std::vector<std::string> options) {
+        SetOptions(level, std::move(options));
+        return *this;
+    }
     CascadingCombo& WithLayout(Layout layout) {
         SetLayout(layout);
         return *this;
     }
     CascadingCombo& WithItemWidth(float width) {
         SetItemWidth(width);
+        return *this;
+    }
+    CascadingCombo& WithItemWidth(int level, float width) {
+        SetItemWidth(level, width);
         return *this;
     }
     CascadingCombo& WithSpacing(float spacing) {
@@ -74,6 +86,15 @@ public:
     /// Render levels horizontally (SameLine between combos) instead of stacked.
     /// Convenience wrapper around SetLayout(Layout::Horizontal|Vertical).
     void SetHorizontal(bool on) { SetLayout(on ? Layout::Horizontal : Layout::Vertical); }
+    // Fluent counterparts (declared here because OnChanged is defined above).
+    CascadingCombo& WithOnChanged(OnChanged fn) {
+        SetOnChanged(std::move(fn));
+        return *this;
+    }
+    CascadingCombo& WithHorizontal(bool on) {
+        SetHorizontal(on);
+        return *this;
+    }
 
 private:
     std::vector<Level> levels_;

@@ -10,7 +10,7 @@
 namespace unigui {
 
 Window::Window(std::string name, std::string title)
-        : Widget(std::move(name))
+        : FluentWidget<Window>(std::move(name))
         , title_(std::move(title)) {}
 
 void Window::Render() {

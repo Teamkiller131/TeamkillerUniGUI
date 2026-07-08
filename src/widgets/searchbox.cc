@@ -8,7 +8,7 @@
 namespace unigui {
 
 SearchBox::SearchBox(std::string name, std::string hint)
-        : Widget(std::move(name))
+        : FluentWidget<SearchBox>(std::move(name))
         , hint_(std::move(hint)) {}
 
 void SearchBox::Render() {

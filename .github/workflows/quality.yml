@@ -88,14 +88,17 @@ jobs:
         # a bugprone-* finding (WarningsAsErrors in .clang-tidy) or a real
         # clang-diagnostic-error makes clang-tidy exit non-zero and fails the step.
         xargs clang-tidy-19 -p build --config-file=.clang-tidy --extra-arg=-std=gnu++23 < tidy_files.txt
-    - name: Wrapper coverage vs ImGui (advisory)
-      # Reports the first-class-wrapped %% of ImGui's practical surface (the
-      # "Wrapper coverage" success metric in DEVELOPMENT_PLAN.md). Advisory for
-      # now; the trend should move up, never down. Once stable, add
-      # `--threshold N` to turn it into a hard regression gate.
+    - name: Wrapper coverage vs ImGui (hard gate ≥95%)
+      # Gates the first-class-wrapped %% of ImGui's practical surface (the
+      # "Wrapper coverage" success metric in DEVELOPMENT_PLAN.md). Current figure is
+      # 98.5% (201/204); the threshold sits at 95 so a deliberate vcpkg imgui bump
+      # (which adds new practical functions and dilutes the %%) can land first and the
+      # wrapping catch-up follow — while an actual regression (dropping wrappers)
+      # fails CI. The imgui surface is baseline-pinned in vcpkg.json, so the figure
+      # cannot drift on its own.
       run: |
         python3 scripts/coverage_vs_imgui.py \
-          --imgui build/vcpkg_installed/x64-linux/include/imgui.h --list
+          --imgui build/vcpkg_installed/x64-linux/include/imgui.h --list --threshold 95
 
   coverage:
     runs-on: ubuntu-latest

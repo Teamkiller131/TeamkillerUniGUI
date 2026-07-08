@@ -9,7 +9,7 @@ namespace unigui {
 
 /// MultiSplitter — N-panel resizable layout with drag handles.
 /// Panels are added via AddPanel(ratio, content). Ratios sum to 1.0.
-class MultiSplitter : public Widget {
+class MultiSplitter : public FluentWidget<MultiSplitter> {
 public:
     enum Orientation { Horizontal, Vertical };
 
@@ -50,6 +50,16 @@ public:
     /// layout for a different splitter is ignored). Returns true if applied.
     /// Non-throwing on malformed input.
     bool RestoreLayout(const std::string& s);
+
+    // ── Fluent (chainable) helpers — return MultiSplitter& via CRTP base ──────────
+    MultiSplitter& WithRatios(const std::vector<float>& ratios) {
+        SetRatios(ratios);
+        return *this;
+    }
+    MultiSplitter& WithDesignRatios(const std::vector<float>& ratios) {
+        SetDesignRatios(ratios);
+        return *this;
+    }
 
 private:
     Orientation ori_;

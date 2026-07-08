@@ -1,6 +1,23 @@
 ## [Unreleased]
 
 ### Added
+- **Fluent `With*` API across the entire retained widget layer** (roadmap — the fluent
+  rollout). Every retained widget that still derived `Widget` directly — all **63** of
+  them, including the `DataTable<T>` / `BasketTicket<T>` class templates (CRTP-on-template)
+  — now derives `FluentWidget<T>`, and **+250 chainable `With*` helpers** landed as parity
+  for their existing `Set*` configuration. Two effects: (1) the base chainers
+  (`WithTooltip`/`WithEnabled`/`WithVisible`/…) now return the *derived* type everywhere,
+  so the CascadingCombo-style break — a base chainer mid-chain degrading the type to
+  `Widget&` and stopping the chain from continuing with a derived `With*` — is gone
+  layer-wide; (2) `w.WithLabel(…).WithOnClick(…)`-style one-expression configuration now
+  works on every widget, not ~12% of them. Purely additive (semver-minor): no signature
+  changed, no `Set*` removed. Pinned by `tests/widgets/fluent_rollout_test.cc` — a
+  compile-time `static_assert` per class that fails if any widget regresses to a plain
+  `Widget` base — plus runtime chain tests (suite: 1268/1268).
+- **CI: wrapper-coverage is now a hard gate** (`--threshold 95`). The
+  `coverage_vs_imgui.py` step in `quality.yml` fails the pipeline if the first-class
+  wrapped share of ImGui's practical surface drops below 95% (currently 98.5%; the
+  headroom lets a deliberate vcpkg imgui bump land before the wrapping catch-up).
 - **CI: WARP headless render smoke for the DX11/DX12 backends** (roadmap H4b — the last
   unproven-backend surface). The DX backends previously only *compiled* in CI — the
   assumption was that a D3D device needs a GPU the headless runner lacks. WARP

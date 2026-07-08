@@ -5,7 +5,7 @@
 namespace unigui {
 
 VirtualList::VirtualList(std::string name, int itemCount)
-        : Widget(std::move(name))
+        : FluentWidget<VirtualList>(std::move(name))
         , count_(itemCount) {}
 
 void VirtualList::Render() {

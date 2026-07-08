@@ -10,7 +10,7 @@ struct NotificationMsg {
     float duration = 3.0f;
     float elapsed = 0;
 };
-class Notification : public Widget {
+class Notification : public FluentWidget<Notification> {
 public:
     Notification(std::string name);
     void Render() override;

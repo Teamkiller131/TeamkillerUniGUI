@@ -5,7 +5,7 @@
 namespace unigui {
 
 Wizard::Wizard(std::string name, std::string title)
-        : Widget(std::move(name))
+        : FluentWidget<Wizard>(std::move(name))
         , title_(std::move(title)) {}
 
 void Wizard::AddStep(std::string name, std::string title, std::function<void()> renderFn) {

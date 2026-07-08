@@ -5,7 +5,7 @@
 #include <algorithm>
 namespace unigui {
 Image::Image(std::string n, void* t, float w, float h)
-        : Widget(std::move(n))
+        : FluentWidget<Image>(std::move(n))
         , tex_(t)
         , w_(w)
         , h_(h) {}

@@ -96,7 +96,7 @@ void SkipJsonWhitespace(const std::string& json, size_t& pos) {
 } // namespace
 
 Form::Form(std::string name, std::string title)
-        : Widget(std::move(name))
+        : FluentWidget<Form>(std::move(name))
         , title_(std::move(title)) {}
 
 void Form::AddTextField(std::string name, std::string label, bool required) {

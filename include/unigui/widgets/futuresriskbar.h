@@ -7,7 +7,7 @@
 
 namespace unigui {
 
-class FuturesRiskBar : public Widget {
+class FuturesRiskBar : public FluentWidget<FuturesRiskBar> {
 public:
     explicit FuturesRiskBar(std::string name);
 
@@ -19,6 +19,32 @@ public:
     void SetEstimatedRatio(double r);
     void SetOvernightRatio(double r);
     void SetAnimated(bool on);
+
+    // ── Fluent (chainable) helpers — return FuturesRiskBar& via CRTP base ──────────
+    FuturesRiskBar& WithAccountName(std::string name) {
+        SetAccountName(std::move(name));
+        return *this;
+    }
+    FuturesRiskBar& WithMarginText(std::string text) {
+        SetMarginText(std::move(text));
+        return *this;
+    }
+    FuturesRiskBar& WithActualRatio(double r) {
+        SetActualRatio(r);
+        return *this;
+    }
+    FuturesRiskBar& WithEstimatedRatio(double r) {
+        SetEstimatedRatio(r);
+        return *this;
+    }
+    FuturesRiskBar& WithOvernightRatio(double r) {
+        SetOvernightRatio(r);
+        return *this;
+    }
+    FuturesRiskBar& WithAnimated(bool on) {
+        SetAnimated(on);
+        return *this;
+    }
 
 private:
     std::string accountName_;

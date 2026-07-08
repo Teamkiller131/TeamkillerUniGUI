@@ -5,7 +5,7 @@
 #include <algorithm>
 namespace unigui {
 ListView::ListView(std::string name, std::vector<std::string> items)
-        : Widget(std::move(name))
+        : FluentWidget<ListView>(std::move(name))
         , items_(std::move(items)) {}
 void ListView::Render() {
     if (!IsVisible())

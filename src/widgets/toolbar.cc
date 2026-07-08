@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 ToolBar::ToolBar(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<ToolBar>(std::move(name)) {}
 void ToolBar::SetItems(std::vector<ToolBarItem> items) {
     items_ = std::move(items);
 }

@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 MenuBar::MenuBar(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<MenuBar>(std::move(name)) {}
 void MenuBar::SetMenus(std::vector<MenuDef> menus) {
     menus_ = std::move(menus);
 }

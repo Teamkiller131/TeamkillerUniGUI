@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 Tag::Tag(std::string n, std::string t, std::array<float, 3> c)
-        : Widget(std::move(n))
+        : FluentWidget<Tag>(std::move(n))
         , text_(std::move(t))
         , color_(c) {}
 void Tag::SetText(std::string t) {

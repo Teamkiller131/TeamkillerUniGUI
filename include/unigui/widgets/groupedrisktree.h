@@ -15,7 +15,7 @@ namespace unigui {
 /// the two things strategy tabs hand-roll: the **parent rollup** and the
 /// **warn/danger colouring**. Caller supplies pre-computed leaf ratios and
 /// labels; no unit/scaling assumptions are baked in (presentation-only).
-class GroupedRiskTree : public Widget {
+class GroupedRiskTree : public FluentWidget<GroupedRiskTree> {
 public:
     enum class Rollup { Worst, Mean, Sum };
 
@@ -44,6 +44,24 @@ public:
     /// Pure: the effective ratio of `n` under rollup `r` (leaf → its own ratio,
     /// parent → worst/mean/sum of children, recursively). Unit-testable.
     static double ComputeRatio(const RiskNode& n, Rollup r);
+
+    // ── Fluent (chainable) helpers — return GroupedRiskTree& via CRTP base ──────────
+    GroupedRiskTree& WithData(RiskNode root) {
+        SetData(std::move(root));
+        return *this;
+    }
+    GroupedRiskTree& WithRollup(Rollup r) {
+        SetRollup(r);
+        return *this;
+    }
+    GroupedRiskTree& WithThresholds(double warn, double danger) {
+        SetThresholds(warn, danger);
+        return *this;
+    }
+    GroupedRiskTree& WithHideRoot(bool on) {
+        SetHideRoot(on);
+        return *this;
+    }
 
 private:
     TreeNode BuildNode(const RiskNode& rn) const;

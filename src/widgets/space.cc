@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 DockSpace::DockSpace(std::string n)
-        : Widget(std::move(n)) {}
+        : FluentWidget<DockSpace>(std::move(n)) {}
 void DockSpace::Render() {
     if (!IsVisible())
         return;

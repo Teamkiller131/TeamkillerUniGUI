@@ -16,7 +16,7 @@ static LRESULT CALLBACK TrayWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 #endif
 namespace unigui {
 TrayIcon::TrayIcon(std::string name, std::string title, int iconId)
-        : Widget(std::move(name))
+        : FluentWidget<TrayIcon>(std::move(name))
         , title_(std::move(title))
         , iconId_(iconId) {
 #ifdef _WIN32

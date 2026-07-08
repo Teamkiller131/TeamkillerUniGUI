@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace unigui {
-class ComboBox : public Widget {
+class ComboBox : public FluentWidget<ComboBox> {
 public:
     ComboBox(std::string name, std::string label, std::vector<std::string> items = {},
              int selected = 0);
@@ -35,6 +35,48 @@ public:
     /// index be -1.
     void SetAllowEmpty(bool on) { allowEmpty_ = on; }
     bool GetAllowEmpty() const { return allowEmpty_; }
+
+    // ── Fluent (chainable) helpers — return ComboBox& via CRTP base ────────
+    ComboBox& WithSelectedIndex(int idx) {
+        SetSelectedIndex(idx);
+        return *this;
+    }
+    ComboBox& WithItems(std::vector<std::string> items) {
+        SetItems(std::move(items));
+        return *this;
+    }
+    ComboBox& WithOnChange(std::function<void(int)> callback) {
+        SetOnChange(std::move(callback));
+        return *this;
+    }
+    ComboBox& WithEditable(bool on) {
+        SetEditable(on);
+        return *this;
+    }
+    ComboBox& WithSearchable(bool on) {
+        SetSearchable(on);
+        return *this;
+    }
+    ComboBox& WithItemIcon(int index, ImTextureID textureID) {
+        SetItemIcon(index, textureID);
+        return *this;
+    }
+    ComboBox& WithFillWidth(bool on) {
+        SetFillWidth(on);
+        return *this;
+    }
+    ComboBox& WithWidth(float px) {
+        SetWidth(px);
+        return *this;
+    }
+    ComboBox& WithPlaceholder(std::string text) {
+        SetPlaceholder(std::move(text));
+        return *this;
+    }
+    ComboBox& WithAllowEmpty(bool on) {
+        SetAllowEmpty(on);
+        return *this;
+    }
 
 private:
     std::string label_;

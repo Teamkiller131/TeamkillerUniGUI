@@ -28,7 +28,7 @@ struct PropertyDef {
 };
 
 /// Property grid for editing key-value properties (like VS Properties window).
-class PropertyGrid : public Widget {
+class PropertyGrid : public FluentWidget<PropertyGrid> {
 public:
     PropertyGrid(std::string name);
 
@@ -45,6 +45,17 @@ public:
     }
 
     const std::vector<PropertyDef>& GetProperties() const { return props_; }
+
+    // ── Fluent (chainable) helpers — return PropertyGrid& via CRTP base ──────────
+    PropertyGrid& WithValue(const std::string& name, PropValue val) {
+        SetValue(name, std::move(val));
+        return *this;
+    }
+    PropertyGrid& WithOnChange(
+        std::function<void(const std::string& name, const PropValue& val)> fn) {
+        SetOnChange(std::move(fn));
+        return *this;
+    }
 
 private:
     void RenderProp(PropertyDef& prop);

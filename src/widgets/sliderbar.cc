@@ -10,7 +10,7 @@
 namespace unigui {
 
 SliderBar::SliderBar(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<SliderBar>(std::move(name)) {}
 
 // ── Helper: convert tick index → screen position on bar ────────────────────
 ImVec2 SliderBar::TickToPos(int index, float barX, float barY, float barW) const {

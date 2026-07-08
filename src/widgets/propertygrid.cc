@@ -2,14 +2,14 @@
 
 #include <imgui.h>
 
-#include "detail/combo_chevron.h"
-
 #include <cstdio>
+
+#include "detail/combo_chevron.h"
 
 namespace unigui {
 
 PropertyGrid::PropertyGrid(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<PropertyGrid>(std::move(name)) {}
 
 void PropertyGrid::AddProperty(PropertyDef prop) {
     props_.push_back(std::move(prop));

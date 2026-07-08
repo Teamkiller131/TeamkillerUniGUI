@@ -7,7 +7,7 @@
 
 namespace unigui {
 
-class Panel : public Widget {
+class Panel : public FluentWidget<Panel> {
 public:
     Panel(std::string name, std::string title);
     void Render() override;
@@ -16,6 +16,20 @@ public:
     bool IsCollapsed() const;
     void SetContentCallback(std::function<void()> callback);
     void SetWrapEnabled(bool on) { wrap_ = on; }
+
+    // ── Fluent (chainable) helpers — return Panel& via CRTP base ──────────
+    Panel& WithTitle(std::string title) {
+        SetTitle(std::move(title));
+        return *this;
+    }
+    Panel& WithContentCallback(std::function<void()> callback) {
+        SetContentCallback(std::move(callback));
+        return *this;
+    }
+    Panel& WithWrapEnabled(bool on) {
+        SetWrapEnabled(on);
+        return *this;
+    }
 
 private:
     std::string title_;

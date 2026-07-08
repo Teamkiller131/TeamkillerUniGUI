@@ -78,7 +78,7 @@ bool FuzzyMatch(std::string_view pattern, std::string_view text, int& outScore) 
 } // namespace detail
 
 CommandPalette::CommandPalette(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<CommandPalette>(std::move(name)) {}
 
 CommandPalette& CommandPalette::AddCommand(Command cmd) {
     if (cmd.title.empty())

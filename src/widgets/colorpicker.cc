@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 ColorPicker::ColorPicker(std::string name, std::string label, std::array<float, 3> color)
-        : Widget(std::move(name))
+        : FluentWidget<ColorPicker>(std::move(name))
         , label_(std::move(label))
         , color_(color) {}
 void ColorPicker::Render() {

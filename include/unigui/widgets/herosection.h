@@ -7,7 +7,7 @@
 namespace unigui {
 
 /// HeroSection — tall banner with gradient background, title, subtitle, CTA button
-class HeroSection : public Widget {
+class HeroSection : public FluentWidget<HeroSection> {
 public:
     HeroSection(std::string name, std::string title = "", std::string subtitle = "");
 
@@ -17,6 +17,28 @@ public:
     void SetBackground(ImU32 topColor, ImU32 bottomColor);
     void SetActionButton(std::string label, std::function<void()> callback);
     void SetHeight(float h);
+
+    // ── Fluent (chainable) helpers — return HeroSection& via CRTP base ──────────
+    HeroSection& WithTitle(std::string t) {
+        SetTitle(std::move(t));
+        return *this;
+    }
+    HeroSection& WithSubtitle(std::string t) {
+        SetSubtitle(std::move(t));
+        return *this;
+    }
+    HeroSection& WithBackground(ImU32 topColor, ImU32 bottomColor) {
+        SetBackground(topColor, bottomColor);
+        return *this;
+    }
+    HeroSection& WithActionButton(std::string label, std::function<void()> callback) {
+        SetActionButton(std::move(label), std::move(callback));
+        return *this;
+    }
+    HeroSection& WithHeight(float h) {
+        SetHeight(h);
+        return *this;
+    }
 
 private:
     std::string title_, subtitle_, actionLabel_;

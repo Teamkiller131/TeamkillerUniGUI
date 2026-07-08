@@ -7,7 +7,7 @@
 namespace unigui {
 
 Markdown::Markdown(std::string name, std::string markdown)
-        : Widget(std::move(name))
+        : FluentWidget<Markdown>(std::move(name))
         , source_(std::move(markdown)) {}
 
 void Markdown::SetMarkdown(std::string md) {

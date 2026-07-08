@@ -16,7 +16,7 @@ struct SliderTick {
 };
 
 /// MultiHandleSlider — draggable multi-handle slider bar
-class MultiHandleSlider : public Widget {
+class MultiHandleSlider : public FluentWidget<MultiHandleSlider> {
 public:
     MultiHandleSlider(std::string name);
 
@@ -48,6 +48,28 @@ public:
         markerPos_ = pos;
         markerColor_ = color;
         hasMarker_ = true;
+    }
+
+    // ── Fluent (chainable) helpers — return MultiHandleSlider& via CRTP base ──────────
+    MultiHandleSlider& WithTicks(const std::vector<SliderTick>& ticks) {
+        SetTicks(ticks);
+        return *this;
+    }
+    MultiHandleSlider& WithRange(float min, float max) {
+        SetRange(min, max);
+        return *this;
+    }
+    MultiHandleSlider& WithOnTickChanged(TickChangedFn fn) {
+        SetOnTickChanged(std::move(fn));
+        return *this;
+    }
+    MultiHandleSlider& WithTickOverlay(TickOverlayFn fn) {
+        SetTickOverlay(std::move(fn));
+        return *this;
+    }
+    MultiHandleSlider& WithCurrentMarker(float pos, ImU32 color) {
+        SetCurrentMarker(pos, color);
+        return *this;
     }
 
 private:

@@ -7,7 +7,7 @@
 namespace unigui {
 
 StatusLamp::StatusLamp(std::string name, State state)
-        : Widget(std::move(name))
+        : FluentWidget<StatusLamp>(std::move(name))
         , state_(state) {}
 
 namespace {

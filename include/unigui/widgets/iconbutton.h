@@ -3,7 +3,7 @@
 
 #include <string>
 namespace unigui {
-class IconButton : public Widget {
+class IconButton : public FluentWidget<IconButton> {
 public:
     IconButton(std::string name, std::string icon, std::string label = "");
     void Render() override;
@@ -11,6 +11,16 @@ public:
     void SetIcon(std::string icon);
     void SetLabel(std::string label);
     void SetEnabled(bool e);
+
+    // ── Fluent (chainable) helpers — return IconButton& via CRTP base ──────────
+    IconButton& WithIcon(std::string icon) {
+        SetIcon(std::move(icon));
+        return *this;
+    }
+    IconButton& WithLabel(std::string label) {
+        SetLabel(std::move(label));
+        return *this;
+    }
 
 private:
     std::string icon_, label_;

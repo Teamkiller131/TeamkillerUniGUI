@@ -9,7 +9,7 @@
 namespace unigui {
 
 TimeSeriesChart::TimeSeriesChart(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<TimeSeriesChart>(std::move(name)) {}
 
 int TimeSeriesChart::AddSeries(TimeSeriesDef def) {
     int id = nextId_++;

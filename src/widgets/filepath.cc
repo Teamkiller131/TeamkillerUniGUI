@@ -15,7 +15,7 @@
 namespace unigui {
 
 FilePath::FilePath(std::string name, std::string label, Mode mode)
-        : Widget(std::move(name))
+        : FluentWidget<FilePath>(std::move(name))
         , label_(std::move(label))
         , mode_(mode) {}
 

@@ -11,7 +11,7 @@
 namespace unigui {
 
 /// Multi-select combo box with checkboxes.
-class MultiCombo : public Widget {
+class MultiCombo : public FluentWidget<MultiCombo> {
 public:
     MultiCombo(std::string name, std::string label, std::vector<std::string> items = {});
 
@@ -28,6 +28,24 @@ public:
     std::string GetPreview() const; // "Item1, Item2, +3 more..."
 
     void SetOnChange(std::function<void()> fn) { onChange_ = std::move(fn); }
+
+    // ── Fluent (chainable) helpers — return MultiCombo& via CRTP base ──────────
+    MultiCombo& WithItems(std::vector<std::string> items) {
+        SetItems(std::move(items));
+        return *this;
+    }
+    MultiCombo& WithSelected(int index, bool sel) {
+        SetSelected(index, sel);
+        return *this;
+    }
+    MultiCombo& WithSelectedIndices(const std::vector<int>& indices) {
+        SetSelectedIndices(indices);
+        return *this;
+    }
+    MultiCombo& WithOnChange(std::function<void()> fn) {
+        SetOnChange(std::move(fn));
+        return *this;
+    }
 
 private:
     std::string label_;

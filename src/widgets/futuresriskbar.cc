@@ -8,7 +8,7 @@
 namespace unigui {
 
 FuturesRiskBar::FuturesRiskBar(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<FuturesRiskBar>(std::move(name)) {}
 
 void FuturesRiskBar::Render() {
     if (!IsVisible())

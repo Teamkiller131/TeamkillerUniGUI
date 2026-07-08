@@ -8,7 +8,7 @@
 namespace unigui {
 
 /// A button with an image and optional label.
-class ImageButton : public Widget {
+class ImageButton : public FluentWidget<ImageButton> {
 public:
     ImageButton(std::string name, std::string label = "");
 
@@ -27,6 +27,20 @@ public:
     bool IsEnabled() const { return enabled_; }
 
     void SetFramePadding(float x, float y);
+
+    // ── Fluent (chainable) helpers — return ImageButton& via CRTP base ──────────
+    ImageButton& WithImage(ImTextureID textureID, float width, float height) {
+        SetImage(textureID, width, height);
+        return *this;
+    }
+    ImageButton& WithLabel(std::string label) {
+        SetLabel(std::move(label));
+        return *this;
+    }
+    ImageButton& WithFramePadding(float x, float y) {
+        SetFramePadding(x, y);
+        return *this;
+    }
 
 private:
     std::string label_;

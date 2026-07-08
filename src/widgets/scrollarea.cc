@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 ScrollArea::ScrollArea(std::string n, float w, float h)
-        : Widget(std::move(n))
+        : FluentWidget<ScrollArea>(std::move(n))
         , w_(w)
         , h_(h) {}
 void ScrollArea::Render() {

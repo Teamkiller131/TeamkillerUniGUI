@@ -5,7 +5,7 @@
 #include <algorithm>
 namespace unigui {
 TreeView::TreeView(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<TreeView>(std::move(name)) {}
 void TreeView::Render() {
     if (!IsVisible() || root_.label.empty())
         return;

@@ -7,7 +7,7 @@
 
 namespace unigui {
 
-class AlertBar : public Widget {
+class AlertBar : public FluentWidget<AlertBar> {
 public:
     explicit AlertBar(std::string name);
     void Render() override;

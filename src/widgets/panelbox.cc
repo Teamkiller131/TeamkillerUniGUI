@@ -7,7 +7,7 @@
 namespace unigui {
 
 PanelBox::PanelBox(std::string name, std::string title)
-        : Widget(std::move(name))
+        : FluentWidget<PanelBox>(std::move(name))
         , title_(std::move(title)) {}
 
 void PanelBox::Render() {

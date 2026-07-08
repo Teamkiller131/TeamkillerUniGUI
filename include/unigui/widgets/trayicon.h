@@ -12,7 +12,7 @@ struct TrayMenuItem {
     std::vector<TrayMenuItem> children; // submenu
 };
 enum class NotifyType { Info, Warning, Error };
-class TrayIcon : public Widget {
+class TrayIcon : public FluentWidget<TrayIcon> {
 public:
     TrayIcon(std::string name, std::string title = "UniGUI", int iconId = 0);
     ~TrayIcon();
@@ -23,6 +23,16 @@ public:
     void UpdateTooltip(std::string title);
     void ShowNotification(std::string title, std::string msg, NotifyType type = NotifyType::Info);
     void SetOnExit(std::function<void()> cb) { onExit_ = std::move(cb); }
+
+    // ── Fluent (chainable) helpers — return TrayIcon& via CRTP base ──────────
+    TrayIcon& WithMenu(std::vector<TrayMenuItem> items) {
+        SetMenu(std::move(items));
+        return *this;
+    }
+    TrayIcon& WithOnExit(std::function<void()> cb) {
+        SetOnExit(std::move(cb));
+        return *this;
+    }
 #ifdef _WIN32
     void ShowContextMenu();
 #endif

@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 Splitter::Splitter(std::string n, Orientation o, float s)
-        : Widget(std::move(n))
+        : FluentWidget<Splitter>(std::move(n))
         , ori_(o)
         , split_(s) {}
 float Splitter::GetSplit() const {

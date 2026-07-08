@@ -14,7 +14,7 @@ struct TabPage {
     bool closable = false;
 };
 
-class TabWidget : public Widget {
+class TabWidget : public FluentWidget<TabWidget> {
 public:
     TabWidget(std::string name);
     void Render() override;
@@ -24,6 +24,16 @@ public:
     void SetActiveTab(int index);
     void SetTabShortcut(int index, ImGuiKey key);
     const std::vector<TabPage>& GetTabs() const;
+
+    // ── Fluent (chainable) helpers — return TabWidget& via CRTP base ──────────
+    TabWidget& WithActiveTab(int index) {
+        SetActiveTab(index);
+        return *this;
+    }
+    TabWidget& WithTabShortcut(int index, ImGuiKey key) {
+        SetTabShortcut(index, key);
+        return *this;
+    }
 
 private:
     std::vector<TabPage> tabs_;

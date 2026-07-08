@@ -7,7 +7,7 @@
 
 namespace unigui {
 
-class ListBox : public Widget {
+class ListBox : public FluentWidget<ListBox> {
 public:
     ListBox(std::string name, std::string label, std::vector<std::string> items = {},
             int selected = -1);
@@ -18,6 +18,20 @@ public:
     const std::vector<std::string>& GetItems() const;
     void SetItems(std::vector<std::string>);
     void SetOnChange(std::function<void(int)> cb);
+
+    // ── Fluent (chainable) helpers — return ListBox& via CRTP base ──────────
+    ListBox& WithSelectedIndex(int index) {
+        SetSelectedIndex(index);
+        return *this;
+    }
+    ListBox& WithItems(std::vector<std::string> items) {
+        SetItems(std::move(items));
+        return *this;
+    }
+    ListBox& WithOnChange(std::function<void(int)> cb) {
+        SetOnChange(std::move(cb));
+        return *this;
+    }
 
 private:
     std::string label_;

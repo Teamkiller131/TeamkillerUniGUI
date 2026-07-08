@@ -6,7 +6,7 @@
 namespace unigui {
 
 MultiHandleSlider::MultiHandleSlider(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<MultiHandleSlider>(std::move(name)) {}
 
 void MultiHandleSlider::SetRange(float min, float max) {
     rangeMin_ = min;

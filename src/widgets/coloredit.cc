@@ -5,7 +5,7 @@
 namespace unigui {
 
 ColorEdit::ColorEdit(std::string name, std::string label, float r, float g, float b, float a)
-        : Widget(std::move(name))
+        : FluentWidget<ColorEdit>(std::move(name))
         , label_(std::move(label))
         , changed_(false) {
     color_[0] = r;

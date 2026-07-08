@@ -189,6 +189,15 @@ target_link_libraries(test_button PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_button PRIVATE cxx_std_23)
 gtest_discover_tests(test_button)
 
+# Fluent With* rollout: compile-time proof (static_asserts over every retained
+# widget) that base chainers preserve the derived type, + runtime chain checks.
+add_executable(test_fluent_rollout
+    widgets/fluent_rollout_test.cc
+)
+target_link_libraries(test_fluent_rollout PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_fluent_rollout PRIVATE cxx_std_23)
+gtest_discover_tests(test_fluent_rollout)
+
 add_executable(test_panel
     widgets/panel_test.cc
 )

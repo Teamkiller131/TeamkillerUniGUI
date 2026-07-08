@@ -8,7 +8,7 @@ namespace unigui {
 
 /// PanelBox — dark panel container with title bar + tinted content area.
 /// Uses PushID/PopID for ID safety.
-class PanelBox : public Widget {
+class PanelBox : public FluentWidget<PanelBox> {
 public:
     PanelBox(std::string name, std::string title);
     void Render() override;
@@ -21,6 +21,24 @@ public:
 
     const std::string& GetTitle() const { return title_; }
     void SetTitle(std::string title) { title_ = std::move(title); }
+
+    // ── Fluent (chainable) helpers — return PanelBox& via CRTP base ──────────
+    PanelBox& WithTintColor(ImU32 color) {
+        SetTintColor(color);
+        return *this;
+    }
+    PanelBox& WithContentCallback(std::function<void()> cb) {
+        SetContentCallback(std::move(cb));
+        return *this;
+    }
+    PanelBox& WithShrinkWrapContent(bool on) {
+        SetShrinkWrapContent(on);
+        return *this;
+    }
+    PanelBox& WithTitle(std::string title) {
+        SetTitle(std::move(title));
+        return *this;
+    }
 
 private:
     std::string title_;

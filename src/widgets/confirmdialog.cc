@@ -5,7 +5,7 @@
 namespace unigui {
 
 ConfirmDialog::ConfirmDialog(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<ConfirmDialog>(std::move(name)) {}
 
 void ConfirmDialog::Open() {
     open_ = true;

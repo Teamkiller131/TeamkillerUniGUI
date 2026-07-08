@@ -10,7 +10,7 @@
 namespace unigui {
 
 MultiSplitter::MultiSplitter(std::string name, Orientation ori)
-        : Widget(std::move(name))
+        : FluentWidget<MultiSplitter>(std::move(name))
         , ori_(ori) {}
 
 void MultiSplitter::AddPanel(float ratio, std::function<void()> content) {
@@ -102,7 +102,8 @@ bool MultiSplitter::RestoreLayout(const std::string& s) {
     std::size_t i = 0;
     while (i < s.size()) {
         std::size_t comma = s.find(',', i);
-        const std::string tok = s.substr(i, comma == std::string::npos ? std::string::npos : comma - i);
+        const std::string tok =
+            s.substr(i, comma == std::string::npos ? std::string::npos : comma - i);
         const char* b = tok.c_str();
         char* e = nullptr;
         const float v = std::strtof(b, &e);
