@@ -1,6 +1,6 @@
 # TeamkillerUniGUI — Long-Term Development Plan
 
-_Last updated: 2026-07-02 · Current version: 4.6.0_
+_Last updated: 2026-07-08 · Current version: 4.6.0_
 
 This document lays out a long-horizon roadmap for the project. It is meant to be
 a living document: revisit it each release, check off what shipped, and re-scope
@@ -263,10 +263,14 @@ the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bu
   Next, cheapest first: a **WARP software-adapter** run for DX11/DX12 on the Windows
   runner (real device creation + render, no GPU needed), then a GPU-capable runner for
   the rest + **golden-image diffing** on top.
-- **ipc/network are safe but functionally unverified.** Zero loopback tests for the ZMQ
-  pub/sub channel and HTTP/WebSocket paths; `Server::OnReceive` is a dead API on a
-  PUB socket; the static zmq context is never terminated; `LoadINI` ignores comments/
-  sections. Safe-to-link after 4.4.3–4.4.4, but below the bar the rest of the library sets.
+- ~~**ipc/network are safe but functionally unverified.**~~ **Resolved (c0cc2c5 + b22015a,
+  post-4.6.0).** Loopback functional tests now cover all three paths — ZMQ pub/sub
+  round-trip (`inproc://`), HTTP GET/POST against an in-process httplib server, and a
+  WebSocket echo — and run headless in the `linux-modules` CI lane (55/55 green). The dead
+  `Server::OnReceive` PUB-socket API now warns + is documented as a no-op; `ipc::Shutdown()`
+  terminates the static zmq context (re-creatable for reuse); `LoadINI` handles comments,
+  `[sections]` (dotted keys), and whitespace trimming. ipc/network are now at the bar the
+  rest of the library sets.
 - **Interaction coverage is young.** 28 behavior tests exist on a proven harness, but
   ~19% of the suite is still smoke-only and the presets themselves have no driven-input
   tests yet. The harness makes growth mechanical.
@@ -530,12 +534,16 @@ Goal: broaden what apps can build without leaving the toolkit.
   preset-level theming knobs (accent/density), driven-input interaction tests for the
   presets themselves, and a README **screenshot** of `preset_demo` so the layer sells
   itself visually. Let real usage pick the next scaffolds.
-- **P2 · M — Module maturity (ipc/network).** The 4.4.3–4.4.4 hardening made them safe;
-  make them *dependable*: loopback functional tests (ZMQ pub/sub round-trip, HTTP
-  GET/POST against an in-process httplib server, a WebSocket echo), fix the dead
-  `Server::OnReceive` API (PUB sockets can't receive — split or document the Channel
-  contract), terminate the static zmq context on shutdown, and teach `LoadINI`
-  comments/sections/trimming.
+- ~~**P2 · M — Module maturity (ipc/network).**~~ **Done (c0cc2c5 + b22015a).** The
+  4.4.3–4.4.4 hardening made them safe; this made them *dependable*. Loopback functional
+  tests landed for all three transports — ZMQ pub/sub round-trip over `inproc://`, HTTP
+  GET/POST against an in-process httplib server, and a WebSocket echo — all headless-safe
+  and gating the `linux-modules` CI lane (55/55). The dead `Server::OnReceive` PUB API now
+  warns and is documented as a no-op with the Channel topology spelled out; `ipc::Shutdown()`
+  terminates the process-wide zmq context (transparently re-created for post-shutdown reuse,
+  with the channel-reuse constraint documented in the public header); and `LoadINI` now skips
+  `;`/`#` comments, maps `[section]` headers to dotted keys, and trims key/value whitespace.
+  An adversarial review→verify pass over the diff confirmed 0 defects.
 - **P2 · M — Fluent `With*` rollout.** The documented convention covers ~12% of widgets.
   Sweep the retained layer: derive from `FluentWidget<T>` where missing and add `With*`
   parity for existing `Set*` config (mechanical, additive, semver-minor), then fix the
@@ -703,11 +711,15 @@ Track these over time to know the plan is working:
   closures), the **UI preset layer shipped** (4.6.0), and the **web runtime proven in a
   real browser on every push** (H4a — the wasm smoke, post-4.6.0), the recommended order
   for the open frontier is:
-  1. **UI presets v2** (H5 — P1·M): the adoption multiplier — more scaffolds (LoginPage,
-     WizardFlow, CommandPalette-in-AppShell), preset interaction tests on the proven
-     harness, a README screenshot; let real usage steer what comes next.
-  2. **Module maturity** (H5 — P2·M) and the **WARP DX run** (H4b — P2·M), in either
-     order — both convert "safe" into "proven".
+  1. ~~**UI presets v2**~~ **(largely shipped, 4.6.0 + 01c3642):** LoginPage, WizardFlow, and
+     the Ctrl+P CommandPalette-in-AppShell all landed with driven-input interaction tests on
+     the proven harness. Remaining tail: a README **screenshot** of `preset_demo` (best cut
+     from a Playwright shot of the wasm build, reusing the smoke infra) and preset-level
+     theming knobs (accent/density) — let real usage steer which scaffold comes next.
+  2. ~~**Module maturity**~~ **(done, c0cc2c5 + b22015a):** ipc/network now have loopback
+     functional tests gating CI. Remaining in this tier: the **WARP DX run** (H4b — P2·M) — a
+     software-adapter DX11/DX12 device-create + render on the Windows runner, converting the
+     last "safe but unproven" backend surface into "proven".
   3. The standing small items as opportunity allows: **coverage/clang-tidy hard gates**,
      **keyboard-only nav audit**, **fluent `With*` rollout**, **platform-aware font
      fallback**, and the **framework-idiom deepening** driven by real apps.
