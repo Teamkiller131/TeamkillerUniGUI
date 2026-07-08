@@ -50,11 +50,14 @@ widgets — 28 interaction-driven behavior tests on a reusable harness (`linux-t
 TreeView, and DepthLadder now report and announce (~44 widgets wired). And the toolkit
 gained its highest-leverage capability layer yet: **UI preset scaffolds** (4.6.0,
 `unigui::presets`) — AppShell, SettingsPage, Dashboard, MasterDetail, LogConsole — so a
-decent, themed, screen-reader-visible app is ~30 lines (`examples/preset_demo`). With
-completeness, accessibility, and the verification net in place, the frontier is now
-**runtime proof on the remaining backends** (headless-browser wasm smoke, WARP/GPU
-runners, golden images), **module maturity** (ipc/network functional tests + API fixes),
-**preset/framework depth**, and **packaging reach**.
+decent, themed, screen-reader-visible app is ~30 lines (`examples/preset_demo`). The
+**headless-browser wasm smoke** then landed (post-4.6.0): every push now loads the
+WebGL2 `web_demo` in headless Chromium and hard-gates on real rendered pixels — the web
+went from "validated manually" to runtime-proven, taking runtime-verified backends to
+**2 of 7**. With completeness, accessibility, and the verification net in place, the
+frontier is now **preset/framework depth** (presets v2 — the adoption multiplier),
+**runtime proof on the remaining backends** (WARP/GPU runners, golden images), **module
+maturity** (ipc/network functional tests + API fixes), and **packaging reach**.
 
 ## 1. Vision
 
@@ -251,13 +254,15 @@ _Closed since the 4.4.5 full-project audit (kept here as one line for the record
 the 0-byte integration test, doc-stamp drift (now CI-gated), the data-widget a11y hole,
 the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bug._
 
-- **Runtime backend coverage is still GL-only.** Six of seven renderers (DX11/DX12/
-  Vulkan/SDL3/Metal/WebGPU) are build-covered but have **no automated runtime render
-  test**; only GLFW+OpenGL3 gets the Linux llvmpipe pixel-readback. The 4.4.2 leak batch
-  proves this class of bug is real. Closing it, cheapest first: a **headless-browser
-  smoke for the wasm artifacts** (Playwright non-blank-canvas — no GPU needed), a **WARP
-  software adapter** run for DX11/DX12 on the Windows runner, then a GPU-capable runner
-  for the rest + **golden-image diffing** on top.
+- **Runtime backend coverage: 2 of 7.** GLFW+OpenGL3 (Linux llvmpipe pixel-readback) and
+  the wasm/WebGL2 path (headless-browser smoke: Playwright + SwiftShader, canvas-only
+  pixel verdict, hard-gated) are runtime-verified on every push. The other five (DX11/
+  DX12/Vulkan/SDL3/Metal) remain build-only, and WebGPU's browser runtime stays a
+  best-effort step (blank under the runner's SwiftShader — flips to a hard gate when the
+  runner grows an adapter). The 4.4.2 leak batch proves this class of bug is real.
+  Next, cheapest first: a **WARP software-adapter** run for DX11/DX12 on the Windows
+  runner (real device creation + render, no GPU needed), then a GPU-capable runner for
+  the rest + **golden-image diffing** on top.
 - **ipc/network are safe but functionally unverified.** Zero loopback tests for the ZMQ
   pub/sub channel and HTTP/WebSocket paths; `Server::OnReceive` is a dead API on a
   PUB socket; the static zmq context is never terminated; `LoadINI` ignores comments/
@@ -682,8 +687,9 @@ Track these over time to know the plan is working:
 - **Performance:** frame time for `DataTable`/`VirtualList`/DOM at 100k rows and
   high update rates; parser throughput (CSV/JSON).
 - **Reach:** functional backends (**7/7** real; **all compile in CI**; runtime-verified:
-  **1/7** — the GL path; target: wasm browser-smoke next, then WARP for DX); platforms
-  with a passing test suite (**Win/Linux/macOS all green**); packaging channels available.
+  **2/7** — the GL path + wasm/WebGL2 in a real headless browser; target: WARP for DX
+  next, then a GPU runner); platforms with a passing test suite (**Win/Linux/macOS all
+  green**); packaging channels available.
 - **Adoption:** examples that build on web; external plugins; downstream
   embedders.
 
@@ -694,15 +700,15 @@ Track these over time to know the plan is working:
   complete**, all 7 backends **real and compile-gated in CI**, **accessibility done
   through the data-dense widgets** (4.4.0–4.5.0), the **verification net installed**
   (sanitizers, hard gates, interaction tests, doc-stamp gate — 4.5.0–4.6.0 + the audit
-  closures), and the **UI preset layer shipped** (4.6.0), the recommended order for the
-  open frontier is:
-  1. **Headless-browser wasm smoke** (H4a — P1·S): the only platform with zero automated
-     runtime signal, and the cheapest runtime-verification win on the board.
-  2. **UI presets v2** (H5 — P1·M): the adoption multiplier — more scaffolds, preset
-     interaction tests, a README screenshot; let real usage steer.
-  3. **Module maturity** (H5 — P2·M) and the **WARP DX run** (H4b — P2·M), in either
+  closures), the **UI preset layer shipped** (4.6.0), and the **web runtime proven in a
+  real browser on every push** (H4a — the wasm smoke, post-4.6.0), the recommended order
+  for the open frontier is:
+  1. **UI presets v2** (H5 — P1·M): the adoption multiplier — more scaffolds (LoginPage,
+     WizardFlow, CommandPalette-in-AppShell), preset interaction tests on the proven
+     harness, a README screenshot; let real usage steer what comes next.
+  2. **Module maturity** (H5 — P2·M) and the **WARP DX run** (H4b — P2·M), in either
      order — both convert "safe" into "proven".
-  4. The standing small items as opportunity allows: **coverage/clang-tidy hard gates**,
+  3. The standing small items as opportunity allows: **coverage/clang-tidy hard gates**,
      **keyboard-only nav audit**, **fluent `With*` rollout**, **platform-aware font
      fallback**, and the **framework-idiom deepening** driven by real apps.
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
