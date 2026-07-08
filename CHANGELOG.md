@@ -50,6 +50,17 @@
   presets-v2 tail item).
 
 ### Fixed
+- **`CollapsingHeader` now tracks real expand/collapse state.** `Render()` passed
+  `&open_` as imgui's `p_visible` — the close-'X' / don't-render-at-all flag — and
+  discarded the return value that carries the actual expand state. Consequences:
+  constructing with `default_open=false` made the header *invisible* instead of
+  collapsed; clicking or keyboard-toggling the header never updated `open_`, so the
+  content callback kept rendering under a visually collapsed header and `onToggle_`
+  only fired from the stray 'X' button (which then vanished the header entirely).
+  The open state now flows `SetNextItemOpen(open_) → return value → open_`, so
+  `IsOpen()`/`SetOpen()` reflect expansion, `onToggle_` fires on expand/collapse, and
+  the content callback runs only while expanded. Two regression tests pin it
+  (verified to fail against the old code).
 - **`SearchBox` suggestions are now clickable at all.** The autocomplete list rendered
   in a tooltip window — and tooltips carry `NoInputs`, so the `Selectable` rows never
   received a click: picking a suggestion by mouse silently did nothing. The list is
