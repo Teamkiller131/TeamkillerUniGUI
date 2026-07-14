@@ -3,6 +3,8 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cwchar>
+#include <iterator>
 #ifdef _WIN32
 #ifndef NOMINMAX // also defined project-wide; guard to avoid a /W4 C4005 redefinition
 #define NOMINMAX
@@ -41,29 +43,65 @@ void FilePath::SetOnPathChanged(std::function<void(std::string)> cb) {
     on_change_ = std::move(cb);
 }
 
+#ifdef _WIN32
+namespace {
+
+// UTF-8 <-> UTF-16 boundary conversion. The widget API (path_/title_/filter_) is
+// UTF-8 like the rest of the library; the ANSI dialog APIs interpret bytes in the
+// local code page (GBK on zh-CN), which mangles non-ASCII paths/labels — so the
+// dialog must go through the W variants with explicit conversion at this boundary.
+std::wstring Utf8ToWide(const std::string& s) {
+    if (s.empty())
+        return {};
+    const int n = MultiByteToWideChar(CP_UTF8, 0, s.data(), (int) s.size(), nullptr, 0);
+    std::wstring w(n > 0 ? (size_t) n : 0, L'\0');
+    if (n > 0)
+        MultiByteToWideChar(CP_UTF8, 0, s.data(), (int) s.size(), w.data(), n);
+    return w;
+}
+
+std::string WideToUtf8(const wchar_t* s, size_t len) {
+    if (len == 0)
+        return {};
+    const int n = WideCharToMultiByte(CP_UTF8, 0, s, (int) len, nullptr, 0, nullptr, nullptr);
+    std::string out(n > 0 ? (size_t) n : 0, '\0');
+    if (n > 0)
+        WideCharToMultiByte(CP_UTF8, 0, s, (int) len, out.data(), n, nullptr, nullptr);
+    return out;
+}
+
+} // namespace
+#endif
+
 bool FilePath::OpenNativeDialog() {
 #ifdef _WIN32
-    char file[512] = {};
-    std::copy_n(path_.data(), std::min(path_.size(), sizeof(file) - 1), file);
-    char filterBuf[512] = {};
-    std::copy_n(filter_.data(), std::min(filter_.size(), sizeof(filterBuf) - 1), filterBuf);
-    for (char* p = filterBuf; *p; p++)
-        if (*p == '|')
-            *p = 0;
+    wchar_t file[512] = {};
+    const std::wstring widePath = Utf8ToWide(path_);
+    std::copy_n(widePath.data(), std::min(widePath.size(), std::size(file) - 1), file);
 
-    OPENFILENAMEA ofn{};
+    // filter_ uses '|' separators ("Label|*.ext|…"); the dialog wants embedded NULs.
+    std::wstring wideFilter = Utf8ToWide(filter_);
+    for (wchar_t& c : wideFilter)
+        if (c == L'|')
+            c = L'\0';
+    wideFilter.push_back(L'\0'); // double-NUL terminator after the last entry
+
+    const std::wstring wideTitle = Utf8ToWide(title_);
+
+    OPENFILENAMEW ofn{};
     ofn.lStructSize = sizeof(ofn);
-    ofn.lpstrFilter = filter_.empty() ? "All Files\0*.*\0" : filterBuf;
+    ofn.lpstrFilter = filter_.empty() ? L"All Files\0*.*\0" : wideFilter.c_str();
     ofn.lpstrFile = file;
-    ofn.nMaxFile = sizeof(file);
-    ofn.lpstrTitle = title_.empty() ? (mode_ == Open ? "Open File" : "Save File") : title_.c_str();
+    ofn.nMaxFile = (DWORD) std::size(file);
+    ofn.lpstrTitle =
+        title_.empty() ? (mode_ == Open ? L"Open File" : L"Save File") : wideTitle.c_str();
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
     if (mode_ == Save)
         ofn.Flags |= OFN_OVERWRITEPROMPT;
 
-    BOOL ok = (mode_ == Open) ? GetOpenFileNameA(&ofn) : GetSaveFileNameA(&ofn);
+    BOOL ok = (mode_ == Open) ? GetOpenFileNameW(&ofn) : GetSaveFileNameW(&ofn);
     if (ok) {
-        path_ = file;
+        path_ = WideToUtf8(file, wcsnlen(file, std::size(file)));
         size_t n = std::min(path_.size(), sizeof(buffer_) - 1);
         std::copy_n(path_.data(), n, buffer_);
         buffer_[n] = 0;

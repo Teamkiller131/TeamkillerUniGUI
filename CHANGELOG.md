@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+### Fixed
+- **`FilePath` native dialog now round-trips non-ASCII paths on Windows** — the
+  dialog previously used the ANSI `GetOpenFileNameA`/`GetSaveFileNameA` APIs,
+  which return paths in the local code page (GBK on zh-CN). Callers treating the
+  widget's path as UTF-8 (per the library-wide convention) then failed to open
+  any file whose name contains non-ASCII characters, and UTF-8 dialog
+  titles/filters rendered as mojibake. The dialog now goes through the wide
+  (`W`) APIs, converting title/filter/initial path UTF-8 → UTF-16 on the way in
+  and the selected path UTF-16 → UTF-8 on the way out.
+
 ### Added
 - **`im::Combo` mouse-wheel quick-select** — hovering the *closed* combo and
   scrolling now cycles the selection in place (wheel up = previous item, wheel
