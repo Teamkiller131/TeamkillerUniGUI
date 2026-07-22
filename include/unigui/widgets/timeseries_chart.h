@@ -79,6 +79,24 @@ public:
     /// zooming/panning the X axis rescales Y to the visible window instead of the
     /// full dataset. When false, Y auto-fits to the entire dataset.
     void SetYRangeFit(bool on);
+    /// Y-axis padding ratio for auto-fit (2026-07-22 user spec): the fitted range is
+    /// [min·(1−r), max·(1+r)] so the series never hugs the plot border. Sign-aware —
+    /// for negative extremes the factor flips ([min·(1+r)] etc.) so padding always
+    /// expands OUTWARD; the naive formula would clip negative data against the axis.
+    /// Default r = 0.05. Set 0 to restore ImPlot's raw AutoFit behavior.
+    void SetYPadRatio(double r) { yPadRatio_ = r < 0 ? 0.0 : r; }
+    /// Pure padding math (public so tests can pin the edge cases without an ImPlot
+    /// frame): returns the padded [lo, hi]. Sign-aware per the doc above; a
+    /// degenerate flat-at-zero input yields [-1, 1] so the axis never collapses.
+    static std::pair<double, double> PadRange(double lo, double hi, double r) {
+        double plo = lo >= 0.0 ? lo * (1.0 - r) : lo * (1.0 + r);
+        double phi = hi >= 0.0 ? hi * (1.0 + r) : hi * (1.0 - r);
+        if (!(phi > plo)) {
+            plo -= 1.0;
+            phi += 1.0;
+        }
+        return {plo, phi};
+    }
     /// Minimum Y-axis span (height) enforced while auto-fitting. 0 (default)
     /// disables the floor. When the data inside the visible X window spans less
     /// than `span`, the Y axis is held at exactly `span` (centered on the data)
@@ -147,6 +165,7 @@ private:
     bool yRangeFit_ = true;
     double yMin_ = 0, yMax_ = 100;
     double minYSpan_ = 0.0;    // 0 = disabled; else Y-axis height floor (auto-fit only)
+    double yPadRatio_ = 0.05;  // auto-fit padding: [min·(1−r), max·(1+r)], sign-aware
     double lastXMin_ = -1e300; // visible X window cached from the previous frame,
     double lastXMax_ = 1e300;  // used to scope the min-span Y fit (see Render)
     bool xRangeSet_ = false;

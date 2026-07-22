@@ -96,3 +96,33 @@ TEST(TimeSeriesChartTest, SetSessionAxis_DoesNotCrashAndAcceptsFormatter) {
     c.AppendSample(id, axis.ToAxis(9 * 3600 + 30 * 60), 1.0f);
     EXPECT_EQ(axis.FormatAxis(0.0), "09:30");
 }
+
+// ── Y 轴边距算术(2026-07-22 需求:[min·0.95, max·1.05])────────────────────────
+// 纯算术,不需要 ImPlot 帧。四种形态各钉一条:正区间按用户原始口径;负区间与跨零
+// 必须【向外】扩(naive 公式会把负数据夹在轴外);全平恰为 0 时兜底 [-1,1]。
+TEST(TimeSeriesChartTest, PadRange_PositiveData_MatchesUserSpec) {
+    auto [lo, hi] = TimeSeriesChart::PadRange(100.0, 200.0, 0.05);
+    EXPECT_DOUBLE_EQ(lo, 95.0);    // min × 0.95
+    EXPECT_DOUBLE_EQ(hi, 210.0);   // max × 1.05
+}
+TEST(TimeSeriesChartTest, PadRange_NegativeData_PadsOutward) {
+    auto [lo, hi] = TimeSeriesChart::PadRange(-200.0, -100.0, 0.05);
+    EXPECT_DOUBLE_EQ(lo, -210.0);  // 向下扩,naive 的 -190 会切掉数据
+    EXPECT_DOUBLE_EQ(hi, -95.0);
+}
+TEST(TimeSeriesChartTest, PadRange_CrossZero_PadsBothSides) {
+    auto [lo, hi] = TimeSeriesChart::PadRange(-100.0, 200.0, 0.05);
+    EXPECT_DOUBLE_EQ(lo, -105.0);
+    EXPECT_DOUBLE_EQ(hi, 210.0);
+}
+TEST(TimeSeriesChartTest, PadRange_FlatAtZero_NeverDegenerate) {
+    auto [lo, hi] = TimeSeriesChart::PadRange(0.0, 0.0, 0.05);
+    EXPECT_LT(lo, hi);             // 轴绝不允许塌成零高度
+    EXPECT_DOUBLE_EQ(lo, -1.0);
+    EXPECT_DOUBLE_EQ(hi, 1.0);
+}
+TEST(TimeSeriesChartTest, PadRange_FlatNonZero_StillHasSpan) {
+    auto [lo, hi] = TimeSeriesChart::PadRange(100.0, 100.0, 0.05);
+    EXPECT_DOUBLE_EQ(lo, 95.0);    // 平但非零:乘法边距天然给出高度
+    EXPECT_DOUBLE_EQ(hi, 105.0);
+}

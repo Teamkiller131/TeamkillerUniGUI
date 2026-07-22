@@ -245,10 +245,43 @@ void TimeSeriesChart::Render() {
         }
         if (!minSpanApplied) {
             if (yAutoFit_) {
-                ImPlotAxisFlags yFlags = ImPlotAxisFlags_AutoFit;
-                if (yRangeFit_)
-                    yFlags |= ImPlotAxisFlags_RangeFit;
-                ImPlot::SetupAxis(ImAxis_Y1, yLabel, yFlags);
+                // Padded fit (2026-07-22 user spec): Y range = [min·(1−r), max·(1+r)]
+                // instead of ImPlot's border-hugging AutoFit. Scope matches the old
+                // behavior: with RangeFit only the visible X window participates;
+                // reference lines (thresholds) are included because PlotInfLines used
+                // to register them with ImPlot's fitter — dropping them would push
+                // e.g. the FSA alarm line off-screen exactly when price approaches it.
+                double lo = 1e300, hi = -1e300;
+                if (yPadRatio_ > 0.0) {
+                    for (auto& s : series_) {
+                        if (s.def.yAxisId == 3)
+                            continue;   // Y3 series must not drive the Y1 range
+                        for (auto& [ts, v] : s.points) {
+                            if (yRangeFit_ && (ts < lastXMin_ || ts > lastXMax_))
+                                continue;
+                            lo = std::min(lo, (double) v);
+                            hi = std::max(hi, (double) v);
+                        }
+                    }
+                    for (auto& line : refLines_) {
+                        lo = std::min(lo, line.value);
+                        hi = std::max(hi, line.value);
+                    }
+                }
+                if (yPadRatio_ > 0.0 && lo <= hi) {
+                    // Sign-aware outward padding — math lives in PadRange() (header)
+                    // so the tests pin positive/negative/cross-zero/flat-at-zero.
+                    auto [plo, phi] = PadRange(lo, hi, yPadRatio_);
+                    ImPlot::SetupAxis(ImAxis_Y1, yLabel);
+                    ImPlot::SetupAxisLimits(ImAxis_Y1, plo, phi, ImPlotCond_Always);
+                } else {
+                    // No data yet (or padding disabled): keep the legacy AutoFit flags
+                    // so an empty chart renders exactly as before.
+                    ImPlotAxisFlags yFlags = ImPlotAxisFlags_AutoFit;
+                    if (yRangeFit_)
+                        yFlags |= ImPlotAxisFlags_RangeFit;
+                    ImPlot::SetupAxis(ImAxis_Y1, yLabel, yFlags);
+                }
             } else {
                 ImPlot::SetupAxis(ImAxis_Y1, yLabel);
                 ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_, ImPlotCond_Once);
