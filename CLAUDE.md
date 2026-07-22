@@ -4,6 +4,46 @@ Guidance for Claude Code (and other AI agents) working in this repository.
 Read this first — it captures the architecture, conventions, and workflows
 that aren't obvious from any single file.
 
+## ⛔ The one rule: don't call `ImGui::` in application code
+
+This is a **wrapper**. Its whole reason to exist is that you write against
+`unigui`, not `ImGui`. Dear ImGui is an implementation detail that lives
+*behind* the API — you almost never call it directly.
+
+Your training data is saturated with raw Dear ImGui and nearly empty of this
+library, so the default pull is to write `ImGui::Text(...)`. Resist it. Every
+common immediate-mode call has a **drop-in** `unigui::im` equivalent with the
+*same name and signature* — the only change is the namespace:
+
+| Instead of…            | Write…              |
+|------------------------|---------------------|
+| `ImGui::Text`          | `im::Text`          |
+| `ImGui::TextUnformatted` | `im::TextUnformatted` |
+| `ImGui::TextWrapped`   | `im::TextWrapped`   |
+| `ImGui::BulletText`    | `im::BulletText`    |
+| `ImGui::Button`        | `im::Button`        |
+| `ImGui::Checkbox`      | `im::Checkbox`      |
+| `ImGui::RadioButton`   | `im::RadioButton`   |
+| `ImGui::Combo`         | `im::Combo`         |
+| `ImGui::SliderFloat`   | `im::SliderFloat`   |
+| `ImGui::Separator`     | `im::Separator`     |
+| `ImGui::SameLine`      | `im::SameLine`      |
+| `ImGui::Spacing`       | `im::Spacing`       |
+| `ImGui::Begin/End` (window) | RAII `WindowScope` / `ChildScope` from `<unigui/core/scope.h>` |
+
+`#include <unigui/im/im.h>`, add `namespace im = unigui::im;`, and call
+`im::…`. For anything stateful (validation, undo/redo, serialization) use the
+retained-mode **widget classes** instead — see `docs/WIDGET_API.md`. The full
+immediate-mode reference is `docs/IM_API.md`.
+
+**Raw `ImGui::` is allowed in exactly two places:** inside `src/backend/`, and
+inside a widget's own implementation under `src/widgets/`/`src/im/` (that *is*
+the wrapper). If you're writing an example, a preset, a doc snippet, or app
+code and you typed `ImGui::`, you almost certainly want `im::` — stop and
+switch. When you touch an example that still mixes raw `ImGui::` with `im::`,
+convert the raw calls as you go; those files are the pattern everyone (human
+and agent) copies from.
+
 ## Project at a glance
 
 **TeamkillerUniGUI** is a C++23 [Dear ImGui](https://github.com/ocornut/imgui)
@@ -191,5 +231,3 @@ accurate.
 - Some GL-context tests are skipped in headless Linux CI — that's expected.
 - Metal/WebGPU/Emscripten renderers are **stubs**; don't assume they're
   functional when wiring features through the backend layer.
-</content>
-</invoke>

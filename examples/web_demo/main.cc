@@ -8,26 +8,29 @@
 // http(s), not file://).
 #include <unigui/unigui.h>
 
+#include <format>
 #include <memory>
+
+namespace im = unigui::im;
 
 static void DrawGallery() {
     namespace im = unigui::im;
 
-    ImGui::SetNextWindowPos(ImVec2(30, 30), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(920, 660), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("UniGUI on the Web — Widget Gallery")) {
-        ImGui::End();
+    im::SetNextWindowPos(ImVec2(30, 30), ImGuiCond_FirstUseEver);
+    im::SetNextWindowSize(ImVec2(920, 660), ImGuiCond_FirstUseEver);
+    // WindowScope always balances End on both the early-return and normal path.
+    unigui::WindowScope window{"UniGUI on the Web — Widget Gallery"};
+    if (!window.visible())
         return;
-    }
 
-    ImGui::TextWrapped("UniGUI v" UNIGUI_VERSION_STRING
-                       " compiled to WebAssembly — the same C++23 widget library, theme "
-                       "engine, and immediate-mode helpers as the desktop, rendered through "
-                       "WebGL2 (GLES3) or WebGPU.");
-    ImGui::Spacing();
+    im::TextWrapped("UniGUI v" UNIGUI_VERSION_STRING
+                    " compiled to WebAssembly — the same C++23 widget library, theme "
+                    "engine, and immediate-mode helpers as the desktop, rendered through "
+                    "WebGL2 (GLES3) or WebGPU.");
+    im::Spacing();
 
-    if (ImGui::BeginTabBar("gallery", ImGuiTabBarFlags_FittingPolicyScroll)) {
-        if (ImGui::BeginTabItem("Buttons")) {
+    if (im::BeginTabBar("gallery", ImGuiTabBarFlags_FittingPolicyScroll)) {
+        if (im::BeginTabItem("Buttons")) {
             static unigui::Button b1("b1", "Default");
             static unigui::Button b2("b2", "Primary");
             b2.SetColorVariant(unigui::Button::Primary);
@@ -35,25 +38,22 @@ static void DrawGallery() {
             b3.SetColorVariant(unigui::Button::Danger);
             static unigui::IconButton ib("ib", "★", "Star");
             b1.Render();
-            ImGui::SameLine();
+            im::SameLine();
             b2.Render();
-            ImGui::SameLine();
+            im::SameLine();
             b3.Render();
-            ImGui::SameLine();
+            im::SameLine();
             ib.Render();
             im::Separator();
-            if (im::Button("im::Primary", im::ButtonVariant::Primary)) {
-            }
+            if (im::Button("im::Primary", im::ButtonVariant::Primary)) {}
             im::SameLine();
-            if (im::Button("im::Success", im::ButtonVariant::Success)) {
-            }
+            if (im::Button("im::Success", im::ButtonVariant::Success)) {}
             im::SameLine();
-            if (im::Button("im::Warning", im::ButtonVariant::Warning)) {
-            }
-            ImGui::EndTabItem();
+            if (im::Button("im::Warning", im::ButtonVariant::Warning)) {}
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Inputs")) {
+        if (im::BeginTabItem("Inputs")) {
             static unigui::InputInt ii("ii", "Count", 0, 0, 100);
             static unigui::InputFloat iif("iif", "Price", 0, 0, 1000);
             static unigui::LineEdit le("le", "Email");
@@ -66,29 +66,29 @@ static void DrawGallery() {
             le.Render();
             sb.Render();
             pi.Render();
-            ImGui::Text(" Strength: %d/4", pi.GetStrengthScore());
-            ImGui::EndTabItem();
+            im::Text(std::format(" Strength: {}/4", pi.GetStrengthScore()));
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Toggles")) {
+        if (im::BeginTabItem("Toggles")) {
             static unigui::CheckBox cb("cb", "Enable");
             static unigui::ToggleSwitch ts("ts", "Dark Mode", true);
             static unigui::RadioGroup rg("rg", {"A", "B", "C"}, 1);
             cb.Render();
             ts.Render();
             rg.Render();
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Selection")) {
+        if (im::BeginTabItem("Selection")) {
             static unigui::ComboBox cmb("cmb", "Fruit", {"Apple", "Banana", "Cherry"}, 0);
             static unigui::ListView lv("lv", {"Item 1", "Item 2", "Item 3", "Item 4"});
             cmb.Render();
             lv.Render();
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Progress")) {
+        if (im::BeginTabItem("Progress")) {
             static unigui::ProgressBar pb("pb", 0.65f);
             pb.SetOverlayText("65%");
             static unigui::LoadingIndicator li("li", 16);
@@ -96,36 +96,36 @@ static void DrawGallery() {
             pb.Render();
             li.Render();
             sl.Render();
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Layout")) {
+        if (im::BeginTabItem("Layout")) {
             static unigui::Separator sep("sep", "Section");
             static unigui::GroupBox gb("gb", "Settings");
             static unigui::ScrollArea sa("sa", 0, 100);
             static unigui::Splitter sp("sp", unigui::Splitter::Horizontal, 0.5f);
             sep.Render();
-            gb.SetContentCallback([] { ImGui::Text("Group content"); });
+            gb.SetContentCallback([] { im::Text("Group content"); });
             gb.Render();
             sa.SetContentCallback([] {
                 for (int i = 0; i < 6; i++)
-                    ImGui::Text("Scrollable line %d", i);
+                    im::Text(std::format("Scrollable line {}", i));
             });
             sa.Render();
-            sp.SetContentA([] { ImGui::Text("Left"); });
-            sp.SetContentB([] { ImGui::Text("Right"); });
+            sp.SetContentA([] { im::Text("Left"); });
+            sp.SetContentB([] { im::Text("Right"); });
             sp.Render();
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Navigation")) {
+        if (im::BeginTabItem("Navigation")) {
             static unigui::TabWidget tabs("tabs");
             static unigui::Breadcrumb bc("bc");
             static unigui::TreeView tv("tv");
             static bool tabInit = false;
             if (!tabInit) {
-                tabs.AddTab({"t1", "Tab 1", [] { ImGui::Text("Content 1"); }});
-                tabs.AddTab({"t2", "Tab 2", [] { ImGui::Text("Content 2"); }});
+                tabs.AddTab({"t1", "Tab 1", [] { im::Text("Content 1"); }});
+                tabs.AddTab({"t2", "Tab 2", [] { im::Text("Content 2"); }});
                 bc.SetItems({"Home", "Settings", "Profile"});
                 unigui::TreeNode root{"Root", {{"Child 1", {}}, {"Child 2", {{"Grandchild", {}}}}}};
                 tv.SetRoot(root);
@@ -134,10 +134,10 @@ static void DrawGallery() {
             tabs.Render();
             bc.Render();
             tv.Render();
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Data")) {
+        if (im::BeginTabItem("Data")) {
             static unigui::Table tbl("tbl", {"Name", "Age", "City"});
             static bool init = false;
             if (!init) {
@@ -148,10 +148,10 @@ static void DrawGallery() {
                 init = true;
             }
             tbl.Render();
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("File & Color")) {
+        if (im::BeginTabItem("File & Color")) {
             static unigui::FilePath fp("fp", "File");
             fp.SetFilter("*.cpp;*.h");
             static unigui::DirPath dp("dp", "Folder");
@@ -159,11 +159,11 @@ static void DrawGallery() {
             fp.Render();
             dp.Render();
             cp.Render();
-            ImGui::TextDisabled("(native file dialogs are desktop-only; no-op on the web)");
-            ImGui::EndTabItem();
+            im::TextDisabled("(native file dialogs are desktop-only; no-op on the web)");
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Info")) {
+        if (im::BeginTabItem("Info")) {
             static unigui::Label lbl("lbl", "A static label");
             static unigui::MultiLine ml("ml", "Line 1\nLine 2\nLine 3");
             static unigui::Hyperlink hl("hl", "GitHub", "https://github.com");
@@ -174,23 +174,23 @@ static void DrawGallery() {
             hl.Render();
             tag.Render();
             dpo.Render();
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Cards & Effects")) {
+        if (im::BeginTabItem("Cards & Effects")) {
             static unigui::Card card("Elevated Card");
             card.SetContent([] {
-                ImGui::TextWrapped("A card with drop shadow and rounded corners.");
+                im::TextWrapped("A card with drop shadow and rounded corners.");
                 static int clicks = 0;
-                if (ImGui::Button("Click Me"))
+                if (im::Button("Click Me"))
                     clicks++;
-                ImGui::SameLine();
-                ImGui::Text("Clicks: %d", clicks);
+                im::SameLine();
+                im::Text(std::format("Clicks: {}", clicks));
             });
-            card.SetFooter([] { ImGui::TextDisabled("Card footer"); });
+            card.SetFooter([] { im::TextDisabled("Card footer"); });
             card.Render();
 
-            ImGui::Spacing();
+            im::Spacing();
             static unigui::Badge dot("");
             dot.SetVariant(unigui::Badge::Dot);
             static unigui::Badge cnt("");
@@ -198,15 +198,15 @@ static void DrawGallery() {
             cnt.SetColor(IM_COL32(233, 69, 96, 255));
             static unigui::Badge nbl("NEW");
             nbl.SetColor(IM_COL32(0, 180, 100, 255));
-            ImGui::Text("Badges:");
-            ImGui::SameLine();
+            im::Text("Badges:");
+            im::SameLine();
             dot.Render();
-            ImGui::SameLine(120);
+            im::SameLine(120);
             cnt.Render();
-            ImGui::SameLine(180);
+            im::SameLine(180);
             nbl.Render();
 
-            ImGui::Spacing();
+            im::Spacing();
             static unigui::Shimmer sh;
             static bool shInit = true;
             if (shInit) {
@@ -217,82 +217,81 @@ static void DrawGallery() {
                 sh.Start();
                 shInit = false;
             }
-            if (ImGui::Button(sh.IsPlaying() ? "Stop shimmer" : "Start shimmer"))
+            if (im::Button(sh.IsPlaying() ? "Stop shimmer" : "Start shimmer"))
                 sh.IsPlaying() ? sh.Stop() : sh.Start();
-            ImGui::Dummy(ImVec2(0, 4));
+            im::Dummy(0, 4);
             sh.Render();
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Themes")) {
-            ImGui::TextWrapped("Switch the active theme at runtime — UniGUI's theme engine ships "
-                               "13 presets and restyles every widget live.");
-            ImGui::Spacing();
+        if (im::BeginTabItem("Themes")) {
+            im::TextWrapped("Switch the active theme at runtime — UniGUI's theme engine ships "
+                            "13 presets and restyles every widget live.");
+            im::Spacing();
             static int selected = 0;
             auto names = unigui::theme::ThemeRegistry::Instance().List();
             if (!names.empty() &&
-                ImGui::BeginCombo("Theme", names[selected % (int) names.size()].c_str())) {
+                im::BeginCombo("Theme", names[selected % (int) names.size()].c_str())) {
                 for (int i = 0; i < (int) names.size(); i++) {
                     bool isSel = (selected == i);
-                    if (ImGui::Selectable(names[i].c_str(), isSel)) {
+                    if (im::Selectable(names[i].c_str(), isSel)) {
                         selected = i;
                         unigui::theme::ThemeRegistry::Instance().Apply(names[i]);
                     }
                 }
-                ImGui::EndCombo();
+                im::EndCombo();
             }
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Accessibility")) {
+        if (im::BeginTabItem("Accessibility")) {
             namespace a11y = unigui::a11y;
-            ImGui::TextWrapped("UniGUI exposes a semantic accessibility layer over Dear ImGui: a "
-                               "per-frame element tree, focus tracking, and ARIA-style live "
-                               "announcements that a screen-reader bridge can consume. Keyboard "
-                               "navigation (Tab / arrows) is on by default.");
-            ImGui::Spacing();
+            im::TextWrapped("UniGUI exposes a semantic accessibility layer over Dear ImGui: a "
+                            "per-frame element tree, focus tracking, and ARIA-style live "
+                            "announcements that a screen-reader bridge can consume. Keyboard "
+                            "navigation (Tab / arrows) is on by default.");
+            im::Spacing();
 
             bool enabled = a11y::IsEnabled();
-            if (ImGui::Checkbox("Enable accessibility", &enabled))
+            if (im::Checkbox("Enable accessibility", &enabled))
                 a11y::SetEnabled(enabled);
-            ImGui::SameLine();
-            if (ImGui::SmallButton("Log to console"))
+            im::SameLine();
+            if (im::SmallButton("Log to console"))
                 a11y::InstallLoggingBridge(); // reference bridge → browser console
 
-            if (ImGui::Button("Announce (polite)"))
+            if (im::Button("Announce (polite)"))
                 a11y::Announce("Polite announcement from UniGUI", a11y::Live::Polite);
-            ImGui::SameLine();
-            if (ImGui::Button("Announce (assertive)"))
+            im::SameLine();
+            if (im::Button("Announce (assertive)"))
                 a11y::Announce("Assertive announcement!", a11y::Live::Assertive);
 
-            ImGui::TextDisabled("Tab through the Widgets tab, then watch the inspector below.");
+            im::TextDisabled("Tab through the Widgets tab, then watch the inspector below.");
             static bool show_inspector = true;
-            ImGui::Checkbox("Show the accessibility inspector window", &show_inspector);
+            im::Checkbox("Show the accessibility inspector window", &show_inspector);
             if (show_inspector)
                 a11y::DrawInspector(&show_inspector);
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("About")) {
-            ImGui::TextWrapped("This gallery is the examples/web_demo target, built with "
-                               "`emcmake cmake -DUNIGUI_WEB_WEBGPU=ON/OFF` and "
-                               "`cmake --build … --target web_demo`.");
-            ImGui::SeparatorText("Fonts");
-            ImGui::TextWrapped("The web build embeds only the Latin JetBrains Mono Nerd Font and "
-                               "has no system fonts, so CJK / emoji show as missing glyphs — load "
-                               "a CJK font via the font manager to render them (the desktop build "
-                               "merges system CJK ranges automatically).");
-            ImGui::SeparatorText("Dear ImGui interop");
+        if (im::BeginTabItem("About")) {
+            im::TextWrapped("This gallery is the examples/web_demo target, built with "
+                            "`emcmake cmake -DUNIGUI_WEB_WEBGPU=ON/OFF` and "
+                            "`cmake --build … --target web_demo`.");
+            im::SeparatorText("Fonts");
+            im::TextWrapped("The web build embeds only the Latin JetBrains Mono Nerd Font and "
+                            "has no system fonts, so CJK / emoji show as missing glyphs — load "
+                            "a CJK font via the font manager to render them (the desktop build "
+                            "merges system CJK ranges automatically).");
+            im::SeparatorText("Dear ImGui interop");
             static bool show_demo = false;
             im::Checkbox("Show the stock Dear ImGui demo window", &show_demo);
             if (show_demo)
                 ImGui::ShowDemoWindow(&show_demo);
-            ImGui::EndTabItem();
+            im::EndTabItem();
         }
 
-        ImGui::EndTabBar();
+        im::EndTabBar();
     }
-    ImGui::End();
 }
 
 int main() {

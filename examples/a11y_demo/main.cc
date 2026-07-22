@@ -11,17 +11,19 @@
 #include <cstdlib>
 #include <string_view>
 
+namespace im = unigui::im;
+
 static void Draw() {
     namespace im = unigui::im;
     namespace a11y = unigui::a11y;
 
-    ImGui::SetNextWindowPos(ImVec2(40, 40), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(440, 460), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Accessibility demo")) {
-        ImGui::TextWrapped("Tab / Shift-Tab through these widgets with a screen reader running. "
-                           "Each focused control is announced; the buttons below post live-region "
-                           "announcements.");
-        ImGui::Spacing();
+    im::SetNextWindowPos(ImVec2(40, 40), ImGuiCond_FirstUseEver);
+    im::SetNextWindowSize(ImVec2(440, 460), ImGuiCond_FirstUseEver);
+    if (unigui::WindowScope window{"Accessibility demo"}; window.visible()) {
+        im::TextWrapped("Tab / Shift-Tab through these widgets with a screen reader running. "
+                        "Each focused control is announced; the buttons below post live-region "
+                        "announcements.");
+        im::Spacing();
 
         static unigui::Button save("save", "Save");
         save.WithPrimary().WithAccessibleDescription("Saves the current settings");
@@ -39,14 +41,13 @@ static void Draw() {
         static unigui::RadioGroup color("color", {"Red", "Green", "Blue"}, 0);
         color.Render();
 
-        ImGui::Separator();
+        im::Separator();
         if (im::Button("Announce status"))
             a11y::Announce("Settings saved", a11y::Live::Polite);
         im::SameLine();
         if (im::Button("Announce error", im::ButtonVariant::Danger))
             a11y::Announce("Validation failed", a11y::Live::Assertive);
     }
-    ImGui::End();
 
     a11y::DrawInspector();
 }

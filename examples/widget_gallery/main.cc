@@ -2,7 +2,10 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <format>
 #include <string_view>
+
+namespace im = unigui::im;
 
 int main(int argc, char** argv) {
     int max_frames = 0;
@@ -43,9 +46,9 @@ int main(int argc, char** argv) {
                 b3.SetColorVariant(unigui::Button::Danger);
                 static unigui::IconButton ib("ib", "★", "Star");
                 b1.Render();
-                ImGui::SameLine();
+                im::SameLine();
                 b2.Render();
-                ImGui::SameLine();
+                im::SameLine();
                 b3.Render();
                 ib.Render();
             });
@@ -63,7 +66,7 @@ int main(int argc, char** argv) {
                 static unigui::PasswordInput pi("pi", "Password");
                 pi.SetShowStrength(true);
                 pi.Render();
-                ImGui::Text(" Strength: %d/4", pi.GetStrengthScore());
+                im::Text(std::format(" Strength: {}/4", pi.GetStrengthScore()));
             });
 
             addGroup("Toggles", []() {
@@ -98,15 +101,15 @@ int main(int argc, char** argv) {
                 static unigui::ScrollArea sa("sa", 0, 100);
                 static unigui::Splitter sp("sp", unigui::Splitter::Horizontal, 0.5f);
                 sep.Render();
-                gb.SetContentCallback([] { ImGui::Text("Group content"); });
+                gb.SetContentCallback([] { im::Text("Group content"); });
                 gb.Render();
                 sa.SetContentCallback([] {
                     for (int i = 0; i < 5; i++)
-                        ImGui::Text("Line %d", i);
+                        im::Text(std::format("Line {}", i));
                 });
                 sa.Render();
-                sp.SetContentA([] { ImGui::Text("Left"); });
-                sp.SetContentB([] { ImGui::Text("Right"); });
+                sp.SetContentA([] { im::Text("Left"); });
+                sp.SetContentB([] { im::Text("Right"); });
                 sp.Render();
             });
 
@@ -116,8 +119,8 @@ int main(int argc, char** argv) {
                 static unigui::TreeView tv("tv");
                 static bool tabInit = false;
                 if (!tabInit) {
-                    tabs.AddTab({"t1", "Tab 1", [] { ImGui::Text("Content 1"); }});
-                    tabs.AddTab({"t2", "Tab 2", [] { ImGui::Text("Content 2"); }});
+                    tabs.AddTab({"t1", "Tab 1", [] { im::Text("Content 1"); }});
+                    tabs.AddTab({"t2", "Tab 2", [] { im::Text("Content 2"); }});
                     bc.SetItems({"Home", "Settings", "Profile"});
                     unigui::TreeNode root{"Root",
                                           {{"Child1", {}}, {"Child2", {{"Grandchild", {}}}}}};
@@ -185,15 +188,15 @@ int main(int argc, char** argv) {
             themePanel->SetContentCallback([]() {
                 static int selected = 0;
                 auto names = unigui::theme::ThemeRegistry::Instance().List();
-                if (ImGui::BeginCombo("Theme", names.empty() ? "" : names[selected].c_str())) {
+                if (im::BeginCombo("Theme", names.empty() ? "" : names[selected].c_str())) {
                     for (int i = 0; i < (int) names.size(); i++) {
                         bool isSel = (selected == i);
-                        if (ImGui::Selectable(names[i].c_str(), &isSel)) {
+                        if (im::Selectable(names[i].c_str(), &isSel)) {
                             selected = i;
                             unigui::theme::ThemeRegistry::Instance().Apply(names[i]);
                         }
                     }
-                    ImGui::EndCombo();
+                    im::EndCombo();
                 }
             });
             win->AddPanel(themePanel);
@@ -203,15 +206,15 @@ int main(int argc, char** argv) {
             cardPanel->SetContentCallback([]() {
                 static unigui::Card card("Elevated Card");
                 card.SetContent([]() {
-                    ImGui::TextWrapped("This is a card with drop shadow and rounded corners. "
-                                       "Cards can have titles, content, and footers.");
+                    im::TextWrapped("This is a card with drop shadow and rounded corners. "
+                                    "Cards can have titles, content, and footers.");
                     static int clicks = 0;
-                    if (ImGui::Button("Click Me"))
+                    if (im::Button("Click Me"))
                         clicks++;
-                    ImGui::SameLine();
-                    ImGui::Text("Clicks: %d", clicks);
+                    im::SameLine();
+                    im::Text(std::format("Clicks: {}", clicks));
                 });
-                card.SetFooter([]() { ImGui::TextDisabled("Card footer"); });
+                card.SetFooter([]() { im::TextDisabled("Card footer"); });
                 card.Render();
             });
             win->AddPanel(cardPanel);
@@ -231,12 +234,12 @@ int main(int argc, char** argv) {
                     sh.Start();
                     init = false;
                 }
-                if (ImGui::Button(sh.IsPlaying() ? "Stop" : "Start")) {
+                if (im::Button(sh.IsPlaying() ? "Stop" : "Start")) {
                     sh.IsPlaying() ? sh.Stop() : sh.Start();
                 }
-                ImGui::SameLine();
-                ImGui::Text("(skeleton shimmer)");
-                ImGui::Dummy(ImVec2(0, 4));
+                im::SameLine();
+                im::Text("(skeleton shimmer)");
+                im::Dummy(0, 4);
                 sh.Render();
             });
             win->AddPanel(shimmerPanel);
@@ -252,16 +255,16 @@ int main(int argc, char** argv) {
                 static unigui::Badge lbl("NEW");
                 lbl.SetColor(IM_COL32(0, 180, 100, 255));
 
-                ImGui::Text("Dot:");
-                ImGui::SameLine();
+                im::Text("Dot:");
+                im::SameLine();
                 dot.Render();
-                ImGui::SameLine(80);
-                ImGui::Text("Count:");
-                ImGui::SameLine();
+                im::SameLine(80);
+                im::Text("Count:");
+                im::SameLine();
                 cnt.Render();
-                ImGui::SameLine(170);
-                ImGui::Text("Label:");
-                ImGui::SameLine();
+                im::SameLine(170);
+                im::Text("Label:");
+                im::SameLine();
                 lbl.Render();
             });
             win->AddPanel(badgePanel);

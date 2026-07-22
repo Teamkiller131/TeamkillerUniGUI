@@ -124,12 +124,19 @@ The simplest way — one call handles `Init`, the loop, and `Shutdown`:
 ```cpp
 #include <unigui/unigui.h>
 
+namespace im = unigui::im;
+
 int main() {
     unigui::AppConfig cfg;
     cfg.title = "My App";
     // cfg.backend = unigui::BackendType::DX11; // default on Windows
     return unigui::RunApp(cfg, [] {
-        ImGui::ShowDemoWindow(); // raw ImGui works + auto-themed
+        // Write UI against unigui, not ImGui: im::* for immediate-mode
+        // controls, or the retained widget classes for stateful UI.
+        im::Text("Hello from UniGUI!");
+        if (im::Button("Click me")) { /* ... */ }
+
+        ImGui::ShowDemoWindow(); // raw ImGui still works for interop (auto-themed)
     });
 }
 ```

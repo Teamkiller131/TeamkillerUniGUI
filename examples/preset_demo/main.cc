@@ -7,8 +7,11 @@
 #include <unigui/unigui.h>
 
 #include <cstdlib>
+#include <format>
 #include <string>
 #include <string_view>
+
+namespace im = unigui::im;
 
 using namespace unigui;
 
@@ -34,15 +37,15 @@ static void BuildOnce() {
         .AddMetric(
             "P&L", [] { return "+$12,408"; }, [] { return 0.8; })
         .AddCard("Notes", [] {
-            ImGui::TextWrapped("Every card on this page is one AddMetric/AddCard call. "
-                               "The grid re-wraps as the window resizes.");
+            im::TextWrapped("Every card on this page is one AddMetric/AddCard call. "
+                            "The grid re-wraps as the window resizes.");
         });
 
     g_data.WithItems({"EURUSD", "XAUUSD", "BTCUSDT", "AAPL", "NVDA"})
         .WithDetail([](int i) {
-            ImGui::Text("Instrument #%d", i);
-            ImGui::Separator();
-            ImGui::TextWrapped("Detail pane: render anything here — charts, blotters, forms.");
+            im::Text(std::format("Instrument #{}", i));
+            im::Separator();
+            im::TextWrapped("Detail pane: render anything here — charts, blotters, forms.");
         })
         .WithOnSelect([](int i) {
             g_logs.Append(presets::LogConsole::Level::Info,
@@ -79,16 +82,16 @@ static void BuildOnce() {
         });
 
     // A first-run setup wizard, shown as a page.
-    g_setup.AddStep("Welcome", [] { ImGui::TextWrapped("This wizard has validation gating."); })
+    g_setup.AddStep("Welcome", [] { im::TextWrapped("This wizard has validation gating."); })
         .AddStep(
             "Confirm",
             [] {
                 static bool agreed = false;
-                ImGui::Checkbox("I agree to the terms", &agreed);
+                im::Checkbox("I agree to the terms", &agreed);
                 g_setup_agreed = agreed; // captured by the gate below
             },
             [] { return g_setup_agreed; })
-        .AddStep("Done", [] { ImGui::TextUnformatted("All set!"); })
+        .AddStep("Done", [] { im::TextUnformatted("All set!"); })
         .WithOnFinish([] { g_logs.Append(presets::LogConsole::Level::Info, "Setup complete"); });
 
     g_shell
@@ -122,13 +125,15 @@ static void Draw() {
             g_login.SetUsername("trader1");
             g_login.Submit();
         }
-        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos);
-        ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize);
-        ImGui::Begin("##login_host", nullptr,
-                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-        g_login.Render();
-        ImGui::End();
+        im::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos);
+        im::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize);
+        {
+            unigui::WindowScope host{"##login_host", nullptr,
+                                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+                                         ImGuiWindowFlags_NoSavedSettings |
+                                         ImGuiWindowFlags_NoBringToFrontOnFocus};
+            g_login.Render();
+        }
         return;
     }
 

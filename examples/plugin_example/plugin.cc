@@ -1,11 +1,13 @@
 /// Example plugin: demonstrates the plugin interface.
 /// Build: cmake --build && the DLL goes to the build output.
 #include <unigui/core/log.h>
+#include <unigui/core/scope.h>
+#include <unigui/im/im.h>
 #include <unigui/plugin/plugin_interface.h>
 
-#include <imgui.h>
-
 #include <cstdio>
+
+namespace im = unigui::im;
 
 class ExamplePlugin : public unigui::plugin::IPlugin {
 public:
@@ -18,9 +20,8 @@ public:
     }
     void Shutdown() override { std::printf("[ExamplePlugin] Shutdown\n"); }
     void Render() override {
-        ImGui::Begin("Example Plugin");
-        ImGui::Text("Hello from ExamplePlugin v1.0.0!");
-        ImGui::End();
+        unigui::WindowScope window{"Example Plugin"};
+        im::Text("Hello from ExamplePlugin v1.0.0!");
     }
 };
 

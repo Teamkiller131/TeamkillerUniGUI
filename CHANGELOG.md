@@ -1,5 +1,24 @@
 ## [Unreleased]
 
+### Changed
+- **Examples now use the `unigui` API, not raw Dear ImGui.** Every desktop and web
+  example previously mixed `ImGui::Text`/`Button`/`Begin`/`End`/… directly into
+  application code, which both undercut the wrapper's purpose and taught readers (and
+  AI coding agents) to reach for raw ImGui. All 13 examples were converted to
+  `unigui::im::*` immediate-mode helpers and the RAII `WindowScope`/`ChildScope`
+  guards; the only remaining `ImGui::` calls are genuinely ImGui-specific
+  (`ShowDemoWindow`, `GetIO`, `GetMainViewport`). printf-style `ImGui::Text("%d", …)`
+  became `im::Text(std::format(…))`. The flagship `hello_unigui` went from a ~50/50
+  ImGui/unigui mix to zero avoidable raw calls. All examples still build and pass their
+  headless `--frames` smoke run.
+
+### Documentation
+- `CLAUDE.md`: added a top-of-file rule — never call `ImGui::` in application code —
+  with an `ImGui::` → `unigui::im::` drop-in mapping table, and scoped the two places
+  raw ImGui is legitimate (`src/backend/`, widget internals). Removed a stray tag left
+  in the file. `README.md`: the core-loop quick-start now models `unigui::im` instead
+  of leading with a raw `ImGui::` call.
+
 ## [4.8.0] - 2026-07-08
 
 ### Added

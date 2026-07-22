@@ -2,6 +2,9 @@
 #include <unigui/unigui.h>
 
 #include <cstdio>
+#include <format>
+
+namespace im = unigui::im;
 
 int main(int argc, char** argv) {
     int max_frames = 0;
@@ -33,96 +36,98 @@ int main(int argc, char** argv) {
     while (!unigui::ShouldClose()) {
         unigui::NewFrame();
 
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-        ImGui::Begin("Theme Demo", nullptr,
-                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+        im::SetNextWindowPos(ImVec2(0, 0));
+        im::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+        {
+            unigui::WindowScope window{"Theme Demo", nullptr,
+                                       ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                           ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse};
 
-        // Theme name display
-        ImGui::SetCursorPos(ImVec2(20, 20));
-        ImGui::Text("Current Theme: %s (%d/%d)", names[currentTheme].c_str(), currentTheme + 1,
-                    (int) names.size());
+            // Theme name display
+            im::SetCursorPos(ImVec2(20, 20));
+            im::Text(std::format("Current Theme: {} ({}/{})", names[currentTheme], currentTheme + 1,
+                                 (int) names.size()));
 
-        // Progress bar
-        float pct = (float) (frame % switchInterval) / (float) switchInterval;
-        ImGui::SetCursorPos(ImVec2(20, 50));
-        ImGui::ProgressBar(pct, ImVec2(760, 20));
+            // Progress bar
+            float pct = (float) (frame % switchInterval) / (float) switchInterval;
+            im::SetCursorPos(ImVec2(20, 50));
+            im::ProgressBar(pct, ImVec2(760, 20));
 
-        // Card with theme info
-        ImGui::SetCursorPos(ImVec2(20, 90));
-        ImGui::BeginChild("card", ImVec2(360, 200), ImGuiChildFlags_Borders);
-        ImGui::TextWrapped("This demo cycles through all %d built-in themes.", (int) names.size());
-        ImGui::Spacing();
-        ImGui::Text("Available themes:");
-        for (auto& n : names) {
-            ImGui::BulletText("%s", n.c_str());
+            // Card with theme info
+            im::SetCursorPos(ImVec2(20, 90));
+            im::BeginChild("card", ImVec2(360, 200), ImGuiChildFlags_Borders);
+            im::TextWrapped(std::format("This demo cycles through all {} built-in themes.",
+                                        (int) names.size()));
+            im::Spacing();
+            im::Text("Available themes:");
+            for (auto& n : names) {
+                im::BulletText(n);
+            }
+            im::EndChild();
+
+            // Buttons
+            im::SetCursorPos(ImVec2(400, 90));
+            im::BeginChild("buttons", ImVec2(380, 200), ImGuiChildFlags_Borders);
+            im::Text("Animated Buttons:");
+            static unigui::Button b1("tb1", "Primary");
+            b1.SetColorVariant(unigui::Button::Primary);
+            static unigui::Button b2("tb2", "Danger");
+            b2.SetColorVariant(unigui::Button::Danger);
+            static unigui::Button b3("tb3", "Success");
+            b3.SetColorVariant(unigui::Button::Success);
+            b1.Render();
+            im::SameLine();
+            b2.Render();
+            im::SameLine();
+            b3.Render();
+
+            im::Spacing();
+            im::Text("Badges:");
+            static unigui::Badge dot("");
+            dot.SetVariant(unigui::Badge::Dot);
+            static unigui::Badge cnt("");
+            cnt.SetCount(7);
+            im::Text("Dot:");
+            im::SameLine();
+            dot.Render();
+            im::SameLine(60);
+            im::Text("Count:");
+            im::SameLine();
+            cnt.Render();
+
+            im::Spacing();
+            im::Text("Animated ProgressBar:");
+            static unigui::ProgressBar pb("tpb", 0.f);
+            static float pbVal = 0.f;
+            pbVal += 0.008f;
+            if (pbVal > 1.f)
+                pbVal = 0.f;
+            pb.SetFraction(pbVal);
+            pb.Render();
+            im::EndChild();
+
+            // Footer
+            im::SetCursorPos(ImVec2(20, 340));
+            if (autoCycle) {
+                im::Text(std::format("Auto-cycling every {} frames. Use --manual to stop.",
+                                     switchInterval));
+                if (frame % switchInterval == 0 && frame > 0) {
+                    currentTheme = (currentTheme + 1) % (int) names.size();
+                    unigui::theme::ThemeRegistry::Instance().Apply(names[currentTheme]);
+                }
+            } else {
+                im::Text("Manual mode. Use --auto to enable auto-cycle.");
+                if (im::Button("< Prev")) {
+                    currentTheme = (currentTheme - 1 + (int) names.size()) % (int) names.size();
+                    unigui::theme::ThemeRegistry::Instance().Apply(names[currentTheme]);
+                }
+                im::SameLine();
+                if (im::Button("Next >")) {
+                    currentTheme = (currentTheme + 1) % (int) names.size();
+                    unigui::theme::ThemeRegistry::Instance().Apply(names[currentTheme]);
+                }
+            }
         }
-        ImGui::EndChild();
-
-        // Buttons
-        ImGui::SetCursorPos(ImVec2(400, 90));
-        ImGui::BeginChild("buttons", ImVec2(380, 200), ImGuiChildFlags_Borders);
-        ImGui::Text("Animated Buttons:");
-        static unigui::Button b1("tb1", "Primary");
-        b1.SetColorVariant(unigui::Button::Primary);
-        static unigui::Button b2("tb2", "Danger");
-        b2.SetColorVariant(unigui::Button::Danger);
-        static unigui::Button b3("tb3", "Success");
-        b3.SetColorVariant(unigui::Button::Success);
-        b1.Render();
-        ImGui::SameLine();
-        b2.Render();
-        ImGui::SameLine();
-        b3.Render();
-
-        ImGui::Spacing();
-        ImGui::Text("Badges:");
-        static unigui::Badge dot("");
-        dot.SetVariant(unigui::Badge::Dot);
-        static unigui::Badge cnt("");
-        cnt.SetCount(7);
-        ImGui::Text("Dot:");
-        ImGui::SameLine();
-        dot.Render();
-        ImGui::SameLine(60);
-        ImGui::Text("Count:");
-        ImGui::SameLine();
-        cnt.Render();
-
-        ImGui::Spacing();
-        ImGui::Text("Animated ProgressBar:");
-        static unigui::ProgressBar pb("tpb", 0.f);
-        static float pbVal = 0.f;
-        pbVal += 0.008f;
-        if (pbVal > 1.f)
-            pbVal = 0.f;
-        pb.SetFraction(pbVal);
-        pb.Render();
-        ImGui::EndChild();
-
-        // Footer
-        ImGui::SetCursorPos(ImVec2(20, 340));
-        if (autoCycle) {
-            ImGui::Text("Auto-cycling every %d frames. Use --manual to stop.", switchInterval);
-            if (frame % switchInterval == 0 && frame > 0) {
-                currentTheme = (currentTheme + 1) % (int) names.size();
-                unigui::theme::ThemeRegistry::Instance().Apply(names[currentTheme]);
-            }
-        } else {
-            ImGui::Text("Manual mode. Use --auto to enable auto-cycle.");
-            if (ImGui::Button("< Prev")) {
-                currentTheme = (currentTheme - 1 + (int) names.size()) % (int) names.size();
-                unigui::theme::ThemeRegistry::Instance().Apply(names[currentTheme]);
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Next >")) {
-                currentTheme = (currentTheme + 1) % (int) names.size();
-                unigui::theme::ThemeRegistry::Instance().Apply(names[currentTheme]);
-            }
-        }
-
-        ImGui::End();
         unigui::Render();
         frame++;
         if (max_frames > 0 && frame >= max_frames)
