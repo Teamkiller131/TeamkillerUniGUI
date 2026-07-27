@@ -269,6 +269,12 @@ void TableSetupColumn(std::string_view label, ImGuiTableColumnFlags flags = 0,
 /// Freeze the first `cols` columns / `rows` rows while the rest scrolls.
 void TableSetupScrollFreeze(int cols, int rows);
 void TableHeadersRow();
+void TableHeader(std::string_view label);
+/// Name of a column (-1 = the current one). Points into ImGui's table storage —
+/// valid until the next table call, so copy it if you keep it.
+const char* TableGetColumnName(int columnN = -1);
+/// Current sort spec, or null when the table is not sortable / not dirty.
+ImGuiTableSortSpecs* TableGetSortSpecs();
 int  TableGetColumnCount();
 int  TableGetColumnIndex();
 int  TableGetRowIndex();
@@ -292,11 +298,15 @@ void SetWindowFontScale(float scale);
 // ── Metrics & context accessors ───────────────────────────────────────────────
 // (GetTime / CalcTextSize / GetContentRegionAvail / GetCursorScreenPos /
 //  GetWindowDrawList already live in the sections above — do not redeclare.)
+ImFont* GetFont();
 float GetFontSize();
 /// The live style block, e.g. to read FramePadding or a theme color.
 ImGuiStyle& GetStyle();
 /// The IO block — font scale, display size, input state.
 ImGuiIO& GetIO();
+/// The active ImGui context. Needed only by code that reaches into internals;
+/// prefer the typed accessors above.
+ImGuiContext* GetCurrentContext();
 
 // ── Style stack ───────────────────────────────────────────────────────────────
 //

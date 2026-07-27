@@ -89,13 +89,18 @@ public:
     /// frame): returns the padded [lo, hi]. Sign-aware per the doc above; a
     /// degenerate flat-at-zero input yields [-1, 1] so the axis never collapses.
     static std::pair<double, double> PadRange(double lo, double hi, double r) {
-        double plo = lo >= 0.0 ? lo * (1.0 - r) : lo * (1.0 + r);
-        double phi = hi >= 0.0 ? hi * (1.0 + r) : hi * (1.0 - r);
-        if (!(phi > plo)) {
-            plo -= 1.0;
-            phi += 1.0;
+        // 按【数据跨度 span=hi-lo】外扩,而非按【绝对值】。旧实现 lo*(1−r)/hi*(1+r) 对
+        // "偏离 0 很远但波动很小"的序列(如比价/价差 ~7000 而当日仅波动 ~60)会按【值】的
+        // 5% 外扩(±350),把 60 的真实信号压成一条平线 + 粗刻度(200/500),看不清走势。
+        // span 相对外扩(±3)才与движение成比例:近零数据两种口径几乎一致,偏移数据这里才正确。
+        const double span = hi - lo;
+        if (span > 0.0) {
+            const double pad = span * r;
+            return {lo - pad, hi + pad};
         }
-        return {plo, phi};
+        // 退化(单点 / 全平):给一个不塌缩的极小窗口(±1),避免零高度轴;
+        // 想要"平线固定高度"的调用方应改用 SetYAxisMinSpan()。
+        return {lo - 1.0, hi + 1.0};
     }
     /// Minimum Y-axis span (height) enforced while auto-fitting. 0 (default)
     /// disables the floor. When the data inside the visible X window spans less
@@ -165,7 +170,7 @@ private:
     bool yRangeFit_ = true;
     double yMin_ = 0, yMax_ = 100;
     double minYSpan_ = 0.0;    // 0 = disabled; else Y-axis height floor (auto-fit only)
-    double yPadRatio_ = 0.05;  // auto-fit padding: [min·(1−r), max·(1+r)], sign-aware
+    double yPadRatio_ = 0.05;  // auto-fit padding: ±r × 数据跨度(span=max−min),见 PadRange()
     double lastXMin_ = -1e300; // visible X window cached from the previous frame,
     double lastXMax_ = 1e300;  // used to scope the min-span Y fit (see Render)
     bool xRangeSet_ = false;

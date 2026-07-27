@@ -638,6 +638,15 @@ void TableSetupScrollFreeze(int cols, int rows) {
 void TableHeadersRow() {
     ImGui::TableHeadersRow();
 }
+void TableHeader(std::string_view label) {
+    ImGui::TableHeader(Z(label).c_str());
+}
+const char* TableGetColumnName(int columnN) {
+    return ImGui::TableGetColumnName(columnN);
+}
+ImGuiTableSortSpecs* TableGetSortSpecs() {
+    return ImGui::TableGetSortSpecs();
+}
 int TableGetColumnCount() {
     return ImGui::TableGetColumnCount();
 }
@@ -673,6 +682,9 @@ void SetWindowFontScale(float scale) {
 }
 
 // ── Metrics & context accessors ───────────────────────────────────────────────
+ImFont* GetFont() {
+    return ImGui::GetFont();
+}
 float GetFontSize() {
     return ImGui::GetFontSize();
 }
@@ -681,6 +693,9 @@ ImGuiStyle& GetStyle() {
 }
 ImGuiIO& GetIO() {
     return ImGui::GetIO();
+}
+ImGuiContext* GetCurrentContext() {
+    return ImGui::GetCurrentContext();
 }
 
 // ── Style stack ───────────────────────────────────────────────────────────────
