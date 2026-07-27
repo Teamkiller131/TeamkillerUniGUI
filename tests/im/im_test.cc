@@ -3,6 +3,7 @@
 #include <imgui.h>
 
 #include <gtest/gtest.h>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -833,4 +834,66 @@ TEST_F(ImTest, MiscUtilities_DoNotCrash) {
     unigui::im::SetMouseCursor(ImGuiMouseCursor_Hand);
     EXPECT_EQ(unigui::im::GetMouseCursor(), ImGuiMouseCursor_Hand);
     ImGui::End();
+}
+
+// ── Regression: EnterReturnsTrue must not swallow the typing ────────────────
+//
+// `EditString` used to write back to the caller's std::string only when the
+// widget returned true. With ImGuiInputTextFlags_EnterReturnsTrue that return
+// fires *only on the Enter frame*, so every keystroke was discarded and the
+// field visibly emptied itself the moment it lost focus — a password box you
+// could not type into. Reported 2026-07-27 against a change-password dialog.
+//
+// The flag is documented as changing the *return value*; nothing at the call
+// site hints that it also disables persistence. Hence this test, which types
+// like a human does: focus, one character per frame, and never press Enter.
+namespace {
+
+/// Runs `body` inside a real frame; returns when the frame is rendered.
+void RunFrame(const std::function<void()>& body) {
+    ImGui::NewFrame();
+    ImGui::Begin("host");
+    body();
+    ImGui::End();
+    ImGui::Render();
+}
+
+} // namespace
+
+TEST(ImInputTextPersistence, EnterReturnsTrueStillKeepsTypedText) {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2(800, 600);
+    io.DeltaTime = 1.0f / 60.0f;
+    io.Fonts->Build();
+
+    std::string value;
+    const ImGuiInputTextFlags flags =
+        ImGuiInputTextFlags_Password | ImGuiInputTextFlags_EnterReturnsTrue;
+
+    // Frame 1: focus the field.
+    RunFrame([&] {
+        ImGui::SetKeyboardFocusHere();
+        unigui::im::InputText("##pwd", &value, 128, flags);
+    });
+
+    // Frames 2..4: type "abc", one character per frame, Enter never pressed.
+    for (char c : {'a', 'b', 'c'}) {
+        io.AddInputCharacter(static_cast<unsigned int>(c));
+        RunFrame([&] { unigui::im::InputText("##pwd", &value, 128, flags); });
+    }
+
+    // Frame 5: the field loses focus. Under the old behaviour `value` was still
+    // empty here and the next frame repainted an empty box.
+    RunFrame([&] {
+        unigui::im::InputText("##pwd", &value, 128, flags);
+        ImGui::SetKeyboardFocusHere();
+        ImGui::InputText("##elsewhere", nullptr, 0);
+    });
+
+    EXPECT_EQ(value, "abc")
+        << "typing was discarded: EnterReturnsTrue must not disable write-back";
+
+    ImGui::DestroyContext();
 }

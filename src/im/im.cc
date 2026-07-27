@@ -269,7 +269,18 @@ bool EditString(const char* id, std::string* value, std::size_t maxLength, bool 
                              ? ImGui::InputTextMultiline(id, buf.data(), buf.size(), size, flags)
                              : ImGui::InputText(id, buf.data(), buf.size(), flags);
     DrawActiveInputCaret();
-    if (changed)
+    // Write back whenever the buffer differs -- NOT when the widget returns true.
+    //
+    // With ImGuiInputTextFlags_EnterReturnsTrue the return value fires only on the
+    // Enter frame, so keying it to `changed` silently discards every keystroke: the
+    // next frame refills `buf` from the untouched string and the typing vanishes the
+    // moment the field loses focus. That is a password box that cannot be typed into,
+    // and it is impossible to spot from the call site -- the flag is documented as
+    // changing the *return* value, not as disabling persistence.
+    //
+    // The scaffold's LoginView already hand-rolled its own wrapper with exactly this
+    // rule to work around it; fixing it here removes the need for that copy.
+    if (*value != buf.data())
         value->assign(buf.data());
     return changed;
 }
@@ -294,7 +305,7 @@ bool InputTextWithHint(std::string_view label, std::string_view hint, std::strin
     const bool changed =
         ImGui::InputTextWithHint(Z(label).c_str(), Z(hint).c_str(), buf.data(), buf.size(), flags);
     DrawActiveInputCaret();
-    if (changed)
+    if (*value != buf.data()) // same rule as EditString -- see the note there
         value->assign(buf.data());
     return changed;
 }
