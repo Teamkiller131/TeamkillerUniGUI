@@ -6,6 +6,7 @@
 #include "detail/combo_chevron.h"
 
 #include <algorithm>
+#include <cstdarg>
 #include <cstring>
 
 namespace unigui::im {
@@ -293,6 +294,28 @@ bool InputText(std::string_view label, std::string* value, std::size_t maxLength
     return EditString(Z(label).c_str(), value, maxLength, /*multiline=*/false, ImVec2(0, 0), flags);
 }
 
+bool InputText(std::string_view label, char* buf, std::size_t bufSize,
+               ImGuiInputTextFlags flags) {
+    const bool changed = ImGui::InputText(Z(label).c_str(), buf, bufSize, flags);
+    DrawActiveInputCaret();
+    return changed;
+}
+
+bool InputTextWithHint(std::string_view label, std::string_view hint, char* buf,
+                       std::size_t bufSize, ImGuiInputTextFlags flags) {
+    const bool changed =
+        ImGui::InputTextWithHint(Z(label).c_str(), Z(hint).c_str(), buf, bufSize, flags);
+    DrawActiveInputCaret();
+    return changed;
+}
+
+bool InputTextMultiline(std::string_view label, char* buf, std::size_t bufSize,
+                        const ImVec2& size, ImGuiInputTextFlags flags) {
+    const bool changed = ImGui::InputTextMultiline(Z(label).c_str(), buf, bufSize, size, flags);
+    DrawActiveInputCaret();
+    return changed;
+}
+
 bool InputTextWithHint(std::string_view label, std::string_view hint, std::string* value,
                        std::size_t maxLength, ImGuiInputTextFlags flags) {
     if (!value)
@@ -542,6 +565,124 @@ float GetWindowHeight() {
 }
 
 // ── Clip rect ─────────────────────────────────────────────────────────────────
+// ── Formatted text (printf-style) ─────────────────────────────────────────────
+// Each forwards the va_list to ImGui's *V variant — no intermediate buffer, so
+// long strings are not truncated by a fixed-size scratch array.
+void TextF(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::TextV(fmt, args);
+    va_end(args);
+}
+void TextColoredF(const ImVec4& color, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::TextColoredV(color, fmt, args);
+    va_end(args);
+}
+void TextDisabledF(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::TextDisabledV(fmt, args);
+    va_end(args);
+}
+void TextWrappedF(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::TextWrappedV(fmt, args);
+    va_end(args);
+}
+void LabelTextF(const char* label, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::LabelTextV(label, fmt, args);
+    va_end(args);
+}
+void BulletTextF(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::BulletTextV(fmt, args);
+    va_end(args);
+}
+void SetTooltipF(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::SetTooltipV(fmt, args);
+    va_end(args);
+}
+
+// ── Tables ────────────────────────────────────────────────────────────────────
+bool BeginTable(std::string_view strId, int columns, ImGuiTableFlags flags,
+                const ImVec2& outerSize, float innerWidth) {
+    return ImGui::BeginTable(Z(strId).c_str(), columns, flags, outerSize, innerWidth);
+}
+void EndTable() {
+    ImGui::EndTable();
+}
+void TableNextRow(ImGuiTableRowFlags rowFlags, float minRowHeight) {
+    ImGui::TableNextRow(rowFlags, minRowHeight);
+}
+bool TableNextColumn() {
+    return ImGui::TableNextColumn();
+}
+bool TableSetColumnIndex(int columnN) {
+    return ImGui::TableSetColumnIndex(columnN);
+}
+void TableSetupColumn(std::string_view label, ImGuiTableColumnFlags flags,
+                      float initWidthOrWeight, ImGuiID userId) {
+    ImGui::TableSetupColumn(Z(label).c_str(), flags, initWidthOrWeight, userId);
+}
+void TableSetupScrollFreeze(int cols, int rows) {
+    ImGui::TableSetupScrollFreeze(cols, rows);
+}
+void TableHeadersRow() {
+    ImGui::TableHeadersRow();
+}
+int TableGetColumnCount() {
+    return ImGui::TableGetColumnCount();
+}
+int TableGetColumnIndex() {
+    return ImGui::TableGetColumnIndex();
+}
+int TableGetRowIndex() {
+    return ImGui::TableGetRowIndex();
+}
+
+// ── Legacy columns ────────────────────────────────────────────────────────────
+void Columns(int count, std::string_view id, bool borders) {
+    // ImGui treats a null id as "unnamed"; an empty view must map to that rather
+    // than to the empty string, which would be a *different* (hashed) id.
+    ImGui::Columns(count, id.empty() ? nullptr : Z(id).c_str(), borders);
+}
+void NextColumn() {
+    ImGui::NextColumn();
+}
+void SetColumnWidth(int columnIndex, float width) {
+    ImGui::SetColumnWidth(columnIndex, width);
+}
+
+// ── Windows ───────────────────────────────────────────────────────────────────
+bool Begin(std::string_view name, bool* pOpen, ImGuiWindowFlags flags) {
+    return ImGui::Begin(Z(name).c_str(), pOpen, flags);
+}
+void End() {
+    ImGui::End();
+}
+void SetWindowFontScale(float scale) {
+    ImGui::SetWindowFontScale(scale);
+}
+
+// ── Metrics & context accessors ───────────────────────────────────────────────
+float GetFontSize() {
+    return ImGui::GetFontSize();
+}
+ImGuiStyle& GetStyle() {
+    return ImGui::GetStyle();
+}
+ImGuiIO& GetIO() {
+    return ImGui::GetIO();
+}
+
 // ── Style stack ───────────────────────────────────────────────────────────────
 void PushStyleColor(ImGuiCol idx, ImU32 color) {
     ImGui::PushStyleColor(idx, color);

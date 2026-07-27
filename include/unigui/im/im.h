@@ -120,6 +120,16 @@ bool InputDouble(std::string_view label, double* value, double step = 0.0, doubl
 bool InputText(std::string_view label, std::string* value, std::size_t maxLength = 256,
                ImGuiInputTextFlags flags = 0);
 /// Single-line text input with a greyed-out `hint` shown when the field is empty.
+/// char-buffer overloads, for call sites that own a fixed `char[]` rather than a
+/// std::string (filter boxes, log scratch buffers). Same semantics as ImGui's —
+/// `bufSize` includes the terminating NUL.
+bool InputText(std::string_view label, char* buf, std::size_t bufSize,
+               ImGuiInputTextFlags flags = 0);
+bool InputTextWithHint(std::string_view label, std::string_view hint, char* buf,
+                       std::size_t bufSize, ImGuiInputTextFlags flags = 0);
+bool InputTextMultiline(std::string_view label, char* buf, std::size_t bufSize,
+                        const ImVec2& size = ImVec2(0, 0), ImGuiInputTextFlags flags = 0);
+
 bool InputTextWithHint(std::string_view label, std::string_view hint, std::string* value,
                        std::size_t maxLength = 256, ImGuiInputTextFlags flags = 0);
 /// Multi-line text input bound to a std::string.
@@ -220,6 +230,73 @@ ImVec2 GetWindowPos();
 ImVec2 GetWindowSize();
 float GetWindowWidth();
 float GetWindowHeight();
+
+// ── Formatted text (printf-style) ─────────────────────────────────────────────
+//
+// The string_view Text/TextDisabled/… above cover the common case. These cover
+// the other one: call sites that already carry a format string.
+//
+// They exist so that migrating `ImGui::Text("%d 条", n)` is a *symbol swap*
+// rather than a hand-rewrite into some other formatting library. Rewriting 100+
+// format strings by hand is precisely how an argument gets dropped or reordered
+// and nobody notices until the number on screen is wrong — the compiler cannot
+// help once the format string is gone. Here IM_FMTARGS keeps compiler format
+// checking on (GCC/Clang), so a mismatched argument is a build error.
+void TextF(const char* fmt, ...) IM_FMTARGS(1);
+void TextColoredF(const ImVec4& color, const char* fmt, ...) IM_FMTARGS(2);
+void TextDisabledF(const char* fmt, ...) IM_FMTARGS(1);
+void TextWrappedF(const char* fmt, ...) IM_FMTARGS(1);
+void LabelTextF(const char* label, const char* fmt, ...) IM_FMTARGS(2);
+void BulletTextF(const char* fmt, ...) IM_FMTARGS(1);
+void SetTooltipF(const char* fmt, ...) IM_FMTARGS(1);
+
+// ── Tables ────────────────────────────────────────────────────────────────────
+//
+// Thin pass-throughs. `unigui::Table` is the retained-state widget for ordinary
+// data grids; these are for the cases that need the immediate-mode API directly
+// (custom per-cell layout, mixed content, dynamic column sets).
+bool BeginTable(std::string_view strId, int columns, ImGuiTableFlags flags = 0,
+                const ImVec2& outerSize = ImVec2(0.0f, 0.0f), float innerWidth = 0.0f);
+/// Only call when BeginTable returned true.
+void EndTable();
+void TableNextRow(ImGuiTableRowFlags rowFlags = 0, float minRowHeight = 0.0f);
+/// Advance to the next column; returns false when that column is clipped/hidden,
+/// which is the cue to skip the work of drawing it.
+bool TableNextColumn();
+bool TableSetColumnIndex(int columnN);
+void TableSetupColumn(std::string_view label, ImGuiTableColumnFlags flags = 0,
+                      float initWidthOrWeight = 0.0f, ImGuiID userId = 0);
+/// Freeze the first `cols` columns / `rows` rows while the rest scrolls.
+void TableSetupScrollFreeze(int cols, int rows);
+void TableHeadersRow();
+int  TableGetColumnCount();
+int  TableGetColumnIndex();
+int  TableGetRowIndex();
+
+// ── Legacy columns ────────────────────────────────────────────────────────────
+// Superseded by Tables in ImGui; wrapped only so existing call sites can move
+// off raw ImGui:: without being rewritten in the same change.
+void Columns(int count = 1, std::string_view id = {}, bool borders = true);
+void NextColumn();
+void SetColumnWidth(int columnIndex, float width);
+
+// ── Windows ───────────────────────────────────────────────────────────────────
+/// Full windows. Most app code should be inside the scaffold's layout instead;
+/// these are for tool windows and overlays.
+bool Begin(std::string_view name, bool* pOpen = nullptr, ImGuiWindowFlags flags = 0);
+void End();
+/// Per-window font scaling. Prefer the global font-size preference — this exists
+/// for the odd panel that genuinely needs to differ.
+void SetWindowFontScale(float scale);
+
+// ── Metrics & context accessors ───────────────────────────────────────────────
+// (GetTime / CalcTextSize / GetContentRegionAvail / GetCursorScreenPos /
+//  GetWindowDrawList already live in the sections above — do not redeclare.)
+float GetFontSize();
+/// The live style block, e.g. to read FramePadding or a theme color.
+ImGuiStyle& GetStyle();
+/// The IO block — font scale, display size, input state.
+ImGuiIO& GetIO();
 
 // ── Style stack ───────────────────────────────────────────────────────────────
 //
