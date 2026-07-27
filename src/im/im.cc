@@ -542,6 +542,76 @@ float GetWindowHeight() {
 }
 
 // ── Clip rect ─────────────────────────────────────────────────────────────────
+// ── Style stack ───────────────────────────────────────────────────────────────
+void PushStyleColor(ImGuiCol idx, ImU32 color) {
+    ImGui::PushStyleColor(idx, color);
+}
+void PushStyleColor(ImGuiCol idx, const ImVec4& color) {
+    ImGui::PushStyleColor(idx, color);
+}
+void PopStyleColor(int count) {
+    ImGui::PopStyleColor(count);
+}
+void PushStyleVar(ImGuiStyleVar idx, float value) {
+    ImGui::PushStyleVar(idx, value);
+}
+void PushStyleVar(ImGuiStyleVar idx, const ImVec2& value) {
+    ImGui::PushStyleVar(idx, value);
+}
+void PopStyleVar(int count) {
+    ImGui::PopStyleVar(count);
+}
+ImU32 GetColorU32(ImGuiCol idx, float alphaMul) {
+    return ImGui::GetColorU32(idx, alphaMul);
+}
+ImU32 GetColorU32(const ImVec4& color) {
+    return ImGui::GetColorU32(color);
+}
+const ImVec4& GetStyleColorVec4(ImGuiCol idx) {
+    return ImGui::GetStyleColorVec4(idx);
+}
+
+// ── Text wrapping ─────────────────────────────────────────────────────────────
+void PushTextWrapPos(float wrapLocalPosX) {
+    ImGui::PushTextWrapPos(wrapLocalPosX);
+}
+void PopTextWrapPos() {
+    ImGui::PopTextWrapPos();
+}
+
+// ── ID stack ──────────────────────────────────────────────────────────────────
+void PushID(std::string_view strId) {
+    // Push the explicit begin/end overload: ImGui hashes the exact range, so a
+    // string_view that is not null-terminated still yields the right ID.
+    ImGui::PushID(strId.data(), strId.data() + strId.size());
+}
+void PushID(int intId) {
+    ImGui::PushID(intId);
+}
+void PushID(const void* ptrId) {
+    ImGui::PushID(ptrId);
+}
+void PopID() {
+    ImGui::PopID();
+}
+ImGuiID GetID(std::string_view strId) {
+    return ImGui::GetID(strId.data(), strId.data() + strId.size());
+}
+
+// ── Clipboard ─────────────────────────────────────────────────────────────────
+void SetClipboardText(std::string_view text) {
+    ImGui::SetClipboardText(Z(text).c_str());
+}
+std::string GetClipboardText() {
+    const char* t = ImGui::GetClipboardText();
+    return t ? std::string(t) : std::string();
+}
+
+// ── Viewport ──────────────────────────────────────────────────────────────────
+ImGuiViewport* GetMainViewport() {
+    return ImGui::GetMainViewport();
+}
+
 void PushClipRect(const ImVec2& clipMin, const ImVec2& clipMax, bool intersectWithCurrent) {
     ImGui::PushClipRect(clipMin, clipMax, intersectWithCurrent);
 }

@@ -221,6 +221,59 @@ ImVec2 GetWindowSize();
 float GetWindowWidth();
 float GetWindowHeight();
 
+// ── Style stack ───────────────────────────────────────────────────────────────
+//
+// These exist so business code never has to reach for raw `ImGui::` just to tint
+// a line of text. Every Push must be matched by a Pop in the same frame — a leak
+// bleeds into unrelated widgets and is painful to track down, so keep the pair
+// adjacent and prefer the smallest possible scope.
+void PushStyleColor(ImGuiCol idx, ImU32 color);
+void PushStyleColor(ImGuiCol idx, const ImVec4& color);
+/// Pop `count` colors pushed by PushStyleColor.
+void PopStyleColor(int count = 1);
+
+void PushStyleVar(ImGuiStyleVar idx, float value);
+void PushStyleVar(ImGuiStyleVar idx, const ImVec2& value);
+/// Pop `count` vars pushed by PushStyleVar.
+void PopStyleVar(int count = 1);
+
+/// Resolve a style color to a packed 32-bit value (respecting the current alpha
+/// multiplier), for draw-list calls that take ImU32.
+ImU32 GetColorU32(ImGuiCol idx, float alphaMul = 1.0f);
+ImU32 GetColorU32(const ImVec4& color);
+/// The current value of a style color, e.g. to derive a hover/disabled shade.
+const ImVec4& GetStyleColorVec4(ImGuiCol idx);
+
+// ── Text wrapping ─────────────────────────────────────────────────────────────
+/// Wrap subsequent text at `wrapLocalPosX` (window-local X). 0.0f wraps at the
+/// content region edge; <0 disables wrapping.
+///
+/// Prefer this over letting a long string size the window: an auto-resizing
+/// window grows to fit the longest unwrapped line and can end up wider than the
+/// screen, clipping its own content.
+void PushTextWrapPos(float wrapLocalPosX = 0.0f);
+void PopTextWrapPos();
+
+// ── ID stack ──────────────────────────────────────────────────────────────────
+/// Scope widget IDs so identical labels in a loop (table rows, list items) do
+/// not collide. Pair every Push with a Pop.
+void PushID(std::string_view strId);
+void PushID(int intId);
+void PushID(const void* ptrId);
+void PopID();
+/// Compute the ID a widget with this label would get in the current scope.
+ImGuiID GetID(std::string_view strId);
+
+// ── Clipboard ─────────────────────────────────────────────────────────────────
+void SetClipboardText(std::string_view text);
+/// Empty when the clipboard holds no text.
+std::string GetClipboardText();
+
+// ── Viewport ──────────────────────────────────────────────────────────────────
+/// The primary viewport — use `->WorkPos` / `->WorkSize` to size content against
+/// the usable area (excludes menu bars and other decorations).
+ImGuiViewport* GetMainViewport();
+
 // ── Clip rect ─────────────────────────────────────────────────────────────────
 /// Push a scissor rectangle for rendering and hit-testing. Set
 /// intersectWithCurrent to narrow an existing clip rather than replace it.
