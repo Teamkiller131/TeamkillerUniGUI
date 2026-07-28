@@ -97,23 +97,31 @@ TEST(TimeSeriesChartTest, SetSessionAxis_DoesNotCrashAndAcceptsFormatter) {
     EXPECT_EQ(axis.FormatAxis(0.0), "09:30");
 }
 
-// ── Y 轴边距算术(2026-07-22 需求:[min·0.95, max·1.05])────────────────────────
-// 纯算术,不需要 ImPlot 帧。四种形态各钉一条:正区间按用户原始口径;负区间与跨零
-// 必须【向外】扩(naive 公式会把负数据夹在轴外);全平恰为 0 时兜底 [-1,1]。
-TEST(TimeSeriesChartTest, PadRange_PositiveData_MatchesUserSpec) {
+// ── Y 轴边距算术(2026-07-24 修正:按【数据跨度 span】外扩,不按【绝对值】)──────────
+// 纯算术,不需要 ImPlot 帧。旧口径 [min·0.95, max·1.05] 对偏移数据(比价 ~7000 波动 ~60)
+// 会按值的 5% 外扩(±350)压平信号;改为 ±r×span,与波动成比例。全平兜底 [±1] 防零高度。
+TEST(TimeSeriesChartTest, PadRange_PositiveData_SpanRelative) {
     auto [lo, hi] = TimeSeriesChart::PadRange(100.0, 200.0, 0.05);
-    EXPECT_DOUBLE_EQ(lo, 95.0);    // min × 0.95
-    EXPECT_DOUBLE_EQ(hi, 210.0);   // max × 1.05
+    EXPECT_DOUBLE_EQ(lo, 95.0);    // 100 − 0.05×(200−100)
+    EXPECT_DOUBLE_EQ(hi, 205.0);   // 200 + 0.05×100
+}
+TEST(TimeSeriesChartTest, PadRange_OffsetSmallSwing_StaysTight) {
+    // 回归本次 AA 比价 bug:~6900 附近波动 60,旧口径会扩成 ~6555..7308(span≈753);
+    // 新口径只扩 ±3 → 走势清晰可见,ImPlot 细刻度。
+    auto [lo, hi] = TimeSeriesChart::PadRange(6900.0, 6960.0, 0.05);
+    EXPECT_DOUBLE_EQ(lo, 6897.0);
+    EXPECT_DOUBLE_EQ(hi, 6963.0);
+    EXPECT_LT(hi - lo, 70.0);      // 跨度受控(旧口径会 >750)
 }
 TEST(TimeSeriesChartTest, PadRange_NegativeData_PadsOutward) {
     auto [lo, hi] = TimeSeriesChart::PadRange(-200.0, -100.0, 0.05);
-    EXPECT_DOUBLE_EQ(lo, -210.0);  // 向下扩,naive 的 -190 会切掉数据
+    EXPECT_DOUBLE_EQ(lo, -205.0);  // 向外(下)扩 ±span×r
     EXPECT_DOUBLE_EQ(hi, -95.0);
 }
 TEST(TimeSeriesChartTest, PadRange_CrossZero_PadsBothSides) {
     auto [lo, hi] = TimeSeriesChart::PadRange(-100.0, 200.0, 0.05);
-    EXPECT_DOUBLE_EQ(lo, -105.0);
-    EXPECT_DOUBLE_EQ(hi, 210.0);
+    EXPECT_DOUBLE_EQ(lo, -115.0);  // span=300 → pad=15,两侧对称外扩
+    EXPECT_DOUBLE_EQ(hi, 215.0);
 }
 TEST(TimeSeriesChartTest, PadRange_FlatAtZero_NeverDegenerate) {
     auto [lo, hi] = TimeSeriesChart::PadRange(0.0, 0.0, 0.05);
@@ -123,6 +131,7 @@ TEST(TimeSeriesChartTest, PadRange_FlatAtZero_NeverDegenerate) {
 }
 TEST(TimeSeriesChartTest, PadRange_FlatNonZero_StillHasSpan) {
     auto [lo, hi] = TimeSeriesChart::PadRange(100.0, 100.0, 0.05);
-    EXPECT_DOUBLE_EQ(lo, 95.0);    // 平但非零:乘法边距天然给出高度
-    EXPECT_DOUBLE_EQ(hi, 105.0);
+    EXPECT_LT(lo, hi);             // span=0 → ±1 兜底,不塌缩
+    EXPECT_DOUBLE_EQ(lo, 99.0);
+    EXPECT_DOUBLE_EQ(hi, 101.0);
 }

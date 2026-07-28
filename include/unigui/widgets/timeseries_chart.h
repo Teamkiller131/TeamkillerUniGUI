@@ -79,20 +79,24 @@ public:
     /// zooming/panning the X axis rescales Y to the visible window instead of the
     /// full dataset. When false, Y auto-fits to the entire dataset.
     void SetYRangeFit(bool on);
-    /// Y-axis padding ratio for auto-fit (2026-07-22 user spec): the fitted range is
-    /// [min·(1−r), max·(1+r)] so the series never hugs the plot border. Sign-aware —
-    /// for negative extremes the factor flips ([min·(1+r)] etc.) so padding always
-    /// expands OUTWARD; the naive formula would clip negative data against the axis.
+    /// Y-axis padding ratio for auto-fit: the fitted range is
+    /// `[min − r·span, max + r·span]` where `span = max − min`, so the margin is
+    /// proportional to how much the series actually MOVES, not to how large its
+    /// values happen to be. (The original 2026-07-22 spec padded by a fraction of
+    /// the value — `[min·(1−r), max·(1+r)]` — which flattened any series sitting
+    /// far from zero but swinging only slightly; see PadRange below.)
     /// Default r = 0.05. Set 0 to restore ImPlot's raw AutoFit behavior.
     void SetYPadRatio(double r) { yPadRatio_ = r < 0 ? 0.0 : r; }
     /// Pure padding math (public so tests can pin the edge cases without an ImPlot
-    /// frame): returns the padded [lo, hi]. Sign-aware per the doc above; a
-    /// degenerate flat-at-zero input yields [-1, 1] so the axis never collapses.
+    /// frame): returns the padded [lo, hi]. Span-relative and therefore sign-agnostic
+    /// — negative and cross-zero ranges pad outward by construction, with no special
+    /// case. A degenerate (flat / single-point) input yields [lo−1, hi+1] so the axis
+    /// never collapses to zero height.
     static std::pair<double, double> PadRange(double lo, double hi, double r) {
         // 按【数据跨度 span=hi-lo】外扩,而非按【绝对值】。旧实现 lo*(1−r)/hi*(1+r) 对
         // "偏离 0 很远但波动很小"的序列(如比价/价差 ~7000 而当日仅波动 ~60)会按【值】的
         // 5% 外扩(±350),把 60 的真实信号压成一条平线 + 粗刻度(200/500),看不清走势。
-        // span 相对外扩(±3)才与движение成比例:近零数据两种口径几乎一致,偏移数据这里才正确。
+        // span 相对外扩(±3)才与波动成比例:近零数据两种口径几乎一致,偏移数据这里才正确。
         const double span = hi - lo;
         if (span > 0.0) {
             const double pad = span * r;

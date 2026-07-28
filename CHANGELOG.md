@@ -1,6 +1,17 @@
 ## [Unreleased]
 
 ### Fixed
+- **`TimeSeriesChart` Y-axis auto-fit padding is now span-relative, not
+  value-relative** — `PadRange()` previously padded `[min·(1−r), max·(1+r)]`,
+  i.e. by a fraction of the absolute *value*. For a series that sits far from
+  zero but moves only slightly (e.g. an intraday price ratio around 6900 that
+  swings ~60), the 5% padding was ±350 — an order of magnitude larger than the
+  real signal — so the line rendered nearly flat and the axis picked coarse
+  200/500-unit ticks. Padding is now `±r × span` (span = max − min), so the
+  margin tracks the actual movement and the trend and fine ticks are visible.
+  Data near zero is essentially unchanged; only far-from-zero small-swing series
+  (spread/ratio/price charts) tighten. Flat input still falls back to a ±1
+  window; use `SetYAxisMinSpan()` for a fixed flat-line height.
 - **`FilePath` native dialog now round-trips non-ASCII paths on Windows** — the
   dialog previously used the ANSI `GetOpenFileNameA`/`GetSaveFileNameA` APIs,
   which return paths in the local code page (GBK on zh-CN). Callers treating the
