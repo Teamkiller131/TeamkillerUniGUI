@@ -260,6 +260,16 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
     // Keyboard navigation (Tab / Shift-Tab / arrows / Space-Enter to activate) — the
     // foundation for keyboard-only operation, and what the a11y focus tracker rides on.
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    // Multi-viewport (opt-in, see AppConfig::multiViewport): windows dragged outside the
+    // main window become real OS windows. Independent of DockingEnable — the drag-out /
+    // merge-back behaviour comes from the viewport system alone, so this does not depend
+    // on (and does not change) the DX11 docking exclusion above.
+    // Skipped on Emscripten: a browser page has no secondary OS windows, and the flag
+    // would only make ImGui create viewports the platform layer cannot realise.
+    if (config.multiViewport && g_backend != BackendType::Emscripten) {
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+        UNIGUI_LOG_INFO("Multi-viewport enabled (windows can be dragged out of the main window)");
+    }
     io.DisplaySize = ImVec2((float) config.width, (float) config.height);
 
     dpiOut = dpi;
@@ -484,6 +494,18 @@ void Render() {
         glClear(GL_COLOR_BUFFER_BIT);
     }
     g_renderer->RenderDrawData(dd);
+    // Multi-viewport: render the windows the user dragged outside the main one.
+    // Order matters — upstream's examples put this after the main viewport's draw data
+    // and **before** SwapBuffers, so the secondary windows present in the same frame.
+    // The GL context save/restore is delegated to the platform (see
+    // PlatformBackend::SaveRenderContext): RenderPlatformWindowsDefault() leaves the
+    // last secondary window's context current, and the next frame would draw into it.
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        void* ctx = g_platform->SaveRenderContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        g_platform->RestoreRenderContext(ctx);
+    }
     if (gl_backend) {
         VerifyRenderIfEnabled(); // reads the back buffer; no-op unless UNIGUI_RENDER_VERIFY=1
         g_platform->SwapBuffers();

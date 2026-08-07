@@ -155,6 +155,18 @@ public:
             glfwSwapBuffers(window_);
     }
 
+    // Multi-viewport: bracket ImGui's secondary-window pass so the main window's GL
+    // context is current again afterwards. Only meaningful for the GL renderers
+    // (needGL_); with DX11/Vulkan on GLFW there is no current-context notion and the
+    // no-op base behaviour is correct.
+    void* SaveRenderContext() override {
+        return needGL_ ? static_cast<void*>(glfwGetCurrentContext()) : nullptr;
+    }
+    void RestoreRenderContext(void* ctx) override {
+        if (needGL_ && ctx)
+            glfwMakeContextCurrent(static_cast<GLFWwindow*>(ctx));
+    }
+
 #ifdef UNIGUI_HAS_VULKAN
     void GetVulkanInstanceExtensions(std::vector<const char*>& out) const override {
         uint32_t count = 0;
