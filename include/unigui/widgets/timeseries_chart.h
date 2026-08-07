@@ -113,7 +113,18 @@ public:
     /// micro-noise as full-height swings. Has no effect when auto-fit is off.
     void SetYAxisMinSpan(double span) { minYSpan_ = span; }
     /// Manual Y axis range (takes effect only when auto-fit is off).
+    /// Seeds the range once, then leaves the axis zoomable/pannable by the user.
     void SetYAxisRange(double min, double max);
+    /// Hold the manual Y range every frame instead of only seeding it once.
+    ///
+    /// Needed whenever the range is *derived* rather than fixed — a checkbox the user can
+    /// toggle, a span they can edit, a centre that tracks the latest data. With the default
+    /// (seed-once) ImPlot applies `SetYAxisRange` only the first time a given plot ID is set
+    /// up, so later changes silently do nothing, and the same chart drawn inside a different
+    /// window (a new ID scope — e.g. a panel popped out into its own window) behaves
+    /// differently from the docked one. Locking costs the user's ability to zoom Y, which is
+    /// the point: the caller is asserting the height.
+    void SetYAxisRangeLocked(bool on) { yRangeLocked_ = on; }
     /// Fixed X axis range. When set, the X axis always shows [min, max] even with no data.
     void SetXAxisRange(double min, double max);
 
@@ -173,6 +184,7 @@ private:
     bool yAutoFit_ = true;
     bool yRangeFit_ = true;
     double yMin_ = 0, yMax_ = 100;
+    bool yRangeLocked_ = false;  // manual range: Always (hold) vs Once (seed, then zoomable)
     double minYSpan_ = 0.0;    // 0 = disabled; else Y-axis height floor (auto-fit only)
     double yPadRatio_ = 0.05;  // auto-fit padding: ±r × 数据跨度(span=max−min),见 PadRange()
     double lastXMin_ = -1e300; // visible X window cached from the previous frame,

@@ -284,7 +284,16 @@ void TimeSeriesChart::Render() {
                 }
             } else {
                 ImPlot::SetupAxis(ImAxis_Y1, yLabel);
-                ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_, ImPlotCond_Once);
+                // Once = "seed the range, then let the user zoom/pan freely" (the default,
+                // and what most manual-range callers want).
+                // Always = "hold this range every frame" — for callers that need the axis
+                // height to actually stay put. Once is subtly wrong for them: ImPlot only
+                // honours it the first time a given plot ID is set up, so re-setting the
+                // range later (a toggle being switched on, the value being edited) does
+                // nothing, and the same chart rendered inside a *different* window — a new
+                // ID scope — silently behaves differently from the docked one.
+                ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_,
+                                        yRangeLocked_ ? ImPlotCond_Always : ImPlotCond_Once);
             }
         }
 

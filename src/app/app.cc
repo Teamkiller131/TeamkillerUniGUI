@@ -93,6 +93,22 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
     g_platform = std::move(be.platform);
     g_renderer = std::move(be.renderer);
 
+    // ★ Multi-viewport must be requested BEFORE the platform/renderer backends init.
+    //   Both ImGui_ImplGlfw_Init* and ImGui_ImplXxx_Init read ImGuiConfigFlags_ViewportsEnable
+    //   *at that moment* to decide whether to install their viewport interfaces. Setting the
+    //   flag afterwards (as an earlier revision of this change did) leaves the flag on with no
+    //   backend support: ImGui then places windows in absolute screen coordinates while the
+    //   platform cannot report the main viewport's position, so the main layout lands off
+    //   screen and the app renders blank apart from small centered windows. Keep this here.
+    //
+    //   Uses `type` rather than g_backend for clarity: this function is called a second time
+    //   on the fallback path, and the flag is idempotent.
+    if (config.multiViewport && type != BackendType::Emscripten) {
+        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+        UNIGUI_LOG_INFO("Multi-viewport requested (set before backend init so the backends "
+                        "install their viewport interfaces)");
+    }
+
     if (!g_platform || !g_platform->Init(nullptr)) {
         UNIGUI_LOG_ERROR("Platform init failed (backend={})", (int) type);
         ResetBackendOnly();
@@ -260,15 +276,23 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
     // Keyboard navigation (Tab / Shift-Tab / arrows / Space-Enter to activate) — the
     // foundation for keyboard-only operation, and what the a11y focus tracker rides on.
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    // Multi-viewport (opt-in, see AppConfig::multiViewport): windows dragged outside the
-    // main window become real OS windows. Independent of DockingEnable — the drag-out /
-    // merge-back behaviour comes from the viewport system alone, so this does not depend
-    // on (and does not change) the DX11 docking exclusion above.
-    // Skipped on Emscripten: a browser page has no secondary OS windows, and the flag
-    // would only make ImGui create viewports the platform layer cannot realise.
-    if (config.multiViewport && g_backend != BackendType::Emscripten) {
-        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-        UNIGUI_LOG_INFO("Multi-viewport enabled (windows can be dragged out of the main window)");
+    // Multi-viewport: the flag itself is set at the TOP of this function (before the
+    // backends init — see the comment there; setting it here would be too late and the
+    // app would render blank). Here we only report whether the backends actually took it.
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        const bool platformOk = (io.BackendFlags & ImGuiBackendFlags_PlatformHasViewports) != 0;
+        const bool rendererOk = (io.BackendFlags & ImGuiBackendFlags_RendererHasViewports) != 0;
+        if (platformOk && rendererOk) {
+            UNIGUI_LOG_INFO("Multi-viewport enabled (windows can be dragged out of the main window)");
+        } else {
+            // Fail loud, then fail safe. A half-installed viewport setup does not degrade
+            // gracefully — it mispositions every window — so drop back to single-viewport
+            // rather than hand the user a blank app.
+            io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+            UNIGUI_LOG_WARN("Multi-viewport requested but unsupported by this backend pair "
+                            "(platform={} renderer={}) — disabled to avoid a blank window",
+                            platformOk, rendererOk);
+        }
     }
     io.DisplaySize = ImVec2((float) config.width, (float) config.height);
 
