@@ -294,6 +294,28 @@ void TimeSeriesChart::Render() {
                 // ID scope — silently behaves differently from the docked one.
                 ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_,
                                         yRangeLocked_ ? ImPlotCond_Always : ImPlotCond_Once);
+                // Explicit tick step (e.g. "label every 2 units"). Only meaningful here,
+                // in the manual-range branch: ticks must be declared during setup and the
+                // auto-fit range isn't known until after it.
+                if (yTickSpacing_ > 0.0 && yMax_ > yMin_) {
+                    const double step = yTickSpacing_;
+                    const double lo = std::ceil(yMin_ / step) * step;
+                    // Count first, emit second: a step of 1 over a range of 100000 would
+                    // otherwise push 100k labels through ImPlot and hang the frame. Over
+                    // budget = fall back to automatic ticks; a black smear of overlapping
+                    // labels would be no more useful than the wrong step.
+                    const double spanTicks = (yMax_ - lo) / step;
+                    if (spanTicks >= 0.0 && spanTicks < (double) kMaxYTicks) {
+                        yTickBuf_.clear();
+                        // Multiply rather than accumulate: `v += step` drifts over hundreds
+                        // of iterations and the labels stop landing on round numbers.
+                        for (int i = 0; i <= (int) spanTicks; ++i)
+                            yTickBuf_.push_back(lo + step * i);
+                        if (!yTickBuf_.empty())
+                            ImPlot::SetupAxisTicks(ImAxis_Y1, yTickBuf_.data(),
+                                                   (int) yTickBuf_.size());
+                    }
+                }
             }
         }
 

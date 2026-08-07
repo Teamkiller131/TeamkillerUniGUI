@@ -125,6 +125,20 @@ public:
     /// differently from the docked one. Locking costs the user's ability to zoom Y, which is
     /// the point: the caller is asserting the height.
     void SetYAxisRangeLocked(bool on) { yRangeLocked_ = on; }
+    /// Y gridline/label spacing in data units: `1` labels 0,1,2,3…, `2` labels 0,2,4,6…
+    /// `0` (default) leaves ImPlot's automatic tick selection alone.
+    ///
+    /// Only applies when auto-fit is OFF — ticks must be declared during axis setup, and
+    /// with auto-fit the range isn't known until after it. Pair it with
+    /// SetYAxisRange()+SetYAxisRangeLocked(): a caller who wants to dictate the tick step
+    /// wants to dictate the range too, otherwise the tick count swings with the data.
+    ///
+    /// A step that would need more than `kMaxYTicks` labels for the current range is
+    /// ignored (auto ticks are used instead) rather than honoured: the guard is against a
+    /// user typing 1 with a range of 100000 and freezing the UI while ImPlot lays out
+    /// 100k labels. Silently drawing a black smear of overlapping text would be no better.
+    void SetYAxisTickSpacing(double step) { yTickSpacing_ = step > 0.0 ? step : 0.0; }
+    static constexpr int kMaxYTicks = 200;
     /// Fixed X axis range. When set, the X axis always shows [min, max] even with no data.
     void SetXAxisRange(double min, double max);
 
@@ -185,6 +199,8 @@ private:
     bool yRangeFit_ = true;
     double yMin_ = 0, yMax_ = 100;
     bool yRangeLocked_ = false;  // manual range: Always (hold) vs Once (seed, then zoomable)
+    double yTickSpacing_ = 0.0;  // 0 = ImPlot's automatic ticks
+    std::vector<double> yTickBuf_;  // reused across frames; ImPlot copies during setup
     double minYSpan_ = 0.0;    // 0 = disabled; else Y-axis height floor (auto-fit only)
     double yPadRatio_ = 0.05;  // auto-fit padding: ±r × 数据跨度(span=max−min),见 PadRange()
     double lastXMin_ = -1e300; // visible X window cached from the previous frame,
