@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <implot.h>
 
+#include <cmath>
 #include <deque>
 #include <functional>
 #include <string>
@@ -112,19 +113,54 @@ public:
     /// instead of zooming in tighter — so a near-flat series doesn't render its
     /// micro-noise as full-height swings. Has no effect when auto-fit is off.
     void SetYAxisMinSpan(double span) { minYSpan_ = span; }
-    /// Manual Y axis range (takes effect only when auto-fit is off).
-    /// Seeds the range once, then leaves the axis zoomable/pannable by the user.
-    void SetYAxisRange(double min, double max);
-    /// Hold the manual Y range every frame instead of only seeding it once.
+    /// Manual Y axis range (also turns auto-fit off).
     ///
-    /// Needed whenever the range is *derived* rather than fixed — a checkbox the user can
-    /// toggle, a span they can edit, a centre that tracks the latest data. With the default
-    /// (seed-once) ImPlot applies `SetYAxisRange` only the first time a given plot ID is set
-    /// up, so later changes silently do nothing, and the same chart drawn inside a different
-    /// window (a new ID scope — e.g. a panel popped out into its own window) behaves
-    /// differently from the docked one. Locking costs the user's ability to zoom Y, which is
-    /// the point: the caller is asserting the height.
+    /// Applies the range on the next frame and then **releases the axis** — the user can
+    /// pan and zoom Y freely afterwards, and the range is not re-imposed until a
+    /// *different* range is requested. Re-asserting the same values every frame from a
+    /// render loop is therefore harmless (it will not fight the user's drag).
+    /// Use SetYAxisRangeLocked(true) for the opposite behaviour.
+    void SetYAxisRange(double min, double max);
+    /// Re-impose the manual Y range on EVERY frame instead of applying it once and
+    /// releasing the axis.
+    ///
+    /// This makes Y un-pannable and un-zoomable: every drag snaps back on the next frame.
+    /// Only use it when the axis is genuinely a readout the user must not move. If the
+    /// range is derived from live data (a centre that tracks the latest value, say),
+    /// locking is almost always wrong — the axis will visibly jitter as the data updates,
+    /// and any attempt to drag it fights the code. Prefer plain SetYAxisRange(), which
+    /// applies the new range once and then hands the axis to the user.
     void SetYAxisRangeLocked(bool on) { yRangeLocked_ = on; }
+
+    /// Pin the Y axis **height** (span) while still allowing the user to pan.
+    ///
+    /// `span > 0` enables it; `0` (default) disables. Panning only moves the centre, so
+    /// it passes through untouched; zooming (wheel / rubber-band) changes the span and is
+    /// undone on the next frame — the view stays where the user put it, at the height the
+    /// caller demanded. This is what "固定纵轴" means to a trader: the height is a fixed
+    /// yardstick they read swings against, so a stray wheel click must not silently
+    /// rescale it.
+    ///
+    /// Why not an axis flag: ImPlot's `Lock`/`LockMin`/`LockMax` kill panning too, and
+    /// this widget's SetPanEnabled/SetZoomEnabled only map to `ImPlotAxisFlags_NoMenus`
+    /// (they do NOT gate input — see Render, where the computed flags are `(void)`-ed).
+    /// So the span is restored after the fact rather than prevented up front; the visible
+    /// cost is a one-frame bounce on zoom.
+    void SetYAxisSpanLock(double span) { ySpanLock_ = span > 0.0 ? span : 0.0; }
+
+    /// Pure span-restore math (public so tests can pin it without an ImPlot frame):
+    /// keeps the midpoint of [lo, hi] and forces the width to `span`.
+    /// A non-positive `span`, or an already-correct width, returns [lo, hi] unchanged —
+    /// callers rely on the identity to detect "nothing to correct".
+    static std::pair<double, double> RestoreSpan(double lo, double hi, double span) {
+        if (!(span > 0.0) || !(hi > lo)) return {lo, hi};
+        const double cur = hi - lo;
+        // 容差按 span 相对取，不用绝对值：比价量纲 ~7000 与价差 ~4 差三个数量级，
+        // 固定绝对 epsilon 在大量纲下会把真实缩放当成噪声放过去。
+        if (std::fabs(cur - span) <= span * 1e-9) return {lo, hi};
+        const double mid = (lo + hi) * 0.5;
+        return {mid - span * 0.5, mid + span * 0.5};
+    }
     /// Y gridline/label spacing in data units: `1` labels 0,1,2,3…, `2` labels 0,2,4,6…
     /// `0` (default) leaves ImPlot's automatic tick selection alone.
     ///
@@ -198,7 +234,10 @@ private:
     bool yAutoFit_ = true;
     bool yRangeFit_ = true;
     double yMin_ = 0, yMax_ = 100;
-    bool yRangeLocked_ = false;  // manual range: Always (hold) vs Once (seed, then zoomable)
+    bool yRangeLocked_ = false;        // hold the manual range every frame (blocks pan/zoom)
+    bool yRangeApplyPending_ = true;   // apply a newly-requested range for one frame, then release
+    double lastYMin_ = 0.0, lastYMax_ = 0.0;  // actual Y range last frame; drives explicit ticks
+    double ySpanLock_ = 0.0;     // >0 = 固定纵轴高度(只钉跨度,平移照常);见 SetYAxisSpanLock
     double yTickSpacing_ = 0.0;  // 0 = ImPlot's automatic ticks
     std::vector<double> yTickBuf_;  // reused across frames; ImPlot copies during setup
     double minYSpan_ = 0.0;    // 0 = disabled; else Y-axis height floor (auto-fit only)

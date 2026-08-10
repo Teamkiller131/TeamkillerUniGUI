@@ -1,5 +1,22 @@
 ## [Unreleased]
 
+### Added
+- **`TimeSeriesChart::SetYAxisSpanLock(span)` — pin the Y axis *height* while
+  still allowing the user to pan.** Panning only moves the centre, so it passes
+  through untouched; zooming (wheel or rubber-band) changes the span and is
+  undone on the next frame, keeping the view where the user put it at the height
+  the caller demanded. This is what a "fixed Y axis" means to a trader: the
+  height is a yardstick they read swings against, so a stray wheel click must
+  not silently rescale it. Neither `ImPlotAxisFlags_Lock` nor this widget's
+  `SetPanEnabled`/`SetZoomEnabled` can express "pan yes, zoom no" — `Lock` kills
+  panning too, and those two setters only map to `ImPlotAxisFlags_NoMenus`
+  (the computed flags are `(void)`-ed in `Render`, so they never gate input at
+  all). The span is therefore restored after the fact; the visible cost is a
+  one-frame bounce on zoom. The pure math is exposed as the static
+  `RestoreSpan(lo, hi, span)` and is unit-tested, including the relative
+  tolerance that keeps the lock effective at large magnitudes (a 0.1-wide zoom
+  off a 50-unit span around 7000 would slip past a fixed absolute epsilon).
+
 ### Fixed
 - **`TimeSeriesChart` Y-axis auto-fit padding is now span-relative, not
   value-relative** — `PadRange()` previously padded `[min·(1−r), max·(1+r)]`,

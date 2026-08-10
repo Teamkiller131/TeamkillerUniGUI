@@ -135,3 +135,63 @@ TEST(TimeSeriesChartTest, PadRange_FlatNonZero_StillHasSpan) {
     EXPECT_DOUBLE_EQ(lo, 99.0);
     EXPECT_DOUBLE_EQ(hi, 101.0);
 }
+
+// ── [YSPANLOCK-20260810] 固定纵轴 = 高度钉死,平移允许、缩放不允许 ─────────────
+//
+// 交易员原话:「固定就是固定,就不能缩放了,不固定的时候才允许缩放」。
+// 上一版只把量程下发了一次就撒手,ImPlot 的滚轮缩放照样改高度 —— 于是「固定纵轴」
+// 勾着,高度却能被一次误触改掉,而那个高度正是她用来横向比较波动幅度的尺子。
+//
+// 实现是「按结果纠偏」:平移只改中心不改跨度(不触发),缩放改了跨度就按当前中心拉回。
+// 下面钉的就是这条纯函数。
+
+TEST(TimeSeriesChartTest, RestoreSpan_PanOnly_IsNotTouched) {
+    // 平移:跨度仍是 50,中心从 100 挪到 130 —— 必须原样放行(返回值恒等)。
+    auto [lo, hi] = TimeSeriesChart::RestoreSpan(105.0, 155.0, 50.0);
+    EXPECT_DOUBLE_EQ(lo, 105.0);
+    EXPECT_DOUBLE_EQ(hi, 155.0);
+}
+
+TEST(TimeSeriesChartTest, RestoreSpan_ZoomIn_SnapsBackKeepingCentre) {
+    // 放大到跨度 20(中心 130) → 拉回跨度 50,中心不动。
+    auto [lo, hi] = TimeSeriesChart::RestoreSpan(120.0, 140.0, 50.0);
+    EXPECT_DOUBLE_EQ(lo, 105.0);
+    EXPECT_DOUBLE_EQ(hi, 155.0);
+    EXPECT_DOUBLE_EQ(hi - lo, 50.0);
+}
+
+TEST(TimeSeriesChartTest, RestoreSpan_ZoomOut_SnapsBackKeepingCentre) {
+    auto [lo, hi] = TimeSeriesChart::RestoreSpan(0.0, 260.0, 50.0);
+    EXPECT_DOUBLE_EQ((lo + hi) * 0.5, 130.0);
+    EXPECT_DOUBLE_EQ(hi - lo, 50.0);
+}
+
+TEST(TimeSeriesChartTest, RestoreSpan_Disabled_IsIdentity) {
+    // span<=0 = 未启用固定 → 必须恒等,否则「不固定」时会被反向锁死。
+    auto [lo, hi] = TimeSeriesChart::RestoreSpan(10.0, 99.0, 0.0);
+    EXPECT_DOUBLE_EQ(lo, 10.0);
+    EXPECT_DOUBLE_EQ(hi, 99.0);
+    auto [lo2, hi2] = TimeSeriesChart::RestoreSpan(10.0, 99.0, -5.0);
+    EXPECT_DOUBLE_EQ(lo2, 10.0);
+    EXPECT_DOUBLE_EQ(hi2, 99.0);
+}
+
+TEST(TimeSeriesChartTest, RestoreSpan_DegenerateRange_IsIdentity) {
+    // 首帧/塌缩量程(hi<=lo):没有可用的中心,别硬造一个,交给上层的定心逻辑。
+    auto [lo, hi] = TimeSeriesChart::RestoreSpan(50.0, 50.0, 20.0);
+    EXPECT_DOUBLE_EQ(lo, 50.0);
+    EXPECT_DOUBLE_EQ(hi, 50.0);
+}
+
+TEST(TimeSeriesChartTest, RestoreSpan_ToleranceIsRelative_CatchesLargeMagnitudeZoom) {
+    // ★ 容差按 span 相对取。AA 比价量纲 ~7000,固定高度 50;
+    //   放大到 49.9 只差 0.1 —— 绝对 epsilon(比如 1e-6 之于 7000)会把它当噪声放过去,
+    //   于是大量纲下「固定」又悄悄失效。这条就是钉这个。
+    auto [lo, hi] = TimeSeriesChart::RestoreSpan(6975.05, 7024.95, 50.0);
+    EXPECT_DOUBLE_EQ(hi - lo, 50.0);
+    EXPECT_DOUBLE_EQ((lo + hi) * 0.5, 7000.0);
+    // 反向:真正等于 span 的必须恒等,不能每帧都"纠偏"造成抖动。
+    auto [lo2, hi2] = TimeSeriesChart::RestoreSpan(6975.0, 7025.0, 50.0);
+    EXPECT_DOUBLE_EQ(lo2, 6975.0);
+    EXPECT_DOUBLE_EQ(hi2, 7025.0);
+}

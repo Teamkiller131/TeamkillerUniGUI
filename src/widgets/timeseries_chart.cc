@@ -38,6 +38,11 @@ void TimeSeriesChart::SetYRangeFit(bool on) {
 }
 void TimeSeriesChart::SetYAxisRange(double min, double max) {
     yAutoFit_ = false;
+    // Only a CHANGED range asks to be applied. Callers legitimately re-assert the same
+    // range every frame from inside a render loop; treating that as "apply again" would
+    // force the axis on every frame and the user could never pan or zoom away from it.
+    if (min != yMin_ || max != yMax_)
+        yRangeApplyPending_ = true;
     yMin_ = min;
     yMax_ = max;
 }
@@ -292,19 +297,37 @@ void TimeSeriesChart::Render() {
                 // range later (a toggle being switched on, the value being edited) does
                 // nothing, and the same chart rendered inside a *different* window — a new
                 // ID scope — silently behaves differently from the docked one.
-                ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_,
-                                        yRangeLocked_ ? ImPlotCond_Always : ImPlotCond_Once);
-                // Explicit tick step (e.g. "label every 2 units"). Only meaningful here,
-                // in the manual-range branch: ticks must be declared during setup and the
-                // auto-fit range isn't known until after it.
-                if (yTickSpacing_ > 0.0 && yMax_ > yMin_) {
+                // Three ways to drive a manual range, and the difference matters:
+                //  • locked  → Always: hold [yMin_,yMax_] every frame. The axis cannot be
+                //    panned or zoomed — every drag snaps back next frame.
+                //  • pending → Always for exactly ONE frame: apply the newly requested
+                //    range, then stop forcing so the user owns the axis from then on.
+                //    This is what a "set the height, then let me drag around" control
+                //    wants, and it is the default because plain Once is a trap:
+                //    ImPlot honours Once only the first time a plot ID is set up, so a
+                //    range set later (a checkbox switched on, a value edited) silently
+                //    did nothing — and the same chart in another window, being a new ID
+                //    scope, behaved differently from the docked one.
+                //  • neither → don't touch the limits at all; whatever the user dragged
+                //    to persists.
+                if (yRangeLocked_ || yRangeApplyPending_) {
+                    ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_, ImPlotCond_Always);
+                    yRangeApplyPending_ = false;
+                }
+                // Explicit tick step (e.g. "label every 2 units"). Keyed off the range the
+                // user is ACTUALLY looking at (cached last frame), not the one last
+                // requested — after a pan/zoom those differ, and ticks built from the
+                // request would sit outside the view.
+                const double tickLo = (lastYMax_ > lastYMin_) ? lastYMin_ : yMin_;
+                const double tickHi = (lastYMax_ > lastYMin_) ? lastYMax_ : yMax_;
+                if (yTickSpacing_ > 0.0 && tickHi > tickLo) {
                     const double step = yTickSpacing_;
-                    const double lo = std::ceil(yMin_ / step) * step;
+                    const double lo = std::ceil(tickLo / step) * step;
                     // Count first, emit second: a step of 1 over a range of 100000 would
                     // otherwise push 100k labels through ImPlot and hang the frame. Over
                     // budget = fall back to automatic ticks; a black smear of overlapping
                     // labels would be no more useful than the wrong step.
-                    const double spanTicks = (yMax_ - lo) / step;
+                    const double spanTicks = (tickHi - lo) / step;
                     if (spanTicks >= 0.0 && spanTicks < (double) kMaxYTicks) {
                         yTickBuf_.clear();
                         // Multiply rather than accumulate: `v += step` drifts over hundreds
@@ -368,6 +391,29 @@ void TimeSeriesChart::Render() {
         ImPlotRect lim = ImPlot::GetPlotLimits(ImAxis_X1, ImAxis_Y1);
         lastXMin_ = lim.X.Min;
         lastXMax_ = lim.X.Max;
+        // Same for Y: the *actual* range after auto-fit / the user's pan+zoom. Explicit
+        // tick generation keys off this rather than the requested [yMin_, yMax_] — once
+        // the user drags the axis those two diverge, and ticks computed from the request
+        // would march off the visible range and disappear.
+        lastYMin_ = lim.Y.Min;
+        lastYMax_ = lim.Y.Max;
+
+        // ── [YSPANLOCK-20260810] 固定高度 = 跨度钉死，但仍可平移 ───────────────
+        // 「固定纵轴」的语义是 *高度* 固定；平移允许、缩放不允许。ImPlot 没有
+        // 「只禁缩放不禁平移」的轴标志(Lock 系列会把平移一起锁掉)，而本控件的
+        // panEnabled_/zoomEnabled_ 只映射到 NoMenus、根本不管输入(见 Render 开头，
+        // 算完就 (void) 掉了)——所以只能在这里按结果纠偏：
+        //   平移只改中心、不改跨度 → 不触发；
+        //   滚轮/框选缩放改了跨度 → 下一帧按当前中心把跨度拉回去。
+        // 代价是缩放会有一帧的回弹，这正是「固定就是固定」该有的手感。
+        if (ySpanLock_ > 0.0 && lastYMax_ > lastYMin_) {
+            const auto fixed = RestoreSpan(lastYMin_, lastYMax_, ySpanLock_);
+            if (fixed.first != lastYMin_ || fixed.second != lastYMax_) {
+                yMin_ = fixed.first;
+                yMax_ = fixed.second;
+                yRangeApplyPending_ = true;   // 下一帧 SetupAxisLimits(..., Always) 生效
+            }
+        }
         ImPlot::EndPlot();
     }
     ImPlot::PopStyleColor(4);
