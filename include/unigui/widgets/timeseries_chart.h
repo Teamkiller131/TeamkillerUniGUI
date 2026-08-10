@@ -1,4 +1,5 @@
 #pragma once
+#include <unigui/core/api.h>
 #include <unigui/core/session_axis.h>
 #include <unigui/widgets/widget_base.h>
 
@@ -142,8 +143,9 @@ public:
     /// rescale it.
     ///
     /// Why not an axis flag: ImPlot's `Lock`/`LockMin`/`LockMax` kill panning too, and
-    /// this widget's SetPanEnabled/SetZoomEnabled only map to `ImPlotAxisFlags_NoMenus`
-    /// (they do NOT gate input — see Render, where the computed flags are `(void)`-ed).
+    /// ImPlot has no separate NoPan/NoZoom. (This widget used to carry SetPanEnabled/
+    /// SetZoomEnabled that looked like input gates but only mapped to
+    /// `ImPlotAxisFlags_NoMenus` and were then `(void)`-ed — deprecated 2026-08-10.)
     /// So the span is restored after the fact rather than prevented up front; the visible
     /// cost is a one-frame bounce on zoom.
     void SetYAxisSpanLock(double span) { ySpanLock_ = span > 0.0 ? span : 0.0; }
@@ -186,10 +188,26 @@ public:
     void SetCrosshairEnabled(bool on) { crosshair_ = on; }
     /// Show legend.
     void SetLegendEnabled(bool on) { legend_ = on; }
-    /// Enable mouse pan (drag to scroll).
-    void SetPanEnabled(bool on) { panEnabled_ = on; }
-    /// Enable mouse wheel zoom.
-    void SetZoomEnabled(bool on) { zoomEnabled_ = on; }
+    /// \deprecated Never worked. Both this and SetZoomEnabled mapped to the *same*
+    /// `ImPlotAxisFlags_NoMenus` bit, and the computed flags were `(void)`-ed in
+    /// `Render` — so neither ever gated input. Someone trusted them and shipped a
+    /// "fixed" Y axis the user could still zoom (2026-08-10).
+    ///
+    /// Kept as a no-op instead of deleted because `include/unigui/**` is a semver
+    /// contract (docs/API_STABILITY.md): removal waits for a major. The
+    /// `[[deprecated]]` warning is the actual fix — it tells the caller the truth at
+    /// compile time, which a silently-ignored setter never did.
+    ///
+    /// Use instead:
+    ///   * pin the axis *height*, keep panning → `SetYAxisSpanLock(span)`
+    ///   * freeze the axis outright (panning dies too) → `ImPlotAxisFlags_Lock`.
+    ///     ImPlot has no separate NoPan/NoZoom — that is precisely why SpanLock
+    ///     restores the span after the fact instead of asking ImPlot to forbid zoom.
+    UNIGUI_DEPRECATED("no-op since forever; use SetYAxisSpanLock() or ImPlotAxisFlags_Lock")
+    void SetPanEnabled(bool /*on*/) {}
+    /// \deprecated Never worked — see SetPanEnabled.
+    UNIGUI_DEPRECATED("no-op since forever; use SetYAxisSpanLock() or ImPlotAxisFlags_Lock")
+    void SetZoomEnabled(bool /*on*/) {}
 
     /// Grid and background colors.
     void SetGridColor(ImU32 c) { gridColor_ = c; }
@@ -251,8 +269,6 @@ private:
     std::function<std::string(double, const std::vector<double>&)> crosshairFmt_;
     std::function<int(double, char*, int, void*)> xAxisFmt_;
     bool legend_ = true;
-    bool panEnabled_ = true;
-    bool zoomEnabled_ = true;
     bool rubberBandZoom_ = true;
     bool themeBackground_ = true;
     ImU32 gridColor_ = IM_COL32(60, 60, 70, 70);

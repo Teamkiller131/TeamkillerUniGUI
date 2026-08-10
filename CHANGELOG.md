@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+### Deprecated
+- **`TimeSeriesChart::SetPanEnabled` / `SetZoomEnabled` — they never did anything.**
+  Both mapped to the *same* `ImPlotAxisFlags_NoMenus` bit and the computed flags were
+  `(void)`-ed in `Render`, so neither ever gated input. Someone trusted them and
+  shipped a "fixed" Y axis the user could still zoom. They are now `[[deprecated]]`
+  no-ops rather than deleted, because `include/unigui/**` is a semver contract —
+  removal waits for a major. The warning is the fix: it tells the caller the truth at
+  compile time, which a silently-ignored setter never did. Use `SetYAxisSpanLock(span)`
+  to pin the axis height while keeping pan, or `ImPlotAxisFlags_Lock` to freeze it
+  outright; ImPlot has no separate NoPan/NoZoom.
+
 ### Added
 - **`TimeSeriesChart::SetYAxisSpanLock(span)` — pin the Y axis *height* while
   still allowing the user to pan.** Panning only moves the centre, so it passes

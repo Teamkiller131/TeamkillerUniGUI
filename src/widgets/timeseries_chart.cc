@@ -168,9 +168,6 @@ void TimeSeriesChart::Render() {
 
     ImPlotFlags plotFlags =
         (crosshair_ ? ImPlotFlags_Crosshairs : 0) | (legend_ ? 0 : ImPlotFlags_NoLegend);
-    ImPlotAxisFlags axisFlags =
-        (panEnabled_ ? 0 : ImPlotAxisFlags_NoMenus) | (zoomEnabled_ ? 0 : ImPlotAxisFlags_NoMenus);
-    (void) axisFlags; // flags applied via ImPlot default — pan/zoom enabled by default
 
     // ── Background / border / grid colors ────────────────────────────────
     // When themeBackground_ is on, follow the active ImGui theme palette so the
@@ -400,9 +397,9 @@ void TimeSeriesChart::Render() {
 
         // ── [YSPANLOCK-20260810] 固定高度 = 跨度钉死，但仍可平移 ───────────────
         // 「固定纵轴」的语义是 *高度* 固定；平移允许、缩放不允许。ImPlot 没有
-        // 「只禁缩放不禁平移」的轴标志(Lock 系列会把平移一起锁掉)，而本控件的
-        // panEnabled_/zoomEnabled_ 只映射到 NoMenus、根本不管输入(见 Render 开头，
-        // 算完就 (void) 掉了)——所以只能在这里按结果纠偏：
+        // 「只禁缩放不禁平移」的轴标志(Lock 系列会把平移一起锁掉)。本控件曾经有一对
+        // panEnabled_/zoomEnabled_ 看着像输入开关，其实只映射到 NoMenus、算完还被
+        // (void) 掉——2026-08-10 已删除，别再去找它们——所以只能在这里按结果纠偏：
         //   平移只改中心、不改跨度 → 不触发；
         //   滚轮/框选缩放改了跨度 → 下一帧按当前中心把跨度拉回去。
         // 代价是缩放会有一帧的回弹，这正是「固定就是固定」该有的手感。
