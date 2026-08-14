@@ -1,0 +1,50 @@
+{
+  "name": "unigui",
+  "version": "4.9.0",
+  "description": "Modern Dear ImGui C++ wrapper — SDL3+Vulkan + GLFW+OpenGL3 backends, theme engine, 92-widget library",
+  "homepage": "https://github.com/Teamkiller131/TeamkillerUniGUI",
+  "license": "MIT",
+  "dependencies": [
+    {
+      "name": "imgui",
+      "default-features": false,
+      "features": [
+        "docking-experimental",
+        "freetype",
+        "glfw-binding",
+        "opengl3-binding"
+      ]
+    },
+    {
+      "name": "imgui",
+      "default-features": false,
+      "platform": "windows",
+      "features": [
+        "dx11-binding",
+        "dx12-binding"
+      ]
+    },
+    { "name": "glfw3" },
+    { "name": "glad", "features": ["loader"] },
+    { "name": "implot" },
+    { "name": "spdlog" }
+  ],
+  "features": {
+    "sqlite": {
+      "description": "SQLite database module",
+      "dependencies": ["sqlite3"]
+    },
+    "config": {
+      "description": "TOML/JSON config module",
+      "dependencies": ["cpptoml", "nlohmann-json"]
+    },
+    "ipc": {
+      "description": "Shared memory IPC module",
+      "dependencies": ["zeromq"]
+    },
+    "network": {
+      "description": "HTTP/WebSocket module",
+      "dependencies": ["cpp-httplib", "ixwebsocket"]
+    }
+  }
+}
