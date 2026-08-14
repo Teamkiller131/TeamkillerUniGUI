@@ -37,6 +37,11 @@
 
 #include <windows.h> // SetProcessDpiAwarenessContext
 
+#include <d3d11.h> // ID3D11Device for the WARP adapter query
+#include <dxgi.h>
+#include <wrl/client.h> // ComPtr for the adapter query
+using Microsoft::WRL::ComPtr;
+
 #include <cstdlib>
 #include <gtest/gtest.h>
 #include <string>
@@ -180,6 +185,59 @@ TEST(DXMultiViewportSmoke, PoppedOutWindow_MainViewportStillDrawn) {
     frame();
     EXPECT_EQ(countSecondaries(), 0) << "merged window must not pop back out";
     EXPECT_EQ(dxr->LastVerifyDrawn(), 1) << "main window must stay drawn after the merge settles";
+
+    unigui::Shutdown();
+}
+
+// ── Windowed/swapchain WARP pass (headless CI escape hatch) ───────────────────
+// UNIGUI_DX11_WARP=1 forces the software rasterizer, so a GPU-less runner gets a REAL
+// device + swapchain + present: the windowed path of the roadmap's WARP work (the
+// offscreen raw-D3D half already lives in dx_warp_smoke_test.cc). This asserts the
+// adapter really is the software one and that the app renders through it.
+TEST(DXMultiViewportSmoke, WarpAdapter_RendersWithoutGPU) {
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    _putenv_s("UNIGUI_DX11_WARP", "1");
+    _putenv_s("UNIGUI_RENDER_VERIFY", "1");
+
+    unigui::AppConfig cfg;
+    cfg.width = 480;
+    cfg.height = 360;
+    cfg.backend = unigui::BackendType::DX11;
+    cfg.theme.font_size = 13.0f;
+    if (!unigui::Init(cfg))
+        GTEST_SKIP() << "app bring-up failed (no WARP on this Windows?)";
+    if (std::string(ImGui::GetIO().BackendRendererName) != "imgui_impl_dx11") {
+        unigui::Shutdown();
+        GTEST_SKIP() << "DX11 unavailable — nothing to verify";
+    }
+
+    auto* dxr = static_cast<unigui::DX11Renderer*>(unigui::GetActiveRenderer());
+    ASSERT_NE(dxr, nullptr);
+
+    // The WARP device reports the Microsoft Basic Render Driver adapter — prove it
+    // (GetAdapter lives on IDXGIDevice; reach it through QueryInterface).
+    ComPtr<IDXGIDevice> dxgiDevice;
+    ASSERT_TRUE(SUCCEEDED(dxr->device_->QueryInterface(IID_PPV_ARGS(&dxgiDevice))));
+    ComPtr<IDXGIAdapter> adapter;
+    const HRESULT hr = dxgiDevice->GetAdapter(adapter.GetAddressOf());
+    ASSERT_TRUE(SUCCEEDED(hr));
+    DXGI_ADAPTER_DESC desc{};
+    adapter->GetDesc(&desc);
+    const std::wstring name(desc.Description);
+    EXPECT_TRUE(name.find(L"Basic Render") != std::wstring::npos ||
+                name.find(L"WARP") != std::wstring::npos)
+            << "WARP requested but the adapter is '" << desc.Description << "'";
+
+    // Render a few frames through the software device — real pixels must land.
+    for (int i = 0; i < 3; ++i) {
+        ASSERT_TRUE(unigui::NewFrame());
+        if (unigui::im::Begin("warpwin")) {
+            unigui::im::Text("warp content");
+        }
+        unigui::im::End();
+        unigui::Render();
+    }
+    EXPECT_EQ(dxr->LastVerifyDrawn(), 1) << "the WARP swapchain must produce drawn pixels";
 
     unigui::Shutdown();
 }
