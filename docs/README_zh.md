@@ -42,7 +42,7 @@
 2. 构建应用 → [FRAMEWORK.md](FRAMEWORK.md)（+ [REACTIVE.md](REACTIVE.md) / [LAYOUT.md](LAYOUT.md)）
 3. 查单个控件 → [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) / [API_INDEX.md](API_INDEX.md) → [WIDGET_API.md](WIDGET_API.md)
 
-**「95 widgets」** 指 `widgets/` 下保留式组件；另有约 **250** 个 `unigui::im` 函数、声明式 DSL 与组件框架、响应式与布局层等，见各专题文档。
+**「92 widgets」** 指 `widgets/` 下保留式组件；另有约 **250** 个 `unigui::im` 函数、声明式 DSL 与组件框架、响应式与布局层等，见各专题文档。
 
 ## 仓库
 

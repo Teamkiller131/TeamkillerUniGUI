@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-4.9.0-blueviolet)]()
 [![Tests](https://img.shields.io/badge/tests-1300-brightgreen)]()
-[![Widgets](https://img.shields.io/badge/widgets-95-blue)]()
+[![Widgets](https://img.shields.io/badge/widgets-92-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
 C++23 Dear ImGui 封装库——提供统一的明暗主题引擎、高层组件、声明式 DSL、CSS 样式引擎、插件系统与 EventBus。支持 7 种渲染后端：GLFW+OpenGL3、SDL3+Vulkan、DX11、DX12、Metal、WebGPU 和 Emscripten。
@@ -50,7 +50,7 @@ ctest --preset windows-msvc-release
 cmake --preset windows-msvc-sdl3-vulkan-release
 cmake --build --preset windows-msvc-sdl3-vulkan-release
 
-# 运行演示（综合展示：全部 95 个组件，零原生 ImGui 调用）
+# 运行演示（综合展示：全部 92 个组件，零原生 ImGui 调用）
 ./build/windows-msvc-release/examples/unigui_showcase/unigui_showcase.exe --frames 10
 # 或最小 hello world：
 ./build/windows-msvc-release/examples/hello_unigui/hello_unigui.exe --frames 10
@@ -93,7 +93,7 @@ ctest --test-dir build
     ↓
 unigui:: API
     ├── 主题引擎 (明暗主题 + 13 套预设，统一样式/颜色令牌，毛玻璃材质，立体阴影，StyleScope RAII)
-    ├── 组件库 (95 个组件（100% PushID 安全），表单校验/撤销重做/序列化)
+    ├── 组件库 (92 个组件（100% PushID 安全），表单校验/撤销重做/序列化)
     ├── 声明式 DSL (unigui::dsl — Window, VBox/HBox, Button, CheckBox, SliderFloat, InputText, If/For)
     ├── 事件总线 (unigui::events::Bus — 发布/订阅，支持通配符)
     ├── CSS 样式引擎 (unigui::styling::Engine — 选择器引擎 + 变量)
@@ -197,8 +197,8 @@ im::Text("status: ok");
 （`unigui::Button`、`unigui::Form`、`unigui::DataTable` 等）。两层并存，
 按需选用。
 
-`unigui::im` 覆盖了 **Dear ImGui 实用公开接口的 98.5%**（204 个目标中封装 201 个；
-**共 248 个**一等函数，含表格、样式/ID 栈、printf 风格文本与剪贴板/上下文访问器）——
+`unigui::im` 覆盖了 **Dear ImGui 实用公开接口的 100%**（204 个目标全部封装；
+**共 251 个**一等函数，含表格、样式/ID 栈、printf 风格文本与剪贴板/上下文访问器）——
 你几乎不需要退回原生 `ImGui::`，即便使用也完全受支持并自动套用主题。
 该覆盖率数字由 [`scripts/coverage_vs_imgui.py`](scripts/coverage_vs_imgui.py)
 在 CI 中持续跟踪。
@@ -317,7 +317,7 @@ cmake -DUNIGUI_MODULE_SQLITE=ON -DUNIGUI_MODULE_CONFIG=ON \
 
 ## ID 安全
 
-全部 95 个组件均通过 `PushID(name)/PopID()` 自动划分 ImGui ID 作用域。
+全部 92 个组件均通过 `PushID(name)/PopID()` 自动划分 ImGui ID 作用域。
 无需手动管理 ID——只需给每个组件实例一个唯一名称：
 ```cpp
 auto btn1 = std::make_shared<unigui::Button>("ok", "确定");

@@ -1,6 +1,6 @@
 # TeamkillerUniGUI v4.9.0 Release Notes
 
-**Release Date:** 2026-08-14 | **Version:** 4.9.0 | **Widgets:** 95 | **Tests:** 1305 (1342 with the test engine)
+**Release Date:** 2026-08-14 | **Version:** 4.9.0 | **Widgets:** 92 | **Tests:** 1305 (1342 with the test engine)
 
 > The **client-suite release**: opt-in multi-viewport with runtime proof, a trading-grade
 > `TimeSeriesChart` hardening batch (span-lock / tick-spacing / range semantics), the

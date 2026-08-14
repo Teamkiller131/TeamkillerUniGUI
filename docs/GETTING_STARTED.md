@@ -1,7 +1,7 @@
 # Getting Started
 
 TeamkillerUniGUI (**v4.9.0**) is a C++23 [Dear ImGui](https://github.com/ocornut/imgui)
-framework. It layers a unified dark/light theme engine, ~95 retained-mode
+framework. It layers a unified dark/light theme engine, 92 retained-mode
 widgets, a themed immediate-mode helper layer (`unigui::im`), a declarative
 DSL + reactive component framework (`unigui::dsl`), a flexbox layout solver, a
 CSS-like styling engine, an EventBus, a plugin system, and optional sub-modules

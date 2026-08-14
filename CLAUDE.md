@@ -48,7 +48,7 @@ and agent) copies from.
 
 **TeamkillerUniGUI** is a C++23 [Dear ImGui](https://github.com/ocornut/imgui)
 wrapper (v3.8.x). It layers a unified dark+light theme engine, a high-level
-retained-mode widget library (95 widgets), an immediate-mode helper layer
+retained-mode widget library (92 widgets), an immediate-mode helper layer
 (`unigui::im`), a declarative DSL, CSS-like styling, an EventBus, a plugin
 system, and optional sub-modules (SQLite, config, IPC, networking) on top of
 ImGui. It targets Windows, Linux, macOS, and Web via a pluggable backend
@@ -191,7 +191,7 @@ Examples accept `--frames N` to render N frames and exit — use this in CI/smok
 | `docs/DSL.md` | Declarative DSL (view language) reference |
 | `docs/THEMING.md` | Theme engine + CSS styling & hot-reload |
 | `docs/BACKENDS.md` | Backend abstraction (platforms × renderers) + app loop |
-| `docs/WIDGET_API.md` | Full widget API reference (all 95) |
+| `docs/WIDGET_API.md` | Full widget API reference (all 92) |
 | `docs/WIDGET_EXAMPLES.md` | One minimal example per widget |
 | `docs/API_INDEX.md` | Master index (widgets + `im` + DSL + framework + core) |
 | `docs/MODULES.md` | Per-module reference (events/plugin/config/sqlite/ipc/network/fonts) |

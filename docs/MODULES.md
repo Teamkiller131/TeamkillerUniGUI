@@ -24,7 +24,7 @@ and a runnable usage example.
 
 | CMake option | Default | Namespace | Purpose | Extra vcpkg deps |
 |---|---|---|---|---|
-| `UNIGUI_MODULE_WIDGETS` | **ON** | `unigui::` | ~95 retained-mode widgets (tables, trees, charts, dialogs, …) | — |
+| `UNIGUI_MODULE_WIDGETS` | **ON** | `unigui::` | 92 retained-mode widgets (tables, trees, charts, dialogs, …) | — |
 | `UNIGUI_MODULE_DSL` | **ON** | `unigui::dsl` | Declarative UI builders + component framework | — |
 | `UNIGUI_MODULE_STYLING` | **ON** | `unigui::styling` | CSS-like style engine | — |
 | `UNIGUI_MODULE_FONTS` | **ON** | `unigui::fonts` | Font manager, fallback chains, emoji, gradient text | — |
@@ -855,7 +855,7 @@ points.
 
 ### Widgets — `UNIGUI_MODULE_WIDGETS` (default ON)
 
-The retained-mode widget library — roughly 95 widget classes in `unigui::`
+The retained-mode widget library — 92 widget classes in `unigui::`
 (tables, tree/list views, color pickers, date pickers, charts, dialogs, toasts,
 command palette, etc.). The fundamental primitives (`Button`, `Label`, `Panel`,
 `Form`, `Window`, `Checkbox`, …) are compiled into the **core** group and are

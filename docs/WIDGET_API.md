@@ -1,6 +1,10 @@
 # UniGUI Widget API Reference
 
-> **Version**: 4.9.0 (C++23) · **Widgets**: 95 · **Backend**: Dear ImGui (docking + multi-viewport)
+> **Version**: 4.9.0 (C++23) · **Widgets**: 92 · **Backend**: Dear ImGui (docking + multi-viewport)
+>
+> **How the count is derived**: 86 `.cc`-backed widgets (`src/widgets/`) + 3 trading widgets
+> (`CandlestickChart`, `DepthLadder`, `OrderTicket`) + 3 header-only widgets (`DataTable<T>`,
+> `ConnectionStatusBar`, `DockSpace`) — helper classes beside the widgets are not counted.
 >
 > **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Cookbook**: [EXAMPLES.md](EXAMPLES.md) · **Per-widget examples**: [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)
 >

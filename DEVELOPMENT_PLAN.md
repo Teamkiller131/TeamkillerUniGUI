@@ -10,9 +10,9 @@ happened) and `RELEASE.md` (per-release notes).
 The project's two original headline goals are **achieved**:
 
 1. ~~**Complete the wrapper.**~~ **Done (Horizon 2).** `unigui::im` now wraps **100%
-   of ImGui's practical surface** (201 of 204 practical-surface targets — 98.5%,
-   hard-gated at 95% in CI; **248 first-class `im::` functions** in total after the
-   2026-08 client-suite merge). Raw `ImGui::` stays fully supported and auto-themed.
+   of ImGui's practical surface** (204 of 204 practical-surface targets, hard-gated
+   at 95% in CI; **251 first-class `im::` functions** in total). Raw `ImGui::` stays
+   fully supported and auto-themed.
 2. ~~**A trading-client toolkit.**~~ **Done (Horizon 3).** The four trading widget
    families (order ticket, candlestick/OHLC chart, depth ladder, blotters) + thin
    models + the `trading_dashboard` example shipped.
@@ -91,8 +91,8 @@ Guiding principles:
 
 ## 2. Where we are today (baseline)
 
-- **95 widgets** (100% PushID-safe), the `unigui::im` immediate layer (**248
-  functions** — 201 of ImGui's 204 practical-surface targets, 98.5%, CI-gated),
+- **92 widgets** (100% PushID-safe), the `unigui::im` immediate layer (**251
+  functions** — 204 of ImGui's 204 practical-surface targets, 100%, CI-gated),
   declarative DSL, CSS styling engine, EventBus, plugin system, font manager,
   and opt-in **multi-viewport** (drag windows out of the main window; 2026-08).
 - **UI preset scaffolds** (`unigui::presets`, 4.6.0): AppShell / SettingsPage /
@@ -325,7 +325,7 @@ the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bu
   `(int)(x+0.5f)`→`std::lround`, two `Form::Deserialize` inc-in-condition lifts, `MasterDetail`
   optional guards) with two sub-checks excluded by rationale (branch-clone false positive,
   crtp-accessibility stylistic). The **wrapper-coverage** metric is also gated now
-  (`--threshold 95`, current 98.5%). **Still advisory:** ~4,900 style warnings across the
+  (`--threshold 95`, current **100%**). **Still advisory:** ~4,900 style warnings across the
   other tidy families (deliberate lowercase-suffix / brace-less-statement deviations — not
   bugs) and the lcov line-coverage job. Promote another tidy family into the gate as the
   tree is cleaned under it.
@@ -340,7 +340,7 @@ the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bu
 - **Software-GL renders crash inside Mesa** (`llvmpipe`/`softpipe` segfault in
   `libgallium` during `RenderDrawData` — a driver bug, absent on hardware GL), so the
   Linux smoke verifies bring-up + pixel-readback on the frames that survive.
-- **`docs/WIDGET_API.md` depth is uneven** (16 deep sections vs 95 widgets; the one-line
+- **`docs/WIDGET_API.md` depth is uneven** (16 deep sections vs 92 widgets; the one-line
   catalog lives in WIDGET_EXAMPLES.md).
 - Optional trading follow-ups: a `PriceTicker` marquee and in-cell mini sparkline/bar
   renderers (needs a custom-draw cell hook in `DataTable` — now partially available via
@@ -706,8 +706,9 @@ These run in parallel with every horizon:
 - **Wrapper-coverage tracking:** `scripts/coverage_vs_imgui.py` (_landed_)
   reports the first-class-wrapped % of the ImGui practical surface each CI run,
   now enforced as a **hard `--threshold 95` gate** in `quality.yml` (currently
-  98.5% — headroom exists so a deliberate vcpkg imgui bump can land before the
-  wrapping catch-up, while a real regression fails CI).
+  **100% — the full 204-function practical surface**; headroom for a deliberate
+  vcpkg imgui bump comes from the curated exclusion list, while a real regression
+  fails CI).
 - **Trading module hygiene:** the library must build and pass tests with
   `UNIGUI_MODULE_TRADING=OFF`; trading widgets stay presentation-only; the
   models are header-light and unit-tested.
@@ -830,40 +831,40 @@ The post-4.9 tree is green across all three suites (1316 / 1356 / 1432) and both
 remotes carry the work. The next batch closes the last measurable completeness gaps
 rather than opening new surfaces. Recommended order:
 
-1. **P0 · S — `unigui::im` to 100% of the practical surface.** Exactly three functions
-   remain unwrapped (98.5% → 100%): `GetFontBaked` (baked font at the current size),
-   `GetItemFlags` (last-item generic flags — pairs with `BeginDisabled`), and
-   `TreeNodeGetOpen(ImGuiID)` (tree-node open state — pairs with `GetID`). Wrap them,
-   add the usual headless tests, and update the metric everywhere it is quoted
-   (README/README_zh/docs/IM_API.md/DEVELOPMENT_PLAN — "201 of 204 targets" becomes
-   "204 of 204"). The `--threshold 95` CI gate keeps protecting the figure.
-2. **P1 · M — Session-boundary X ticks** (the chart-family tail). When a
-   `SessionAxis` formatter is installed (intraday charts with lunch/overnight gaps
-   collapsed), the plain arithmetic `SetXAxisTickSpacing` labels land on round
-   numbers, not on the session starts a trader reads. Extend the tick generation with
-   a session-aligned mode: ticks snap to the session boundary grid
-   (`SessionAxis::ToAxis` of session starts, e.g. 09:30 / 10:30 / 13:00 …) with the
-   step as a minimum interval; pure math stays testable without an ImPlot frame.
-   Closes the only remaining item-3 tail.
-3. **P1 · M — Trading interaction tests.** The trading widgets have headless tests but
-   no engine-driven input coverage: `OrderTicket` (type a price/qty → `Validate()` →
-   `Submit()` fires `OnSubmit` only when valid), `DepthLadder` (click a bid/ask level →
-   `OnLevelClick(price, size)`), `CandlestickChart` (hover/crosshair sanity). Needs a
-   combined preset (`windows-msvc-debug-testengine-modules`: test engine + trading ON)
-   so the engine runs against the module-gated widgets — the first CI lane combining
-   the two.
-4. **P1 · S — Count audit + WIDGET_API depth pass.** Verify the headline numbers
-   against reality — widgets (docs claim 95; `src/widgets` holds 86 .cc + 3 trading +
-   header-only/preset classes), a11y-wired widgets (~44), im functions (248) — and fix
-   any badge/doc drift. Then deepen the thinnest `docs/WIDGET_API.md` sections for the
-   newest widgets (PriceTicker, cell renderers, tick spacing) so the 16-deep-vs-95
-   imbalance narrows at the frontier that just moved.
-5. **P2 · M — Quality gate measurement.** Run the clang-tidy preset locally to measure
-   the per-family advisory backlog; promote the next-cleanest family into the
-   hard-gated `WarningsAsErrors` set (currently `bugprone-*`), and record the
-   `COVERAGE_FLOOR` number the Linux lane should gate on (the flip itself needs the
-   CI runner). If the tidy backlog for a whole family is too large for one batch,
-   clear it incrementally and land the gate when it reaches zero.
+1. ~~**P0 · S — `unigui::im` to 100% of the practical surface.**~~ **Done (post-4.9).**
+   `GetFontBaked`, `GetItemFlags` and `TreeNodeGetOpen` are now first-class `im::`
+   calls (204 of 204 targets — the coverage script reads **100.0%**, and its parser
+   learned the last two return types). Three headless tests pin them; README/README_zh
+   and this file now quote the full-coverage figure (251 first-class functions).
+2. ~~**P1 · M — Session-boundary X ticks** (the chart-family tail).~~ **Done (post-4.9).**
+   `SetXAxisSessionTicks(bool)` + the pure `MakeSessionTicks(axis, lo, hi, step, maxTicks)`:
+   the explicit X grid gains every session-boundary anchor (span start/end), so intraday
+   labels land on session edges even when the step doesn't divide the span; a collapsed
+   lunch boundary (11:30/13:00 sharing one axis coordinate) yields a single tick. Four
+   pure tests (boundary inclusion, shared-boundary dedup, window clipping, budget guard)
+   + a frame smoke; the first-frame ±1e300 placeholder window is budget-guarded before
+   any allocation. **Closes the chart-family tail.**
+3. ~~**P1 · M — Trading interaction tests.**~~ **Done (post-4.9).** New
+   `windows-msvc-debug-testengine-modules` preset (engine + trading together) and three
+   engine-driven tests: `OrderTicket` valid draft → submit click → `OnSubmit` with the
+   draft; invalid price → the disabled submit button fires nothing; `DepthLadder` level
+   click → `OnLevelClick(side, price, size)`. _CandlestickChart stays engine-free: ImPlot
+   crashes under the engine's per-frame state manipulation (yield assert + access
+   violation) — documented in the test file; headless frame tests remain its coverage._
+4. ~~**P1 · S — Count audit + WIDGET_API depth pass.**~~ **Done (post-4.9).** The
+   historical "95 widgets" did not reproduce from any clean rule (the only match counted
+   20 helper classes + 2 model classes as widgets). The audited count is **92** = 86
+   `.cc`-backed widgets + 3 trading + 3 header-only (`DataTable<T>`, `ConnectionStatusBar`,
+   `DockSpace`) — badges and docs now quote 92 with the derivation rule written into
+   `docs/API_INDEX.md` and `docs/WIDGET_API.md` so the number stays maintainable. The
+   `im` count is 251 (100% of the practical surface, see item 1).
+5. ~~**P2 · M — Quality gate measurement.**~~ **Measured (post-4.9).** The local
+   `windows-clang-tidy` build does not reproduce CI: the local toolchain differs from the
+   pinned Linux clang-tidy-19 (fno-exceptions mismatch on `try` in main_thread/eventbus/
+   window + a `bugprone-unchecked-string-to-number-conversion` in window.cc that CI's
+   pinned version does not flag). Per-family promotion must therefore be based on the CI
+   lane's numbers, not local ones — deferred until the CI baseline can be read; the
+   wrapper-coverage gate is already at 100% (see item 1).
 6. **P2 — Carry-over (unchanged):** backend runtime proof (GPU runner + golden
    images), multi-context singletons, and the long-horizon backlog from item 8 above.
 

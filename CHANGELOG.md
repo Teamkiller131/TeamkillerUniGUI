@@ -1,6 +1,41 @@
 ## [Unreleased]
 
 ### Added
+- **`unigui::im` now wraps 100% of Dear ImGui's practical surface** — the last three
+  unwrapped functions landed: `GetFontBaked` (baked font at the current size),
+  `GetItemFlags` (last-item generic flags — read back `ImGuiItemFlags_Disabled` under
+  `BeginDisabled`), and `TreeNodeGetOpen(ImGuiID)` (tree-node open state, pairs with
+  `GetID`). The coverage script reads **204/204 = 100.0%** (its parser also learned
+  the `ImFontBaked*` / `ImGuiItemFlags` return types), and three headless tests pin
+  the new wrappers. README/README_zh now quote the full-coverage figure (251
+  first-class functions).
+- **`TimeSeriesChart::SetXAxisSessionTicks(bool)` — session-boundary X ticks.** On
+  intraday charts (`SetSessionAxis`), the explicit X tick grid now also anchors every
+  session boundary (span start/end), so labels land on session edges even when the step
+  does not divide the span — and a collapsed lunch boundary (11:30/13:00 sharing one
+  axis coordinate) produces a single tick. The pure math is `MakeSessionTicks(axis, lo,
+  hi, step, maxTicks)` (boundaries + budget-guarded step grid, sorted/deduped) — four
+  pure tests plus a frame smoke; the first frame's ±1e300 placeholder window is
+  budget-guarded before any allocation.
+- **Trading widgets get engine-driven input coverage** (new
+  `windows-msvc-debug-testengine-modules` preset — the first configuration combining the
+  test engine with the trading module). Three tests drive the real input path:
+  `OrderTicket` (valid draft → submit click → `OnSubmit` with the draft; invalid price →
+  the disabled button fires nothing) and `DepthLadder` (level click → `OnLevelClick` with
+  the level's side/price/size). `CandlestickChart` is deliberately not engine-driven:
+  ImPlot crashes under the engine's per-frame state manipulation (yield assert + access
+  violation) — documented in the test file, headless frame tests remain its coverage.
+- **Widget-count audit: 95 → 92.** The historical "95 widgets" did not reproduce from any
+  clean counting rule (the only rule that yielded 95 counted 20 helper classes and 2
+  model classes as widgets). The audited number is **92** = 86 `.cc`-backed widgets + 3
+  trading widgets + 3 header-only widgets (`DataTable<T>`, `ConnectionStatusBar`,
+  `DockSpace`). Badges, docs and the plan now quote 92, with the derivation rule written
+  into `docs/API_INDEX.md` / `docs/WIDGET_API.md` so it stays maintainable.
+- **Quality-gate measurement (local).** The local `windows-clang-tidy` build does not
+  reproduce CI (toolchain differences: fno-exceptions mismatch and a window.cc bugprone
+  finding the pinned Linux clang-tidy-19 does not flag) — per-family tidy promotion must
+  be based on the CI lane's numbers; deferred, with the wrapper-coverage gate already at
+  100%.
 - **`TimeSeriesChart::SetXAxisTickSpacing(step)` — explicit X gridline step** (the
   X-axis counterpart of the 4.9.0 Y tick spacing). Keyed off the *visible* X window
   (cached from the previous frame), so after pan/zoom the ticks follow the view instead

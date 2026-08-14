@@ -457,6 +457,7 @@ return).
 | `bool TreeNodeEx(std::string_view label, ImGuiTreeNodeFlags flags = 0)` | Tree node with flags. |
 | `void TreePop()` | Close a `TreeNode` / `TreeNodeEx`. |
 | `void SetNextItemOpen(bool isOpen, ImGuiCond cond = 0)` | Force the next tree node / header open or closed. |
+| `bool TreeNodeGetOpen(ImGuiID storageId)` | Read a tree node's open state by its storage ID (from `GetID`). |
 | `bool CollapsingHeader(std::string_view label, ImGuiTreeNodeFlags flags = 0)` | Full-width collapsing header. |
 | `bool CollapsingHeader(std::string_view label, bool* pVisible, ImGuiTreeNodeFlags flags = 0)` | Collapsing header with a close ✕ bound to `pVisible`. |
 
@@ -520,6 +521,7 @@ return).
 | `bool IsItemFocused()` | Last item is focused. |
 | `bool IsItemClicked(ImGuiMouseButton mouseButton = 0)` | Last item was clicked with the given button. |
 | `bool IsItemVisible()` | Last item is visible (not clipped). |
+| `ImGuiItemFlags GetItemFlags()` | Generic flags of the last item (e.g. `ImGuiItemFlags_Disabled` inside `BeginDisabled`). |
 | `bool IsItemEdited()` | Last item's value was edited this frame. |
 | `bool IsItemActivated()` | Last item was activated this frame. |
 | `bool IsItemDeactivated()` | Last item was deactivated this frame. |
@@ -603,6 +605,7 @@ return).
 | `ImGuiViewport* GetMainViewport()` | The main viewport (owned by the platform backend). |
 | `ImFont* GetFont()` | The currently active font. |
 | `float GetFontSize()` | The active font size (DPI-scaled). |
+| `ImFontBaked* GetFontBaked()` | The baked font at the current size (the glyph-ready object behind `GetFont()`). |
 | `void SetWindowFontScale(float scale)` | Scale the font of the *next* window. |
 | `bool Begin(std::string_view name, bool* pOpen = nullptr, ImGuiWindowFlags flags = 0)` | Raw window begin (prefer the RAII `WindowScope` guard). |
 | `void End()` | Raw window end (only when `Begin` returned true). |

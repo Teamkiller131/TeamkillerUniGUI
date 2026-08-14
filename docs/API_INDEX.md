@@ -4,14 +4,20 @@ Master lookup for the **entire public surface** of TeamkillerUniGUI 4.9.0.
 
 | Category | Count | Primary doc |
 |----------|------:|-------------|
-| Retained widgets & helpers | **95** | [WIDGET_API.md](WIDGET_API.md), [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) |
-| `unigui::im` functions | **201** | [IM_API.md](IM_API.md) |
+| Retained widgets | **92** | [WIDGET_API.md](WIDGET_API.md), [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) |
+| `unigui::im` functions | **251** | [IM_API.md](IM_API.md) |
 | `unigui::dsl` builders + component framework | **24+** | [DSL.md](DSL.md), [FRAMEWORK.md](FRAMEWORK.md) |
 | Reactive (Observable / Computed / State / Store) | — | [REACTIVE.md](REACTIVE.md) |
 | Layout (SolveFlex / FlexRow / Layout helpers) | — | [LAYOUT.md](LAYOUT.md) |
 | App / theme / core | **15+** | [BACKENDS.md](BACKENDS.md), [THEMING.md](THEMING.md), [GETTING_STARTED.md](GETTING_STARTED.md) |
 
-> README badge **「95 widgets」** counts retained components under `include/unigui/widgets/`. It does **not** include `im::`, the DSL, the component framework, the reactive/layout layers, theme, or optional modules — those add **hundreds** of additional APIs (see the dedicated docs above).
+> **How the widget count is derived** (2026-08 audit): **86** `.cc`-backed widget
+> implementations in `src/widgets/` + **3** trading widgets (`CandlestickChart`,
+> `DepthLadder`, `OrderTicket`) + **3** header-only widgets (`DataTable<T>`,
+> `ConnectionStatusBar`, `DockSpace`) = **92**. It does **not** include `im::`, the
+> DSL, the component framework, the reactive/layout layers, theme, presets, or the
+> helper/model classes that live beside the widgets — those add **hundreds** of
+> additional APIs (see the dedicated docs above).
 
 ---
 

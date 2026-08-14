@@ -5,7 +5,7 @@
 English | [中文索引](README_zh.md)
 
 TeamkillerUniGUI is a C++23 Dear ImGui framework: a backend abstraction, a
-dark+light theme engine, ~95 retained widgets, a themed immediate layer
+dark+light theme engine, 92 retained widgets, a themed immediate layer
 (`unigui::im`), a declarative DSL + reactive **component framework**, a flexbox
 layout system, CSS-like styling, and optional modules (SQLite, config, IPC,
 networking, trading).
@@ -94,7 +94,7 @@ After building with `UNIGUI_BUILD_EXAMPLES=ON` (the default), examples accept
 
 ```text
 build/<preset>/examples/framework_demo/framework_demo --frames 10   # the framework idiom
-build/<preset>/examples/unigui_showcase/unigui_showcase --frames 10  # all 95 widgets
+build/<preset>/examples/unigui_showcase/unigui_showcase --frames 10  # all 92 widgets
 build/<preset>/examples/hello_unigui/hello_unigui --frames 10        # minimal
 ```
 

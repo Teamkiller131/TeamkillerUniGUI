@@ -19,7 +19,7 @@ Everything is reachable through a single umbrella header:
 ```
 
 That header pulls in the backend factory, core utilities, the theme engine, all
-~95 retained widgets, the immediate-mode layer (`unigui::im`), the DSL +
+92 retained widgets, the immediate-mode layer (`unigui::im`), the DSL +
 component framework (`unigui::dsl`), the EventBus, styling, plugins, and — guarded
 by `UNIGUI_HAS_*` macros — whichever optional modules were compiled in.
 
@@ -237,7 +237,7 @@ highest. They coexist in the same frame, so you can mix them freely.
 
 ### 3a. Retained-mode widgets — `unigui::`
 
-The ~95 widget **classes** are the building blocks: persistent objects that hold
+The 92 widget **classes** are the building blocks: persistent objects that hold
 state, support validation, undo/redo, serialization, accessibility, shadows, and
 elevation. Every widget derives from `Widget` (`<unigui/widgets/widget_base.h>`),
 which provides the common surface — visibility, tooltips, focus, enabled state,
