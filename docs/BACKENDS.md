@@ -450,6 +450,7 @@ struct AppConfig {
     BackendType backend = BackendType::GLFW_GL3;
 #endif
     bool dpiScaleFonts = false;
+    bool multiViewport = false;                    // opt-in: windows can be dragged out of the main window
 };
 ```
 
