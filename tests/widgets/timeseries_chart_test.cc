@@ -1,7 +1,11 @@
 #include <unigui/core/session_axis.h>
 #include <unigui/widgets/timeseries_chart.h>
 
+#include <imgui.h>
+#include <implot.h>
+
 #include <gtest/gtest.h>
+#include <memory>
 #include <vector>
 
 using namespace unigui;
@@ -194,4 +198,104 @@ TEST(TimeSeriesChartTest, RestoreSpan_ToleranceIsRelative_CatchesLargeMagnitudeZ
     auto [lo2, hi2] = TimeSeriesChart::RestoreSpan(6975.0, 7025.0, 50.0);
     EXPECT_DOUBLE_EQ(lo2, 6975.0);
     EXPECT_DOUBLE_EQ(hi2, 7025.0);
+}
+
+// ── Span-lock render-path tests (headless ImGui + ImPlot frames) ─────────────────
+// RestoreSpan is pure math, but the *integration* is what traders feel: the chart must
+// observe the user's zoom from ImPlot, restore the span on the NEXT frame, and let a
+// pure pan (span unchanged) pass through untouched. Zoom/pan are injected through
+// ImPlot::SetNextAxesLimits — the same knob ImPlot's wheel-zoom turns internally.
+
+namespace {
+class SpanLockFrameTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImPlot::CreateContext();
+        ImGui::GetIO().DisplaySize = ImVec2(800, 600);
+        ImGui::GetIO().Fonts->Build();
+        chart_ = std::make_unique<TimeSeriesChart>("spanlock");
+        const int id = chart_->AddSeries({});
+        std::vector<double> xs, ys;
+        for (int i = 0; i < 20; ++i) {
+            xs.push_back(i);
+            ys.push_back(i * 5.0); // data spans [0, 95]
+        }
+        chart_->SetSeriesData(id, xs, ys);
+        chart_->SetYAxisRange(0.0, 100.0);
+        chart_->SetYAxisSpanLock(50.0);
+    }
+    void TearDown() override {
+        chart_.reset();
+        ImPlot::DestroyContext();
+        ImGui::DestroyContext();
+    }
+
+    // Render one full frame. `lo/hi` (non-null) injects Y limits for the NEXT plot —
+    // the equivalent of the user wheel-zooming between frames.
+    void Frame(const double* lo = nullptr, const double* hi = nullptr) {
+        if (lo && hi)
+            ImPlot::SetNextAxesLimits(0.0, 19.0, *lo, *hi, ImGuiCond_Always);
+        ImGui::NewFrame();
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(800, 600));
+        ImGui::Begin("host");
+        chart_->Render();
+        ImGui::End();
+        ImGui::Render();
+    }
+
+    std::pair<double, double> Seen() const { return chart_->GetYAxisRange(); }
+
+    std::unique_ptr<TimeSeriesChart> chart_;
+};
+} // namespace
+
+TEST_F(SpanLockFrameTest, InitialManualRange_IsCorrectedToTheLockedSpan) {
+    // The manual range [0,100] has span 100 ≠ lock 50: frame 1 applies it as requested,
+    // the lock notices and schedules the correction; frame 2 lands on [25,75] (centre
+    // kept) and stays there — the height the caller demanded from then on.
+    Frame();
+    auto s = Seen();
+    EXPECT_DOUBLE_EQ(s.first, 0.0);
+    EXPECT_DOUBLE_EQ(s.second, 100.0);
+    Frame();
+    s = Seen();
+    EXPECT_DOUBLE_EQ(s.first, 25.0);
+    EXPECT_DOUBLE_EQ(s.second, 75.0);
+    EXPECT_DOUBLE_EQ(s.second - s.first, 50.0);
+}
+
+TEST_F(SpanLockFrameTest, WheelZoom_SnapsBackNextFrameKeepingCentre) {
+    Frame();
+    Frame(); // settle on [25,75]
+    // User wheel-zooms into [35,75] — span 40, centre 55. The lock allows the one-frame
+    // bounce (the user sees the zoom), then restores the height around the new centre.
+    const double zlo = 35.0, zhi = 75.0;
+    Frame(&zlo, &zhi);
+    auto s = Seen();
+    EXPECT_DOUBLE_EQ(s.first, 35.0);
+    EXPECT_DOUBLE_EQ(s.second, 75.0);
+    Frame();
+    s = Seen();
+    EXPECT_DOUBLE_EQ(s.first, 30.0);  // centre 55 kept: 55 ± 25
+    EXPECT_DOUBLE_EQ(s.second, 80.0);
+    EXPECT_DOUBLE_EQ(s.second - s.first, 50.0);
+}
+
+TEST_F(SpanLockFrameTest, PurePan_PassesThroughWithoutReimposing) {
+    Frame();
+    Frame(); // settle on [25,75]
+    // Pan only moves the centre (span still 50) — must pass through untouched, AND the
+    // chart must not re-impose anything on the following frame.
+    const double plo = 45.0, phi = 95.0;
+    Frame(&plo, &phi);
+    auto s = Seen();
+    EXPECT_DOUBLE_EQ(s.first, 45.0);
+    EXPECT_DOUBLE_EQ(s.second, 95.0);
+    Frame();
+    s = Seen();
+    EXPECT_DOUBLE_EQ(s.first, 45.0);
+    EXPECT_DOUBLE_EQ(s.second, 95.0);
 }
