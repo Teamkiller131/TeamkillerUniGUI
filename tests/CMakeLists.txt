@@ -285,7 +285,7 @@ if(UNIGUI_MODULE_WIDGETS)
 endif()
 
 # Core tests
-foreach(_core locale settings strutil undo_stack version format_num observable main_thread widget_pool session_axis decimate layout_store accessibility dpi path_util flex_layout context_registry)
+foreach(_core locale settings strutil undo_stack version format_num observable main_thread widget_pool session_axis decimate layout_store accessibility dpi path_util flex_layout context_registry layout_direction)
     add_executable(test_${_core} core/${_core}_test.cc)
     target_link_libraries(test_${_core} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_core} PRIVATE cxx_std_23)
@@ -474,6 +474,12 @@ add_executable(test_im im/im_test.cc)
 target_link_libraries(test_im PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_im PRIVATE cxx_std_23)
 gtest_discover_tests(test_im)
+
+# RTL mirroring geometry (headless — layout math only, no render backend)
+add_executable(test_im_rtl im/im_rtl_test.cc)
+target_link_libraries(test_im_rtl PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_im_rtl PRIVATE cxx_std_23)
+gtest_discover_tests(test_im_rtl)
 
 # Usability layer: RAII scope guards (unigui::WindowScope, ...)
 add_executable(test_scope core/scope_test.cc)

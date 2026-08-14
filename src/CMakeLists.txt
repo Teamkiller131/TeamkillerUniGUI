@@ -193,6 +193,7 @@ target_sources(unigui PRIVATE
     core/context.cc
     core/error.cc
     core/locale.cc
+    core/layout_direction.cc
     core/settings.cc
     core/strutil.cc
     core/log.cc

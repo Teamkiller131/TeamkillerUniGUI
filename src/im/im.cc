@@ -1,13 +1,14 @@
+#include <unigui/core/layout_direction.h>
 #include <unigui/im/im.h>
 
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "detail/combo_chevron.h"
-
 #include <algorithm>
 #include <cstdarg>
 #include <cstring>
+
+#include "detail/combo_chevron.h"
 
 namespace unigui::im {
 
@@ -17,6 +18,19 @@ namespace {
 // stay in std::string's small-buffer (no heap allocation).
 inline std::string Z(std::string_view s) {
     return std::string(s);
+}
+
+// RTL mirroring, increment 1: single-line text blocks right-align so RTL-script
+// UIs read right-to-left. The cursor is advanced to (right edge - measured
+// width), so the block ENDS where LTR text would end. Excluded from v1 (deep
+// layout-engine concerns, documented in DEVELOPMENT_PLAN §7): BulletText (the
+// bullet marker lives at the cursor), TextWrapped (per-line bidi shaping), and
+// control internals/table order/tree indents.
+inline void AlignTextRightIfRtl(std::string_view text) {
+    if (!unigui::IsRightToLeft())
+        return;
+    const float w = ImGui::CalcTextSize(text.data(), text.data() + text.size()).x;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - w);
 }
 
 inline ImVec4 Lighten(const ImVec4& c, float t) {
@@ -35,7 +49,7 @@ ImVec4 VariantColor(ButtonVariant v, const ImVec4& fallback) {
     case ButtonVariant::Success:
         return ImVec4(0.18f, 0.60f, 0.28f, 1.0f);
     case ButtonVariant::Warning:
-        return ImVec4(0.85f, 0.55f, 0.13f, 1.0f);  // amber — e.g. an exhausted/triggered-out action
+        return ImVec4(0.85f, 0.55f, 0.13f, 1.0f); // amber — e.g. an exhausted/triggered-out action
     default:
         return fallback;
     }
@@ -66,6 +80,7 @@ bool SmallButton(std::string_view label) {
 
 // ── Text ──────────────────────────────────────────────────────────────────────
 void Text(std::string_view text) {
+    AlignTextRightIfRtl(text);
     ImGui::TextUnformatted(text.data(), text.data() + text.size());
 }
 
@@ -76,12 +91,14 @@ void TextWrapped(std::string_view text) {
 }
 
 void TextDisabled(std::string_view text) {
+    AlignTextRightIfRtl(text);
     ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
     ImGui::TextUnformatted(text.data(), text.data() + text.size());
     ImGui::PopStyleColor();
 }
 
 void TextColored(const ImVec4& color, std::string_view text) {
+    AlignTextRightIfRtl(text);
     ImGui::PushStyleColor(ImGuiCol_Text, color);
     ImGui::TextUnformatted(text.data(), text.data() + text.size());
     ImGui::PopStyleColor();
@@ -94,6 +111,9 @@ void BulletText(std::string_view text) {
 }
 
 void LabelText(std::string_view label, std::string_view text) {
+    // Right-align the whole "label: value" block as one unit.
+    const std::string combined = std::string(label) + ": " + std::string(text);
+    AlignTextRightIfRtl(combined);
     ImGui::LabelText(Z(label).c_str(), "%.*s", static_cast<int>(text.size()), text.data());
 }
 
@@ -241,17 +261,17 @@ void DrawActiveInputCaret() {
         return;
     ImGuiContext& g = *ImGui::GetCurrentContext();
     const ImGuiPlatformImeData& ime = g.PlatformImeData;
-    if (!ime.WantVisible)  // ImGui only sets this for the active, editable input
+    if (!ime.WantVisible) // ImGui only sets this for the active, editable input
         return;
     const float anim = g.InputTextState.CursorAnim;
-    const bool blinkOn = !g.IO.ConfigInputTextCursorBlink || anim <= 0.0f
-                         || ImFmod(anim, 1.20f) <= 0.80f;
+    const bool blinkOn =
+        !g.IO.ConfigInputTextCursorBlink || anim <= 0.0f || ImFmod(anim, 1.20f) <= 0.80f;
     if (!blinkOn)
         return;
     const float h = ime.InputLineHeight > 0.0f ? ime.InputLineHeight : g.FontSize;
     const ImVec2 top(ime.InputPos.x + 1.0f, ime.InputPos.y);
     const ImVec2 bottom(top.x, top.y + h);
-    const float thickness = ImMax(2.0f, g.FontSize * 0.09f);  // ~2-3px, scales with font/DPI
+    const float thickness = ImMax(2.0f, g.FontSize * 0.09f); // ~2-3px, scales with font/DPI
     ImGui::GetWindowDrawList()->AddLine(top, bottom, ImGui::GetColorU32(ImGuiCol_Text), thickness);
 }
 
@@ -294,8 +314,7 @@ bool InputText(std::string_view label, std::string* value, std::size_t maxLength
     return EditString(Z(label).c_str(), value, maxLength, /*multiline=*/false, ImVec2(0, 0), flags);
 }
 
-bool InputText(std::string_view label, char* buf, std::size_t bufSize,
-               ImGuiInputTextFlags flags) {
+bool InputText(std::string_view label, char* buf, std::size_t bufSize, ImGuiInputTextFlags flags) {
     const bool changed = ImGui::InputText(Z(label).c_str(), buf, bufSize, flags);
     DrawActiveInputCaret();
     return changed;
@@ -309,8 +328,8 @@ bool InputTextWithHint(std::string_view label, std::string_view hint, char* buf,
     return changed;
 }
 
-bool InputTextMultiline(std::string_view label, char* buf, std::size_t bufSize,
-                        const ImVec2& size, ImGuiInputTextFlags flags) {
+bool InputTextMultiline(std::string_view label, char* buf, std::size_t bufSize, const ImVec2& size,
+                        ImGuiInputTextFlags flags) {
     const bool changed = ImGui::InputTextMultiline(Z(label).c_str(), buf, bufSize, size, flags);
     DrawActiveInputCaret();
     return changed;
@@ -358,8 +377,7 @@ bool Combo(std::string_view label, int* current, const std::vector<std::string>&
     // The unified UniGUI combo look: no stock arrow button, slim ˅ chevron in the right
     // padding (see detail/combo_chevron.h for the full rationale).
     const auto frame = detail::CaptureComboFrame();
-    const bool open =
-        ImGui::BeginCombo(Z(label).c_str(), preview, ImGuiComboFlags_NoArrowButton);
+    const bool open = ImGui::BeginCombo(Z(label).c_str(), preview, ImGuiComboFlags_NoArrowButton);
     const bool hovered = ImGui::IsItemHovered();
     detail::DrawComboChevron(frame, hovered || open);
     // Mouse-wheel quick-select (trader request 2026-07-07): while hovering the CLOSED
@@ -612,8 +630,8 @@ void SetTooltipF(const char* fmt, ...) {
 }
 
 // ── Tables ────────────────────────────────────────────────────────────────────
-bool BeginTable(std::string_view strId, int columns, ImGuiTableFlags flags,
-                const ImVec2& outerSize, float innerWidth) {
+bool BeginTable(std::string_view strId, int columns, ImGuiTableFlags flags, const ImVec2& outerSize,
+                float innerWidth) {
     return ImGui::BeginTable(Z(strId).c_str(), columns, flags, outerSize, innerWidth);
 }
 void EndTable() {
@@ -628,8 +646,8 @@ bool TableNextColumn() {
 bool TableSetColumnIndex(int columnN) {
     return ImGui::TableSetColumnIndex(columnN);
 }
-void TableSetupColumn(std::string_view label, ImGuiTableColumnFlags flags,
-                      float initWidthOrWeight, ImGuiID userId) {
+void TableSetupColumn(std::string_view label, ImGuiTableColumnFlags flags, float initWidthOrWeight,
+                      ImGuiID userId) {
     ImGui::TableSetupColumn(Z(label).c_str(), flags, initWidthOrWeight, userId);
 }
 void TableSetupScrollFreeze(int cols, int rows) {
