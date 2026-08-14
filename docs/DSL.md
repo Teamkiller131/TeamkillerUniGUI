@@ -472,6 +472,37 @@ int main() {
 }
 ```
 
+### ToSource
+
+```cpp
+std::string ToSource(const NodePtr& root);
+```
+
+The designer-tool "emit code" half: serialises a tree back into the equivalent
+builder expression — a complete, compilable snippet:
+
+```cpp
+using namespace unigui::dsl;
+
+NodePtr ui =
+    Window("Demo", VBox({
+        Text("Welcome!"),
+        ...
+    }));
+```
+
+What round-trips exactly: structure, labels/text, numeric parameters (slider
+min/max, flex gap/weights/justify) and button variants. What cannot:
+callbacks and conditions — a `std::function` cannot be recovered, so
+`onClick`/`onToggle`/`onChange`, `If` conditions, `For` item builders and
+`Custom` bodies are emitted as *compilable* placeholder forms
+(`[] { return true; } /* condition */`, a `Label(std::to_string(i))` item
+builder, a `/* draw lambda */` body), and external bindings become a trailing
+`// bound to an external ...` note. A null root yields an empty string.
+
+See the `designer` example (examples/designer) for the live preview +
+code-emission workflow around it.
+
 ---
 
 ## Binding: pointer-bound vs node-held state
