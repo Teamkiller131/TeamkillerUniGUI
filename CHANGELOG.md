@@ -1,6 +1,20 @@
 ## [Unreleased]
 
 ### Added
+- **Plugin ABI version gate.** `kPluginInterfaceVersion` plus a mandatory
+  `PluginInterfaceVersion()` export: the plugin manager rejects a version mismatch — or
+  a missing export, i.e. a plugin that predates versioning — before instantiation, with
+  a clear rebuild hint. The ABI policy is documented (frozen within a version,
+  additive-end-only growth, bump on any break); the example plugin exports the version
+  and the gate is pinned by tests.
+- **vcpkg-registry packaging, prepared and validated.** `registry/` (ports/unigui +
+  baseline + git-tree version database) plus
+  `scripts/packaging/prepare_vcpkg_registry.ps1` (assembles the registry repo at
+  release time, generates the version db, prints the consumer snippet). Validated
+  end-to-end against vcpkg 2026-03-04: a `vcpkg install` resolving unigui through the
+  generated registry builds and installs the package; the source-tarball SHA512 is left
+  as the accepted zero placeholder with pinning instructions (publishing waits for a
+  release tag).
 - **Windowed/swapchain WARP pass.** `UNIGUI_DX11_WARP=1` forces Microsoft's software
   rasterizer in the DX11 device creation (hardware stays the default, WARP falls back to
   hardware if unavailable), so a GPU-less runner gets a REAL device + swapchain +

@@ -846,10 +846,21 @@ phase closes by cutting **4.9.0** from the merged work. Recommended order:
    (`config::Store`, `Settings`, `events::Bus`, `plugin::Manager`, `ThemeRegistry`) are
    per-app/process by design and stay function-local statics until a real
    embed-two-surfaces consumer asks for them.
-8. **P2 — Long-horizon backlog (unchanged):** RTL layout mirroring, packaging (vcpkg
-   registry/Conan), C ABI bindings, the designer/live-preview tool, fractional-DPI
-   polish, plugin-ABI stabilisation. In-the-wild screen-reader validation (Narrator/
-   VoiceOver/Orca) remains the human-in-the-loop a11y tail.
+8. ~~**P2 — Long-horizon backlog (unchanged):**~~ **Two items advanced (post-4.9).**
+   **Plugin-ABI stabilisation landed**: `kPluginInterfaceVersion` + a mandatory
+   `PluginInterfaceVersion()` export — the manager rejects a version mismatch (or a
+   missing export, i.e. a pre-versioning plugin) before instantiation, with the ABI
+   policy documented (frozen within a version; additive-end-only growth; bump on any
+   break). The example plugin exports the version; tests pin the compatibility gate.
+   **vcpkg-registry packaging prepared**: `registry/` skeleton (ports/unigui +
+   baseline + git-tree version db) and `scripts/packaging/prepare_vcpkg_registry.ps1`
+   (assembles the registry repo at release time, generates the version db, prints the
+   consumer snippet) — validated end-to-end: a `vcpkg install` resolving unigui through
+   the generated registry builds and installs the package (vcpkg 2026-03-04). The
+   source-tarball SHA512 is left as the accepted zero placeholder with pinning
+   instructions; publishing waits for a release tag. _Remaining: RTL layout mirroring,
+   C ABI bindings, the designer tool, fractional-DPI cross-monitor polish (needs a
+   multi-monitor runner), and in-the-wild screen-reader validation (human).
 
 ### Next phase — "completeness sweep" (post-4.9 → 4.10)
 

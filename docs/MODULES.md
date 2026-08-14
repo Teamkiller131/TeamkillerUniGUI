@@ -301,8 +301,26 @@ public:
 extern "C" {
     __declspec(dllexport) unigui::plugin::IPlugin* CreatePlugin() { return new MyPlugin(); }
     __declspec(dllexport) void DestroyPlugin(unigui::plugin::IPlugin* p) { delete p; }
+    __declspec(dllexport) std::int32_t PluginInterfaceVersion() { return unigui::plugin::kPluginInterfaceVersion; }
 }
 ```
+
+### The ABI version gate
+
+The plugin interface is C++ (a vtable contract), so it is compiler-ABI-sensitive:
+a plugin DLL built by a different toolchain or against a different interface
+revision must never be instantiated. The gate:
+
+- `kPluginInterfaceVersion` (in `plugin_interface.h`) is the frozen interface
+  revision. Within a version the interface is immutable; **only additive changes
+  appended to the END of `IPlugin`** are allowed without a bump.
+- Every plugin DLL exports `PluginInterfaceVersion()` (see above). The manager
+  resolves it before calling `CreatePlugin` and rejects a mismatch with a clear
+  log line — a missing export counts as version 0 (a plugin that predates
+  versioning) and is rejected the same way.
+- Bump `kPluginInterfaceVersion` on ANY ABI-breaking change (adding/removing/
+  reordering virtuals, changing the exported symbol set), and re-export the new
+  version from every plugin.
 
 ### Host side
 
