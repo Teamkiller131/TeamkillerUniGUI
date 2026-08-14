@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unigui/backend/backend_types.h>
+
 #include <functional>
 #include <vector>
 
@@ -50,6 +52,10 @@ public:
     /// window content scale; it fires during NewFrame, before the frame is laid out.
     /// Default no-op — platforms without scale events don't implement it.
     virtual void SetContentScaleCallback(std::function<void(float)> cb) { (void) cb; }
+    /// Enumerate the connected displays (positions/sizes in virtual-desktop
+    /// coordinates, work area, per-monitor DPI scale). Empty before Init /
+    /// after Shutdown or when the platform cannot report monitors.
+    virtual std::vector<MonitorInfo> GetMonitors() const { return {}; }
     /// Set the window title.
     virtual void SetTitle(const char*) {}
     /// Set the window client area size.

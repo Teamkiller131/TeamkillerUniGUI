@@ -157,10 +157,17 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         auto hwnd = g_platform->GetWindowHandle();
         RECT rc;
         GetClientRect((HWND) hwnd, &rc);
-        int pw = rc.right - rc.left, ph = rc.bottom - rc.top;
+        // The swapchain must be sized at PHYSICAL pixels: the client rect is
+        // logical (DIPs) and the OS scales the window on a non-1.0 monitor, so a
+        // swapchain at client size would be stretched. io.DisplayFramebufferScale
+        // (= the same content scale, re-asserted every frame by the platform)
+        // then maps the logical draw data onto the physical back buffer.
+        const float scale = g_platform->GetContentScale();
+        int pw = static_cast<int>((rc.right - rc.left) * scale + 0.5f);
+        int ph = static_cast<int>((rc.bottom - rc.top) * scale + 0.5f);
         if (pw <= 0) {
-            pw = config.width;
-            ph = config.height;
+            pw = static_cast<int>(config.width * scale + 0.5f);
+            ph = static_cast<int>(config.height * scale + 0.5f);
         }
         ID3D11Device* dev = nullptr;
         ID3D11DeviceContext* ctx = nullptr;
@@ -184,9 +191,12 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         auto hwnd = g_platform->GetWindowHandle();
         int pw = 0, ph = 0;
         g_platform->GetClientSize(&pw, &ph);
+        const float scale12 = g_platform->GetContentScale();
+        pw = static_cast<int>(pw * scale12 + 0.5f);
+        ph = static_cast<int>(ph * scale12 + 0.5f);
         if (pw <= 0) {
-            pw = config.width;
-            ph = config.height;
+            pw = static_cast<int>(config.width * scale12 + 0.5f);
+            ph = static_cast<int>(config.height * scale12 + 0.5f);
         }
         ID3D12Device* dev = nullptr;
         ID3D12CommandQueue* queue = nullptr;
@@ -302,7 +312,8 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         const bool platformOk = (io.BackendFlags & ImGuiBackendFlags_PlatformHasViewports) != 0;
         const bool rendererOk = (io.BackendFlags & ImGuiBackendFlags_RendererHasViewports) != 0;
         if (platformOk && rendererOk) {
-            UNIGUI_LOG_INFO("Multi-viewport enabled (windows can be dragged out of the main window)");
+            UNIGUI_LOG_INFO(
+                "Multi-viewport enabled (windows can be dragged out of the main window)");
         } else {
             // Fail loud, then fail safe. A half-installed viewport setup does not degrade
             // gracefully — it mispositions every window — so drop back to single-viewport
@@ -432,11 +443,18 @@ bool NewFrame() {
         int cw = 0, ch = 0;
         g_platform->GetClientSize(&cw, &ch);
         static int lastW = 0, lastH = 0;
-        if (cw > 0 && ch > 0 && (cw != lastW || ch != lastH)) {
+        static float lastScale = 0.0f;
+        const float scale = g_platform->GetContentScale();
+        // Re-resize when the client size OR the monitor scale changes (the window
+        // moved to a differently-scaled monitor — same client size, new physical
+        // size). The swapchain takes PHYSICAL pixels; DisplaySize stays logical.
+        if (cw > 0 && ch > 0 && (cw != lastW || ch != lastH || scale != lastScale)) {
             lastW = cw;
             lastH = ch;
+            lastScale = scale;
             auto* dxr = static_cast<DX11Renderer*>(g_renderer.get());
-            if (dxr->ResizeSwapChain(cw, ch)) {
+            if (dxr->ResizeSwapChain(static_cast<int>(cw * scale + 0.5f),
+                                     static_cast<int>(ch * scale + 0.5f))) {
                 ImGui::GetIO().DisplaySize = ImVec2((float) cw, (float) ch);
             }
         }
@@ -447,11 +465,15 @@ bool NewFrame() {
         int cw = 0, ch = 0;
         g_platform->GetClientSize(&cw, &ch);
         static int lastW12 = 0, lastH12 = 0;
-        if (cw > 0 && ch > 0 && (cw != lastW12 || ch != lastH12)) {
+        static float lastScale12 = 0.0f;
+        const float scale = g_platform->GetContentScale();
+        if (cw > 0 && ch > 0 && (cw != lastW12 || ch != lastH12 || scale != lastScale12)) {
             lastW12 = cw;
             lastH12 = ch;
+            lastScale12 = scale;
             auto* dxr = static_cast<DX12Renderer*>(g_renderer.get());
-            if (dxr->ResizeSwapChain(cw, ch)) {
+            if (dxr->ResizeSwapChain(static_cast<int>(cw * scale + 0.5f),
+                                     static_cast<int>(ch * scale + 0.5f))) {
                 ImGui::GetIO().DisplaySize = ImVec2((float) cw, (float) ch);
             }
         }
@@ -599,6 +621,9 @@ RendererBackend* GetActiveRenderer() {
 }
 void* GetNativeWindowHandle() {
     return g_platform ? g_platform->GetNativeWindowHandle() : nullptr;
+}
+std::vector<MonitorInfo> GetMonitors() {
+    return g_platform ? g_platform->GetMonitors() : std::vector<MonitorInfo>{};
 }
 void SetContentScale(float scale) {
     if (ImGui::GetCurrentContext())

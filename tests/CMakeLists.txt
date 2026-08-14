@@ -146,7 +146,7 @@ gtest_discover_tests(test_glfw_gl3_backend)
 # from the PUBLIC unigui link, so no extra d3d11/d3d12 wiring is needed here; each
 # half of the test self-gates on its UNIGUI_HAS_DX* macro.
 if(WIN32 AND (UNIGUI_BACKEND_DX11 OR UNIGUI_BACKEND_DX12))
-    add_executable(test_dx_warp backend/dx_warp_smoke_test.cc backend/dx_multiviewport_smoke_test.cc)
+    add_executable(test_dx_warp backend/dx_warp_smoke_test.cc backend/dx_multiviewport_smoke_test.cc backend/dx_multimonitor_smoke_test.cc)
     target_link_libraries(test_dx_warp PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_dx_warp PRIVATE cxx_std_23)
     gtest_discover_tests(test_dx_warp)
