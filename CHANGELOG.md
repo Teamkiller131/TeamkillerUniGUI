@@ -1,6 +1,17 @@
 ## [Unreleased]
 
 ### Added
+- **Stable C ABI (`unigui_capi.h`, ABI v1).** A versioned C99 surface over the C++
+  library for C / FFI / language-binding hosts: ABI compatibility gate, version query,
+  app lifecycle (opaque handle, C frame callback, manual loop or `unigui_app_run`),
+  HiDPI content scale, native window handle, and an immediate-mode drawing subset
+  (begin/end, text, button, checkbox, slider, separator). The ABI grows additively
+  (docs/C_API.md documents the frozen-layout policy). Proven from pure C
+  (`tests/capi/capi_c_test.c` is compiled as C — the project now enables the C
+  language), through the test engine (real clicks across the boundary), and end-to-end
+  on a real DX11/WARP swapchain (create → draw from a C callback → capped run →
+  destroy). `unigui_export.h` now generates into the `unigui/` include subtree so it
+  resolves identically in build and install trees.
 - **Plugin ABI version gate.** `kPluginInterfaceVersion` plus a mandatory
   `PluginInterfaceVersion()` export: the plugin manager rejects a version mismatch — or
   a missing export, i.e. a plugin that predates versioning — before instantiation, with

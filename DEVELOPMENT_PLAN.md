@@ -693,8 +693,11 @@ Goal: make UniGUI easy to adopt and contribute to at scale.
   uninstalled generated header now fails CI instead of a downstream user's build.
   _Remaining:_ publish to a vcpkg registry and/or a Conan package; versioned
   binary releases.
-- **P2 · M — Language bindings.** Explore C API + bindings (e.g. C#, Python) over
-  a stable C ABI surface.
+- **P2 · M — Language bindings.** _First increment landed._ A stable C ABI
+  (`unigui_capi.h`, ABI v1) now covers the version/ABI gate, app lifecycle,
+  HiDPI scale, and an immediate-mode drawing subset — pure C99, tested from a
+  C TU and through the test engine (see §7). _Remaining:_ C#/Python/Go
+  bindings over the surface and more `im` calls as demand appears.
 - **P2 · L — Designer / live-preview tool.** Standalone app that previews DSL/CSS
   and emits code.
 - **P2 · S — Community.** Contribution ladder, "good first issue" curation,
@@ -858,9 +861,20 @@ phase closes by cutting **4.9.0** from the merged work. Recommended order:
    consumer snippet) — validated end-to-end: a `vcpkg install` resolving unigui through
    the generated registry builds and installs the package (vcpkg 2026-03-04). The
    source-tarball SHA512 is left as the accepted zero placeholder with pinning
-   instructions; publishing waits for a release tag. _Remaining: RTL layout mirroring,
-   C ABI bindings, the designer tool, fractional-DPI cross-monitor polish (needs a
-   multi-monitor runner), and in-the-wild screen-reader validation (human).
+   instructions; publishing waits for a release tag. **C ABI bindings — first
+   increment landed**: `unigui_capi.h` + `src/capi/` expose a versioned C99 surface
+   (ABI gate, version query, app lifecycle with an opaque handle + C frame callback,
+   content scale, native window handle, and an immediate-mode drawing subset:
+   begin/end, text, button, checkbox, slider, separator) with the growth policy
+   documented in docs/C_API.md (additive-only ABI-version bumps; frozen layouts).
+   A pure-C TU (`tests/capi/capi_c_test.c`, compiled as C — the project now enables
+   the C language) proves the header really is C; six headless tests pin the ABI
+   gate/version/config contracts; five test-engine tests click through the C boundary
+   (button/checkbox/slider via `//**/` window-crossing paths); and a real DX11/WARP
+   lifecycle test creates, draws from a C callback, runs a capped frame loop, and
+   destroys — all through the ABI. _Remaining: RTL layout mirroring, the designer
+   tool, more `im` calls / bindings on demand, fractional-DPI cross-monitor polish
+   (needs a multi-monitor runner), and in-the-wild screen-reader validation (human).
 
 ### Next phase — "completeness sweep" (post-4.9 → 4.10)
 
