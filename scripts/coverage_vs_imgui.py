@@ -166,7 +166,9 @@ def parse_im(path: str) -> set[str]:
     names: set[str] = set()
     decl = re.compile(
         r"\s*(?:bool|void|float|int|double|unsigned|std::string|ImVec2|ImVec4|"
-        r"ImU32|ImGuiID|ImDrawList\*|ImGuiMouseCursor|const\s+\w+)\s*\*?\s*&?\s*"
+        r"ImU32|ImGuiID|ImDrawList\*|ImFont\*|ImGuiStyle\s*&|ImGuiIO\s*&|"
+        r"ImGuiContext\*|ImGuiViewport\*|ImGuiTableSortSpecs\*|"
+        r"ImGuiMouseCursor|const\s+\w+)\s*\*?\s*&?\s*"
         r"([A-Za-z_]\w*)\s*\(")
     for line in open(path, encoding="utf-8").read().splitlines():
         mm = decl.match(line)
