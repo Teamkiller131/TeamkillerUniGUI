@@ -68,6 +68,11 @@ TEST(DXMultiViewportSmoke, PoppedOutWindow_MainViewportStillDrawn) {
 
     auto* dxr = static_cast<unigui::DX11Renderer*>(unigui::GetActiveRenderer());
     ASSERT_NE(dxr, nullptr);
+    // This test pops windows around and runs under ctest's working directory — never
+    // let the app persist window/table state to imgui.ini there: later tests create
+    // their own contexts in the same directory and would inherit the popped-out
+    // layout (observed: a DataTable a11y test's dimensions broke after this ran).
+    ImGui::GetIO().IniFilename = nullptr;
 
     auto draw = [&](bool pinBoth, const ImVec2* homePos = nullptr, const ImVec2* panelPos = nullptr) {
         if (pinBoth)
