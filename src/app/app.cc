@@ -5,6 +5,8 @@
 #include <unigui/core/main_thread.h>
 #include <unigui/theme/presets/registry.h>
 #include <unigui/theme/theme.h>
+
+#include "../detail/golden_capture.h"
 #ifdef UNIGUI_HAS_WIDGETS
 #include <unigui/widgets/toast.h>
 #endif
@@ -118,6 +120,16 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
     }
     g_platform->SetTitle(config.title);
     g_platform->SetSize(config.width, config.height);
+    // Runtime content-scale changes (window moved to a differently-scaled monitor, OS
+    // zoom): the platform reports them during NewFrame; update the global font scale
+    // (the dynamic font system re-rasterizes) snapped to a crisp step. The one-shot
+    // bring-up read below still applies the initial scale.
+    g_platform->SetContentScaleCallback([](float rawScale) {
+        const float snapped = dpi::NormalizeContentScale(rawScale);
+        UNIGUI_LOG_INFO("Content scale changed to {:.3f} -> snapped {:.3f} (fonts re-rasterized)",
+                        rawScale, snapped);
+        SetContentScale(snapped);
+    });
 
     float dpi = config.theme.dpi_scale; // 0 = auto-detect once the window is up
     if (dpi <= 0) {
@@ -453,12 +465,15 @@ bool NewFrame() {
 // the screen stays the clear colour (the 4.3.1 black-screen bug). GL backends only; inert
 // unless the env var is set, so zero cost in normal runs. Must be called after
 // RenderDrawData and before SwapBuffers (it reads the rendered back buffer).
+// UNIGUI_GOLDEN_CAPTURE=<path> additionally writes the raw framebuffer (see
+// src/detail/golden_capture.h) — the CI/dev golden-image pipeline.
 static void VerifyRenderIfEnabled() {
     static const bool verify = [] {
         const char* e = std::getenv("UNIGUI_RENDER_VERIFY");
         return e && e[0] == '1';
     }();
-    if (!verify)
+    const char* golden = detail::GoldenCapturePath();
+    if (!verify && !golden)
         return;
 
     const GLenum err = glGetError();
@@ -473,6 +488,12 @@ static void VerifyRenderIfEnabled() {
 
     std::vector<unsigned char> buf((size_t) w * (size_t) h * 4u);
     glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, buf.data());
+
+    if (golden)
+        detail::SaveGoldenRaw(golden, w, h, buf.data());
+
+    if (!verify)
+        return;
 
     const ImVec4 bg = GetBackdropColor();
     auto to8 = [](float v) { return (int) std::lround(v * 255.0f); };

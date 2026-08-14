@@ -15,6 +15,7 @@
 #define GLFW_EXPOSE_NATIVE_COCOA // exposes glfwGetCocoaWindow (NSWindow*) for Metal
 #include <GLFW/glfw3native.h>
 #endif
+#include <functional>
 #include <memory>
 
 namespace unigui {
@@ -84,6 +85,14 @@ public:
             return false;
         }
         UNIGUI_LOG_DEBUG("ImGui GLFW backend initialized");
+        // Report the framebuffer scale to ImGui: the client area is sized in logical
+        // pixels but the back buffer is physical (720×540 on a 150% monitor for a
+        // 480×360 client), and the render backends scale their projection by
+        // DisplayFramebufferScale. Without this the main viewport renders at the
+        // wrong physical size and viewport/window coordinates disagree at any
+        // non-1.0 DPI.
+        lastScale_ = ReadContentScale();
+        ApplyScaleToIO(lastScale_);
         initialized_ = true;
         return true;
     }
@@ -101,9 +110,27 @@ public:
         initialized_ = false;
     }
 
-    void NewFrame() override { ImGui_ImplGlfw_NewFrame(); }
+    void NewFrame() override {
+        ImGui_ImplGlfw_NewFrame();
+        // Runtime content-scale changes (the window moved to a differently-scaled
+        // monitor, OS zoom): poll every frame (cheap — one GLFW call) and fire the
+        // callback once per change, before the frame's layout runs.
+        if (window_) {
+            const float s = ReadContentScale();
+            if (s != lastScale_) {
+                lastScale_ = s;
+                ApplyScaleToIO(s);
+                if (scaleCb_)
+                    scaleCb_(s);
+            }
+        }
+    }
     void PollEvents() override { glfwPollEvents(); }
     bool ShouldClose() const override { return window_ ? glfwWindowShouldClose(window_) : false; }
+
+    void SetContentScaleCallback(std::function<void(float)> cb) override {
+        scaleCb_ = std::move(cb);
+    }
 
     void* GetWindowHandle() const override {
 #ifdef _WIN32
@@ -135,11 +162,7 @@ public:
     }
 
     float GetContentScale() const override {
-        if (!window_)
-            return 1.0f;
-        float xs = 1.0f, ys = 1.0f;
-        glfwGetWindowContentScale(window_, &xs, &ys); // 1.0 / 2.0 (retina) / 1.5 …
-        return xs > 0.f ? xs : 1.0f;
+        return ReadContentScale();
     }
 
     void SetTitle(const char* title) override {
@@ -192,9 +215,25 @@ public:
     GLFWwindow* GetWindow() const { return window_; }
 
 private:
+    float ReadContentScale() const {
+        if (!window_)
+            return 1.0f;
+        float xs = 1.0f, ys = 1.0f;
+        glfwGetWindowContentScale(window_, &xs, &ys);
+        return xs > 0.f ? xs : 1.0f;
+    }
+    static void ApplyScaleToIO(float s) {
+        // Tell ImGui the back buffer is `s`× the logical client size, so the render
+        // backends scale their projection and the main viewport renders at the correct
+        // physical resolution at any DPI.
+        ImGui::GetIO().DisplayFramebufferScale = ImVec2(s, s);
+    }
+
     GLFWwindow* window_ = nullptr;
     bool initialized_ = false;
     bool needGL_ = true;
+    float lastScale_ = 1.0f;
+    std::function<void(float)> scaleCb_;
 };
 
 } // anonymous namespace

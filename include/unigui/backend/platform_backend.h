@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 
 struct ImDrawData;
@@ -44,6 +45,11 @@ public:
     /// rasterize the font atlas at the right size on macOS/Linux, where the Win32
     /// DPI query does not apply. Default 1.0 for platforms that can't report it.
     virtual float GetContentScale() const { return 1.0f; }
+    /// Register a callback for *runtime* content-scale changes (the window moved to a
+    /// differently-scaled monitor, OS zoom changed). The callback receives the raw
+    /// window content scale; it fires during NewFrame, before the frame is laid out.
+    /// Default no-op — platforms without scale events don't implement it.
+    virtual void SetContentScaleCallback(std::function<void(float)> cb) { (void) cb; }
     /// Set the window title.
     virtual void SetTitle(const char*) {}
     /// Set the window client area size.
