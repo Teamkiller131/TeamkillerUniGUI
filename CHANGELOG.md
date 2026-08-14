@@ -1,6 +1,21 @@
 ## [Unreleased]
 
 ### Added
+- **Windowed/swapchain WARP pass.** `UNIGUI_DX11_WARP=1` forces Microsoft's software
+  rasterizer in the DX11 device creation (hardware stays the default, WARP falls back to
+  hardware if unavailable), so a GPU-less runner gets a REAL device + swapchain +
+  present. `DXMultiViewportSmoke.WarpAdapter_RendersWithoutGPU` proves the adapter really
+  is the software one (Microsoft Basic Render Driver) and that real pixels land through
+  it — the app-level smokes can now hard-gate on headless Windows CI instead of skipping.
+- **Multi-context, first increment.** A `detail::ContextRegistry<T>` (per-ImGui-context
+  instance map, LRU-capped so test suites churning contexts stay bounded) now backs four
+  singletons — `fonts::Manager`, `fx::AnimationManager`, `styling::Engine` and `Toast`
+  (via an overridable factory that keeps its `_toast` widget name). Their public shape is
+  unchanged (`Instance()`), their default constructors are now public (documented for the
+  registry), the app loop resets per-context instances on Shutdown, and four isolation
+  tests pin per-context identity + the no-context default. Two independent UniGUI
+  surfaces in one process now get independent instances for these four; the remaining
+  five singletons are per-app/process by design.
 - **Runtime / fractional DPI.** Root cause of the fractional-DPI breakage found and
   fixed: the GLFW platform never reported `io.DisplayFramebufferScale`, so the back
   buffer rasterized at the wrong physical size on any non-1.0 monitor (the multi-viewport

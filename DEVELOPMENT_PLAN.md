@@ -828,13 +828,24 @@ phase closes by cutting **4.9.0** from the merged work. Recommended order:
    hard gate as its backlog clears; raise `COVERAGE_FLOOR` to just under the headless
    baseline and flip the coverage step to hard `exit 1`; keep converting the ~19%
    smoke-only tail opportunistically.
-6. **P2 · L — Backend runtime proof.** A GPU-capable runner for Vulkan/SDL3/Metal +
-   golden-image snapshot diffing on top of the WARP/GL smokes; a windowed/swapchain
-   WARP pass (offscreen → actual present).
-7. **P2 · L — Multi-context.** The ~9 `::Instance()` singletons (EventBus/StyleEngine/
-   fonts/plugins/Settings/…) are the standing wall for two independent UniGUI surfaces
-   or parallel test isolation — revisit once multi-viewport settles, since viewport
-   tooling often ends up wanting per-surface state.
+6. ~~**P2 · L — Backend runtime proof.**~~ **Windowed/swapchain WARP pass done (post-4.9).**
+   `UNIGUI_DX11_WARP=1` forces the software rasterizer in the DX11 device creation, so a
+   GPU-less runner gets a REAL device + swapchain + present; `DXMultiViewportSmoke.
+   WarpAdapter_RendersWithoutGPU` proves the adapter really is the Microsoft Basic Render
+   Driver and that real pixels land through it. The app-level smokes can now hard-gate on
+   headless Windows CI instead of skipping. _Remaining: the GPU-capable runner for
+   Vulkan/SDL3/Metal, golden-image diffing wired into a CI lane (the tooling exists —
+   see the DPI & visual-proof phase), and per-monitor scale inheritance._
+7. ~~**P2 · L — Multi-context.**~~ **First increment done (post-4.9).** The wall is
+   cracked, not demolished: a `detail::ContextRegistry<T>` (LRU-capped per-ImGui-context
+   instance map) now backs four singletons — `fonts::Manager`, `fx::AnimationManager`,
+   `styling::Engine`, `Toast` (via an overridable factory, keeping its "_toast" widget
+   name) — with public default constructors documented for the registry, the app loop
+   resetting per-context instances on Shutdown, and four isolation tests (per-context
+   instances, stable identity, no-context default fallback). The remaining five
+   (`config::Store`, `Settings`, `events::Bus`, `plugin::Manager`, `ThemeRegistry`) are
+   per-app/process by design and stay function-local statics until a real
+   embed-two-surfaces consumer asks for them.
 8. **P2 — Long-horizon backlog (unchanged):** RTL layout mirroring, packaging (vcpkg
    registry/Conan), C ABI bindings, the designer/live-preview tool, fractional-DPI
    polish, plugin-ABI stabilisation. In-the-wild screen-reader validation (Narrator/
