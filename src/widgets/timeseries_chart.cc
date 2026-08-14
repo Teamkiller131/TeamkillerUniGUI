@@ -74,6 +74,45 @@ std::vector<double> TimeSeriesChart::MakeTicks(double lo, double hi, double step
         ticks.push_back(first + step * i);
     return ticks;
 }
+
+std::vector<double> TimeSeriesChart::MakeSessionTicks(const SessionAxis& axis, double lo,
+                                                      double hi, double step, int maxTicks) {
+    if (!(step > 0.0) || !(hi > lo) || maxTicks <= 0)
+        return {};
+    // Boundary anchors: the axis coordinates of every span start/end. On a collapsed
+    // (gap-free) axis, span i's end and span i+1's start share one coordinate — the
+    // dedup below collapses them to a single tick (formatted as the next span's open).
+    std::vector<double> anchors;
+    for (const auto& s : axis.Spans()) {
+        anchors.push_back(axis.ToAxis(s.startSec));
+        anchors.push_back(axis.ToAxis(s.endSec));
+    }
+    std::sort(anchors.begin(), anchors.end());
+    anchors.erase(std::unique(anchors.begin(), anchors.end()), anchors.end());
+
+    // The step grid (multiplication-based, like MakeTicks) plus the boundary anchors;
+    // sort + dedup so anchors interleave correctly into the grid.
+    std::vector<double> ticks;
+    const double first = std::ceil(lo / step) * step;
+    const double spanTicks = (hi - first) / step;
+    // Count first, emit second — same budget guard as MakeTicks (a step of 1 over a
+    // range of 100000 would otherwise push 100k labels through ImPlot and hang the
+    // frame; and the first frame's ±1e300 placeholder window must bail before any
+    // allocation).
+    if (spanTicks < 0.0 || spanTicks >= (double) maxTicks)
+        return {};
+    ticks.reserve((size_t) spanTicks + anchors.size() + 2);
+    for (int i = 0; i <= (int) spanTicks; ++i)
+        ticks.push_back(first + step * i);
+    for (double a : anchors)
+        if (a >= lo && a <= hi)
+            ticks.push_back(a);
+    std::sort(ticks.begin(), ticks.end());
+    ticks.erase(std::unique(ticks.begin(), ticks.end()), ticks.end());
+    if (ticks.size() >= (size_t) maxTicks)
+        return {}; // budget guard: fall back to automatic ticks
+    return ticks;
+}
 void TimeSeriesChart::SetXAxisLabel(const std::string& l) {
     xLabel_ = l;
 }
@@ -125,6 +164,7 @@ void TimeSeriesChart::UpsertPoint(int seriesId, float value, double timestamp) {
 }
 
 void TimeSeriesChart::SetSessionAxis(SessionAxis axis) {
+    sessionAxis_ = axis;
     xAxisFmt_ = [axis = std::move(axis)](double value, char* buf, int size, void*) -> int {
         const std::string label = axis.FormatAxis(value);
         return std::snprintf(buf, static_cast<size_t>(size), "%s", label.c_str());
@@ -272,7 +312,11 @@ void TimeSeriesChart::Render() {
         // previous frame (lastXMin_/lastXMax_), so after pan/zoom the ticks follow the
         // view instead of marching off it. Same guards as the Y ticks (budget + multiply).
         if (xTickSpacing_ > 0.0 && lastXMax_ > lastXMin_) {
-            xTickBuf_ = MakeTicks(lastXMin_, lastXMax_, xTickSpacing_, kMaxXTicks);
+            if (sessionTicksOn_ && sessionAxis_.has_value())
+                xTickBuf_ = MakeSessionTicks(*sessionAxis_, lastXMin_, lastXMax_,
+                                             xTickSpacing_, kMaxXTicks);
+            else
+                xTickBuf_ = MakeTicks(lastXMin_, lastXMax_, xTickSpacing_, kMaxXTicks);
             if (!xTickBuf_.empty())
                 ImPlot::SetupAxisTicks(ImAxis_X1, xTickBuf_.data(), (int) xTickBuf_.size());
         }

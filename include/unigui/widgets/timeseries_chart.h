@@ -9,6 +9,7 @@
 #include <cmath>
 #include <deque>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -196,6 +197,13 @@ public:
     /// current view falls back to automatic ticks rather than freezing the frame.
     void SetXAxisTickSpacing(double step) { xTickSpacing_ = step > 0.0 ? step : 0.0; }
     static constexpr int kMaxXTicks = 200;
+    /// Session-aligned X ticks (intraday charts): when enabled (requires a
+    /// `SessionAxis` from SetSessionAxis), the explicit tick grid also includes the
+    /// axis coordinates of every session boundary (span start/end), so labels land
+    /// on session edges no matter how the step divides the span. With no session
+    /// axis installed this is a no-op (plain MakeTicks applies).
+    void SetXAxisSessionTicks(bool on) { sessionTicksOn_ = on; }
+    bool XAxisSessionTicks() const { return sessionTicksOn_; }
 
     /// Pure tick-generation math (public so tests can pin it without an ImPlot frame):
     /// ticks covering [lo, hi] at `step` intervals, aligned to multiples of `step`.
@@ -205,6 +213,13 @@ public:
     /// (the budget guard: honouring a step of 1 over a range of 100000 would push 100k
     /// labels through ImPlot and hang the frame).
     static std::vector<double> MakeTicks(double lo, double hi, double step, int maxTicks);
+    /// Session-aligned variant of MakeTicks: the step grid PLUS the axis coordinates of
+    /// every session boundary in [lo, hi] (sorted, deduplicated, budget-guarded) — so
+    /// intraday labels always land on session edges, even when the step does not divide
+    /// the span. On a collapsed (gap-free) axis, a span's end and the next span's start
+    /// share one coordinate and produce a single tick (formatted as the next open).
+    static std::vector<double> MakeSessionTicks(const SessionAxis& axis, double lo, double hi,
+                                                double step, int maxTicks);
 
     /// X axis label.
     void SetXAxisLabel(const std::string& label);
@@ -368,6 +383,8 @@ private:
     std::vector<double> yTickBuf_;  // reused across frames; ImPlot copies during setup
     double xTickSpacing_ = 0.0;  // 0 = ImPlot's automatic ticks
     std::vector<double> xTickBuf_;  // reused across frames; ImPlot copies during setup
+    std::optional<SessionAxis> sessionAxis_;  // set by SetSessionAxis; anchors session ticks
+    bool sessionTicksOn_ = false;  // include session boundaries in the explicit X ticks
     double minYSpan_ = 0.0;    // 0 = disabled; else Y-axis height floor (auto-fit only)
     double yPadRatio_ = 0.05;  // auto-fit padding: ±r × 数据跨度(span=max−min),见 PadRange()
     double lastXMin_ = -1e300; // visible X window cached from the previous frame,

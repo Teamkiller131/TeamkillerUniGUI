@@ -309,6 +309,59 @@ TEST_F(SpanLockFrameTest, XTickSpacing_RendersWithoutCrash) {
     Frame();
 }
 
+TEST_F(SpanLockFrameTest, XSessionTicks_RenderWithoutCrash) {
+    // Frame smoke for the session-aligned path (intraday axis + boundaries).
+    chart_->SetSessionAxis(SessionAxis::AShareFutures());
+    chart_->SetXAxisRange(0.0, 14400.0);
+    chart_->SetXAxisTickSpacing(1800.0);
+    chart_->SetXAxisSessionTicks(true);
+    Frame();
+    Frame();
+}
+
+// ── Session-aligned X ticks (pure MakeSessionTicks math) ──────────────────────
+// 日内轴:开收盘边界必须落在刻度上,即使步长不能整除时段;午休折叠处(11:30 与
+// 13:00 同轴位)只出一个刻度。纯函数,无需 ImPlot 帧。
+
+TEST(TimeSeriesChartTest, MakeSessionTicks_BoundaryAnchorsIncluded) {
+    // A-share sessions: 09:30–11:30 (axis 0–7200) and 13:00–15:00 (axis 7200–14400).
+    // A step of 8000 never lands on the 13:00 boundary (axis 7200) — the session
+    // variant must still tick it.
+    const SessionAxis axis = SessionAxis::AShareFutures();
+    auto t = TimeSeriesChart::MakeSessionTicks(axis, 0.0, 14400.0, 8000.0, 200);
+    // grid {0, 8000} ∪ anchors {0, 7200, 14400} → sorted {0, 7200, 8000, 14400}
+    ASSERT_EQ(t.size(), 4u);
+    EXPECT_DOUBLE_EQ(t[0], 0.0);
+    EXPECT_DOUBLE_EQ(t[1], 7200.0);   // the 13:00 session open
+    EXPECT_DOUBLE_EQ(t[2], 8000.0);
+    EXPECT_DOUBLE_EQ(t[3], 14400.0);  // the 15:00 close
+}
+
+TEST(TimeSeriesChartTest, MakeSessionTicks_AlignedStep_DedupsSharedBoundary) {
+    const SessionAxis axis = SessionAxis::AShareFutures();
+    auto t = TimeSeriesChart::MakeSessionTicks(axis, 0.0, 14400.0, 3600.0, 200);
+    // grid {0,3600,…,14400} ∪ anchors {0,7200,14400} — the lunch boundary (11:30/13:00)
+    // shares axis coordinate 7200 and must produce exactly one tick.
+    ASSERT_EQ(t.size(), 5u);
+    EXPECT_DOUBLE_EQ(t[2], 7200.0);
+    EXPECT_DOUBLE_EQ(t[4], 14400.0);
+}
+
+TEST(TimeSeriesChartTest, MakeSessionTicks_WindowClipsBoundaries) {
+    const SessionAxis axis = SessionAxis::AShareFutures();
+    auto t = TimeSeriesChart::MakeSessionTicks(axis, 1000.0, 5000.0, 2000.0, 200);
+    // Visible window [1000,5000]: grid {2000,4000}; both anchors (0, 7200) are outside.
+    ASSERT_EQ(t.size(), 2u);
+    EXPECT_DOUBLE_EQ(t[0], 2000.0);
+    EXPECT_DOUBLE_EQ(t[1], 4000.0);
+}
+
+TEST(TimeSeriesChartTest, MakeSessionTicks_OverBudget_Empty) {
+    const SessionAxis axis = SessionAxis::AShareFutures();
+    auto t = TimeSeriesChart::MakeSessionTicks(axis, 0.0, 14400.0, 1.0, 200);
+    EXPECT_TRUE(t.empty());
+}
+
 // ── X-axis tick spacing (pure MakeTicks math) ───────────────────────────────────
 // 与 Y 轴同构:乘加(不累加)防漂移、预算守卫防标签洪水。纯函数,无需 ImPlot 帧。
 
