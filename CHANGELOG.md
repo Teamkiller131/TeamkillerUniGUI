@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [4.9.1] - 2026-08-14
+
 ### Added
 - **Designer in-app scene editing (`dsl::ParseScene`).** Scenes can now be
   written as text: an indentation-based scene format (`window`/`vbox`/`hbox`/

@@ -1,6 +1,6 @@
 # TeamkillerUniGUI — Long-Term Development Plan
 
-_Last updated: 2026-08-14 · Current version: 4.9.0 (next phase planned → 4.10)_
+_Last updated: 2026-08-14 · Current version: 4.9.1_
 
 This document lays out a long-horizon roadmap for the project. It is meant to be
 a living document: revisit it each release, check off what shipped, and re-scope
