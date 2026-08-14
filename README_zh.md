@@ -5,7 +5,7 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-4.8.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-1282-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-1300-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-95-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
@@ -110,7 +110,7 @@ unigui:: API
     │   ├── Metal          (macOS — 基于 CAMetalLayer 的 imgui_impl_metal)
     │   ├── WebGPU         (Web/HTML5 — 基于 emdawnwebgpu 的 WebAssembly + WebGPU)
     │   └── Emscripten     (Web/HTML5 — WebAssembly + WebGL2)
-    └── App 启动器 (Init / Run / NewFrame / Render)
+    └── App 启动器 (Init / Run / NewFrame / Render + 可选 multi-viewport)
     ↓
 ImGui (v1.92.8，docking + multi-viewport)
 ```
@@ -197,7 +197,8 @@ im::Text("status: ok");
 （`unigui::Button`、`unigui::Form`、`unigui::DataTable` 等）。两层并存，
 按需选用。
 
-`unigui::im` 覆盖了 **Dear ImGui 实用公开接口的 100%**（201 个函数）——
+`unigui::im` 覆盖了 **Dear ImGui 实用公开接口的 98.5%**（204 个目标中封装 201 个；
+**共 248 个**一等函数，含表格、样式/ID 栈、printf 风格文本与剪贴板/上下文访问器）——
 你几乎不需要退回原生 `ImGui::`，即便使用也完全受支持并自动套用主题。
 该覆盖率数字由 [`scripts/coverage_vs_imgui.py`](scripts/coverage_vs_imgui.py)
 在 CI 中持续跟踪。

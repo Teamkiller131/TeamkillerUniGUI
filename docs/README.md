@@ -29,7 +29,7 @@ networking, trading).
 
 | Document | Description |
 |----------|-------------|
-| [IM_API.md](IM_API.md) | The immediate layer `unigui::im` — full grouped reference (~201 functions) |
+| [IM_API.md](IM_API.md) | The immediate layer `unigui::im` — full grouped reference (~250 functions) |
 | [DSL.md](DSL.md) | The declarative DSL (view language): builders, nodes, `Render`, `Custom` |
 | [THEMING.md](THEMING.md) | Theme engine (presets, surface styles, tokens) + the CSS styling engine & hot-reload |
 | [BACKENDS.md](BACKENDS.md) | The backend abstraction (platforms × renderers) and the application loop (`AppConfig`/`Init`/`Run`) |

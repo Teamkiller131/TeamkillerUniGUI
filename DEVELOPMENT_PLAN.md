@@ -1,6 +1,6 @@
 # TeamkillerUniGUI — Long-Term Development Plan
 
-_Last updated: 2026-07-08 · Current version: 4.6.0_
+_Last updated: 2026-08-14 · Current version: 4.8.0 (+ client-suite merge, targeting 4.9.0)_
 
 This document lays out a long-horizon roadmap for the project. It is meant to be
 a living document: revisit it each release, check off what shipped, and re-scope
@@ -10,8 +10,9 @@ happened) and `RELEASE.md` (per-release notes).
 The project's two original headline goals are **achieved**:
 
 1. ~~**Complete the wrapper.**~~ **Done (Horizon 2).** `unigui::im` now wraps **100%
-   of ImGui's practical surface** (201 functions, A1–A6). Raw `ImGui::` stays fully
-   supported and auto-themed.
+   of ImGui's practical surface** (201 of 204 practical-surface targets — 98.5%,
+   hard-gated at 95% in CI; **248 first-class `im::` functions** in total after the
+   2026-08 client-suite merge). Raw `ImGui::` stays fully supported and auto-themed.
 2. ~~**A trading-client toolkit.**~~ **Done (Horizon 3).** The four trading widget
    families (order ticket, candlestick/OHLC chart, depth ladder, blotters) + thin
    models + the `trading_dashboard` example shipped.
@@ -90,9 +91,10 @@ Guiding principles:
 
 ## 2. Where we are today (baseline)
 
-- **95 widgets** (100% PushID-safe), the `unigui::im` immediate layer (**201
-  functions = 100% of ImGui's practical surface**, A1–A6 complete), declarative DSL,
-  CSS styling engine, EventBus, plugin system, font manager.
+- **95 widgets** (100% PushID-safe), the `unigui::im` immediate layer (**248
+  functions** — 201 of ImGui's 204 practical-surface targets, 98.5%, CI-gated),
+  declarative DSL, CSS styling engine, EventBus, plugin system, font manager,
+  and opt-in **multi-viewport** (drag windows out of the main window; 2026-08).
 - **UI preset scaffolds** (`unigui::presets`, 4.6.0): AppShell / SettingsPage /
   Dashboard / MasterDetail / LogConsole — prefab, themed, a11y-wired compositions so a
   decent app is ~30 lines (`docs/PRESETS.md`, `examples/preset_demo`).
@@ -123,10 +125,10 @@ Guiding principles:
   data-dense ones** (DataTable/VirtualList/TreeView/DepthLadder report dimensions/
   selection and announce interactions), and screen-reader bridges for all four
   platforms — opt-in via `AppConfig::accessibility`.
-- ~165 GoogleTest files (**1242** default-preset cases; ~1300 with all modules on) +
-  **28 interaction-driven behavior tests** on the Dear ImGui test engine harness
-  (`tests/interaction_harness.h`), benchmarks (LTTB/100k-row budgets, sanitizer-aware)
-  and fuzz targets (CSV/JSON/CSS/config).
+- ~165 GoogleTest files (**1300** default-preset cases on Windows, post client-suite
+  merge; ~1300+ with all modules on) + **28 interaction-driven behavior tests** on the
+  Dear ImGui test engine harness (`tests/interaction_harness.h`), benchmarks (LTTB/100k-row
+  budgets, sanitizer-aware) and fuzz targets (CSV/JSON/CSS/config).
 - CI (**all green**, 11 build jobs + 3 quality jobs): cross-platform build/test
   (Win/Linux/macOS, **hard-gated** — no `|| true`) + a **headless backend smoke that
   proves the GL path actually runs and draws pixels** (`render-verify`) + the
@@ -139,6 +141,36 @@ Guiding principles:
   Every backend and module now **compiles in CI**; no silent test-swallowing remains.
 
 ### Recently completed
+
+- **Client-suite merge (post-4.8.0, 2026-08-14).** The `feat/client-suite-20260814`
+  branch (which had absorbed `feat/im-wrappers-20260728` and the filepath/chart-pad
+  branches) merged into `master` — 12 commits, +1k lines, suite 1300/1300 green:
+  - **Opt-in multi-viewport** (`AppConfig::multiViewport`): ImGui windows can be dragged
+    out of the main window into real OS windows and merged back. Set *before* backend init
+    (the backends read the flag at init to install their viewport interfaces) with a
+    capability self-check that drops back to single-viewport instead of rendering blank;
+    GL context save/restore delegated to new `PlatformBackend::SaveRenderContext`/
+    `RestoreRenderContext` hooks; ignored on Emscripten. Fixed en route: **DX11's main RTV
+    is now bound every frame** (a popped-out window used to hijack the main window's draw).
+  - **`TimeSeriesChart` hardened for real trading clients**: span-relative auto-fit padding
+    (the old value-relative padding flattened far-from-zero small-swing series),
+    `SetYAxisRange` now applies-and-releases (the `ImPlotCond_Once` trap is gone),
+    new `SetYAxisSpanLock(span)` (pin the Y *height*, keep panning — "固定纵轴" for a
+    trader's yardstick) and `SetYAxisTickSpacing(step)` (explicit gridline step, guarded
+    against label floods), and `SetPanEnabled`/`SetZoomEnabled` finally deprecated —
+    they never gated anything.
+  - **`im` layer grows to 248 functions**: tables, printf-style text, char-buffer inputs,
+    the style/ID stacks, clipboard, viewport/context/font accessors. Fixed en route:
+    `InputText`/`InputTextWithHint` now persist typing under `EnterReturnsTrue`
+    (the write-back was keyed on a return value that only fires on Enter — a password box
+    you could not type into).
+  - **`FilePath` dialog now round-trips non-ASCII paths on Windows** (wide `W` APIs instead
+    of the ANSI ones — GBK-mangled UTF-8 no more).
+  - Merge-resolution notes: the regression test for the InputText fix carried two latent
+    bugs (an ImGui `IM_ASSERT(buf != NULL)` trip and a missing post-focus idle frame) that
+    only a Debug run exposes — both fixed; `docs/IM_API.md`/`BACKENDS.md`/`WIDGET_API.md`
+    and the CHANGELOG were brought up to date with the new surface; the coverage script's
+    parser now recognises the new wrapper return types.
 
 - **UI preset scaffolds (4.6.0).** `UNIGUI_MODULE_PRESETS` / `unigui::presets`: AppShell
   (full app chrome), SettingsPage (schema-driven rows via getter/setter pairs), Dashboard
@@ -264,6 +296,12 @@ the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bu
   an adapter). The 4.4.2 leak batch proves this class of bug is real. Next: a GPU-capable
   runner for the rest + **golden-image diffing** on top, and a **windowed/swapchain** WARP
   pass to extend the DX smoke from offscreen render to actual present.
+- **Multi-viewport is runtime-verified on GL + DX11 only** (2026-08). The opt-in flag
+  shipped with the GL context save/restore and the per-frame DX11 RTV rebind proven on the
+  two runtime-checked backends; the DX12/Vulkan/SDL3/Metal viewport paths, per-viewport
+  DPI/focus routing, and the backdrop-clear contract for secondary viewports (§7 of
+  `docs/BACKENDS.md`) have no runtime proof or tests yet. A WARP/headless multi-viewport
+  smoke (enable the flag, pop a window out, assert pixels) would close most of it.
 - ~~**ipc/network are safe but functionally unverified.**~~ **Resolved (c0cc2c5 + b22015a,
   post-4.6.0).** Loopback functional tests now cover all three paths — ZMQ pub/sub
   round-trip (`inproc://`), HTTP GET/POST against an in-process httplib server, and a
@@ -705,7 +743,7 @@ Track these over time to know the plan is working:
 - **Stability:** CI green rate; count of experimental vs. stable public headers;
   `v2` duplicate code paths remaining (target met: 0); **sanitizer-clean** under
   ASan+UBSan+LSan (currently: yes, one documented third-party suppression).
-- **Quality:** test count (**1242** default / ~1300 all-modules) & coverage %;
+- **Quality:** test count (**1300** default preset on Windows / ~1300+ all-modules) & coverage %;
   **interaction-driven tests** (28 today — should grow with every widget/preset);
   smoke-only share of the suite (~19% — should shrink); fuzz targets; open P0/P1 bug count.
 - **Ease of adoption:** lines of code for a decent app (**~30–60** via `unigui::presets`
@@ -727,34 +765,64 @@ Track these over time to know the plan is working:
   complete**, all 7 backends **real and compile-gated in CI**, **accessibility done
   through the data-dense widgets** (4.4.0–4.5.0), the **verification net installed**
   (sanitizers, hard gates, interaction tests, doc-stamp gate — 4.5.0–4.6.0 + the audit
-  closures), the **UI preset layer shipped** (4.6.0), and the **web runtime proven in a
-  real browser on every push** (H4a — the wasm smoke, post-4.6.0), the recommended order
-  for the open frontier is:
-  1. ~~**UI presets v2**~~ **(largely shipped, 4.6.0 + 01c3642):** LoginPage, WizardFlow, and
-     the Ctrl+P CommandPalette-in-AppShell all landed with driven-input interaction tests on
-     the proven harness. Remaining tail: a README **screenshot** of `preset_demo` (best cut
-     from a Playwright shot of the wasm build, reusing the smoke infra) and preset-level
-     theming knobs (accent/density) — let real usage steer which scaffold comes next.
-  2. ~~**Module maturity**~~ **(done, c0cc2c5 + b22015a)** and ~~**the WARP DX run**~~
-     **(done, post-4.6.0):** ipc/network now have loopback functional tests gating CI, and
-     DX11/DX12 now create a real WARP software device + render + read pixels back headlessly
-     in the `windows` / `windows-dx12` lanes (`tests/backend/dx_warp_smoke_test.cc`) — moving
-     runtime backend coverage to 4/7. Remaining backend-proof tail: a GPU-capable runner for
-     Vulkan/SDL3/Metal + golden-image diffing, and a windowed/swapchain WARP pass (offscreen
-     → present).
-  3. The standing small items are now the lead frontier: ~~coverage/clang-tidy hard gates~~
-     (done: clang-tidy `bugprone-*` enforced + wrapper-coverage `--threshold 95`; remaining
-     tail: promote more tidy families as the tree is cleaned, lcov job stays advisory),
-     ~~fluent `With*` rollout~~ (done: 63 classes → `FluentWidget<T>`, +250 `With*`,
-     compile-time pinned), ~~keyboard-only nav audit~~ (done: all 86 widgets audited —
-     49 OK, 26 display-only, 11 confirmed gaps all fixed + 4 driven keyboard tests;
-     in-the-wild screen-reader validation remains the human-in-the-loop tail),
-     ~~platform-aware font fallback~~ (done: per-distro emoji candidates + new
-     `LoadSystemCJK`, %WINDIR% honored, web no-op; killed an `Unload` double-free
-     en route), and ~~framework-idiom deepening~~ (first increment done:
-     `FormComponent`/`FormField<T>` — forms/validation as components, FRAMEWORK.md §8;
-     next: the routing/URL story and devtools beyond the inspector, as real apps
-     drive requirements).
+  closures), the **UI preset layer shipped** (4.6.0–4.8.0), the **web runtime proven in a
+  real browser on every push** (H4a — the wasm smoke), and the **client-suite merged**
+  (multi-viewport + chart hardening + 47 new `im::` wrappers, 2026-08-14), the next
+  period's plan is below.
+
+### Next phase — "client-suite hardening" (2026-08 → 4.9.0)
+
+The merged client-suite work opened two fresh surfaces that deserve proof before
+anything new: **multi-viewport** (landed with GL/DX11 runtime evidence only) and the
+**chart-family APIs** (landed with headless tests, driven-input coverage pending). The
+phase closes by cutting **4.9.0** from the merged work. Recommended order:
+
+1. **P0 · M — Prove multi-viewport on the runtime-verified backends.** The flag works
+   on GL + DX11 by construction and by the DX11 RTV fix, but nothing renders a popped-out
+   window in CI. Add a headless/WARP multi-viewport smoke (enable the flag, create a
+   secondary viewport, render N frames, assert pixels on both surfaces — extending the
+   existing `dx_warp_smoke_test` / `UNIGUI_RENDER_VERIFY` machinery) and a driven-input
+   test on the test-engine harness (pop out → render → merge back). Verify the DX12/
+   Vulkan/SDL3/Metal viewport paths at least compile and fail loud through the
+   capability self-check (already warns) — document the capability matrix in
+   `docs/BACKENDS.md`. Close the **backdrop-clear contract for secondary viewports**
+   (§7 there: a popped-out window must clear to `GetBackdropColor()` too, or translucent
+   materials render against garbage).
+2. **P0 · S — Cut release 4.9.0.** The `Unreleased` CHANGELOG section is already
+   complete (multi-viewport, SpanLock/TickSpacing, range semantics, InputText
+   persistence, FilePath wide-char, deprecations, im wrappers). Move it under
+   `## [4.9.0]`, bump `core/version.h` + `vcpkg.json` together, write `RELEASE.md`
+   notes, re-stamp docs (the `docs-version` CI gate enforces it), and update the
+   README badges/counts (tests 1282 → **1300**, `im` functions 201 → **248**,
+   multi-viewport in the feature list).
+3. **P1 · M — Chart family follow-ups (client-driven).** SpanLock/TickSpacing landed;
+   the natural next items from the trading client: an X-axis tick-spacing counterpart
+   (`SetXAxisTickSpacing`, session-boundary-aware so ticks land on session starts),
+   driven tests pinning the documented SpanLock zoom-bounce and the keyboard-nav ↔
+   span-lock interplay, and the long-deferred **in-cell mini sparkline/bar renderers**
+   (needs the `DataTable` custom-draw cell hook — the one real blocker from B5) plus
+   the **PriceTicker marquee**.
+4. **P1 · S — Interaction coverage for the new surface.** Driven-input tests on the
+   proven harness: multi-viewport pop-out/merge, `SetYAxisSpanLock` zoom-bounce,
+   sortable `im::` table headers (`TableGetSortSpecs` after a header click), and an
+   interaction twin of the `EnterReturnsTrue` persistence regression.
+5. **P1 · M — Quality-front small items.** Promote the next clang-tidy family into the
+   hard gate as its backlog clears; raise `COVERAGE_FLOOR` to just under the headless
+   baseline and flip the coverage step to hard `exit 1`; add driven-input tests for the
+   presets themselves (the largest untested-by-input surface); keep converting the
+   ~19% smoke-only tail opportunistically.
+6. **P2 · L — Backend runtime proof.** A GPU-capable runner for Vulkan/SDL3/Metal +
+   golden-image snapshot diffing on top of the WARP/GL smokes; a windowed/swapchain
+   WARP pass (offscreen → actual present).
+7. **P2 · L — Multi-context.** The ~9 `::Instance()` singletons (EventBus/StyleEngine/
+   fonts/plugins/Settings/…) are the standing wall for two independent UniGUI surfaces
+   or parallel test isolation — revisit once multi-viewport settles, since viewport
+   tooling often ends up wanting per-surface state.
+8. **P2 — Long-horizon backlog (unchanged):** RTL layout mirroring, packaging (vcpkg
+   registry/Conan), C ABI bindings, the designer/live-preview tool, fractional-DPI
+   polish, plugin-ABI stabilisation. In-the-wild screen-reader validation (Narrator/
+   VoiceOver/Orca) remains the human-in-the-loop a11y tail.
+
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
 - Re-scope horizons at each release: promote, demote, or split items as reality

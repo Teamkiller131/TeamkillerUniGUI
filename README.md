@@ -5,7 +5,7 @@
 [![vcpkg](https://img.shields.io/badge/vcpkg-managed-orange)](https://vcpkg.io/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Web-lightgrey)]()
 [![Version](https://img.shields.io/badge/version-4.8.0-blueviolet)]()
-[![Tests](https://img.shields.io/badge/tests-1282-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-1300-brightgreen)]()
 [![Widgets](https://img.shields.io/badge/widgets-95-blue)]()
 [![Backends](https://img.shields.io/badge/backends-7%20%284%20runtime%29-orange)]()
 
@@ -110,7 +110,7 @@ unigui:: API
     │   ├── Metal          (macOS — imgui_impl_metal on a CAMetalLayer)
     │   ├── WebGPU         (Web/HTML5 — WebAssembly + WebGPU via emdawnwebgpu)
     │   └── Emscripten     (Web/HTML5 — WebAssembly + WebGL2)
-    └── App Bootstrap (Init / Run / NewFrame / Render)
+    └── App Bootstrap (Init / Run / NewFrame / Render + opt-in multi-viewport)
     ↓
 ImGui (v1.92.8, docking + multi-viewport)
 ```
@@ -206,9 +206,11 @@ stateless controls; use the retained-mode widget classes (`unigui::Button`,
 `unigui::Form`, `unigui::DataTable`, …) when you need persistent state,
 validation, undo/redo or serialization. The two layers coexist.
 
-`unigui::im` wraps **100% of Dear ImGui's practical public surface** (201
-functions) — you rarely need to drop to raw `ImGui::`, though it stays fully
-supported and auto-themed when you do. The figure is tracked in CI by
+`unigui::im` wraps **98.5% of Dear ImGui's practical public surface** (201 of
+204 targets; **248 first-class functions** in total including tables, the
+style/ID stacks, printf-style text and clipboard/context accessors) — you rarely
+need to drop to raw `ImGui::`, though it stays fully supported and auto-themed
+when you do. The figure is tracked in CI by
 [`scripts/coverage_vs_imgui.py`](scripts/coverage_vs_imgui.py).
 
 ### RAII Scopes
