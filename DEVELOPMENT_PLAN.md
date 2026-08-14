@@ -698,8 +698,14 @@ Goal: make UniGUI easy to adopt and contribute to at scale.
   HiDPI scale, and an immediate-mode drawing subset — pure C99, tested from a
   C TU and through the test engine (see §7). _Remaining:_ C#/Python/Go
   bindings over the surface and more `im` calls as demand appears.
-- **P2 · L — Designer / live-preview tool.** Standalone app that previews DSL/CSS
-  and emits code.
+- **P2 · L — Designer / live-preview tool.** _First increment landed (post-4.9)._
+  `examples/designer` previews built-in DSL scenes live (stateful controls stay
+  interactive), hot-reloads CSS on top (`--css`), and emits the scene's builder
+  expression via the new `dsl::ToSource` — copy-to-clipboard, one click. Ten
+  codegen tests pin the emission (structure/indentation, literals, variants,
+  compilable callback placeholders); the app runs headless (`--frames N`).
+  _Remaining:_ editing DSL scenes in-app (a text DSL + parser, or drag-drop),
+  and richer code emission (state + callbacks).
 - **P2 · S — Community.** Contribution ladder, "good first issue" curation,
   governance doc, public roadmap board mirroring this file.
 
@@ -872,9 +878,15 @@ phase closes by cutting **4.9.0** from the merged work. Recommended order:
    gate/version/config contracts; five test-engine tests click through the C boundary
    (button/checkbox/slider via `//**/` window-crossing paths); and a real DX11/WARP
    lifecycle test creates, draws from a C callback, runs a capped frame loop, and
-   destroys — all through the ABI. _Remaining: RTL layout mirroring, the designer
-   tool, more `im` calls / bindings on demand, fractional-DPI cross-monitor polish
-   (needs a multi-monitor runner), and in-the-wild screen-reader validation (human).
+   destroys — all through the ABI. **Designer tool — first increment landed**:
+   `examples/designer` live-previews built-in DSL scenes (stateful controls stay
+   interactive), hot-reloads CSS on top, and emits the scene's C++ builder
+   expression via the new `dsl::ToSource` (structure/labels/params round-trip;
+   callbacks become compilable placeholders — ten codegen tests pin it; the app
+   smoke-runs headless with `--frames`). _Remaining: RTL layout mirroring,
+   in-app scene editing, more `im` calls / bindings on demand, fractional-DPI
+   cross-monitor polish (needs a multi-monitor runner), and in-the-wild
+   screen-reader validation (human).
 
 ### Next phase — "completeness sweep" (post-4.9 → 4.10)
 

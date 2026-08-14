@@ -1,6 +1,14 @@
 ## [Unreleased]
 
 ### Added
+- **Designer tool, first increment (`examples/designer` + `dsl::ToSource`).** The
+  designer live-previews built-in DSL scenes (stateful controls stay interactive),
+  hot-reloads CSS on top of the preview (`--css`), and emits the scene's C++
+  builder expression — the new `dsl::ToSource` serialises a `Node` tree back into a
+  complete, compilable `NodePtr ui = ...` snippet (structure, labels, numeric
+  parameters and button variants round-trip exactly; callbacks/conditions become
+  compilable placeholder forms, external bindings get a trailing note). Ten
+  codegen tests pin the emission; the app smoke-runs headless with `--frames N`.
 - **Stable C ABI (`unigui_capi.h`, ABI v1).** A versioned C99 surface over the C++
   library for C / FFI / language-binding hosts: ABI compatibility gate, version query,
   app lifecycle (opaque handle, C frame callback, manual loop or `unigui_app_run`),
