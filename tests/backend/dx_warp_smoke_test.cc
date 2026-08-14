@@ -18,6 +18,7 @@
 #if defined(_WIN32) && (defined(UNIGUI_HAS_DX11) || defined(UNIGUI_HAS_DX12))
 #include <windows.h>
 
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <wrl/client.h>
@@ -46,6 +47,9 @@ void ExpectClearPixel(const uint8_t* px, const char* which) {
 // ── DX11 ──────────────────────────────────────────────────────────────────────
 #if defined(_WIN32) && defined(UNIGUI_HAS_DX11)
 #include <d3d11.h>
+
+#include <imgui.h>
+#include <imgui_impl_dx11.h>
 
 TEST(DXWarpSmoke, DX11_WarpDevice_OffscreenClear_ReadbackMatches) {
     // Software (WARP) device — no swapchain, no window, no GPU.
@@ -92,6 +96,125 @@ TEST(DXWarpSmoke, DX11_WarpDevice_OffscreenClear_ReadbackMatches) {
     ASSERT_TRUE(SUCCEEDED(ctx->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &m)));
     ExpectClearPixel(static_cast<const uint8_t*>(m.pData), "DX11");
     ctx->Unmap(staging.Get(), 0);
+}
+
+// ── Multi-viewport RTV-rebind regression (2026-08 client-suite) ─────────────────
+//
+// ImGui_ImplDX11_RenderWindow() binds each secondary window's RTV and never restores
+// the previous binding. DX11Renderer::RenderDrawData therefore binds the MAIN render
+// target every frame — otherwise, from the first frame a popped-out window rendered,
+// the main window would clear its own surface and then draw into the secondary one
+// (blank except the backdrop; the 2026-08-07 fix). This test replays the exact
+// sequence against real ImGui draw data on a WARP device:
+//
+//   main draw → secondary bind + draw → main draw again
+//
+// and asserts the main surface still received the pixels. Against the pre-fix code
+// the final draw lands on the *secondary* surface and the main readback is pure clear.
+TEST(DXWarpSmoke, DX11_MultiViewportRtvRebind_MainSurfaceStillDrawn) {
+    // WARP device — no GPU, no window.
+    ComPtr<ID3D11Device> dev;
+    ComPtr<ID3D11DeviceContext> ctx;
+    D3D_FEATURE_LEVEL got{};
+    const D3D_FEATURE_LEVEL want[] = {D3D_FEATURE_LEVEL_11_0};
+    HRESULT hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, 0, want, 1,
+                                   D3D11_SDK_VERSION, &dev, &got, &ctx);
+    ASSERT_TRUE(SUCCEEDED(hr)) << "WARP D3D11CreateDevice failed: 0x" << std::hex << (unsigned) hr;
+
+    // Two offscreen RGBA8 render targets: the "main" window and a "secondary" one.
+    const UINT rtW = 64, rtH = 64;
+    auto MakeRt = [&](ComPtr<ID3D11Texture2D>& tex, ComPtr<ID3D11RenderTargetView>& rtv) {
+        D3D11_TEXTURE2D_DESC td{};
+        td.Width = rtW;
+        td.Height = rtH;
+        td.MipLevels = 1;
+        td.ArraySize = 1;
+        td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        td.SampleDesc.Count = 1;
+        td.Usage = D3D11_USAGE_DEFAULT;
+        td.BindFlags = D3D11_BIND_RENDER_TARGET;
+        ASSERT_TRUE(SUCCEEDED(dev->CreateTexture2D(&td, nullptr, &tex)));
+        ASSERT_TRUE(SUCCEEDED(dev->CreateRenderTargetView(tex.Get(), nullptr, &rtv)));
+    };
+    ComPtr<ID3D11Texture2D> mainTex, secTex;
+    ComPtr<ID3D11RenderTargetView> mainRtv, secRtv;
+    MakeRt(mainTex, mainRtv);
+    MakeRt(secTex, secRtv);
+
+    // Real ImGui draw data on the WARP device (no platform, no window needed).
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2((float) rtW, (float) rtH);
+    // Init the backend BEFORE building fonts: imgui 1.92's new-backend contract
+    // asserts RendererHasTextures is set by the time the atlas is built.
+    ASSERT_TRUE(ImGui_ImplDX11_Init(dev.Get(), ctx.Get()));
+    io.Fonts->Build();
+
+    auto DrawTextFrame = [&]() -> ImDrawData* {
+        ImGui_ImplDX11_NewFrame();
+        ImGui::NewFrame();
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2((float) rtW, (float) rtH));
+        ImGui::Begin("m", nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
+        ImGui::TextUnformatted("XXXXXXXX");
+        ImGui::End();
+        ImGui::Render();
+        return ImGui::GetDrawData();
+    };
+    // A clear colour distinct from kClear so a wrong-surface draw is unmistakable.
+    const float secClear[4] = {0.10f, 0.20f, 0.30f, 1.0f};
+
+    // Frame 1 — the main window draws into the main surface.
+        ImDrawData* dd = DrawTextFrame();
+    ctx->OMSetRenderTargets(1, mainRtv.GetAddressOf(), nullptr);
+    ctx->ClearRenderTargetView(mainRtv.Get(), kClear);
+    ImGui_ImplDX11_RenderDrawData(dd);
+
+    // Simulate a popped-out window: ImGui_ImplDX11_RenderWindow binds the SECONDARY
+    // RTV (and, pre-fix, leaves it bound).
+        ctx->OMSetRenderTargets(1, secRtv.GetAddressOf(), nullptr);
+    ctx->ClearRenderTargetView(secRtv.Get(), secClear);
+    ImGui_ImplDX11_RenderDrawData(dd);
+
+    // Frame 2 — the main window draws again. The per-frame rebind must re-target the
+    // main surface; without it the draw still goes to the secondary one.
+        dd = DrawTextFrame();
+    ctx->OMSetRenderTargets(1, mainRtv.GetAddressOf(), nullptr);
+    ctx->ClearRenderTargetView(mainRtv.Get(), kClear);
+    ImGui_ImplDX11_RenderDrawData(dd);
+
+    // Read the main surface back: drawn pixels prove the frame-2 draw landed here.
+        D3D11_TEXTURE2D_DESC td{};
+    mainTex->GetDesc(&td);
+    D3D11_TEXTURE2D_DESC sd = td;
+    sd.Usage = D3D11_USAGE_STAGING;
+    sd.BindFlags = 0;
+    sd.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    ComPtr<ID3D11Texture2D> staging;
+    ASSERT_TRUE(SUCCEEDED(dev->CreateTexture2D(&sd, nullptr, &staging)));
+    ctx->CopyResource(staging.Get(), mainTex.Get());
+
+    D3D11_MAPPED_SUBRESOURCE m{};
+    ASSERT_TRUE(SUCCEEDED(ctx->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &m)));
+    int nonClear = 0;
+    const uint8_t* px = static_cast<const uint8_t*>(m.pData);
+    for (UINT y = 0; y < rtH; y += 4) {
+        for (UINT x = 0; x < rtW; x += 4) {
+            const size_t i = (size_t) y * m.RowPitch + (size_t) x * 4u;
+            if (std::abs((int) px[i] - kExpR) > 8 || std::abs((int) px[i + 1] - kExpG) > 8 ||
+                std::abs((int) px[i + 2] - kExpB) > 8)
+                ++nonClear;
+        }
+    }
+    ctx->Unmap(staging.Get(), 0);
+    EXPECT_GT(nonClear, 0)
+        << "main surface contains only the clear colour — the frame-2 draw went to the "
+           "secondary surface (per-frame RTV rebind regression)";
+
+    ImGui_ImplDX11_Shutdown();
+    ImGui::DestroyContext();
 }
 #endif // UNIGUI_HAS_DX11
 
@@ -230,3 +353,4 @@ TEST(DXWarpSmoke, DX12_WarpDevice_OffscreenClear_ReadbackMatches) {
     readback->Unmap(0, &noWrite);
 }
 #endif // UNIGUI_HAS_DX12
+
