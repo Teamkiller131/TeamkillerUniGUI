@@ -201,38 +201,188 @@
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "UNIGUI_BACKEND": "SDL3_VULKAN"
       }
+    },
+    {
+      "name": "windows-msvc-debug-testengine-modules",
+      "displayName": "Windows MSVC Debug + test engine + trading",
+      "description": "Test engine AND the trading module together: engine-driven tests for the module-gated trading widgets (OrderTicket / DepthLadder / CandlestickChart). Dev/CI-only.",
+      "inherits": "windows-msvc-debug",
+      "binaryDir": "${sourceDir}/build/windows-msvc-debug-testengine-modules",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "testengine",
+        "VCPKG_OVERLAY_PORTS": "${sourceDir}/ports",
+        "UNIGUI_TEST_ENGINE": "ON",
+        "UNIGUI_MODULE_TRADING": "ON"
+      }
     }
   ],
   "buildPresets": [
-    { "name": "windows-msvc-debug",              "configurePreset": "windows-msvc-debug" },
-    { "name": "windows-msvc-debug-modules",      "configurePreset": "windows-msvc-debug-modules" },
-    { "name": "windows-msvc-debug-no-dx11",      "configurePreset": "windows-msvc-debug-no-dx11" },
-    { "name": "windows-msvc-release",            "configurePreset": "windows-msvc-release" },
-    { "name": "windows-msvc-debug-asan",         "configurePreset": "windows-msvc-debug-asan" },
-    { "name": "windows-clang-tidy",              "configurePreset": "windows-clang-tidy" },
-    { "name": "windows-clang-coverage",          "configurePreset": "windows-clang-coverage" },
-    { "name": "linux-gcc-debug",                 "configurePreset": "linux-gcc-debug" },
-    { "name": "linux-gcc-debug-asan",            "configurePreset": "linux-gcc-debug-asan" },
-    { "name": "linux-gcc-debug-werror",          "configurePreset": "linux-gcc-debug-werror" },
-    { "name": "windows-msvc-debug-werror",       "configurePreset": "windows-msvc-debug-werror" },
-    { "name": "macos-clang-debug",               "configurePreset": "macos-clang-debug" },
-    { "name": "windows-msvc-sdl3-vulkan-debug",  "configurePreset": "windows-msvc-sdl3-vulkan-debug" },
-    { "name": "windows-msvc-sdl3-vulkan-release","configurePreset": "windows-msvc-sdl3-vulkan-release" }
+    {
+      "name": "windows-msvc-debug",
+      "configurePreset": "windows-msvc-debug"
+    },
+    {
+      "name": "windows-msvc-debug-modules",
+      "configurePreset": "windows-msvc-debug-modules"
+    },
+    {
+      "name": "windows-msvc-debug-no-dx11",
+      "configurePreset": "windows-msvc-debug-no-dx11"
+    },
+    {
+      "name": "windows-msvc-release",
+      "configurePreset": "windows-msvc-release"
+    },
+    {
+      "name": "windows-msvc-debug-asan",
+      "configurePreset": "windows-msvc-debug-asan"
+    },
+    {
+      "name": "windows-clang-tidy",
+      "configurePreset": "windows-clang-tidy"
+    },
+    {
+      "name": "windows-clang-coverage",
+      "configurePreset": "windows-clang-coverage"
+    },
+    {
+      "name": "linux-gcc-debug",
+      "configurePreset": "linux-gcc-debug"
+    },
+    {
+      "name": "linux-gcc-debug-asan",
+      "configurePreset": "linux-gcc-debug-asan"
+    },
+    {
+      "name": "linux-gcc-debug-werror",
+      "configurePreset": "linux-gcc-debug-werror"
+    },
+    {
+      "name": "windows-msvc-debug-werror",
+      "configurePreset": "windows-msvc-debug-werror"
+    },
+    {
+      "name": "macos-clang-debug",
+      "configurePreset": "macos-clang-debug"
+    },
+    {
+      "name": "windows-msvc-sdl3-vulkan-debug",
+      "configurePreset": "windows-msvc-sdl3-vulkan-debug"
+    },
+    {
+      "name": "windows-msvc-sdl3-vulkan-release",
+      "configurePreset": "windows-msvc-sdl3-vulkan-release"
+    },
+    {
+      "name": "windows-msvc-debug-testengine-modules",
+      "configurePreset": "windows-msvc-debug-testengine-modules"
+    }
   ],
   "testPresets": [
-    { "name": "windows-msvc-debug",              "configurePreset": "windows-msvc-debug",              "output": { "outputOnFailure": true } },
-    { "name": "windows-msvc-debug-modules",      "configurePreset": "windows-msvc-debug-modules",      "output": { "outputOnFailure": true } },
-    { "name": "windows-msvc-debug-no-dx11",      "configurePreset": "windows-msvc-debug-no-dx11",      "output": { "outputOnFailure": true } },
-    { "name": "windows-msvc-release",            "configurePreset": "windows-msvc-release",            "output": { "outputOnFailure": true } },
-    { "name": "windows-msvc-debug-asan",         "configurePreset": "windows-msvc-debug-asan",         "output": { "outputOnFailure": true } },
-    { "name": "windows-clang-tidy",              "configurePreset": "windows-clang-tidy",              "output": { "outputOnFailure": true } },
-    { "name": "windows-clang-coverage",          "configurePreset": "windows-clang-coverage",          "output": { "outputOnFailure": true } },
-    { "name": "linux-gcc-debug",                 "configurePreset": "linux-gcc-debug",                 "output": { "outputOnFailure": true } },
-    { "name": "linux-gcc-debug-asan",            "configurePreset": "linux-gcc-debug-asan",            "output": { "outputOnFailure": true } },
-    { "name": "linux-gcc-debug-werror",          "configurePreset": "linux-gcc-debug-werror",          "output": { "outputOnFailure": true } },
-    { "name": "windows-msvc-debug-werror",       "configurePreset": "windows-msvc-debug-werror",       "output": { "outputOnFailure": true } },
-    { "name": "macos-clang-debug",               "configurePreset": "macos-clang-debug",               "output": { "outputOnFailure": true } },
-    { "name": "windows-msvc-sdl3-vulkan-debug",  "configurePreset": "windows-msvc-sdl3-vulkan-debug",  "output": { "outputOnFailure": true } },
-    { "name": "windows-msvc-sdl3-vulkan-release","configurePreset": "windows-msvc-sdl3-vulkan-release","output": { "outputOnFailure": true } }
+    {
+      "name": "windows-msvc-debug",
+      "configurePreset": "windows-msvc-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-debug-modules",
+      "configurePreset": "windows-msvc-debug-modules",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-debug-no-dx11",
+      "configurePreset": "windows-msvc-debug-no-dx11",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-release",
+      "configurePreset": "windows-msvc-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-debug-asan",
+      "configurePreset": "windows-msvc-debug-asan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-clang-tidy",
+      "configurePreset": "windows-clang-tidy",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-clang-coverage",
+      "configurePreset": "windows-clang-coverage",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-gcc-debug",
+      "configurePreset": "linux-gcc-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-gcc-debug-asan",
+      "configurePreset": "linux-gcc-debug-asan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-gcc-debug-werror",
+      "configurePreset": "linux-gcc-debug-werror",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-debug-werror",
+      "configurePreset": "windows-msvc-debug-werror",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "macos-clang-debug",
+      "configurePreset": "macos-clang-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-sdl3-vulkan-debug",
+      "configurePreset": "windows-msvc-sdl3-vulkan-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-sdl3-vulkan-release",
+      "configurePreset": "windows-msvc-sdl3-vulkan-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-debug-testengine-modules",
+      "configurePreset": "windows-msvc-debug-testengine-modules",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
   ]
 }

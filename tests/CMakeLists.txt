@@ -81,6 +81,20 @@ if(UNIGUI_TEST_ENGINE)
         target_compile_definitions(test_interaction_${_itest} PRIVATE UNIGUI_TEST_ENGINE=1)
         gtest_discover_tests(test_interaction_${_itest})
     endforeach()
+    # Trading interaction tests — need the engine AND the trading module together
+    # (the windows-msvc-debug-testengine-modules preset provides the combination).
+    if(UNIGUI_MODULE_TRADING)
+        add_executable(test_interaction_trading interaction/trading_interaction_test.cc)
+        target_link_libraries(test_interaction_trading PRIVATE
+            GTest::gtest
+            GTest::gtest_main
+            unigui
+        )
+        target_include_directories(test_interaction_trading PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        target_compile_features(test_interaction_trading PRIVATE cxx_std_23)
+        target_compile_definitions(test_interaction_trading PRIVATE UNIGUI_TEST_ENGINE=1)
+        gtest_discover_tests(test_interaction_trading)
+    endif()
 endif()
 
 add_executable(test_backend_interface
