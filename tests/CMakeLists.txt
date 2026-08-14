@@ -262,7 +262,7 @@ endforeach()
 
 # Trading toolkit model tests — header-only models, so always built (they only
 # need the headers; no UNIGUI_MODULE_TRADING link dependency yet).
-foreach(_t order_book ohlc_series quote reactive)
+foreach(_t order_book ohlc_series quote reactive cell_renderers)
     add_executable(test_${_t} trading/${_t}_test.cc)
     target_link_libraries(test_${_t} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_t} PRIVATE cxx_std_23)
