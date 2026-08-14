@@ -22,15 +22,65 @@ inline std::string Z(std::string_view s) {
 
 // RTL mirroring, increment 1: single-line text blocks right-align so RTL-script
 // UIs read right-to-left. The cursor is advanced to (right edge - measured
-// width), so the block ENDS where LTR text would end. Excluded from v1 (deep
-// layout-engine concerns, documented in DEVELOPMENT_PLAN §7): BulletText (the
-// bullet marker lives at the cursor), TextWrapped (per-line bidi shaping), and
+// width), so the block ENDS where LTR text would end. Increment 2 adds
+// right-aligned WRAPPED text (TextWrappedRtl below — visual order only, no
+// bidi reordering). Still excluded (deep layout-engine concerns, documented in
+// DEVELOPMENT_PLAN §7): BulletText (the bullet marker lives at the cursor) and
 // control internals/table order/tree indents.
 inline void AlignTextRightIfRtl(std::string_view text) {
     if (!unigui::IsRightToLeft())
         return;
     const float w = ImGui::CalcTextSize(text.data(), text.data() + text.size()).x;
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - w);
+}
+
+// Right-aligned wrapped text: split on whitespace, break lines at the wrap
+// width, and flush each line right-aligned (so the line ENDS at the right
+// edge, like AlignTextRightIfRtl). '\n' is a hard line break. Visual order
+// only — for pure-RTL text (the actual use case) the words already read
+// right-to-left, and the mirroring is exactly the alignment.
+void TextWrappedRtl(std::string_view text) {
+    const float wrapWidth = ImGui::GetContentRegionAvail().x;
+    if (wrapWidth <= 0.0f) { // degenerate/zero-width region: draw as-is
+        ImGui::TextUnformatted(text.data(), text.data() + text.size());
+        return;
+    }
+    std::string line;
+    const auto flush = [&] {
+        if (line.empty())
+            return;
+        const float w = ImGui::CalcTextSize(line.c_str()).x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + wrapWidth - w);
+        ImGui::TextUnformatted(line.c_str());
+        line.clear();
+    };
+    while (!text.empty()) {
+        if (text[0] == '\n') { // hard break
+            flush();
+            text.remove_prefix(1);
+            continue;
+        }
+        const std::size_t sp = text.find_first_of(" \t\n");
+        const std::string_view word =
+            text.substr(0, sp == std::string_view::npos ? text.size() : sp);
+        if (!word.empty()) {
+            if (line.empty()) {
+                line.assign(word);
+            } else {
+                const std::string candidate = line + " " + std::string(word);
+                if (ImGui::CalcTextSize(candidate.c_str()).x <= wrapWidth) {
+                    line = candidate;
+                } else {
+                    flush();
+                    line.assign(word);
+                }
+            }
+        }
+        text.remove_prefix(word.size());
+        while (!text.empty() && (text[0] == ' ' || text[0] == '\t'))
+            text.remove_prefix(1); // collapse the separator run
+    }
+    flush();
 }
 
 inline ImVec4 Lighten(const ImVec4& c, float t) {
@@ -85,6 +135,10 @@ void Text(std::string_view text) {
 }
 
 void TextWrapped(std::string_view text) {
+    if (unigui::IsRightToLeft()) {
+        TextWrappedRtl(text);
+        return;
+    }
     ImGui::PushTextWrapPos(0.0f);
     ImGui::TextUnformatted(text.data(), text.data() + text.size());
     ImGui::PopTextWrapPos();

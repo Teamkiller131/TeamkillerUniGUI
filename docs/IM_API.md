@@ -125,15 +125,16 @@ enum class ButtonVariant { Default, Primary, Danger, Success, Warning };
 | `void LabelTextF(const char* label, const char* fmt, ...)` | printf-style framed label/value. |
 | `void BulletTextF(const char* fmt, ...)` | printf-style bullet text. |
 
-> **RTL layout mirroring (increment 1).** With
+> **RTL layout mirroring (increments 1–2).** With
 > `unigui::SetLayoutDirection(unigui::LayoutDirection::RightToLeft)`, the
 > single-line `std::string_view` text primitives — `Text`, `TextDisabled`,
-> `TextColored`, `LabelText` — right-align against the content region so
-> RTL-script UIs read right-to-left. Not mirrored yet: the printf-style `*F`
-> variants (use the `string_view` forms, or `std::format` + `Text`),
-> `TextWrapped` (per-line bidi shaping), `BulletText` (the bullet marker lives
-> at the cursor), control internals, table column order and tree indents. See
-> `unigui::LayoutDirection` in `<unigui/core/layout_direction.h>`.
+> `TextColored`, `LabelText` — right-align against the content region, and
+> `TextWrapped` wraps with every line right-aligned (visual order only — no
+> bidi reordering, which suits pure-RTL text), so RTL-script UIs read
+> right-to-left. Not mirrored yet: the printf-style `*F` variants (use the
+> `string_view` forms, or `std::format` + `Text`), `BulletText` (the bullet
+> marker lives at the cursor), control internals, table column order and tree
+> indents. See `unigui::LayoutDirection` in `<unigui/core/layout_direction.h>`.
 
 ---
 

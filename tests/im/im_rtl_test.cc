@@ -98,3 +98,36 @@ TEST_F(ImRtlTest, Ltr_Default_DoesNotRightAlign) {
         << "default LTR text must stay left, far from the right edge";
     ImGui::End();
 }
+
+TEST_F(ImRtlTest, Rtl_TextWrapped_WrapsAndRightAlignsEveryLine) {
+    unigui::SetLayoutDirection(unigui::LayoutDirection::RightToLeft);
+    // A narrow window forces several wrapped lines out of one long sentence.
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(240, 300), ImGuiCond_Always);
+    ImGui::Begin("rtl_wrap", nullptr, ImGuiWindowFlags_NoSavedSettings);
+    const float rightEdge = ImGui::GetWindowContentRegionMax().x;
+    const float y0 = ImGui::GetCursorPosY();
+    im::TextWrapped("The quick brown fox jumps over the lazy dog and keeps on running "
+                    "through the narrow window so the text must wrap onto several lines "
+                    "all the way down");
+    const float y1 = ImGui::GetCursorPosY();
+    const ImRect last(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+    ImGui::End();
+
+    EXPECT_GT(y1 - y0, 2.0f * ImGui::GetTextLineHeightWithSpacing())
+        << "the narrow window must force at least three wrapped lines";
+    EXPECT_GT(last.Max.x, rightEdge - 40.0f)
+        << "the last wrapped line must END at the right edge (right-aligned)";
+    EXPECT_LT(last.Min.x, last.Max.x - 8.0f)
+        << "the line must START left of its right-aligned end (it has real width)";
+    // A newline is a hard break: the following line still hugs the right edge.
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(240, 120), ImGuiCond_Always);
+    ImGui::Begin("rtl_wrap2", nullptr, ImGuiWindowFlags_NoSavedSettings);
+    const float rightEdge2 = ImGui::GetWindowContentRegionMax().x;
+    im::TextWrapped("first line\nsecond");
+    const ImRect last2(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+    ImGui::End();
+    EXPECT_GT(last2.Max.x, rightEdge2 - 40.0f)
+        << "the line after a hard \\n break must also right-align";
+}

@@ -678,14 +678,16 @@ Goal: broaden what apps can build without leaving the toolkit.
   key) so partially-translated locales degrade gracefully, **positional
   `{0}`/`{1}` argument substitution** (`Tr(key, args)`), and **RTL detection**
   (`IsRTL()` for ar/he/fa/ur) — all unit-tested. **RTL layout mirroring,
-  increment 1 landed (post-4.9):** `unigui::LayoutDirection` +
-  `SetLayoutDirection` (process-global, like the theme) and right-aligned
-  single-line text primitives under `RightToLeft` (`Text`/`TextDisabled`/
-  `TextColored`/`LabelText` — the DSL inherits it through the im layer), pinned
-  by headless geometry tests (item rect hugs the right edge in RTL, the left
-  edge in LTR). _Remaining:_ the deep mirroring (wrapped-text bidi, control
-  internals, table column order, tree indents — a layout-engine concern,
-  tracked with the Horizon-5 layout work).
+  increments 1–2 landed (post-4.9):** `unigui::LayoutDirection` +
+  `SetLayoutDirection` (process-global, like the theme); under `RightToLeft`
+  the single-line text primitives (`Text`/`TextDisabled`/`TextColored`/
+  `LabelText`) right-align and `TextWrapped` wraps with every line
+  right-aligned (visual order only — no bidi reordering; pure-RTL text is the
+  use case). The DSL inherits it through the im layer; headless geometry tests
+  pin both directions including multi-line wrapping and hard `\n` breaks.
+  _Remaining:_ deep mirroring (bidi line shaping, control internals, table
+  column order, tree indents — a layout-engine concern, tracked with the
+  Horizon-5 layout work).
 - **P2 · M — Plugin ecosystem.** Stable plugin ABI, versioned plugin interface,
   sample third-party plugins, and a plugin template repo.
 
@@ -908,10 +910,15 @@ phase closes by cutting **4.9.0** from the merged work. Recommended order:
    pin the grammar and every error path. **C ABI v2** appended the form &
    layout tranche (radio/combo/inputs/slider/progress/tooltip/selectable) —
    pure append, v1 bindings stay compatible; the pure-C TU proves the new
-   symbols link and the engine clicks/types through each. _Remaining: deep
-   mirroring (wrapped-text bidi, control internals, table order, tree indents
-   — layout-engine), fractional-DPI cross-monitor polish (needs a
-   multi-monitor runner), and in-the-wild screen-reader validation (human).
+   symbols link and the engine clicks/types through each. **RTL mirroring —
+   increment 2 landed**: `TextWrapped` now wraps with every line right-aligned
+   under `RightToLeft` (visual order only — no bidi reordering; pure-RTL text
+   is the use case), pinned by a geometry test (narrow window forces three
+   lines, the last line ends at the right edge, hard `\n` breaks stay aligned).
+   _Remaining: deep mirroring (bidi line shaping, control internals, table
+   order, tree indents — layout-engine), fractional-DPI cross-monitor polish
+   (needs a multi-monitor runner), and in-the-wild screen-reader validation
+   (human).
 
 ### Next phase — "completeness sweep" (post-4.9 → 4.10)
 
