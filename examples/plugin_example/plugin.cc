@@ -33,4 +33,7 @@ __declspec(dllexport) unigui::plugin::IPlugin* CreatePlugin() {
 __declspec(dllexport) void DestroyPlugin(unigui::plugin::IPlugin* p) {
     delete p;
 }
+__declspec(dllexport) std::int32_t PluginInterfaceVersion() {
+    return unigui::plugin::kPluginInterfaceVersion;
+}
 }
