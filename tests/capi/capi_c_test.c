@@ -64,3 +64,30 @@ int capi_c_null_destroy_ok(void) {
     unigui_app_destroy(NULL);
     return 1;
 }
+
+/* ABI v2 tranche: the added symbols must exist and link from plain C. Taking
+ * their addresses proves linkage without executing them (these calls need a
+ * live ImGui context, which a pure-C TU without the app never has). */
+int capi_c_v2_surface_ok(void) {
+    void (*f_same_line)(void) = unigui_same_line;
+    void (*f_spacing)(void) = unigui_spacing;
+    int (*f_radio)(const char*, int*, int) = unigui_radio_button;
+    int (*f_combo)(const char*, int*, const char* const*, int) = unigui_combo;
+    int (*f_itext)(const char*, char*, size_t) = unigui_input_text;
+    int (*f_iint)(const char*, int*) = unigui_input_int;
+    int (*f_ifloat)(const char*, float*) = unigui_input_float;
+    int (*f_slider)(const char*, int*, int, int) = unigui_slider_int;
+    void (*f_bar)(float) = unigui_progress_bar;
+    void (*f_tip)(const char*) = unigui_set_tooltip;
+    int (*f_sel)(const char*, int) = unigui_selectable;
+    (void) f_same_line;
+    (void) f_spacing;
+    return f_radio != NULL && f_combo != NULL && f_itext != NULL && f_iint != NULL &&
+           f_ifloat != NULL && f_slider != NULL && f_bar != NULL && f_tip != NULL && f_sel != NULL;
+}
+
+/* The gate must keep accepting v1 bindings after the v2 addition (additive
+ * growth: unigui_capi_abi_compatible(1) still passes). */
+int capi_c_v1_bindings_still_compatible(void) {
+    return unigui_capi_abi_compatible(1) != 0;
+}

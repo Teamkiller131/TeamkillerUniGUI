@@ -28,6 +28,8 @@ int capi_c_version_ok(void);
 int capi_c_config_defaults_ok(void);
 int capi_c_types_usable_ok(void);
 int capi_c_null_destroy_ok(void);
+int capi_c_v2_surface_ok(void);
+int capi_c_v1_bindings_still_compatible(void);
 }
 
 TEST(CapiC, CompilesAndLinksFromPlainC) {
@@ -38,6 +40,9 @@ TEST(CapiC, CompilesAndLinksFromPlainC) {
     EXPECT_EQ(capi_c_config_defaults_ok(), 1);
     EXPECT_EQ(capi_c_types_usable_ok(), 1);
     EXPECT_EQ(capi_c_null_destroy_ok(), 1);
+    EXPECT_EQ(capi_c_v2_surface_ok(), 1) << "every ABI v2 symbol must link from plain C";
+    EXPECT_EQ(capi_c_v1_bindings_still_compatible(), 1)
+        << "ABI v2 is additive: v1 bindings must remain compatible";
 }
 
 TEST(Capi, VersionMirrorsCppSurface) {
@@ -76,6 +81,19 @@ TEST(Capi, NullHandleContracts) {
     EXPECT_EQ(unigui_app_run(nullptr, nullptr, nullptr, 0), 1);
     EXPECT_EQ(unigui_app_native_window_handle(nullptr), nullptr);
     unigui_app_destroy(nullptr);
+}
+
+TEST(Capi, V2PointerGuardContracts) {
+    // Every ABI v2 call with a null output/input pointer must be a safe no-op
+    // (returns 0) WITHOUT touching ImGui — these run with no context.
+    EXPECT_EQ(unigui_radio_button("x", nullptr, 0), 0);
+    EXPECT_EQ(unigui_combo("x", nullptr, nullptr, 0), 0);
+    EXPECT_EQ(unigui_combo("x", nullptr, nullptr, -1), 0);
+    EXPECT_EQ(unigui_input_text("x", nullptr, 0), 0);
+    EXPECT_EQ(unigui_input_text("x", nullptr, 64), 0);
+    EXPECT_EQ(unigui_input_int("x", nullptr), 0);
+    EXPECT_EQ(unigui_input_float("x", nullptr), 0);
+    EXPECT_EQ(unigui_slider_int("x", nullptr, 0, 10), 0);
 }
 
 #if defined(_WIN32) && defined(UNIGUI_HAS_DX11)

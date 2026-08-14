@@ -49,7 +49,7 @@ extern "C" {
 #define UNIGUI_CAPI extern UNIGUI_API
 
 /// The C ABI contract revision (see the policy block above).
-#define UNIGUI_CAPI_ABI_VERSION 1
+#define UNIGUI_CAPI_ABI_VERSION 2
 
 /// Renderer/platform selection, mirroring `unigui::BackendType`. The enum
 /// values are frozen; new backends append at the end.
@@ -166,6 +166,38 @@ UNIGUI_CAPI int unigui_checkbox(const char* label, int* value);
 /// Slider over [v_min, v_max]; writes *value; returns 1 on the frame it changed.
 UNIGUI_CAPI int unigui_slider_float(const char* label, float* value, float v_min, float v_max);
 UNIGUI_CAPI void unigui_separator(void);
+
+// -- Form & layout tranche (added in ABI v2; everything above is unchanged) ----
+//
+// ABI growth rule in action: this tranche only APPENDS functions, so a binding
+// compiled against ABI v1 keeps working (unigui_capi_abi_compatible(1) still
+// passes); bindings that need these calls compile against ABI v2.
+
+/// Layout: put the next item on the same line as the previous one / add
+/// vertical spacing.
+UNIGUI_CAPI void unigui_same_line(void);
+UNIGUI_CAPI void unigui_spacing(void);
+/// Radio group member: returns 1 on the frame it becomes selected; *current
+/// holds the shared selection index.
+UNIGUI_CAPI int unigui_radio_button(const char* label, int* current, int value);
+/// Drop-down over a caller-owned, NULL-terminated item array of @p items_count
+/// entries. *current is the selected index; returns 1 on the frame it changes.
+UNIGUI_CAPI int unigui_combo(const char* label, int* current, const char* const* items,
+                             int items_count);
+/// Single-line text input into a caller-owned buffer of @p buf_capacity bytes
+/// (includes the NUL). Returns 1 while the value is being edited.
+UNIGUI_CAPI int unigui_input_text(const char* label, char* buf, size_t buf_capacity);
+/// Integer / float drag inputs. Return 1 on the frame the value changed.
+UNIGUI_CAPI int unigui_input_int(const char* label, int* value);
+UNIGUI_CAPI int unigui_input_float(const char* label, float* value);
+/// Integer slider over [v_min, v_max]; returns 1 on the frame it changed.
+UNIGUI_CAPI int unigui_slider_int(const char* label, int* value, int v_min, int v_max);
+/// Horizontal progress bar; @p fraction in [0, 1] (clamped).
+UNIGUI_CAPI void unigui_progress_bar(float fraction);
+/// Tooltip for the PREVIOUS item (call right after it, while it is hovered).
+UNIGUI_CAPI void unigui_set_tooltip(const char* text);
+/// Selectable row: @p selected pre-highlights it; returns 1 on the clicked frame.
+UNIGUI_CAPI int unigui_selectable(const char* label, int selected);
 
 #ifdef __cplusplus
 } // extern "C"

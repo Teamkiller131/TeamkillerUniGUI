@@ -1,6 +1,16 @@
 ## [Unreleased]
 
 ### Added
+- **C ABI v2 — form & layout tranche.** The C surface grows additively to
+  `UNIGUI_CAPI_ABI_VERSION 2` (v1 bindings stay compatible): `unigui_same_line` /
+  `unigui_spacing`, `unigui_radio_button`, `unigui_combo` (caller-owned item
+  array), `unigui_input_text` (caller-owned buffer — the binding-friendly form),
+  `unigui_input_int` / `unigui_input_float`, `unigui_slider_int`,
+  `unigui_progress_bar`, `unigui_set_tooltip` and `unigui_selectable`. The pure-C
+  TU proves every new symbol links from C (address-taking, no context needed);
+  pointer-guard contracts are pinned headless; the test engine clicks/selects/
+  types through each new call (radio selection, combo item pick, selectable
+  click, typed text landing in the caller buffer, full-tranche render smoke).
 - **RTL layout mirroring, increment 1.** `unigui::LayoutDirection` +
   `SetLayoutDirection` (process-global, like the theme) is the mirroring switch:
   under `RightToLeft` the single-line text primitives — `im::Text`,

@@ -7,7 +7,8 @@ bindings, embedding layers, and ABI-stability-sensitive integrations.
 - **Header:** `#include <unigui/capi/unigui_capi.h>` (plain C99; usable from
   C and C++)
 - **Implementation:** compiled into `libunigui` — no extra library to link
-- **First ABI version:** 1 (4.9.0+)
+- **Current ABI version:** 2 (v1: 4.9.0; v2 adds the form & layout tranche — a
+  pure append, so v1 bindings stay compatible)
 
 The C surface is deliberately a **subset** of the C++ API and grows
 additively as demand appears. The full C++ API remains the first-class
@@ -132,15 +133,31 @@ frame callback.
 | `unigui_slider_float(label, float* value, min, max)` | Writes `*value`; 1 on the changed frame |
 | `unigui_separator()` | Horizontal rule |
 
+### Form & layout tranche (ABI v2)
+
+Appended in ABI v2 — everything above is unchanged, and v1 bindings remain
+compatible (additive growth).
+
+| Function | Notes |
+|----------|-------|
+| `unigui_same_line()` / `unigui_spacing()` | Layout: next item on the same line / vertical spacing |
+| `unigui_radio_button(label, int* current, value)` | Radio-group member; 1 on the frame it becomes selected |
+| `unigui_combo(label, int* current, const char* const* items, int items_count)` | Drop-down over a caller-owned NULL-terminated item array; 1 on the frame the index changes |
+| `unigui_input_text(label, char* buf, size_t buf_capacity)` | Text input into a caller-owned buffer (includes the NUL); 1 while being edited |
+| `unigui_input_int(label, int* value)` / `unigui_input_float(label, float* value)` | Drag inputs; 1 on the changed frame |
+| `unigui_slider_int(label, int* value, v_min, v_max)` | Integer slider; 1 on the changed frame |
+| `unigui_progress_bar(float fraction)` | Horizontal progress bar, fraction in [0, 1] |
+| `unigui_set_tooltip(text)` | Tooltip for the PREVIOUS item (call right after it, while hovered) |
+| `unigui_selectable(label, int selected)` | Selectable row; 1 on the clicked frame |
+
 ## Growth policy
 
 New surface lands behind a **C ABI version bump** (additive-only; see the
 stability rules above) and in the same order the C++ API grew it: version
-gate → app lifecycle → a drawing subset (this release) → more `im` calls,
-then retained widgets / localization / events as binding demand appears.
-Candidate next tranches: text input (`unigui_input_text` with a caller-owned
-buffer), locale lookup (`unigui_tr`), more basic controls (radio, combo,
-selectable), and window flags.
+gate → app lifecycle → a drawing subset (v1) → the form & layout tranche (v2)
+→ more `im` calls, then retained widgets / localization / events as binding
+demand appears. Candidate next tranches: locale lookup (`unigui_tr`),
+multi-select / list boxes, tables, and window flags.
 
 ## Bindings
 

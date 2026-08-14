@@ -13,6 +13,8 @@
 #include <imgui.h> // TextV (va_list formatting behind the ABI)
 
 #include <cstdarg>
+#include <string>
+#include <vector>
 
 // Opaque-handle definition: clients only ever see `unigui_app*`; the layout
 // lives here (it is NOT part of the ABI).
@@ -220,4 +222,66 @@ int unigui_slider_float(const char* label, float* value, float v_min, float v_ma
 
 void unigui_separator() {
     unigui::im::Separator();
+}
+
+// ── Form & layout tranche (ABI v2) ────────────────────────────────────────────
+
+void unigui_same_line() {
+    unigui::im::SameLine();
+}
+
+void unigui_spacing() {
+    unigui::im::Spacing();
+}
+
+int unigui_radio_button(const char* label, int* current, int value) {
+    if (!current)
+        return 0;
+    return unigui::im::RadioButton(label ? label : "", current, value) ? 1 : 0;
+}
+
+int unigui_combo(const char* label, int* current, const char* const* items, int items_count) {
+    if (!current || !items || items_count <= 0)
+        return 0;
+    std::vector<std::string> list;
+    list.reserve(static_cast<std::size_t>(items_count));
+    for (int i = 0; i < items_count; ++i)
+        list.emplace_back(items[i] ? items[i] : "");
+    return unigui::im::Combo(label ? label : "", current, list) ? 1 : 0;
+}
+
+int unigui_input_text(const char* label, char* buf, size_t buf_capacity) {
+    if (!buf || buf_capacity == 0)
+        return 0;
+    return unigui::im::InputText(label ? label : "", buf, buf_capacity) ? 1 : 0;
+}
+
+int unigui_input_int(const char* label, int* value) {
+    if (!value)
+        return 0;
+    return unigui::im::InputInt(label ? label : "", value) ? 1 : 0;
+}
+
+int unigui_input_float(const char* label, float* value) {
+    if (!value)
+        return 0;
+    return unigui::im::InputFloat(label ? label : "", value) ? 1 : 0;
+}
+
+int unigui_slider_int(const char* label, int* value, int v_min, int v_max) {
+    if (!value)
+        return 0;
+    return unigui::im::SliderInt(label ? label : "", value, v_min, v_max) ? 1 : 0;
+}
+
+void unigui_progress_bar(float fraction) {
+    unigui::im::ProgressBar(fraction);
+}
+
+void unigui_set_tooltip(const char* text) {
+    unigui::im::SetTooltip(text ? text : "");
+}
+
+int unigui_selectable(const char* label, int selected) {
+    return unigui::im::Selectable(label ? label : "", selected != 0) ? 1 : 0;
 }
