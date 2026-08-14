@@ -1,6 +1,8 @@
 #include <unigui/core/log.h>
 #include <unigui/fonts/font_manager.h>
 
+#include "../detail/context_registry.h"
+
 #include <imgui.h>
 
 #include <cstdio>
@@ -85,8 +87,7 @@ std::vector<std::string> CJKCandidates() {
 } // namespace
 
 Manager& Manager::Instance() {
-    static Manager fm;
-    return fm;
+    return detail::ContextRegistry<Manager>::Instance();
 }
 
 ImFont* Manager::Load(const std::string& name, const std::string& path, float size) {

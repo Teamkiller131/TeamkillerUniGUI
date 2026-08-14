@@ -42,13 +42,29 @@ bool CreateDX11DeviceAndSwapChain(void* hwnd, int width, int height, ID3D11Devic
 
     D3D_FEATURE_LEVEL featLevel;
     const D3D_FEATURE_LEVEL featLevels[] = {D3D_FEATURE_LEVEL_11_0};
-    HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
-                                               featLevels, 1, D3D11_SDK_VERSION, &sd, outSwap,
-                                               outDevice, &featLevel, outCtx);
+    // UNIGUI_DX11_WARP=1 forces the WARP software rasterizer (Microsoft's high-fidelity
+    // software adapter, present on every Windows 8.1+) instead of the hardware device —
+    // the headless-CI escape hatch that lets the app-level smokes create a REAL device,
+    // render, and read pixels back without a GPU. Hardware stays the default; WARP falls
+    // back to hardware if WARP itself is unavailable.
+    const bool wantWarp = [] {
+        const char* e = std::getenv("UNIGUI_DX11_WARP");
+        return e && e[0] == '1';
+    }();
+    HRESULT hr = D3D11CreateDeviceAndSwapChain(
+            nullptr, wantWarp ? D3D_DRIVER_TYPE_WARP : D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
+            featLevels, 1, D3D11_SDK_VERSION, &sd, outSwap, outDevice, &featLevel, outCtx);
+    if (FAILED(hr) && wantWarp) {
+        hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
+                                           featLevels, 1, D3D11_SDK_VERSION, &sd, outSwap,
+                                           outDevice, &featLevel, outCtx);
+    }
     if (FAILED(hr)) {
         std::fprintf(stderr, "[unigui] DX11 device creation failed: 0x%lx\n", (unsigned long) hr);
         return false;
     }
+    UNIGUI_LOG_INFO("DX11 device created on {} adapter",
+                    wantWarp ? "WARP (software)" : "hardware");
 
     // Create render target view
     ID3D11Texture2D* backBuffer = nullptr;

@@ -3,6 +3,8 @@
 #include <unigui/fx/effect_scope.h>
 #include <unigui/styling/style_engine.h>
 
+#include "../detail/context_registry.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -107,8 +109,7 @@ bool NextBlock(const std::string& s, std::size_t& pos, std::string& full) {
 } // namespace
 
 Engine& Engine::Instance() {
-    static Engine se;
-    return se;
+    return detail::ContextRegistry<Engine>::Instance();
 }
 
 int StyleRule::priority() const {

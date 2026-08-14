@@ -6,6 +6,7 @@
 #include <unigui/theme/presets/registry.h>
 #include <unigui/theme/theme.h>
 
+#include "../detail/context_singletons.h"
 #include "../detail/golden_capture.h"
 #ifdef UNIGUI_HAS_WIDGETS
 #include <unigui/widgets/toast.h>
@@ -67,6 +68,10 @@ static void CleanupAppResources(bool destroy_imgui_context) {
         g_platform->Shutdown();
         g_platform.reset();
     }
+    // Drop the per-context singleton instances bound to this context (they live in
+    // ContextRegistry keyed by the ImGui context — see src/detail/context_registry.h).
+    if (ImGui::GetCurrentContext())
+        detail::ResetContextSingletons(ImGui::GetCurrentContext());
     if (ImPlot::GetCurrentContext())
         ImPlot::DestroyContext();
     if (destroy_imgui_context && ImGui::GetCurrentContext())

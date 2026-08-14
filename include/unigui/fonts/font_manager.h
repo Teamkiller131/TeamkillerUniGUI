@@ -71,8 +71,11 @@ public:
     /// a CJK font explicitly there). Registered as "cjk"; idempotent.
     ImFont* LoadSystemCJK(float size = 0);
 
-private:
+    /// Public for the context registry (src/detail/context_registry.h) — prefer
+    /// Instance(); direct construction bypasses the per-context lifetime.
     Manager() = default;
+
+private:
     /// Probe candidates in order, merge the first hit into the default font over
     /// `ranges`, register it as `regName`. Returns the existing entry when already
     /// loaded, nullptr when nothing was found.
