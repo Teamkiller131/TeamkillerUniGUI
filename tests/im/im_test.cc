@@ -878,18 +878,24 @@ TEST(ImInputTextPersistence, EnterReturnsTrueStillKeepsTypedText) {
         unigui::im::InputText("##pwd", &value, 128, flags);
     });
 
-    // Frames 2..4: type "abc", one character per frame, Enter never pressed.
+    // Frame 2: idle. The frame that ACQUIRES keyboard focus swallows one
+    // character (ImGui focus timing, not a property of the code under test),
+    // so typing must start on the frame after that.
+    RunFrame([&] { unigui::im::InputText("##pwd", &value, 128, flags); });
+
+    // Frames 3..5: type "abc", one character per frame, Enter never pressed.
     for (char c : {'a', 'b', 'c'}) {
         io.AddInputCharacter(static_cast<unsigned int>(c));
         RunFrame([&] { unigui::im::InputText("##pwd", &value, 128, flags); });
     }
 
-    // Frame 5: the field loses focus. Under the old behaviour `value` was still
+    // Frame 6: the field loses focus. Under the old behaviour `value` was still
     // empty here and the next frame repainted an empty box.
     RunFrame([&] {
         unigui::im::InputText("##pwd", &value, 128, flags);
         ImGui::SetKeyboardFocusHere();
-        ImGui::InputText("##elsewhere", nullptr, 0);
+        std::string elsewhere;
+        unigui::im::InputText("##elsewhere", &elsewhere);
     });
 
     EXPECT_EQ(value, "abc")
