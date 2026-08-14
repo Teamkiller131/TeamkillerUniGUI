@@ -677,8 +677,15 @@ Goal: broaden what apps can build without leaving the toolkit.
   real catalog: a **fallback chain** (current → base language → fallback locale →
   key) so partially-translated locales degrade gracefully, **positional
   `{0}`/`{1}` argument substitution** (`Tr(key, args)`), and **RTL detection**
-  (`IsRTL()` for ar/he/fa/ur) — all unit-tested. _Remaining:_ full RTL layout
-  *mirroring* (a layout-engine concern, tracked with the Horizon-5 layout work).
+  (`IsRTL()` for ar/he/fa/ur) — all unit-tested. **RTL layout mirroring,
+  increment 1 landed (post-4.9):** `unigui::LayoutDirection` +
+  `SetLayoutDirection` (process-global, like the theme) and right-aligned
+  single-line text primitives under `RightToLeft` (`Text`/`TextDisabled`/
+  `TextColored`/`LabelText` — the DSL inherits it through the im layer), pinned
+  by headless geometry tests (item rect hugs the right edge in RTL, the left
+  edge in LTR). _Remaining:_ the deep mirroring (wrapped-text bidi, control
+  internals, table column order, tree indents — a layout-engine concern,
+  tracked with the Horizon-5 layout work).
 - **P2 · M — Plugin ecosystem.** Stable plugin ABI, versioned plugin interface,
   sample third-party plugins, and a plugin template repo.
 
@@ -883,10 +890,15 @@ phase closes by cutting **4.9.0** from the merged work. Recommended order:
    interactive), hot-reloads CSS on top, and emits the scene's C++ builder
    expression via the new `dsl::ToSource` (structure/labels/params round-trip;
    callbacks become compilable placeholders — ten codegen tests pin it; the app
-   smoke-runs headless with `--frames`). _Remaining: RTL layout mirroring,
-   in-app scene editing, more `im` calls / bindings on demand, fractional-DPI
-   cross-monitor polish (needs a multi-monitor runner), and in-the-wild
-   screen-reader validation (human).
+   smoke-runs headless with `--frames`). **RTL mirroring — first increment
+   landed**: `unigui::LayoutDirection` + `SetLayoutDirection` and right-aligned
+   single-line text under `RightToLeft` (`Text`/`TextDisabled`/`TextColored`/
+   `LabelText`, inherited by the DSL through the im layer), pinned by six
+   headless tests (direction state + item-rect geometry in both directions).
+   _Remaining: deep mirroring (wrapped-text bidi, control internals, table
+   order, tree indents — layout-engine), in-app scene editing, more `im` calls /
+   bindings on demand, fractional-DPI cross-monitor polish (needs a
+   multi-monitor runner), and in-the-wild screen-reader validation (human).
 
 ### Next phase — "completeness sweep" (post-4.9 → 4.10)
 

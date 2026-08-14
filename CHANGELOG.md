@@ -1,6 +1,15 @@
 ## [Unreleased]
 
 ### Added
+- **RTL layout mirroring, increment 1.** `unigui::LayoutDirection` +
+  `SetLayoutDirection` (process-global, like the theme) is the mirroring switch:
+  under `RightToLeft` the single-line text primitives — `im::Text`,
+  `im::TextDisabled`, `im::TextColored`, `im::LabelText` — right-align against
+  the content region, so RTL-script UIs read right-to-left (the DSL inherits this
+  through the im layer). Six headless tests pin the direction state and the item-
+  rect geometry in both directions. Deep mirroring (wrapped-text bidi, control
+  internals, table column order, tree indents) remains a layout-engine concern —
+  see docs/IM_API.md and DEVELOPMENT_PLAN §7.
 - **Designer tool, first increment (`examples/designer` + `dsl::ToSource`).** The
   designer live-previews built-in DSL scenes (stateful controls stay interactive),
   hot-reloads CSS on top of the preview (`--css`), and emits the scene's C++
