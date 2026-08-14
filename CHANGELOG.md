@@ -1,6 +1,37 @@
 ## [Unreleased]
 
 ### Added
+- **Multi-viewport runtime proof (DX11).** The opt-in flag now has pixel-level CI
+  coverage, not just code review: `DXMultiViewportSmoke` runs the real app on a DX11
+  swapchain (WARP or hardware), pops a window out into its own OS viewport, reads the
+  main window's back buffer back, and asserts it is still drawn — the exact regression
+  the per-frame RTV rebind fixed (verified to fail against the pre-fix code). Pop-out →
+  stability → merge-back → no-flap all asserted. New supporting surface:
+  `AppConfig`-level `GetActiveRenderer()`, the DX11 renderer's `LastVerifyDrawn()`
+  readback result, and **`UNIGUI_RENDER_VERIFY=1` now works on DX11** (swapchain
+  readback mirroring the GL path; the readback flushes before mapping so it reads the
+  current frame, not a stale one).
+- **Backdrop-clear contract extended to secondary viewports** (§7.1
+  `docs/BACKENDS.md`). Upstream's per-backend `Renderer_RenderWindow` clears popped-out
+  windows to hardcoded black, which translucent (glass) theme materials would render
+  against. The app loop now paints the theme backdrop into each secondary viewport's
+  background draw list before `ImGui::Render()` — covering every viewport-capable
+  renderer with no per-backend hooks. Found while proving it: the fill must skip
+  orphaned viewports (see Fixed).
+- **`TimeSeriesChart::GetYAxisRange()`** — the Y range the axis *actually showed* after
+  the last frame (auto-fit output, applied manual range, or the user's pan/zoom),
+  rather than the last requested one; drives the new span-lock frame tests and
+  linked-axis readouts.
+- **`TimeSeriesChart::SetYAxisSpanLock` driven frame tests.** The pure `RestoreSpan`
+  math was unit-tested; the *integration* now is too — headless ImGui+ImPlot frames
+  inject a wheel-zoom via `SetNextAxesLimits` and assert the one-frame bounce restores
+  the locked span around the new centre, while a pure pan passes through untouched.
+- **Interaction coverage for the `im` wrapper batch.** Two engine-driven tests:
+  clicking a sortable table header arms `TableGetSortSpecs()`, and typing into an
+  `EnterReturnsTrue` input persists every keystroke (the flag only changes the return
+  value — never the write-back).
+
+### Changed
 - **Opt-in multi-viewport** — `AppConfig::multiViewport` (default off) lets ImGui windows be
   dragged **outside** the main window, where each becomes a real OS window
   (`ImGuiConfigFlags_ViewportsEnable`); dragging one back inside merges it into the main
@@ -113,6 +144,17 @@
   three fields all carried the flag (Enter-to-submit). The write-back is now keyed on the
   buffer actually differing, so the bound string simply stays in sync; the return value
   keeps its documented submit-on-Enter meaning.
+- **Popped-out viewports are no longer leaked forever.** The backdrop fill for secondary
+  viewports initially painted *every* secondary viewport each frame — including orphans
+  left behind after a window merged back. A rendered viewport counts as active, and imgui
+  only destroys secondary viewports after ~3 inactive frames, so the fill kept the
+  orphan's OS window alive indefinitely (found by the new smoke's merge-back assert).
+  The fill now skips viewports that hosted no window this frame.
+- **The `EnterReturnsTrue` regression test now runs for real.** Its original form tripped
+  two latent issues only a Debug build exposes: a focus-stealing `InputText` with a
+  nullptr buffer (`IM_ASSERT(buf != NULL)`), and the frame that acquires keyboard focus
+  swallowing one character — the test now idles a frame after focusing and uses a real
+  buffer.
 
 ### Documentation
 - `CLAUDE.md`: added a top-of-file rule — never call `ImGui::` in application code —

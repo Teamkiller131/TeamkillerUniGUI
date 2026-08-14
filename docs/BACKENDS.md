@@ -666,6 +666,51 @@ the backdrop automatically.
   it inside their own `RenderDrawData`. Either is fine as long as the stored
   backdrop color is the one used.
 
+### 7.1 Secondary viewports (multi-viewport)
+
+With `AppConfig::multiViewport`, windows dragged out of the main window become
+real OS windows. Upstream's per-backend `Renderer_RenderWindow` functions clear
+those secondary viewports to a **hardcoded black** (`imgui_impl_dx11.cpp` and
+`imgui_impl_opengl3.cpp` both do), which would make translucent materials on a
+popped-out window render against garbage.
+
+The app loop therefore extends the contract to every secondary viewport itself:
+before `ImGui::Render()` it paints a full-viewport backdrop rect into each
+secondary viewport's background draw list (flattened before all windows):
+
+```cpp
+if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+    const ImU32 bgCol = ImGui::GetColorU32(GetBackdropColor());
+    for (ImGuiViewport* vp : ImGui::GetPlatformIO().Viewports) {
+        if (vp == nullptr || vp == ImGui::GetMainViewport() ||
+            (vp->Flags & ImGuiViewportFlags_IsMinimized))
+            continue;
+        ImGui::GetBackgroundDrawList(vp)->AddRectFilled(
+            vp->Pos, vp->Pos + vp->Size, bgCol);
+    }
+}
+```
+
+This covers **every** renderer with viewport support (GL3, DX11, Vulkan, …) with
+no per-backend hooks, so a popped-out window honours the same backdrop contract
+as the main one. The black upstream clear underneath is simply never visible.
+
+**Multi-viewport capability matrix** (runtime-verified = pixels asserted in CI):
+
+| Backend | Viewport support | Runtime-verified |
+|---------|------------------|------------------|
+| GLFW + OpenGL3 | ✅ (GLFW viewport windows) | ✅ Linux headless smoke (main window) |
+| GLFW + DX11 | ✅ | ✅ `DXMultiViewportSmoke` (pop-out → main still drawn → merge-back; WARP/GPU) |
+| GLFW + DX12 | ❌ upstream `imgui_impl_dx12` has no multi-viewport support — the flag is dropped by the capability self-check | — |
+| SDL3 + Vulkan | ✅ (SDL3 viewport windows) | build-only |
+| Metal | ✅ (build-only) | build-only |
+| Emscripten | ignored (browser page has no secondary OS windows) | — |
+
+The capability self-check in `BringUpBackend()` reports
+`ImGuiBackendFlags_PlatformHasViewports`/`RendererHasViewports` after init and
+drops back to single-viewport with a warning when a pair can't support it — a
+half-installed viewport setup does not degrade gracefully.
+
 ---
 
 ## 8. Quick reference
