@@ -1,5 +1,31 @@
 ## [Unreleased]
 
+### Added
+- **`TimeSeriesChart::SetXAxisTickSpacing(step)` — explicit X gridline step** (the
+  X-axis counterpart of the 4.9.0 Y tick spacing). Keyed off the *visible* X window
+  (cached from the previous frame), so after pan/zoom the ticks follow the view instead
+  of marching off it; pairs naturally with `SetXAxisRange()`. The same
+  `kMaxXTicks` budget guard and multiplication-based generation (no accumulation
+  drift) apply. The pure tick math is exposed as the static `MakeTicks(lo, hi, step,
+  maxTicks)` and unit-tested (alignment, budget refusal, 3000-tick no-drift,
+  invalid-input identity).
+- **In-cell mini renderers for `DataTable<T>`** (`<unigui/trading/cell_renderers.h>` —
+  the custom-draw half of the long-standing "mini sparkline/bar in a blotter cell"
+  roadmap item; `SetCellRenderer` shipped the hook, these are the batteries):
+  - `SparklineCell<T>(valuesOf, width, height, colorOf)` — a 1.2 px polyline
+    normalized to the row's own min/max, theme `PlotLines` colour by default; rows
+    with fewer than two values only reserve the space.
+  - `BarCell<T>(valueOf, maxAbs, width, height, colorOf, pol)` — a signed horizontal
+    bar mapped into [−maxAbs, +maxAbs] from the cell centre, sign-aware `DeltaColor`
+    by default; flat rows draw nothing but keep their height.
+  Both end with a `Dummy(width, height)` so the row reserves the drawing's height;
+  covered by headless geometry tests (`tests/trading/cell_renderers_test.cc`).
+- **Presets driven-input coverage widened.** Three new engine-driven tests: a
+  `MasterDetail` row click fires `WithOnSelect` with the row index, a `Dashboard`
+  card-body button fires its callback, and typing into a `LogConsole` filter narrows
+  `FilteredSize()` — the presets' input path (composed widgets → preset state) is now
+  exercised for all five scaffolds.
+
 ## [4.9.0] - 2026-08-14
 
 ### Added

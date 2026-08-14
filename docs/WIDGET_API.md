@@ -1345,6 +1345,8 @@ void SetYAxisAutoFit(bool on); void SetYAxisRange(double min, double max);
 void SetYAxisRangeLocked(bool on);              // hold the manual range every frame
 void SetYAxisSpanLock(double span);             // pin Y height, keep panning (trader "fixed axis")
 void SetYAxisTickSpacing(double step);          // explicit Y gridline step (auto-fit off)
+void SetXAxisRange(double min, double max);     // fixed X window
+void SetXAxisTickSpacing(double step);          // explicit X gridline step (follows the visible window)
 void SetXAxisLabel(const std::string&); void SetYAxisLabel(const std::string&);
 void SetCrosshairEnabled(bool); void SetLegendEnabled(bool);
 void SetRubberBandZoom(bool on);                // SetPanEnabled/SetZoomEnabled: DEPRECATED no-ops

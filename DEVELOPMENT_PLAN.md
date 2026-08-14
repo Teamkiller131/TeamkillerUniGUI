@@ -791,15 +791,22 @@ phase closes by cutting **4.9.0** from the merged work. Recommended order:
    SpanLock/TickSpacing + range semantics + InputText persistence + FilePath wide-char +
    deprecations + im wrappers + the hardening itself); `core/version.h` + `vcpkg.json`
    bumped together; docs re-stamped; README badges (tests 1305, im 248) updated.
-3. ~~**P1 · M — Chart family follow-ups (client-driven).**~~ **Partly done (4.9.0).**
-   `SetYAxisSpanLock`/`SetYAxisTickSpacing` now have driven frame tests (injected
+3. ~~**P1 · M — Chart family follow-ups (client-driven).**~~ **Done (post-4.9.0).**
+   `SetYAxisSpanLock`/`SetYAxisTickSpacing` have driven frame tests (injected
    wheel-zoom → one-frame bounce back to the locked span, centre kept; pure pan passes
-   through), plus `GetYAxisRange()` for observability. _Remaining: X-axis tick-spacing
-   counterpart, the DataTable custom-draw cell hook (in-cell sparklines), PriceTicker._
-4. ~~**P1 · S — Interaction coverage for the new surface.**~~ **Partly done (4.9.0).**
+   through), plus `GetYAxisRange()` for observability; the X-axis counterpart
+   `SetXAxisTickSpacing` landed (visible-window-keyed ticks, `MakeTicks` pure math
+   tested); the **in-cell mini sparkline/bar renderers** landed
+   (`trading/cell_renderers.h` — `SparklineCell`/`BarCell` over `SetCellRenderer`,
+   geometry-tested). `PriceTicker` turned out to already be implemented (the deferred
+   note predated it). _Remaining: session-boundary-aware tick pairing for intraday
+   charts — ticks land on session starts, not just round numbers._
+4. ~~**P1 · S — Interaction coverage for the new surface.**~~ **Done (post-4.9.0).**
    Engine-driven: sortable table header → `TableGetSortSpecs`; `EnterReturnsTrue` typing
-   persistence (interaction twin of the headless regression). _Remaining: driven tests for
-   the presets themselves, SpanLock engine test._
+   persistence (interaction twin of the headless regression); and the **presets' input
+   path** — `MasterDetail` row click → `WithOnSelect`, `Dashboard` card button →
+   callback, `LogConsole` filter input → `FilteredSize()` (all five scaffolds now have
+   driven-input coverage).
 5. **P1 · M — Quality-front small items.** Promote the next clang-tidy family into the
    hard gate as its backlog clears; raise `COVERAGE_FLOOR` to just under the headless
    baseline and flip the coverage step to hard `exit 1`; keep converting the ~19%
