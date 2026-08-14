@@ -1,6 +1,26 @@
 ## [Unreleased]
 
 ### Added
+- **Runtime / fractional DPI.** Root cause of the fractional-DPI breakage found and
+  fixed: the GLFW platform never reported `io.DisplayFramebufferScale`, so the back
+  buffer rasterized at the wrong physical size on any non-1.0 monitor (the multi-viewport
+  smoke previously had to pin DPI to 1.0). The platform now reports it at bring-up and
+  polls the content scale every `NewFrame`, firing a new
+  `PlatformBackend::SetContentScaleCallback` on change; the app handler snaps
+  (`dpi::NormalizeContentScale`) and updates `FontScaleDpi` so fonts re-rasterize when the
+  window moves to a differently-scaled monitor. The multi-viewport smoke now runs at the
+  monitor's real scale (150% locally) and passes — pop-out coordinates stay consistent at
+  fractional DPI. Two platform tests pin the wiring.
+- **Golden-image pipeline.** `UNIGUI_GOLDEN_CAPTURE=<path>` writes the rendered back
+  buffer as dependency-free RAW RGBA (shared `src/detail/golden_capture.h`, wired into
+  the DX11 renderer and the GL path); `scripts/golden.py` (stdlib-zlib only) provides
+  `raw2png` (minimal PNG codec), `capture` (run an example → PNG) and `diff`
+  (per-channel threshold, changed-region summary, exit code) — the local half of the
+  visual-regression gate, ready for a GPU-capable CI runner.
+- **Singleton inventory.** The 9 `::Instance()` singletons are now inventoried in the
+  development plan with per-context candidacy (fonts/animation/styling/toast
+  per-context; theme registry a read-only catalog) — the design input for the deferred
+  multi-context refactor.
 - **`unigui::im` now wraps 100% of Dear ImGui's practical surface** — the last three
   unwrapped functions landed: `GetFontBaked` (baked font at the current size),
   `GetItemFlags` (last-item generic flags — read back `ImGuiItemFlags_Disabled` under

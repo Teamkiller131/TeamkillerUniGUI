@@ -329,9 +329,24 @@ the banned-parser and regex-ReDoS findings, and the DragFloat unbounded-clamp bu
   other tidy families (deliberate lowercase-suffix / brace-less-statement deviations — not
   bugs) and the lcov line-coverage job. Promote another tidy family into the gate as the
   tree is cleaned under it.
-- **No multi-context story.** ~9 `::Instance()` singletons (EventBus/StyleEngine/fonts/
-  plugins/Settings/…) assume one UI per process — fine today, a wall for embedding two
-  independent UniGUI surfaces or parallel test isolation.
+- **No multi-context story.** **9 `::Instance()` singletons** (inventoried 2026-08) assume
+  one UI per process — fine today, a wall for embedding two independent UniGUI surfaces
+  or parallel test isolation:
+  | Singleton | Module | Per-context candidacy |
+  |-----------|--------|-----------------------|
+  | `config::Store` | config (optional) | app-level config cache — per-app instance |
+  | `Settings` (core) | core | persistence/settings cache — per-app instance |
+  | `events::Bus` | events (optional) | process-wide pub/sub — per-app or process singleton |
+  | `fonts::Manager` | fonts | atlas/registry state — **per-context** (ImGui context owns fonts) |
+  | `fx::AnimationManager` | fx | animation clock — per-context |
+  | `plugin::Manager` | plugin (optional) | plugin registry — per-app |
+  | `styling::Engine` | styling | CSS rules + hot-reload — per-context |
+  | `theme::ThemeRegistry` | theme | preset registry — read-only catalog, could be static |
+  | `Toast` | widgets | transient notifications — per-context |
+  The likely shape of the fix: a `UIContext`/`InstanceRegistry` keyed by ImGui context,
+  with the optional-module singletons moving behind it and the truly global ones
+  (plugin registry) staying process-wide — design input only; the refactor itself
+  remains deferred (P2·L).
 - ~~Keyboard-only nav audit~~ **done** (86 widgets audited, 11 gaps fixed, driven
   keyboard tests); **in-the-wild screen-reader validation** (Narrator/VoiceOver/Orca)
   remains the last a11y item — it needs a human at a real screen reader.
@@ -867,6 +882,42 @@ rather than opening new surfaces. Recommended order:
    wrapper-coverage gate is already at 100% (see item 1).
 6. **P2 — Carry-over (unchanged):** backend runtime proof (GPU runner + golden
    images), multi-context singletons, and the long-horizon backlog from item 8 above.
+
+### Next phase — "DPI & visual-proof" (post-4.9, → 4.10)
+
+The completeness sweep closed every measurable gap it could reach locally. The next
+batch attacks the two standing client-facing pain points that surfaced during it —
+**DPI** (the multi-viewport smoke had to pin DPI to 1.0 because fractional monitor
+scaling mixes physical and logical coordinates) and **visual regression proof** (the
+pixel readback exists but nothing persists it into goldens). Recommended order:
+
+1. ~~**P1 · M — Runtime / fractional DPI.**~~ **Done (post-4.9).** Root cause found and
+   fixed: the GLFW platform never reported `io.DisplayFramebufferScale`, so the back
+   buffer was rasterized at the wrong physical size at any non-1.0 DPI (and the
+   multi-viewport smoke had to pin DPI to 1.0). The platform now reports it at bring-up
+   and on change, polls the content scale every `NewFrame` (one GLFW call) and fires a
+   new `PlatformBackend::SetContentScaleCallback` on change; the app handler snaps via
+   `dpi::NormalizeContentScale` and updates `FontScaleDpi` (dynamic font re-raster).
+   Tests: two platform tests (framebuffer-scale wiring, steady-scale no-fire) and the
+   multi-viewport smoke now runs at the monitor's REAL scale (150% locally) and passes —
+   proving the pop-out coordinate math at fractional DPI. _Remaining tail: per-monitor
+   scale inheritance across monitors needs a multi-monitor runner (CI)._
+2. ~~**P1 · M — Golden-image infrastructure.**~~ **Done (post-4.9).** The C++ side writes
+   the rendered back buffer as dependency-free RAW RGBA when `UNIGUI_GOLDEN_CAPTURE=<path>`
+   is set (shared `src/detail/golden_capture.h`, wired into the DX11 renderer and the GL
+   path); `scripts/golden.py` owns the rest with stdlib-zlib only: `raw2png` (minimal
+   PNG codec), `capture` (run an example → PNG), `diff` (per-channel threshold + changed-
+   region summary + exit code). Roundtrip verified: two captures diff to 0 pixels (exit
+   0), a one-pixel change reports the exact region (exit 1). No committed corpus: goldens
+   are machine-dependent (GPU/DPI/fonts) — the corpus gets generated per-runner once a
+   GPU-capable CI lane exists (the recipe is the `capture` subcommand).
+3. ~~**P1 · S — Singleton inventory.**~~ **Done (post-4.9).** All 9 `::Instance()`
+   singletons inventoried into the Known-gaps section with per-context candidacy
+   (`fonts::Manager`/`fx::AnimationManager`/`styling::Engine`/`Toast` per-context;
+   `ThemeRegistry` a read-only catalog; the rest per-app/process) as the design input
+   for the still-deferred multi-context refactor.
+4. **P2 — Carry-over (unchanged):** the GPU-capable runner itself, multi-context
+   singletons, and the long-horizon backlog from item 8 above.
 
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
