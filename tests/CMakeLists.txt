@@ -46,6 +46,24 @@ target_link_libraries(test_id_conflict PRIVATE
 target_compile_features(test_id_conflict PRIVATE cxx_std_23)
 gtest_discover_tests(test_id_conflict)
 
+# C ABI tests — the .c TU is compiled as plain C (proving the header is a real
+# C surface) and the .cc TU wraps its checks into gtest cases plus the windowed
+# lifecycle run (DX11/WARP, self-gated).
+add_executable(test_capi
+    capi/capi_test.cc
+    capi/capi_c_test.c
+)
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/capi/capi_c_test.c
+    PROPERTIES LANGUAGE C
+)
+target_link_libraries(test_capi PRIVATE
+    GTest::gtest
+    GTest::gtest_main
+    unigui
+)
+target_compile_features(test_capi PRIVATE cxx_std_23)
+gtest_discover_tests(test_capi)
+
 # Interaction-driven integration tests. With UNIGUI_TEST_ENGINE=ON (and the `testengine`
 # vcpkg manifest feature supplying imgui[test-engine]), the Dear ImGui test engine drives
 # real clicks/typing through widgets; otherwise the file compiles to a single visible
@@ -69,7 +87,7 @@ gtest_discover_tests(test_integration)
 # application framework, and keyboard-only navigation. These targets exist ONLY when
 # the engine is compiled in (unlike test_integration's always-present visible skip).
 if(UNIGUI_TEST_ENGINE)
-    foreach(_itest widgets framework keyboard presets im)
+    foreach(_itest widgets framework keyboard presets im capi)
         add_executable(test_interaction_${_itest} interaction/${_itest}_interaction_test.cc)
         target_link_libraries(test_interaction_${_itest} PRIVATE
             GTest::gtest

@@ -16,7 +16,7 @@ project(unigui
     VERSION ${_unigui_vmajor}.${_unigui_vminor}.${_unigui_vpatch}
     DESCRIPTION "Modular Dear ImGui C++ wrapper — core + backends + optional modules"
     HOMEPAGE_URL "https://github.com/Teamkiller131/TeamkillerUniGUI"
-    LANGUAGES CXX
+    LANGUAGES C CXX
 )
 
 # ── Module Options ───────────────────────────────────────────────────────────

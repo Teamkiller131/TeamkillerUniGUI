@@ -35,7 +35,7 @@ unigui_set_warnings(unigui)
 include(GenerateExportHeader)
 generate_export_header(unigui
     EXPORT_MACRO_NAME UNIGUI_API
-    EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/unigui_export.h
+    EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/unigui/unigui_export.h
 )
 
 # ── Dependencies (always) ─────────────────────────────────────────────────────
@@ -199,6 +199,7 @@ target_sources(unigui PRIVATE
     core/main_thread.cc
     core/accessibility.cc
     core/a11y_bridge.cc
+    capi/unigui_capi.cc
     backend/glfw_platform.cc
     backend/opengl3_renderer.cc
     backend/backend_registry.cc
@@ -456,7 +457,7 @@ if(NOT EMSCRIPTEN)
     )
 
     install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/unigui_export.h
+        ${CMAKE_CURRENT_BINARY_DIR}/unigui/unigui_export.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unigui
     )
 endif()
