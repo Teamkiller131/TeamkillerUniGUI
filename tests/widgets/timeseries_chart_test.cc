@@ -299,3 +299,51 @@ TEST_F(SpanLockFrameTest, PurePan_PassesThroughWithoutReimposing) {
     EXPECT_DOUBLE_EQ(s.first, 45.0);
     EXPECT_DOUBLE_EQ(s.second, 95.0);
 }
+
+TEST_F(SpanLockFrameTest, XTickSpacing_RendersWithoutCrash) {
+    // Frame smoke for the X tick path: a fixed X range + a tick step must survive two
+    // frames (frame 2 derives the ticks from the visible window cached on frame 1).
+    chart_->SetXAxisRange(0.0, 20.0);
+    chart_->SetXAxisTickSpacing(2.0);
+    Frame();
+    Frame();
+}
+
+// ── X-axis tick spacing (pure MakeTicks math) ───────────────────────────────────
+// 与 Y 轴同构:乘加(不累加)防漂移、预算守卫防标签洪水。纯函数,无需 ImPlot 帧。
+
+TEST(TimeSeriesChartTest, MakeTicks_AlignsFirstTickUpToStep) {
+    auto t = TimeSeriesChart::MakeTicks(0.5, 5.5, 1.0, TimeSeriesChart::kMaxXTicks);
+    ASSERT_EQ(t.size(), 5u);
+    EXPECT_DOUBLE_EQ(t.front(), 1.0);
+    EXPECT_DOUBLE_EQ(t.back(), 5.0);
+}
+
+TEST(TimeSeriesChartTest, MakeTicks_EvenStep_LandsOnRoundNumbers) {
+    auto t = TimeSeriesChart::MakeTicks(0.0, 10.0, 2.0, TimeSeriesChart::kMaxXTicks);
+    ASSERT_EQ(t.size(), 6u);
+    for (int i = 0; i < 6; ++i)
+        EXPECT_DOUBLE_EQ(t[(size_t) i], 2.0 * i);
+}
+
+TEST(TimeSeriesChartTest, MakeTicks_OverBudget_ReturnsEmpty) {
+    // step 1 over [0,100000] would push 100k labels — the budget guard must refuse.
+    auto t = TimeSeriesChart::MakeTicks(0.0, 100000.0, 1.0, TimeSeriesChart::kMaxXTicks);
+    EXPECT_TRUE(t.empty());
+}
+
+TEST(TimeSeriesChartTest, MakeTicks_MultiplicationDoesNotDrift) {
+    // 0.1 × 3000 ticks: accumulation would visibly drift off 300.0; multiplication must
+    // not, and the sequence must stay strictly increasing.
+    auto t = TimeSeriesChart::MakeTicks(0.0, 300.0, 0.1, 4000);
+    ASSERT_EQ(t.size(), 3001u);
+    EXPECT_NEAR(t.back(), 300.0, 1e-9);
+    for (size_t i = 1; i < t.size(); ++i)
+        EXPECT_GT(t[i], t[i - 1]);
+}
+
+TEST(TimeSeriesChartTest, MakeTicks_InvalidInputs_ReturnEmpty) {
+    EXPECT_TRUE(TimeSeriesChart::MakeTicks(0.0, 10.0, 0.0, 200).empty());   // step <= 0
+    EXPECT_TRUE(TimeSeriesChart::MakeTicks(10.0, 10.0, 1.0, 200).empty());  // hi <= lo
+    EXPECT_TRUE(TimeSeriesChart::MakeTicks(0.0, 10.0, 1.0, 0).empty());     // maxTicks <= 0
+}

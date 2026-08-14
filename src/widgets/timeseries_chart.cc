@@ -53,6 +53,27 @@ void TimeSeriesChart::SetXAxisRange(double min, double max) {
     xMin_ = min;
     xMax_ = max;
 }
+
+std::vector<double> TimeSeriesChart::MakeTicks(double lo, double hi, double step, int maxTicks) {
+    if (!(step > 0.0) || !(hi > lo) || maxTicks <= 0)
+        return {};
+    // Align the first tick up to a multiple of `step`, then multiply rather than
+    // accumulate: `v += step` drifts over hundreds of iterations and the labels stop
+    // landing on round numbers.
+    const double first = std::ceil(lo / step) * step;
+    const double spanTicks = (hi - first) / step;
+    // Count first, emit second: a step of 1 over a range of 100000 would otherwise push
+    // 100k labels through ImPlot and hang the frame. Over budget = fall back to
+    // automatic ticks; a black smear of overlapping labels would be no more useful than
+    // the wrong step.
+    if (spanTicks < 0.0 || spanTicks >= (double) maxTicks)
+        return {};
+    std::vector<double> ticks;
+    ticks.reserve((size_t) spanTicks + 2);
+    for (int i = 0; i <= (int) spanTicks; ++i)
+        ticks.push_back(first + step * i);
+    return ticks;
+}
 void TimeSeriesChart::SetXAxisLabel(const std::string& l) {
     xLabel_ = l;
 }
@@ -246,6 +267,14 @@ void TimeSeriesChart::Render() {
         if (xLimPending_) {
             ImPlot::SetupAxisLimits(ImAxis_X1, pendXMin_, pendXMax_, ImPlotCond_Always);
             xLimPending_ = false;
+        }
+        // Explicit X tick step — keyed off the *visible* X window cached from the
+        // previous frame (lastXMin_/lastXMax_), so after pan/zoom the ticks follow the
+        // view instead of marching off it. Same guards as the Y ticks (budget + multiply).
+        if (xTickSpacing_ > 0.0 && lastXMax_ > lastXMin_) {
+            xTickBuf_ = MakeTicks(lastXMin_, lastXMax_, xTickSpacing_, kMaxXTicks);
+            if (!xTickBuf_.empty())
+                ImPlot::SetupAxisTicks(ImAxis_X1, xTickBuf_.data(), (int) xTickBuf_.size());
         }
 
         // Y axis behavior:
