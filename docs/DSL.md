@@ -503,6 +503,50 @@ builder, a `/* draw lambda */` body), and external bindings become a trailing
 See the `designer` example (examples/designer) for the live preview +
 code-emission workflow around it.
 
+### Scene text format (`ParseScene`)
+
+```cpp
+#include <unigui/dsl/dsl_scene.h>
+SceneParseResult ParseScene(std::string_view text);
+```
+
+The designer tool's in-app scene-editing format: an indentation-based text
+description of a DSL tree, parseable into a renderable `NodePtr` (result:
+`tree` on success, a line-numbered `error` string on failure — never throws).
+Lines indent with spaces (any consistent step; each line becomes a child of
+the nearest preceding line with a smaller indent), `#` starts a comment, and
+the root must be a `window`:
+
+```text
+# demo scene
+window "Settings"
+  vbox
+    text "Welcome"
+    separator
+    hbox
+      checkbox "Wireframe"
+      button "Save" primary
+    slider_float "Gain" 0 1.5
+    for 3
+      label "item"
+```
+
+| Keyword | Meaning |
+|---------|---------|
+| `window "title"` | The root (mandatory, exactly once) |
+| `vbox` / `hbox` / `flex` | Containers |
+| `label` / `text` / `text_wrapped` / `text_disabled` / `bullet_text "text"` | Text nodes |
+| `button "label" [default\|primary\|danger\|success\|warning]` | Button (variant optional) |
+| `checkbox "label"` | Node-held checkbox |
+| `slider_float "label" min max` | Node-held slider |
+| `input_text "label"` | Node-held text input |
+| `separator` / `spacing` | Spacers |
+| `for count` | Repeats its (indented) template `count` times; the template is cloned per iteration so stateful template children get fresh instances |
+
+Callbacks and conditions cannot be expressed in text: `if`/`if_else`/`custom`
+are rejected with a clear error instead of silently degrading. Strings use
+`\"`, `\\`, `\n`, `\t` escapes.
+
 ---
 
 ## Binding: pointer-bound vs node-held state

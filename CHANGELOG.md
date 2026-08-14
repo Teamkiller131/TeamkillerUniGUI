@@ -1,6 +1,18 @@
 ## [Unreleased]
 
 ### Added
+- **Designer in-app scene editing (`dsl::ParseScene`).** Scenes can now be
+  written as text: an indentation-based scene format (`window`/`vbox`/`hbox`/
+  `flex`, text nodes, `button` variants, `checkbox`/`slider_float`/`input_text`,
+  `separator`/`spacing`, and `for` templates that clone per iteration) parses
+  via the new `dsl::ParseScene` (header `unigui/dsl/dsl_scene.h`) into a
+  renderable tree, with line-numbered errors instead of throws (`if`/`custom`
+  are rejected with a clear message — callbacks cannot live in text). The
+  designer example grows an in-app editor pane (type → Apply → live preview +
+  `ToSource`, inline red error), plus `--scene file.dsl` loading with mtime
+  hot-reload. Seven parser tests pin the grammar, round-trip through
+  `ToSource`, template cloning, escapes and every error path; the designer
+  smoke-runs headless with a scene file.
 - **C ABI v2 — form & layout tranche.** The C surface grows additively to
   `UNIGUI_CAPI_ABI_VERSION 2` (v1 bindings stay compatible): `unigui_same_line` /
   `unigui_spacing`, `unigui_radio_button`, `unigui_combo` (caller-owned item

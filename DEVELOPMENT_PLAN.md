@@ -705,14 +705,18 @@ Goal: make UniGUI easy to adopt and contribute to at scale.
   HiDPI scale, and an immediate-mode drawing subset — pure C99, tested from a
   C TU and through the test engine (see §7). _Remaining:_ C#/Python/Go
   bindings over the surface and more `im` calls as demand appears.
-- **P2 · L — Designer / live-preview tool.** _First increment landed (post-4.9)._
+- **P2 · L — Designer / live-preview tool.** _Two increments landed (post-4.9)._
   `examples/designer` previews built-in DSL scenes live (stateful controls stay
   interactive), hot-reloads CSS on top (`--css`), and emits the scene's builder
   expression via the new `dsl::ToSource` — copy-to-clipboard, one click. Ten
   codegen tests pin the emission (structure/indentation, literals, variants,
   compilable callback placeholders); the app runs headless (`--frames N`).
-  _Remaining:_ editing DSL scenes in-app (a text DSL + parser, or drag-drop),
-  and richer code emission (state + callbacks).
+  Increment 2 adds **in-app scene editing**: a text scene format
+  (`dsl::ParseScene`, `unigui/dsl/dsl_scene.h`) typed into the built-in editor
+  pane (inline line-numbered errors, live Apply) or loaded via
+  `--scene file.dsl` with mtime hot-reload — seven parser tests pin the
+  grammar. _Remaining:_ richer code emission (state + callbacks) and
+  drag-drop scene construction.
 - **P2 · S — Community.** Contribution ladder, "good first issue" curation,
   governance doc, public roadmap board mirroring this file.
 
@@ -895,9 +899,18 @@ phase closes by cutting **4.9.0** from the merged work. Recommended order:
    single-line text under `RightToLeft` (`Text`/`TextDisabled`/`TextColored`/
    `LabelText`, inherited by the DSL through the im layer), pinned by six
    headless tests (direction state + item-rect geometry in both directions).
-   _Remaining: deep mirroring (wrapped-text bidi, control internals, table
-   order, tree indents — layout-engine), in-app scene editing, more `im` calls /
-   bindings on demand, fractional-DPI cross-monitor polish (needs a
+   **In-app scene editing landed (designer increment 2)**: scenes can be
+   written as text — an indentation-based scene format parsed by the new
+   `dsl::ParseScene` (callbacks/conditions rejected with clear errors instead
+   of silent degradation; `for` templates clone per iteration) — typed into
+   the designer's editor pane and applied live (inline parse errors), or
+   loaded from `--scene file.dsl` with mtime hot-reload; seven parser tests
+   pin the grammar and every error path. **C ABI v2** appended the form &
+   layout tranche (radio/combo/inputs/slider/progress/tooltip/selectable) —
+   pure append, v1 bindings stay compatible; the pure-C TU proves the new
+   symbols link and the engine clicks/types through each. _Remaining: deep
+   mirroring (wrapped-text bidi, control internals, table order, tree indents
+   — layout-engine), fractional-DPI cross-monitor polish (needs a
    multi-monitor runner), and in-the-wild screen-reader validation (human).
 
 ### Next phase — "completeness sweep" (post-4.9 → 4.10)
