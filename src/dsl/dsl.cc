@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 
+#include <format>
 #include <string>
 #include <utility>
 #include <vector>
@@ -305,6 +306,258 @@ static void renderImpl(const NodePtr& node) {
 void Render(NodePtr root) {
     g_flexCounter = 0;
     renderImpl(root);
+}
+
+// ── Code emission (designer tool) ─────────────────────────────────────────────
+namespace {
+
+std::string Escape(std::string_view s) {
+    std::string out;
+    out.reserve(s.size() + 4);
+    for (const char c : s) {
+        switch (c) {
+        case '\\':
+            out += "\\\\";
+            break;
+        case '"':
+            out += "\\\"";
+            break;
+        case '\n':
+            out += "\\n";
+            break;
+        case '\t':
+            out += "\\t";
+            break;
+        default:
+            out += c;
+            break;
+        }
+    }
+    return out;
+}
+
+std::string Str(std::string_view s) {
+    return "\"" + Escape(s) + "\"";
+}
+
+// 0.5 -> "0.5f", 2 -> "2.0f", 1e-06 -> "1e-06f" (the 'f' suffix keeps the
+// literal a float wherever the builder takes one).
+std::string F(float v) {
+    std::string s = std::format("{:g}", v);
+    if (s.find('.') == std::string::npos && s.find('e') == std::string::npos)
+        s += ".0";
+    return s + "f";
+}
+
+const char* JustifyName(layout::FlexJustify j) {
+    switch (j) {
+    case layout::FlexJustify::Start:
+        return "Start";
+    case layout::FlexJustify::End:
+        return "End";
+    case layout::FlexJustify::Center:
+        return "Center";
+    case layout::FlexJustify::SpaceBetween:
+        return "SpaceBetween";
+    case layout::FlexJustify::SpaceAround:
+        return "SpaceAround";
+    case layout::FlexJustify::SpaceEvenly:
+        return "SpaceEvenly";
+    }
+    return "Start";
+}
+
+const char* VariantName(im::ButtonVariant v) {
+    switch (v) {
+    case im::ButtonVariant::Default:
+        return "Default";
+    case im::ButtonVariant::Primary:
+        return "Primary";
+    case im::ButtonVariant::Danger:
+        return "Danger";
+    case im::ButtonVariant::Success:
+        return "Success";
+    case im::ButtonVariant::Warning:
+        return "Warning";
+    }
+    return "Default";
+}
+
+// Emit one node as a builder expression. Containers lay their children out
+// one per line; leaves stay inline. Returns lines (indented by `pad`).
+std::vector<std::string> Emit(const NodePtr& node, int pad) {
+    std::vector<std::string> lines;
+    if (!node)
+        return lines;
+    const std::string ind(pad, ' ');
+
+    auto emitChildren = [&](const std::vector<NodePtr>& children) {
+        // Child expressions, each rendered at depth pad+2.
+        std::vector<std::string> flat;
+        for (const auto& c : children)
+            for (auto& l : Emit(c, pad + 2))
+                flat.push_back(std::move(l));
+        return flat;
+    };
+
+    switch (node->kind) {
+    case Node::Kind::Window: {
+        const std::string t = Str(node->title);
+        if (node->children.size() == 1) {
+            const auto child = Emit(node->children[0], pad);
+            if (child.empty()) {
+                lines.push_back(ind + "Window(" + t + ", nullptr),");
+            } else if (child.size() == 1) {
+                // Leaf child: the whole expression fits on one line. The child
+                // line carries a trailing comma and its own indent; drop both
+                // before closing the window's own paren.
+                std::string leaf = child[0].substr(pad);
+                if (leaf.ends_with(','))
+                    leaf.pop_back();
+                lines.push_back(ind + "Window(" + t + ", " + leaf + "),");
+            } else {
+                // Container child: collapse its opening line onto the Window
+                // line (de-indented — it now continues the Window's indent),
+                // keep the middle, and REPLACE the child's closer with the
+                // window's own so the parens stay balanced.
+                lines.push_back(ind + "Window(" + t + ", " + child[0].substr(pad));
+                for (std::size_t i = 1; i + 1 < child.size(); ++i)
+                    lines.push_back(child[i]);
+                lines.push_back(ind + "}),");
+            }
+        } else {
+            lines.push_back(ind + "Window(" + t + ", {");
+            for (auto& l : emitChildren(node->children))
+                lines.push_back(std::move(l));
+            lines.push_back(ind + "}),");
+        }
+        break;
+    }
+    case Node::Kind::VBox:
+    case Node::Kind::HBox: {
+        const char* name = node->kind == Node::Kind::VBox ? "VBox" : "HBox";
+        lines.push_back(ind + std::string(name) + "({");
+        for (auto& l : emitChildren(node->children))
+            lines.push_back(std::move(l));
+        lines.push_back(ind + "}),");
+        break;
+    }
+    case Node::Kind::Flex: {
+        lines.push_back(ind + "Flex({");
+        for (auto& l : emitChildren(node->children))
+            lines.push_back(std::move(l));
+        if (!node->flexGrow.empty()) {
+            std::string w = "{";
+            for (std::size_t i = 0; i < node->flexGrow.size(); ++i) {
+                if (i)
+                    w += ", ";
+                w += F(node->flexGrow[i]);
+            }
+            w += "}";
+            lines.push_back(ind + "}, " + w + ", " + F(node->flexGap) +
+                            ", FlexJustify::" + JustifyName(node->flexJustify) + "),");
+        } else {
+            lines.push_back(ind + "}, " + F(node->flexGap) +
+                            ", FlexJustify::" + JustifyName(node->flexJustify) + "),");
+        }
+        break;
+    }
+    case Node::Kind::Button: {
+        if (node->buttonVariant == im::ButtonVariant::Default) {
+            lines.push_back(ind + "Button(" + Str(node->label) + "),");
+        } else {
+            lines.push_back(ind + "Button(" + Str(node->label) +
+                            ", ButtonVariant::" + VariantName(node->buttonVariant) + "),");
+        }
+        break;
+    }
+    case Node::Kind::Label:
+    case Node::Kind::Text:
+    case Node::Kind::TextWrapped:
+    case Node::Kind::TextDisabled:
+    case Node::Kind::BulletText: {
+        static const char* kNames[] = {"Label", "Text", "TextWrapped", "TextDisabled",
+                                       "BulletText"};
+        const char* name =
+            kNames[static_cast<int>(node->kind) - static_cast<int>(Node::Kind::Label)];
+        lines.push_back(ind + std::string(name) + "(" + Str(node->text) + "),");
+        break;
+    }
+    case Node::Kind::CheckBox: {
+        lines.push_back(ind + "CheckBox(" + Str(node->label) + ")," +
+                        (node->boolBinding ? " // bound to an external bool" : ""));
+        break;
+    }
+    case Node::Kind::SliderFloat: {
+        lines.push_back(ind + "SliderFloat(" + Str(node->label) + ", " + F(node->minValue) + ", " +
+                        F(node->maxValue) + ")," +
+                        (node->floatBinding ? " // bound to an external float" : ""));
+        break;
+    }
+    case Node::Kind::InputText: {
+        lines.push_back(ind + "InputText(" + Str(node->label) + ")," +
+                        (node->strBinding ? " // bound to an external string" : ""));
+        break;
+    }
+    case Node::Kind::Separator:
+        lines.push_back(ind + "Separator(),");
+        break;
+    case Node::Kind::Spacing:
+        lines.push_back(ind + "Spacing(),");
+        break;
+    case Node::Kind::If: {
+        const bool hasElse = node->children.size() > 1;
+        const char* name = hasElse ? "IfElse" : "If";
+        // The condition cannot be recovered from a std::function, so emit a
+        // compilable placeholder (`[] { return true; }`) with a comment.
+        if (hasElse) {
+            auto thenLines = Emit(node->children[0], pad + 2);
+            auto elseLines = Emit(node->children[1], pad + 2);
+            lines.push_back(ind + std::string(name) + "([] { return true; } /* condition */,");
+            for (auto& l : thenLines)
+                lines.push_back(std::move(l));
+            for (auto& l : elseLines)
+                lines.push_back(std::move(l));
+            lines.push_back(ind + "),");
+        } else if (!node->children.empty()) {
+            lines.push_back(ind + std::string(name) + "([] { return true; } /* condition */,");
+            for (auto& l : Emit(node->children[0], pad + 2))
+                lines.push_back(std::move(l));
+            lines.push_back(ind + "),");
+        } else {
+            lines.push_back(ind + std::string(name) +
+                            "([] { return true; } /* condition */, nullptr),");
+        }
+        break;
+    }
+    case Node::Kind::For: {
+        lines.push_back(ind + "For(" + std::to_string(node->count) +
+                        ", [](int i) { /* item builder */ return Label(std::to_string(i)); }),");
+        break;
+    }
+    case Node::Kind::Custom:
+        lines.push_back(ind + "Custom([] { /* draw lambda */ }),");
+        break;
+    }
+    return lines;
+}
+
+} // namespace
+
+std::string ToSource(const NodePtr& root) {
+    if (!root)
+        return {};
+    std::string out = "using namespace unigui::dsl;\n\nNodePtr ui =\n";
+    auto lines = Emit(root, 4);
+    for (const auto& l : lines)
+        out += l + "\n";
+    // Drop the trailing comma the expression emitter added, then terminate.
+    if (!out.empty() && out.back() == '\n')
+        out.pop_back();
+    if (!out.empty() && out.back() == ',')
+        out.pop_back();
+    out += ";\n";
+    return out;
 }
 
 } // namespace unigui::dsl
