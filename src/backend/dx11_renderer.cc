@@ -5,11 +5,15 @@
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
 
+#include "../detail/golden_capture.h"
+
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
+#include <vector>
 #ifdef _WIN32
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -139,7 +143,8 @@ void DX11Renderer::VerifyRenderIfEnabled() {
         const char* e = std::getenv("UNIGUI_RENDER_VERIFY");
         return e && e[0] == '1';
     }();
-    if (!verify || !swapchain_ || !device_ || !ctx_) {
+    const char* golden = detail::GoldenCapturePath();
+    if ((!verify && !golden) || !swapchain_ || !device_ || !ctx_) {
         if (verify)
             lastVerifyDrawn_ = -1;
         return;
@@ -174,13 +179,24 @@ void DX11Renderer::VerifyRenderIfEnabled() {
         back->Release();
         return;
     }
+    const uint8_t* px = static_cast<const uint8_t*>(m.pData);
+
+    // Golden capture: dump the FULL buffer (row pitch may exceed width*4 — copy
+    // tightly packed rows so the raw format is plain RGBA).
+    if (golden) {
+        std::vector<uint8_t> packed((size_t) td.Width * td.Height * 4u);
+        for (UINT y = 0; y < td.Height; ++y)
+            std::memcpy(packed.data() + (size_t) y * td.Width * 4u,
+                        px + (size_t) y * m.RowPitch, (size_t) td.Width * 4u);
+        if (!detail::SaveGoldenRaw(golden, (int) td.Width, (int) td.Height, packed.data()))
+            UNIGUI_LOG_WARN("golden capture: failed to write {}", golden);
+    }
 
     // Sample a coarse grid (cheap) and count pixels that differ from the clear colour.
     auto to8 = [](float v) { return (int) std::lround(v * 255.0f); };
     const int cr = to8(clearR_), cg = to8(clearG_), cb = to8(clearB_);
     const int step = 16;
     int total = 0, nonClear = 0;
-    const uint8_t* px = static_cast<const uint8_t*>(m.pData);
     for (UINT y = 0; y < td.Height; y += step) {
         for (UINT x = 0; x < td.Width; x += step) {
             const size_t i = ((size_t) y * m.RowPitch) + (size_t) x * 4u;
@@ -194,9 +210,11 @@ void DX11Renderer::VerifyRenderIfEnabled() {
     staging->Release();
     back->Release();
 
-    lastVerifyDrawn_ = (nonClear >= 4) ? 1 : 0;
-    UNIGUI_LOG_INFO("[render-verify] nonClear={}/{} drawn={}", nonClear, total,
-                    lastVerifyDrawn_ ? "true" : "false");
+    if (verify) {
+        lastVerifyDrawn_ = (nonClear >= 4) ? 1 : 0;
+        UNIGUI_LOG_INFO("[render-verify] nonClear={}/{} drawn={}", nonClear, total,
+                        lastVerifyDrawn_ ? "true" : "false");
+    }
 }
 void DX11Renderer::SetClearColor(float r, float g, float b, float a) {
     clearR_ = r;
