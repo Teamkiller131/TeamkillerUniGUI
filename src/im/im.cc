@@ -688,6 +688,9 @@ ImFont* GetFont() {
 float GetFontSize() {
     return ImGui::GetFontSize();
 }
+ImFontBaked* GetFontBaked() {
+    return ImGui::GetFontBaked();
+}
 ImGuiStyle& GetStyle() {
     return ImGui::GetStyle();
 }
@@ -873,6 +876,9 @@ bool IsItemClicked(ImGuiMouseButton mouseButton) {
 }
 bool IsItemVisible() {
     return ImGui::IsItemVisible();
+}
+ImGuiItemFlags GetItemFlags() {
+    return ImGui::GetItemFlags();
 }
 bool IsItemEdited() {
     return ImGui::IsItemEdited();
@@ -1070,6 +1076,9 @@ void TreePop() {
 }
 void SetNextItemOpen(bool isOpen, ImGuiCond cond) {
     ImGui::SetNextItemOpen(isOpen, cond);
+}
+bool TreeNodeGetOpen(ImGuiID storageId) {
+    return ImGui::TreeNodeGetOpen(storageId);
 }
 bool CollapsingHeader(std::string_view label, ImGuiTreeNodeFlags flags) {
     return ImGui::CollapsingHeader(Z(label).c_str(), flags);

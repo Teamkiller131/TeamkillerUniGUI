@@ -814,6 +814,38 @@ TEST_F(ImTest, WindowQueries_DoNotCrash) {
 
 // ── A6: Misc utilities ────────────────────────────────────────────────────────
 
+// ── The final three practical-surface wrappers (100% coverage, post-4.9) ───────
+
+TEST_F(ImTest, GetFontBaked_MatchesGetFontAtCurrentSize) {
+    ImFontBaked* baked = unigui::im::GetFontBaked();
+    ASSERT_NE(baked, nullptr);
+    EXPECT_EQ(baked, unigui::im::GetFont()->GetFontBaked(unigui::im::GetFontSize()));
+}
+
+TEST_F(ImTest, GetItemFlags_ReflectsBeginDisabled) {
+    ImGui::Begin("flags_host");
+    unigui::im::BeginDisabled(true);
+    unigui::im::Button("in");
+    EXPECT_NE(unigui::im::GetItemFlags() & ImGuiItemFlags_Disabled, 0)
+        << "an item inside BeginDisabled must report the Disabled flag";
+    unigui::im::EndDisabled();
+    unigui::im::Button("out");
+    EXPECT_EQ(unigui::im::GetItemFlags() & ImGuiItemFlags_Disabled, 0)
+        << "the flag must not leak past EndDisabled";
+    ImGui::End();
+}
+
+TEST_F(ImTest, TreeNodeGetOpen_ReadsStorageState) {
+    ImGui::Begin("tree_host");
+    const ImGuiID id = unigui::im::GetID("node");
+    EXPECT_FALSE(unigui::im::TreeNodeGetOpen(id)) << "new node starts closed";
+    unigui::im::SetNextItemOpen(true, ImGuiCond_Always);
+    if (unigui::im::TreeNodeEx("node"))
+        unigui::im::TreePop();
+    EXPECT_TRUE(unigui::im::TreeNodeGetOpen(id)) << "SetNextItemOpen(true) must be readable back";
+    ImGui::End();
+}
+
 TEST_F(ImTest, CalcTextSize_PositiveWidth) {
     ImVec2 sz = unigui::im::CalcTextSize("hello");
     EXPECT_GT(sz.x, 0.f);
