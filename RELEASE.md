@@ -1,3 +1,62 @@
+# TeamkillerUniGUI v4.9.0 Release Notes
+
+**Release Date:** 2026-08-14 | **Version:** 4.9.0 | **Widgets:** 95 | **Tests:** 1305 (1342 with the test engine)
+
+> The **client-suite release**: opt-in multi-viewport with runtime proof, a trading-grade
+> `TimeSeriesChart` hardening batch (span-lock / tick-spacing / range semantics), the
+> `im` wrapper batch (248 functions), and the InputText / FilePath fixes that surfaced
+> from a real client. Every headline feature ships with pixel-level or engine-driven
+> tests — see `CHANGELOG.md` for the full list.
+
+---
+
+## Highlights
+
+### Multi-viewport, proven at runtime
+
+`AppConfig::multiViewport` (opt-in) lets ImGui windows be dragged out of the main
+window into real OS windows and merged back. Landed with two latent bugs fixed (the
+DX11 per-frame RTV rebind — a popped-out window used to blank the main window — and
+the init-order trap that made the flag useless), the backdrop-clear contract extended
+to secondary viewports (translucent materials no longer render against upstream's
+hardcoded black), and a pixel-level `DXMultiViewportSmoke` that pops a window out on a
+real DX11 swapchain and asserts the main window keeps rendering — `UNIGUI_RENDER_VERIFY`
+now works on DX11. The capability matrix (Vulkan/SDL3/Metal still build-only) is
+documented in `docs/BACKENDS.md` §7.1.
+
+### `TimeSeriesChart` for traders
+
+`SetYAxisSpanLock(span)` pins the Y-axis *height* while keeping panning (a trader's
+"fixed axis" — wheel-zoom snaps back in one frame, centre kept); `SetYAxisTickSpacing`
+sets explicit gridline steps; auto-fit padding became span-relative; `SetYAxisRange`
+applies-and-releases (the `ImPlotCond_Once` trap is gone); `SetPanEnabled`/
+`SetZoomEnabled` are finally deprecated — they never gated anything. All of it
+driven-tested through real ImGui+ImPlot frames.
+
+### `im` layer grows to 248 functions
+
+Tables, printf-style text, char-buffer inputs, the style/ID stacks, clipboard,
+viewport/context/font accessors — with engine-driven interaction tests for the
+sortable-header and EnterReturnsTrue paths. Fixed en route: `InputText` now persists
+typing under `EnterReturnsTrue` (a password box you could not type into), and
+`FilePath` round-trips non-ASCII paths on Windows.
+
+---
+
+## Upgrade Guide
+
+### From v4.8.x
+
+1. **No source breaks** — the only API changes are additions plus the deprecated
+   `TimeSeriesChart::SetPanEnabled/SetZoomEnabled`/`WithPanEnabled/WithZoomEnabled`
+   no-ops (compile-time warnings; removal waits for a major).
+2. **Opt in to multi-viewport:** `cfg.multiViewport = true` — default off (it changes
+   window handling for the whole application).
+3. **New readback for CI:** `UNIGUI_RENDER_VERIFY=1` now also covers DX11
+   (`DX11Renderer::LastVerifyDrawn()`).
+
+---
+
 # TeamkillerUniGUI v3.8.0 Release Notes
 
 **Release Date:** 2026-06-24 | **Version:** 3.8.0 | **Widgets:** 93 | **Tests:** 1000+

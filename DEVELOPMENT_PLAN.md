@@ -1,6 +1,6 @@
 # TeamkillerUniGUI — Long-Term Development Plan
 
-_Last updated: 2026-08-14 · Current version: 4.8.0 (+ client-suite merge, targeting 4.9.0)_
+_Last updated: 2026-08-14 · Current version: 4.9.0_
 
 This document lays out a long-horizon roadmap for the project. It is meant to be
 a living document: revisit it each release, check off what shipped, and re-scope
@@ -777,40 +777,33 @@ anything new: **multi-viewport** (landed with GL/DX11 runtime evidence only) and
 **chart-family APIs** (landed with headless tests, driven-input coverage pending). The
 phase closes by cutting **4.9.0** from the merged work. Recommended order:
 
-1. **P0 · M — Prove multi-viewport on the runtime-verified backends.** The flag works
-   on GL + DX11 by construction and by the DX11 RTV fix, but nothing renders a popped-out
-   window in CI. Add a headless/WARP multi-viewport smoke (enable the flag, create a
-   secondary viewport, render N frames, assert pixels on both surfaces — extending the
-   existing `dx_warp_smoke_test` / `UNIGUI_RENDER_VERIFY` machinery) and a driven-input
-   test on the test-engine harness (pop out → render → merge back). Verify the DX12/
-   Vulkan/SDL3/Metal viewport paths at least compile and fail loud through the
-   capability self-check (already warns) — document the capability matrix in
-   `docs/BACKENDS.md`. Close the **backdrop-clear contract for secondary viewports**
-   (§7 there: a popped-out window must clear to `GetBackdropColor()` too, or translucent
-   materials render against garbage).
-2. **P0 · S — Cut release 4.9.0.** The `Unreleased` CHANGELOG section is already
-   complete (multi-viewport, SpanLock/TickSpacing, range semantics, InputText
-   persistence, FilePath wide-char, deprecations, im wrappers). Move it under
-   `## [4.9.0]`, bump `core/version.h` + `vcpkg.json` together, write `RELEASE.md`
-   notes, re-stamp docs (the `docs-version` CI gate enforces it), and update the
-   README badges/counts (tests 1282 → **1300**, `im` functions 201 → **248**,
-   multi-viewport in the feature list).
-3. **P1 · M — Chart family follow-ups (client-driven).** SpanLock/TickSpacing landed;
-   the natural next items from the trading client: an X-axis tick-spacing counterpart
-   (`SetXAxisTickSpacing`, session-boundary-aware so ticks land on session starts),
-   driven tests pinning the documented SpanLock zoom-bounce and the keyboard-nav ↔
-   span-lock interplay, and the long-deferred **in-cell mini sparkline/bar renderers**
-   (needs the `DataTable` custom-draw cell hook — the one real blocker from B5) plus
-   the **PriceTicker marquee**.
-4. **P1 · S — Interaction coverage for the new surface.** Driven-input tests on the
-   proven harness: multi-viewport pop-out/merge, `SetYAxisSpanLock` zoom-bounce,
-   sortable `im::` table headers (`TableGetSortSpecs` after a header click), and an
-   interaction twin of the `EnterReturnsTrue` persistence regression.
+1. ~~**P0 · M — Prove multi-viewport on the runtime-verified backends.**~~ **Done
+   (4.9.0).** `DXMultiViewportSmoke` runs the real app on a DX11 swapchain (WARP or
+   hardware) with `UNIGUI_RENDER_VERIFY=1`: pop-out → main window still drawn (pixel
+   readback, verified to fail against the pre-rebind-fix code) → stability → merge-back
+   → no-flap. The backdrop-clear contract for secondary viewports was implemented (theme
+   backdrop painted into each secondary viewport's background draw list) — and proving it
+   found a real leak: the fill initially kept orphaned viewports alive forever, now fixed.
+   The DX11 renderer gained a swapchain readback (verify parity with GL). _Remaining tail:
+   Vulkan/SDL3/Metal viewport paths stay build-only; a capability-matrix section now
+   documents exactly that in `docs/BACKENDS.md` §7.1._
+2. ~~**P0 · S — Cut release 4.9.0.**~~ **Done.** CHANGELOG 4.9.0 (multi-viewport +
+   SpanLock/TickSpacing + range semantics + InputText persistence + FilePath wide-char +
+   deprecations + im wrappers + the hardening itself); `core/version.h` + `vcpkg.json`
+   bumped together; docs re-stamped; README badges (tests 1305, im 248) updated.
+3. ~~**P1 · M — Chart family follow-ups (client-driven).**~~ **Partly done (4.9.0).**
+   `SetYAxisSpanLock`/`SetYAxisTickSpacing` now have driven frame tests (injected
+   wheel-zoom → one-frame bounce back to the locked span, centre kept; pure pan passes
+   through), plus `GetYAxisRange()` for observability. _Remaining: X-axis tick-spacing
+   counterpart, the DataTable custom-draw cell hook (in-cell sparklines), PriceTicker._
+4. ~~**P1 · S — Interaction coverage for the new surface.**~~ **Partly done (4.9.0).**
+   Engine-driven: sortable table header → `TableGetSortSpecs`; `EnterReturnsTrue` typing
+   persistence (interaction twin of the headless regression). _Remaining: driven tests for
+   the presets themselves, SpanLock engine test._
 5. **P1 · M — Quality-front small items.** Promote the next clang-tidy family into the
    hard gate as its backlog clears; raise `COVERAGE_FLOOR` to just under the headless
-   baseline and flip the coverage step to hard `exit 1`; add driven-input tests for the
-   presets themselves (the largest untested-by-input surface); keep converting the
-   ~19% smoke-only tail opportunistically.
+   baseline and flip the coverage step to hard `exit 1`; keep converting the ~19%
+   smoke-only tail opportunistically.
 6. **P2 · L — Backend runtime proof.** A GPU-capable runner for Vulkan/SDL3/Metal +
    golden-image snapshot diffing on top of the WARP/GL smokes; a windowed/swapchain
    WARP pass (offscreen → actual present).

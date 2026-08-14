@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [4.9.0] - 2026-08-14
+
 ### Added
 - **Multi-viewport runtime proof (DX11).** The opt-in flag now has pixel-level CI
   coverage, not just code review: `DXMultiViewportSmoke` runs the real app on a DX11
@@ -30,8 +32,6 @@
   clicking a sortable table header arms `TableGetSortSpecs()`, and typing into an
   `EnterReturnsTrue` input persists every keystroke (the flag only changes the return
   value — never the write-back).
-
-### Changed
 - **Opt-in multi-viewport** — `AppConfig::multiViewport` (default off) lets ImGui windows be
   dragged **outside** the main window, where each becomes a real OS window
   (`ImGuiConfigFlags_ViewportsEnable`); dragging one back inside merges it into the main

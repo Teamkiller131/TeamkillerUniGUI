@@ -1,6 +1,6 @@
 # TeamkillerUniGUI Documentation
 
-> **Version 4.8.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
+> **Version 4.9.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
 
 English | [中文索引](README_zh.md)
 
