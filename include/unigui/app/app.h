@@ -28,6 +28,17 @@ struct AppConfig {
     /// fallback elsewhere). Off by default (zero cost); apps can also call
     /// `a11y::SetEnabled`/`InstallSystemBridge` directly.
     bool accessibility = false;
+    /// Multi-viewport: let ImGui windows be dragged **outside** the main window, where
+    /// each becomes a real OS window (`ImGuiConfigFlags_ViewportsEnable`); dragging one
+    /// back inside merges it into the main viewport again. Needed for "pop out this
+    /// panel onto my second monitor" workflows.
+    ///
+    /// Off by default and deliberately opt-in: enabling it changes window handling for
+    /// the *whole* application (extra OS windows, per-viewport DPI, focus routing), so
+    /// an app that doesn't need it should not pay for it. Requires a platform+renderer
+    /// pair with viewport support — every backend here qualifies except Emscripten,
+    /// where the flag is ignored (a browser page has no secondary OS windows).
+    bool multiViewport = false;
 };
 
 bool Init(const AppConfig& config);

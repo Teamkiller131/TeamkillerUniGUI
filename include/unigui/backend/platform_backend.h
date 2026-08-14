@@ -51,6 +51,21 @@ public:
     /// Swap front/back buffers (OpenGL/Vulkan present).
     virtual void SwapBuffers() {}
 
+    /// Save / restore the platform's *current rendering context* around Dear ImGui's
+    /// multi-viewport pass (`UpdatePlatformWindows` + `RenderPlatformWindowsDefault`).
+    ///
+    /// Why this exists: `RenderPlatformWindowsDefault()` makes each secondary window's
+    /// GL context current and does **not** put the original one back, so the next frame
+    /// would draw into the wrong context. Every upstream GLFW+GL example brackets that
+    /// call with `glfwGetCurrentContext()` / `glfwMakeContextCurrent()`. That bracket is
+    /// GLFW-specific and platform-specific code belongs in `src/backend/`, so the app
+    /// loop asks the platform for it instead of calling GLFW itself.
+    ///
+    /// Default = no-op: correct for renderers with no per-thread current context
+    /// (DX11/DX12/Vulkan/Metal). Returns an opaque handle; `nullptr` when not applicable.
+    virtual void* SaveRenderContext() { return nullptr; }
+    virtual void RestoreRenderContext(void* /*ctx*/) {}
+
     /// (Vulkan) Append the VkInstance extension names this platform needs to create
     /// a window surface (e.g. VK_KHR_surface + the OS-specific surface extension).
     /// Default: none — the platform has no Vulkan surface support.

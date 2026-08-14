@@ -33,3 +33,7 @@ node_modules/
 package.json
 package-lock.json
 .claude/
+
+# 运行示例/客户端时在仓库根写下的运行期产物(非源码)
+*.log
+profiles/

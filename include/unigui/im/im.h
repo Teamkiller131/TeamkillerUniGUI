@@ -120,6 +120,16 @@ bool InputDouble(std::string_view label, double* value, double step = 0.0, doubl
 bool InputText(std::string_view label, std::string* value, std::size_t maxLength = 256,
                ImGuiInputTextFlags flags = 0);
 /// Single-line text input with a greyed-out `hint` shown when the field is empty.
+/// char-buffer overloads, for call sites that own a fixed `char[]` rather than a
+/// std::string (filter boxes, log scratch buffers). Same semantics as ImGui's —
+/// `bufSize` includes the terminating NUL.
+bool InputText(std::string_view label, char* buf, std::size_t bufSize,
+               ImGuiInputTextFlags flags = 0);
+bool InputTextWithHint(std::string_view label, std::string_view hint, char* buf,
+                       std::size_t bufSize, ImGuiInputTextFlags flags = 0);
+bool InputTextMultiline(std::string_view label, char* buf, std::size_t bufSize,
+                        const ImVec2& size = ImVec2(0, 0), ImGuiInputTextFlags flags = 0);
+
 bool InputTextWithHint(std::string_view label, std::string_view hint, std::string* value,
                        std::size_t maxLength = 256, ImGuiInputTextFlags flags = 0);
 /// Multi-line text input bound to a std::string.
@@ -220,6 +230,136 @@ ImVec2 GetWindowPos();
 ImVec2 GetWindowSize();
 float GetWindowWidth();
 float GetWindowHeight();
+
+// ── Formatted text (printf-style) ─────────────────────────────────────────────
+//
+// The string_view Text/TextDisabled/… above cover the common case. These cover
+// the other one: call sites that already carry a format string.
+//
+// They exist so that migrating `ImGui::Text("%d 条", n)` is a *symbol swap*
+// rather than a hand-rewrite into some other formatting library. Rewriting 100+
+// format strings by hand is precisely how an argument gets dropped or reordered
+// and nobody notices until the number on screen is wrong — the compiler cannot
+// help once the format string is gone. Here IM_FMTARGS keeps compiler format
+// checking on (GCC/Clang), so a mismatched argument is a build error.
+void TextF(const char* fmt, ...) IM_FMTARGS(1);
+void TextColoredF(const ImVec4& color, const char* fmt, ...) IM_FMTARGS(2);
+void TextDisabledF(const char* fmt, ...) IM_FMTARGS(1);
+void TextWrappedF(const char* fmt, ...) IM_FMTARGS(1);
+void LabelTextF(const char* label, const char* fmt, ...) IM_FMTARGS(2);
+void BulletTextF(const char* fmt, ...) IM_FMTARGS(1);
+void SetTooltipF(const char* fmt, ...) IM_FMTARGS(1);
+
+// ── Tables ────────────────────────────────────────────────────────────────────
+//
+// Thin pass-throughs. `unigui::Table` is the retained-state widget for ordinary
+// data grids; these are for the cases that need the immediate-mode API directly
+// (custom per-cell layout, mixed content, dynamic column sets).
+bool BeginTable(std::string_view strId, int columns, ImGuiTableFlags flags = 0,
+                const ImVec2& outerSize = ImVec2(0.0f, 0.0f), float innerWidth = 0.0f);
+/// Only call when BeginTable returned true.
+void EndTable();
+void TableNextRow(ImGuiTableRowFlags rowFlags = 0, float minRowHeight = 0.0f);
+/// Advance to the next column; returns false when that column is clipped/hidden,
+/// which is the cue to skip the work of drawing it.
+bool TableNextColumn();
+bool TableSetColumnIndex(int columnN);
+void TableSetupColumn(std::string_view label, ImGuiTableColumnFlags flags = 0,
+                      float initWidthOrWeight = 0.0f, ImGuiID userId = 0);
+/// Freeze the first `cols` columns / `rows` rows while the rest scrolls.
+void TableSetupScrollFreeze(int cols, int rows);
+void TableHeadersRow();
+void TableHeader(std::string_view label);
+/// Name of a column (-1 = the current one). Points into ImGui's table storage —
+/// valid until the next table call, so copy it if you keep it.
+const char* TableGetColumnName(int columnN = -1);
+/// Current sort spec, or null when the table is not sortable / not dirty.
+ImGuiTableSortSpecs* TableGetSortSpecs();
+int  TableGetColumnCount();
+int  TableGetColumnIndex();
+int  TableGetRowIndex();
+
+// ── Legacy columns ────────────────────────────────────────────────────────────
+// Superseded by Tables in ImGui; wrapped only so existing call sites can move
+// off raw ImGui:: without being rewritten in the same change.
+void Columns(int count = 1, std::string_view id = {}, bool borders = true);
+void NextColumn();
+void SetColumnWidth(int columnIndex, float width);
+
+// ── Windows ───────────────────────────────────────────────────────────────────
+/// Full windows. Most app code should be inside the scaffold's layout instead;
+/// these are for tool windows and overlays.
+bool Begin(std::string_view name, bool* pOpen = nullptr, ImGuiWindowFlags flags = 0);
+void End();
+/// Per-window font scaling. Prefer the global font-size preference — this exists
+/// for the odd panel that genuinely needs to differ.
+void SetWindowFontScale(float scale);
+
+// ── Metrics & context accessors ───────────────────────────────────────────────
+// (GetTime / CalcTextSize / GetContentRegionAvail / GetCursorScreenPos /
+//  GetWindowDrawList already live in the sections above — do not redeclare.)
+ImFont* GetFont();
+float GetFontSize();
+/// The live style block, e.g. to read FramePadding or a theme color.
+ImGuiStyle& GetStyle();
+/// The IO block — font scale, display size, input state.
+ImGuiIO& GetIO();
+/// The active ImGui context. Needed only by code that reaches into internals;
+/// prefer the typed accessors above.
+ImGuiContext* GetCurrentContext();
+
+// ── Style stack ───────────────────────────────────────────────────────────────
+//
+// These exist so business code never has to reach for raw `ImGui::` just to tint
+// a line of text. Every Push must be matched by a Pop in the same frame — a leak
+// bleeds into unrelated widgets and is painful to track down, so keep the pair
+// adjacent and prefer the smallest possible scope.
+void PushStyleColor(ImGuiCol idx, ImU32 color);
+void PushStyleColor(ImGuiCol idx, const ImVec4& color);
+/// Pop `count` colors pushed by PushStyleColor.
+void PopStyleColor(int count = 1);
+
+void PushStyleVar(ImGuiStyleVar idx, float value);
+void PushStyleVar(ImGuiStyleVar idx, const ImVec2& value);
+/// Pop `count` vars pushed by PushStyleVar.
+void PopStyleVar(int count = 1);
+
+/// Resolve a style color to a packed 32-bit value (respecting the current alpha
+/// multiplier), for draw-list calls that take ImU32.
+ImU32 GetColorU32(ImGuiCol idx, float alphaMul = 1.0f);
+ImU32 GetColorU32(const ImVec4& color);
+/// The current value of a style color, e.g. to derive a hover/disabled shade.
+const ImVec4& GetStyleColorVec4(ImGuiCol idx);
+
+// ── Text wrapping ─────────────────────────────────────────────────────────────
+/// Wrap subsequent text at `wrapLocalPosX` (window-local X). 0.0f wraps at the
+/// content region edge; <0 disables wrapping.
+///
+/// Prefer this over letting a long string size the window: an auto-resizing
+/// window grows to fit the longest unwrapped line and can end up wider than the
+/// screen, clipping its own content.
+void PushTextWrapPos(float wrapLocalPosX = 0.0f);
+void PopTextWrapPos();
+
+// ── ID stack ──────────────────────────────────────────────────────────────────
+/// Scope widget IDs so identical labels in a loop (table rows, list items) do
+/// not collide. Pair every Push with a Pop.
+void PushID(std::string_view strId);
+void PushID(int intId);
+void PushID(const void* ptrId);
+void PopID();
+/// Compute the ID a widget with this label would get in the current scope.
+ImGuiID GetID(std::string_view strId);
+
+// ── Clipboard ─────────────────────────────────────────────────────────────────
+void SetClipboardText(std::string_view text);
+/// Empty when the clipboard holds no text.
+std::string GetClipboardText();
+
+// ── Viewport ──────────────────────────────────────────────────────────────────
+/// The primary viewport — use `->WorkPos` / `->WorkSize` to size content against
+/// the usable area (excludes menu bars and other decorations).
+ImGuiViewport* GetMainViewport();
 
 // ── Clip rect ─────────────────────────────────────────────────────────────────
 /// Push a scissor rectangle for rendering and hit-testing. Set

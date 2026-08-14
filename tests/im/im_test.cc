@@ -3,6 +3,7 @@
 #include <imgui.h>
 
 #include <gtest/gtest.h>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -833,4 +834,150 @@ TEST_F(ImTest, MiscUtilities_DoNotCrash) {
     unigui::im::SetMouseCursor(ImGuiMouseCursor_Hand);
     EXPECT_EQ(unigui::im::GetMouseCursor(), ImGuiMouseCursor_Hand);
     ImGui::End();
+}
+
+// ── Regression: EnterReturnsTrue must not swallow the typing ────────────────
+//
+// `EditString` used to write back to the caller's std::string only when the
+// widget returned true. With ImGuiInputTextFlags_EnterReturnsTrue that return
+// fires *only on the Enter frame*, so every keystroke was discarded and the
+// field visibly emptied itself the moment it lost focus — a password box you
+// could not type into. Reported 2026-07-27 against a change-password dialog.
+//
+// The flag is documented as changing the *return value*; nothing at the call
+// site hints that it also disables persistence. Hence this test, which types
+// like a human does: focus, one character per frame, and never press Enter.
+namespace {
+
+/// Runs `body` inside a real frame; returns when the frame is rendered.
+void RunFrame(const std::function<void()>& body) {
+    ImGui::NewFrame();
+    ImGui::Begin("host");
+    body();
+    ImGui::End();
+    ImGui::Render();
+}
+
+} // namespace
+
+TEST(ImInputTextPersistence, EnterReturnsTrueStillKeepsTypedText) {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2(800, 600);
+    io.DeltaTime = 1.0f / 60.0f;
+    io.Fonts->Build();
+
+    std::string value;
+    const ImGuiInputTextFlags flags =
+        ImGuiInputTextFlags_Password | ImGuiInputTextFlags_EnterReturnsTrue;
+
+    // Frame 1: focus the field.
+    RunFrame([&] {
+        ImGui::SetKeyboardFocusHere();
+        unigui::im::InputText("##pwd", &value, 128, flags);
+    });
+
+    // Frames 2..4: type "abc", one character per frame, Enter never pressed.
+    for (char c : {'a', 'b', 'c'}) {
+        io.AddInputCharacter(static_cast<unsigned int>(c));
+        RunFrame([&] { unigui::im::InputText("##pwd", &value, 128, flags); });
+    }
+
+    // Frame 5: the field loses focus. Under the old behaviour `value` was still
+    // empty here and the next frame repainted an empty box.
+    RunFrame([&] {
+        unigui::im::InputText("##pwd", &value, 128, flags);
+        ImGui::SetKeyboardFocusHere();
+        ImGui::InputText("##elsewhere", nullptr, 0);
+    });
+
+    EXPECT_EQ(value, "abc")
+        << "typing was discarded: EnterReturnsTrue must not disable write-back";
+
+    ImGui::DestroyContext();
+}
+
+// ── Style / ID / clipboard / viewport wrappers ──────────────────────────────
+//
+// These exist so business code never reaches for raw ImGui:: just to tint a
+// line of text or scope IDs in a loop. The failure mode worth testing is not
+// "does it compile" but "does the stack come back balanced" — a leaked push
+// bleeds into unrelated widgets much later and is miserable to trace.
+
+TEST_F(ImTest, StyleColorStack_BalancesAndAppliesTheColor) {
+    const ImVec4 before = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+    const ImVec4 red(1, 0, 0, 1);
+
+    unigui::im::PushStyleColor(ImGuiCol_Text, red);
+    const ImVec4 during = unigui::im::GetStyleColorVec4(ImGuiCol_Text);
+    EXPECT_FLOAT_EQ(during.x, 1.0f);
+    EXPECT_FLOAT_EQ(during.y, 0.0f);
+    unigui::im::PopStyleColor();
+
+    const ImVec4 after = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+    EXPECT_FLOAT_EQ(after.x, before.x);
+    EXPECT_FLOAT_EQ(after.y, before.y);
+    EXPECT_FLOAT_EQ(after.z, before.z);
+
+    // The ImU32 overload and the multi-pop count.
+    unigui::im::PushStyleColor(ImGuiCol_Text, unigui::im::GetColorU32(red));
+    unigui::im::PushStyleColor(ImGuiCol_Button, red);
+    unigui::im::PopStyleColor(2);
+    EXPECT_FLOAT_EQ(ImGui::GetStyleColorVec4(ImGuiCol_Text).x, before.x);
+}
+
+TEST_F(ImTest, StyleVarStack_BalancesForBothScalarAndVec2) {
+    const float alpha = ImGui::GetStyle().Alpha;
+    const ImVec2 pad = ImGui::GetStyle().FramePadding;
+
+    unigui::im::PushStyleVar(ImGuiStyleVar_Alpha, 0.25f);
+    EXPECT_FLOAT_EQ(ImGui::GetStyle().Alpha, 0.25f);
+    unigui::im::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(99, 98));
+    EXPECT_FLOAT_EQ(ImGui::GetStyle().FramePadding.x, 99.0f);
+    unigui::im::PopStyleVar(2);
+
+    EXPECT_FLOAT_EQ(ImGui::GetStyle().Alpha, alpha);
+    EXPECT_FLOAT_EQ(ImGui::GetStyle().FramePadding.x, pad.x);
+    EXPECT_FLOAT_EQ(ImGui::GetStyle().FramePadding.y, pad.y);
+}
+
+TEST_F(ImTest, IdStack_DisambiguatesIdenticalLabels) {
+    // The whole point: same label, different scope → different ID. This is what
+    // makes buttons inside table rows addressable.
+    unigui::im::PushID(1);
+    const ImGuiID a = unigui::im::GetID("same-label");
+    unigui::im::PopID();
+
+    unigui::im::PushID(2);
+    const ImGuiID b = unigui::im::GetID("same-label");
+    unigui::im::PopID();
+
+    EXPECT_NE(a, b);
+
+    // A non-null-terminated string_view must hash as its own range, not run on
+    // into the rest of the backing buffer.
+    const std::string backing = "alpha-beta";
+    const std::string_view alpha(backing.data(), 5); // "alpha"
+    unigui::im::PushID(alpha);
+    const ImGuiID scoped = unigui::im::GetID("x");
+    unigui::im::PopID();
+    unigui::im::PushID(std::string_view("alpha"));
+    const ImGuiID scoped2 = unigui::im::GetID("x");
+    unigui::im::PopID();
+    EXPECT_EQ(scoped, scoped2) << "string_view must hash by range, not to the NUL";
+}
+
+TEST_F(ImTest, TextWrapPos_PushPopDoesNotCrash) {
+    unigui::im::PushTextWrapPos(120.0f);
+    unigui::im::TextUnformatted("a fairly long line that would otherwise widen the window");
+    unigui::im::PopTextWrapPos();
+    unigui::im::PushTextWrapPos(); // default: wrap at content edge
+    unigui::im::PopTextWrapPos();
+}
+
+TEST_F(ImTest, MainViewport_IsAvailable) {
+    ImGuiViewport* vp = unigui::im::GetMainViewport();
+    ASSERT_NE(vp, nullptr);
+    EXPECT_GT(vp->Size.x, 0.0f);
 }

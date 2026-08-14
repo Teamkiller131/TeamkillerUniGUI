@@ -40,6 +40,11 @@ void TimeSeriesChart::SetYRangeFit(bool on) {
 }
 void TimeSeriesChart::SetYAxisRange(double min, double max) {
     yAutoFit_ = false;
+    // Only a CHANGED range asks to be applied. Callers legitimately re-assert the same
+    // range every frame from inside a render loop; treating that as "apply again" would
+    // force the axis on every frame and the user could never pan or zoom away from it.
+    if (min != yMin_ || max != yMax_)
+        yRangeApplyPending_ = true;
     yMin_ = min;
     yMax_ = max;
 }
@@ -165,9 +170,6 @@ void TimeSeriesChart::Render() {
 
     ImPlotFlags plotFlags =
         (crosshair_ ? ImPlotFlags_Crosshairs : 0) | (legend_ ? 0 : ImPlotFlags_NoLegend);
-    ImPlotAxisFlags axisFlags =
-        (panEnabled_ ? 0 : ImPlotAxisFlags_NoMenus) | (zoomEnabled_ ? 0 : ImPlotAxisFlags_NoMenus);
-    (void) axisFlags; // flags applied via ImPlot default — pan/zoom enabled by default
 
     // ── Background / border / grid colors ────────────────────────────────
     // When themeBackground_ is on, follow the active ImGui theme palette so the
@@ -275,13 +277,95 @@ void TimeSeriesChart::Render() {
         }
         if (!minSpanApplied) {
             if (yAutoFit_) {
-                ImPlotAxisFlags yFlags = ImPlotAxisFlags_AutoFit;
-                if (yRangeFit_)
-                    yFlags |= ImPlotAxisFlags_RangeFit;
-                ImPlot::SetupAxis(ImAxis_Y1, yLabel, yFlags);
+                // Padded fit (2026-07-22 user spec): Y range = [min·(1−r), max·(1+r)]
+                // instead of ImPlot's border-hugging AutoFit. Scope matches the old
+                // behavior: with RangeFit only the visible X window participates;
+                // reference lines (thresholds) are included because PlotInfLines used
+                // to register them with ImPlot's fitter — dropping them would push
+                // e.g. the FSA alarm line off-screen exactly when price approaches it.
+                double lo = 1e300, hi = -1e300;
+                if (yPadRatio_ > 0.0) {
+                    for (auto& s : series_) {
+                        if (s.def.yAxisId == 3)
+                            continue;   // Y3 series must not drive the Y1 range
+                        for (auto& [ts, v] : s.points) {
+                            if (yRangeFit_ && (ts < lastXMin_ || ts > lastXMax_))
+                                continue;
+                            lo = std::min(lo, (double) v);
+                            hi = std::max(hi, (double) v);
+                        }
+                    }
+                    for (auto& line : refLines_) {
+                        lo = std::min(lo, line.value);
+                        hi = std::max(hi, line.value);
+                    }
+                }
+                if (yPadRatio_ > 0.0 && lo <= hi) {
+                    // Sign-aware outward padding — math lives in PadRange() (header)
+                    // so the tests pin positive/negative/cross-zero/flat-at-zero.
+                    auto [plo, phi] = PadRange(lo, hi, yPadRatio_);
+                    ImPlot::SetupAxis(ImAxis_Y1, yLabel);
+                    ImPlot::SetupAxisLimits(ImAxis_Y1, plo, phi, ImPlotCond_Always);
+                } else {
+                    // No data yet (or padding disabled): keep the legacy AutoFit flags
+                    // so an empty chart renders exactly as before.
+                    ImPlotAxisFlags yFlags = ImPlotAxisFlags_AutoFit;
+                    if (yRangeFit_)
+                        yFlags |= ImPlotAxisFlags_RangeFit;
+                    ImPlot::SetupAxis(ImAxis_Y1, yLabel, yFlags);
+                }
             } else {
                 ImPlot::SetupAxis(ImAxis_Y1, yLabel);
-                ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_, ImPlotCond_Once);
+                // Once = "seed the range, then let the user zoom/pan freely" (the default,
+                // and what most manual-range callers want).
+                // Always = "hold this range every frame" — for callers that need the axis
+                // height to actually stay put. Once is subtly wrong for them: ImPlot only
+                // honours it the first time a given plot ID is set up, so re-setting the
+                // range later (a toggle being switched on, the value being edited) does
+                // nothing, and the same chart rendered inside a *different* window — a new
+                // ID scope — silently behaves differently from the docked one.
+                // Three ways to drive a manual range, and the difference matters:
+                //  • locked  → Always: hold [yMin_,yMax_] every frame. The axis cannot be
+                //    panned or zoomed — every drag snaps back next frame.
+                //  • pending → Always for exactly ONE frame: apply the newly requested
+                //    range, then stop forcing so the user owns the axis from then on.
+                //    This is what a "set the height, then let me drag around" control
+                //    wants, and it is the default because plain Once is a trap:
+                //    ImPlot honours Once only the first time a plot ID is set up, so a
+                //    range set later (a checkbox switched on, a value edited) silently
+                //    did nothing — and the same chart in another window, being a new ID
+                //    scope, behaved differently from the docked one.
+                //  • neither → don't touch the limits at all; whatever the user dragged
+                //    to persists.
+                if (yRangeLocked_ || yRangeApplyPending_) {
+                    ImPlot::SetupAxisLimits(ImAxis_Y1, yMin_, yMax_, ImPlotCond_Always);
+                    yRangeApplyPending_ = false;
+                }
+                // Explicit tick step (e.g. "label every 2 units"). Keyed off the range the
+                // user is ACTUALLY looking at (cached last frame), not the one last
+                // requested — after a pan/zoom those differ, and ticks built from the
+                // request would sit outside the view.
+                const double tickLo = (lastYMax_ > lastYMin_) ? lastYMin_ : yMin_;
+                const double tickHi = (lastYMax_ > lastYMin_) ? lastYMax_ : yMax_;
+                if (yTickSpacing_ > 0.0 && tickHi > tickLo) {
+                    const double step = yTickSpacing_;
+                    const double lo = std::ceil(tickLo / step) * step;
+                    // Count first, emit second: a step of 1 over a range of 100000 would
+                    // otherwise push 100k labels through ImPlot and hang the frame. Over
+                    // budget = fall back to automatic ticks; a black smear of overlapping
+                    // labels would be no more useful than the wrong step.
+                    const double spanTicks = (tickHi - lo) / step;
+                    if (spanTicks >= 0.0 && spanTicks < (double) kMaxYTicks) {
+                        yTickBuf_.clear();
+                        // Multiply rather than accumulate: `v += step` drifts over hundreds
+                        // of iterations and the labels stop landing on round numbers.
+                        for (int i = 0; i <= (int) spanTicks; ++i)
+                            yTickBuf_.push_back(lo + step * i);
+                        if (!yTickBuf_.empty())
+                            ImPlot::SetupAxisTicks(ImAxis_Y1, yTickBuf_.data(),
+                                                   (int) yTickBuf_.size());
+                    }
+                }
             }
         }
 
@@ -366,31 +450,31 @@ void TimeSeriesChart::Render() {
             } else {
                 // Left/Right pan 10% of the visible span; Up/Down zoom ±10%
                 // about the centre; Home re-fits both axes.
-                if (panEnabled_) {
-                    double shift = 0.0;
-                    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
-                        shift += span * 0.1;
-                    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
-                        shift -= span * 0.1;
-                    if (shift != 0.0) {
-                        pendXMin_ = lim.X.Min + shift;
-                        pendXMax_ = lim.X.Max + shift;
-                        xLimPending_ = true;
-                    }
+                // Note: keyboard pan/zoom is intentionally NOT gated by any flag —
+                // the old SetPanEnabled/SetZoomEnabled were deprecated as no-ops
+                // (2026-08-10, they never gated ImPlot's mouse input), so keyboard
+                // navigation simply always works while the plot has focus.
+                double shift = 0.0;
+                if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+                    shift += span * 0.1;
+                if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+                    shift -= span * 0.1;
+                if (shift != 0.0) {
+                    pendXMin_ = lim.X.Min + shift;
+                    pendXMax_ = lim.X.Max + shift;
+                    xLimPending_ = true;
                 }
-                if (zoomEnabled_) {
-                    double zoom = 0.0;
-                    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
-                        zoom = -0.1; // zoom in
-                    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
-                        zoom = 0.1; // zoom out
-                    if (zoom != 0.0) {
-                        const double mid = 0.5 * (lim.X.Min + lim.X.Max);
-                        const double half = 0.5 * span * (1.0 + zoom);
-                        pendXMin_ = mid - half;
-                        pendXMax_ = mid + half;
-                        xLimPending_ = true;
-                    }
+                double zoom = 0.0;
+                if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+                    zoom = -0.1; // zoom in
+                if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+                    zoom = 0.1; // zoom out
+                if (zoom != 0.0) {
+                    const double mid = 0.5 * (lim.X.Min + lim.X.Max);
+                    const double half = 0.5 * span * (1.0 + zoom);
+                    pendXMin_ = mid - half;
+                    pendXMax_ = mid + half;
+                    xLimPending_ = true;
                 }
             }
             if (ImGui::IsKeyPressed(ImGuiKey_Home))
@@ -453,6 +537,29 @@ void TimeSeriesChart::Render() {
             ImGui::SetTooltip("%s", tip.c_str());
         }
 
+        // Same for Y: the *actual* range after auto-fit / the user's pan+zoom. Explicit
+        // tick generation keys off this rather than the requested [yMin_, yMax_] — once
+        // the user drags the axis those two diverge, and ticks computed from the request
+        // would march off the visible range and disappear.
+        lastYMin_ = lim.Y.Min;
+        lastYMax_ = lim.Y.Max;
+
+        // ── [YSPANLOCK-20260810] 固定高度 = 跨度钉死，但仍可平移 ───────────────
+        // 「固定纵轴」的语义是 *高度* 固定；平移允许、缩放不允许。ImPlot 没有
+        // 「只禁缩放不禁平移」的轴标志(Lock 系列会把平移一起锁掉)。本控件曾经有一对
+        // panEnabled_/zoomEnabled_ 看着像输入开关，其实只映射到 NoMenus、算完还被
+        // (void) 掉——2026-08-10 已删除，别再去找它们——所以只能在这里按结果纠偏：
+        //   平移只改中心、不改跨度 → 不触发；
+        //   滚轮/框选缩放改了跨度 → 下一帧按当前中心把跨度拉回去。
+        // 代价是缩放会有一帧的回弹，这正是「固定就是固定」该有的手感。
+        if (ySpanLock_ > 0.0 && lastYMax_ > lastYMin_) {
+            const auto fixed = RestoreSpan(lastYMin_, lastYMax_, ySpanLock_);
+            if (fixed.first != lastYMin_ || fixed.second != lastYMax_) {
+                yMin_ = fixed.first;
+                yMax_ = fixed.second;
+                yRangeApplyPending_ = true;   // 下一帧 SetupAxisLimits(..., Always) 生效
+            }
+        }
         ImPlot::EndPlot();
     }
     ImPlot::PopStyleColor(4);

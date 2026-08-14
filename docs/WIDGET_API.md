@@ -1342,9 +1342,12 @@ void SetMaxRenderPoints(int n);                 // LTTB-decimate huge series to 
 int GetSeriesPointCount(int seriesId) const;
 void SetSessionAxis(SessionAxis axis);          // gap-free intraday X axis, HH:MM labels
 void SetYAxisAutoFit(bool on); void SetYAxisRange(double min, double max);
+void SetYAxisRangeLocked(bool on);              // hold the manual range every frame
+void SetYAxisSpanLock(double span);             // pin Y height, keep panning (trader "fixed axis")
+void SetYAxisTickSpacing(double step);          // explicit Y gridline step (auto-fit off)
 void SetXAxisLabel(const std::string&); void SetYAxisLabel(const std::string&);
 void SetCrosshairEnabled(bool); void SetLegendEnabled(bool);
-void SetPanEnabled(bool); void SetZoomEnabled(bool); void SetRubberBandZoom(bool on);
+void SetRubberBandZoom(bool on);                // SetPanEnabled/SetZoomEnabled: DEPRECATED no-ops
 void SetGridColor(ImU32 c); void SetThemeBackground(bool on);
 void SetCrosshairFormatter(std::function<std::string(double,const std::vector<double>&)> fn);
 void SetXAxisFormatter(std::function<int(double,char*,int,void*)> fn);

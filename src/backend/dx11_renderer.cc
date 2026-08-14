@@ -107,6 +107,18 @@ void DX11Renderer::RenderDrawData(ImDrawData* dd) {
     if (!initialized_ || !dd)
         return;
     float c[4] = {clearR_, clearG_, clearB_, clearA_};
+    // Bind the main render target EVERY frame, not just at device creation / resize.
+    //
+    // ClearRenderTargetView takes the RTV by handle, so the clear always hit the right
+    // surface — but the draw goes to whatever is *bound*, and this used to rely on the
+    // binding made once in CreateDeviceD3D()/resize surviving forever. Nothing else
+    // rebound it, so it did… until multi-viewport: ImGui_ImplDX11_RenderWindow() binds
+    // each secondary window's RTV and does not restore the previous one. From the first
+    // frame a popped-out window renders, the main window would clear its own surface and
+    // then draw into the secondary one — showing nothing but the backdrop colour, and
+    // recovering only when a resize happened to rebind (maximising "fixed" it).
+    // Binding per frame is also what the upstream imgui DX11 example does.
+    ctx_->OMSetRenderTargets(1, &rtv_, nullptr);
     ctx_->ClearRenderTargetView(rtv_, c);
     ImGui_ImplDX11_RenderDrawData(dd);
     swapchain_->Present(1, 0);
