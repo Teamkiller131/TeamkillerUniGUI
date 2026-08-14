@@ -69,6 +69,12 @@ int RunApp(const AppConfig& config, const std::function<void()>& callback, int m
 /// v1.9: Get native window handle. Returns HWND on Windows, GLFWwindow* elsewhere.
 void* GetNativeWindowHandle();
 
+/// The active renderer backend (nullptr before `Init` / after `Shutdown`).
+/// Advanced use: backend-specific capability queries (e.g. the DX11 renderer's
+/// `LastVerifyDrawn()` after a `UNIGUI_RENDER_VERIFY=1` run) and CI smoke asserts.
+class RendererBackend;
+RendererBackend* GetActiveRenderer();
+
 /// HiDPI content scale. Sets the per-viewport font DPI factor
 /// (`ImGuiStyle::FontScaleDpi`, Dear ImGui ≥1.92), so fonts re-rasterise crisply
 /// at the given scale (1.0 = 100%, 1.5 = 150%, …) using the dynamic font system —

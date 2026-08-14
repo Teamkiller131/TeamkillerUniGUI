@@ -20,6 +20,7 @@
 #include <glad/glad.h>
 #endif
 #include <imgui.h>
+#include <imgui_internal.h> // ImGuiViewportP::Window — skip orphaned viewports in the backdrop fill
 #include <implot.h>
 
 #include <cmath>
@@ -500,6 +501,33 @@ void Render() {
 #ifdef UNIGUI_HAS_WIDGETS
     unigui::Toast::Instance().Render();
 #endif
+    // Backdrop-clear contract for secondary viewports (§7 of docs/BACKENDS.md): the
+    // per-backend RenderWindow functions upstream ships clear popped-out windows to a
+    // hardcoded *black*, which translucent (glass) theme materials would render
+    // against. Paint the theme backdrop into each secondary viewport's background draw
+    // list — flattened before every window — so a popped-out window honours the same
+    // GetBackdropColor() contract as the main one, on every backend with viewport
+    // support (no per-renderer hooks needed). Must run before ImGui::Render() (the
+    // background list is flattened there); viewport coordinates are absolute screen
+    // space (the list clips to the viewport rect).
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        const ImU32 bgCol = ImGui::GetColorU32(GetBackdropColor());
+        for (ImGuiViewport* vp : ImGui::GetPlatformIO().Viewports) {
+            if (vp == nullptr || vp == ImGui::GetMainViewport() ||
+                (vp->Flags & ImGuiViewportFlags_IsMinimized))
+                continue;
+            // Skip secondary viewports that hosted no window THIS frame (orphans after
+            // a merge-back): drawing into their background list would keep them alive
+            // forever — a rendered viewport counts as active, and imgui only destroys
+            // secondary viewports after ~3 inactive frames. A window's Begin refreshes
+            // its viewport's LastFrameActive (internal field; the public alternative
+            // would leak orphaned viewports).
+            if (((ImGuiViewportP*) vp)->LastFrameActive < (int) ImGui::GetFrameCount())
+                continue;
+            ImGui::GetBackgroundDrawList(vp)->AddRectFilled(
+                vp->Pos, ImVec2(vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y), bgCol);
+        }
+    }
     ImGui::Render();
     ImDrawData* dd = ImGui::GetDrawData();
     // Clear to the theme-derived backdrop so translucent (glass) surfaces read
@@ -539,6 +567,9 @@ void Render() {
 
 bool ShouldClose() {
     return g_platform ? g_platform->ShouldClose() : true;
+}
+RendererBackend* GetActiveRenderer() {
+    return g_renderer.get();
 }
 void* GetNativeWindowHandle() {
     return g_platform ? g_platform->GetNativeWindowHandle() : nullptr;

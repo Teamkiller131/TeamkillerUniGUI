@@ -177,6 +177,11 @@ public:
     /// 100k labels. Silently drawing a black smear of overlapping text would be no better.
     void SetYAxisTickSpacing(double step) { yTickSpacing_ = step > 0.0 ? step : 0.0; }
     static constexpr int kMaxYTicks = 200;
+    /// The Y range the axis *actually showed* after the last frame (auto-fit output, the
+    /// applied manual range, or the user's pan/zoom) — not merely the last requested one.
+    /// Lets tests pin the span-lock behaviour (zoom snaps back, pan passes through) and
+    /// apps build linked-axis readouts. `{0, 0}` before the first frame.
+    std::pair<double, double> GetYAxisRange() const { return {lastYMin_, lastYMax_}; }
     /// Fixed X axis range. When set, the X axis always shows [min, max] even with no data.
     void SetXAxisRange(double min, double max);
 
