@@ -916,8 +916,9 @@ phase closes by cutting **4.9.0** from the merged work. Recommended order:
    is the use case), pinned by a geometry test (narrow window forces three
    lines, the last line ends at the right edge, hard `\n` breaks stay aligned).
    _Remaining: deep mirroring (bidi line shaping, control internals, table
-   order, tree indents — layout-engine), fractional-DPI cross-monitor polish
-   (needs a multi-monitor runner), and in-the-wild screen-reader validation
+   order, tree indents — layout-engine), crisp fractional-DPI SECONDARY
+   windows (upstream fork gap — backends size secondary windows in logical
+   units; see the DPI phase), and in-the-wild screen-reader validation
    (human).
 
 ### Next phase — "completeness sweep" (post-4.9 → 4.10)
@@ -971,17 +972,30 @@ batch attacks the two standing client-facing pain points that surfaced during it
 scaling mixes physical and logical coordinates) and **visual regression proof** (the
 pixel readback exists but nothing persists it into goldens). Recommended order:
 
-1. ~~**P1 · M — Runtime / fractional DPI.**~~ **Done (post-4.9).** Root cause found and
-   fixed: the GLFW platform never reported `io.DisplayFramebufferScale`, so the back
-   buffer was rasterized at the wrong physical size at any non-1.0 DPI (and the
-   multi-viewport smoke had to pin DPI to 1.0). The platform now reports it at bring-up
-   and on change, polls the content scale every `NewFrame` (one GLFW call) and fires a
-   new `PlatformBackend::SetContentScaleCallback` on change; the app handler snaps via
-   `dpi::NormalizeContentScale` and updates `FontScaleDpi` (dynamic font re-raster).
-   Tests: two platform tests (framebuffer-scale wiring, steady-scale no-fire) and the
-   multi-viewport smoke now runs at the monitor's REAL scale (150% locally) and passes —
-   proving the pop-out coordinate math at fractional DPI. _Remaining tail: per-monitor
-   scale inheritance across monitors needs a multi-monitor runner (CI)._
+1. ~~**P1 · M — Runtime / fractional DPI.**~~ **Done (post-4.9) — including the
+   cross-monitor tail (4.9.1).** Root cause found and fixed: the GLFW platform never
+   reported `io.DisplayFramebufferScale`, so the back buffer was rasterized at the wrong
+   physical size at any non-1.0 DPI (and the multi-viewport smoke had to pin DPI to 1.0).
+   The platform now reports it at bring-up and on change, polls the content scale every
+   `NewFrame` (one GLFW call) and fires a new `PlatformBackend::SetContentScaleCallback`
+   on change; the app handler snaps via `dpi::NormalizeContentScale` and updates
+   `FontScaleDpi` (dynamic font re-raster). Tests: two platform tests (framebuffer-scale
+   wiring, steady-scale no-fire) and the multi-viewport smoke now runs at the monitor's
+   REAL scale (150% locally) and passes — proving the pop-out coordinate math at
+   fractional DPI. **Cross-monitor tail closed on a 4×150% machine (4.9.1):** the
+   runtime proof exposed two real bugs — GLFW's Win32 content-scale cache lags
+   `WM_DPICHANGED` (the first frames rendered with a 1.0 projection on a 1.5 monitor; the
+   platform now reads `GetDpiForWindow` live), and `imgui_impl_glfw` overwrites
+   `io.DisplayFramebufferScale` every frame with its framebuffer-ratio (meaningless for
+   the external-swapchain backends; the platform now re-asserts the real scale for
+   non-GL backends). The DX11/DX12 swapchains are now created/resized at PHYSICAL pixels
+   (client × scale). New `unigui::GetMonitors()` (MonitorInfo rects/work areas/DPI) +
+   `DXMultiMonitorSmoke`: monitor-table agreement, a real pop-out onto a second monitor
+   with inherited `DpiScale`, a simulated-150% inheritance round-trip, and the physical
+   swapchain-size invariant — 9 tests, all pinned on real hardware. _Known upstream gap
+   (documented in docs/BACKENDS.md §7.2): secondary OS windows are sized in logical
+   units by this ImGui fork's backends — crisp fractional-DPI secondary windows need
+   backend-level DPI support._
 2. ~~**P1 · M — Golden-image infrastructure.**~~ **Done (post-4.9).** The C++ side writes
    the rendered back buffer as dependency-free RAW RGBA when `UNIGUI_GOLDEN_CAPTURE=<path>`
    is set (shared `src/detail/golden_capture.h`, wired into the DX11 renderer and the GL

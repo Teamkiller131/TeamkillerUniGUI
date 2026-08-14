@@ -695,6 +695,39 @@ This covers **every** renderer with viewport support (GL3, DX11, Vulkan, …) wi
 no per-backend hooks, so a popped-out window honours the same backdrop contract
 as the main one. The black upstream clear underneath is simply never visible.
 
+### 7.2 Cross-monitor layout & per-monitor scale
+
+`unigui::GetMonitors()` (mirrored at platform level by
+`PlatformBackend::GetMonitors`) enumerates the connected displays —
+virtual-desktop rects, work areas, and per-monitor DPI scales — for
+cross-monitor layout: place a window on monitor 2, tile across monitors, or
+react to per-monitor scaling. Each entry is a `MonitorInfo`; the list agrees
+with what the GLFW backend reports to ImGui's own monitor table (pinned by
+`DXMultiMonitorSmoke` on a 4×150% machine).
+
+What the wrapper guarantees per monitor:
+
+- **Main window:** the DX11/DX12 swapchain is created and resized at
+  **physical pixels** (client × content scale) — a client-sized swapchain on
+  a 150% monitor would be stretched by the OS. `io.DisplayFramebufferScale`
+  carries the same scale, re-asserted every frame against
+  `imgui_impl_glfw`'s framebuffer-ratio overwrite (that ratio is only the
+  truth for GL-owned framebuffers). The content scale is read live via
+  `GetDpiForWindow` — GLFW's cached value lags `WM_DPICHANGED` by a frame or
+  two, which rendered the first frames with a 1.0 projection on a 1.5
+  monitor before this fix.
+- **Window moves between monitors:** the per-frame scale poll fires the
+  content-scale callback, which snaps and re-rasterises fonts
+  (`FontScaleDpi`); the swapchain re-resizes when the monitor scale changes
+  even at the same client size.
+- **Secondary viewports:** each popped-out viewport inherits the
+  `DpiScale` of the monitor it lands on (ImGui's per-viewport machinery,
+  proven by `DXMultiMonitorSmoke.PoppedOutWindow_LandsOnSecondMonitor_*`
+  and the simulated-fractional test). Physical sizing of secondary windows
+  at fractional DPI is a known upstream gap (this ImGui fork's GLFW/Win32
+  backends size secondary windows in logical units — see
+  `DEVELOPMENT_PLAN` §7).
+
 **Multi-viewport capability matrix** (runtime-verified = pixels asserted in CI):
 
 | Backend | Viewport support | Runtime-verified |

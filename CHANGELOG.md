@@ -1,5 +1,24 @@
 ## [Unreleased]
 
+### Added
+- **Cross-monitor runtime proof + `unigui::GetMonitors()`.** The fractional-DPI
+  tail is now verified on a real 4×150%-monitor machine — and the proof exposed
+  two real bugs, both fixed: (1) GLFW's Win32 content-scale cache lags
+  `WM_DPICHANGED`, so the first frames rendered with a 1.0 projection on a 1.5
+  monitor — the platform now reads the live per-monitor DPI (`GetDpiForWindow`);
+  (2) `imgui_impl_glfw` overwrites `io.DisplayFramebufferScale` every frame with
+  its framebuffer/window ratio, which is meaningless for the external-swapchain
+  backends — the platform re-asserts the real scale for non-GL backends. The
+  DX11/DX12 swapchains are now created and resized at PHYSICAL pixels
+  (client × content scale), so a 480×360 window on a 150% monitor gets a 720×540
+  back buffer instead of an OS-stretched one. New `unigui::GetMonitors()`
+  (`MonitorInfo`: virtual-desktop rects, work areas, per-monitor DPI) for
+  cross-monitor layout. `DXMultiMonitorSmoke` pins monitor-table agreement, a
+  real pop-out onto a second monitor with inherited viewport `DpiScale`, a
+  simulated-150% inheritance round-trip, and the physical swapchain invariant.
+  Known upstream gap documented (secondary OS windows are sized in logical
+  units by this ImGui fork — see docs/BACKENDS.md §7.2).
+
 ## [4.9.1] - 2026-08-14
 
 ### Added
