@@ -310,7 +310,7 @@ endif()
 # Each module's implementation lives in src/<module>/, mirroring its public
 # header under include/unigui/<module>/.
 if(UNIGUI_MODULE_DSL)
-    target_sources(unigui PRIVATE dsl/dsl.cc)
+    target_sources(unigui PRIVATE dsl/dsl.cc dsl/dsl_scene.cc)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DSL)
     message(STATUS "DSL module enabled")
 endif()

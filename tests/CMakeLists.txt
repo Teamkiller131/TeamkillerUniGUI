@@ -356,7 +356,7 @@ if(UNIGUI_MODULE_PLUGIN)
 endif()
 
 if(UNIGUI_MODULE_DSL)
-    foreach(_d dsl component dsl_app form_component codegen)
+    foreach(_d dsl component dsl_app form_component codegen scene_parser)
         add_executable(test_${_d} dsl/${_d}_test.cc)
         target_link_libraries(test_${_d} PRIVATE GTest::gtest GTest::gtest_main unigui)
         target_compile_features(test_${_d} PRIVATE cxx_std_23)
