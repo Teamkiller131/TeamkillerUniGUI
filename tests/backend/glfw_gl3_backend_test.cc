@@ -89,6 +89,42 @@ TEST_F(BackendTest, OpenGL3Renderer_Init_WithoutContext_Succeeds) {
     ImGui::DestroyContext();
     glfwDestroyWindow(window);
 }
+
+// ── Fractional-DPI wiring (runtime content-scale batch) ───────────────────────
+
+TEST_F(BackendTest, GLFWPlatform_ReportsFramebufferScaleToIO) {
+    ASSERT_TRUE(glfw_init_ok_);
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    auto platform = unigui::CreateGLFWPlatform();
+    ASSERT_TRUE(platform->Init(nullptr));
+    // The platform must tell ImGui the physical/logical ratio: without it the render
+    // backends rasterize at the wrong physical size on any non-1.0 monitor.
+    const ImVec2 fs = ImGui::GetIO().DisplayFramebufferScale;
+    EXPECT_GT(fs.x, 0.0f);
+    EXPECT_FLOAT_EQ(fs.x, fs.y);
+    EXPECT_FLOAT_EQ(fs.x, platform->GetContentScale());
+    platform->Shutdown();
+    ImGui::DestroyContext();
+}
+
+TEST_F(BackendTest, GLFWPlatform_ContentScaleCallback_DoesNotFireOnSteadyScale) {
+    // Headless CI cannot move the window across monitors, so the change itself isn't
+    // simulated — the contract pinned here is registration + no-fire while the scale
+    // is steady (the polling lives in NewFrame).
+    ASSERT_TRUE(glfw_init_ok_);
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    auto platform = unigui::CreateGLFWPlatform();
+    ASSERT_TRUE(platform->Init(nullptr));
+    int fired = 0;
+    platform->SetContentScaleCallback([&](float) { ++fired; });
+    platform->NewFrame();
+    platform->NewFrame();
+    EXPECT_EQ(fired, 0);
+    platform->Shutdown();
+    ImGui::DestroyContext();
+}
 TEST_F(BackendTest, OpenGL3Renderer_Init_WithValidContext_Succeeds) {
     ASSERT_TRUE(glfw_init_ok_);
     auto window = CreateHiddenWindow();

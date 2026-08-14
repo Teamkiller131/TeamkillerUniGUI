@@ -52,9 +52,11 @@ TEST(DXMultiViewportSmoke, PoppedOutWindow_MainViewportStillDrawn) {
     cfg.height = 360;
     cfg.backend = unigui::BackendType::DX11;
     cfg.multiViewport = true;
-    // Fixed 1.0 DPI: a fractional monitor scale mixes physical (window/OS) and logical
-    // (client) coordinate spaces, which would corrupt the pop-out coordinate math.
-    cfg.theme.dpi_scale = 1.0f;
+    // Run at the MONITOR's real scale (150% on the dev machine, 100% on CI): the
+    // platform must report DisplayFramebufferScale so the render projection and the
+    // pop-out coordinate math stay consistent at fractional DPI. The font size is
+    // kept small so the 480×360 window still fits the two-window scene.
+    cfg.theme.font_size = 13.0f;
     if (!unigui::Init(cfg))
         GTEST_SKIP() << "app bring-up failed (headless runner?)";
     if (std::string(ImGui::GetIO().BackendRendererName) != "imgui_impl_dx11") {
@@ -68,6 +70,15 @@ TEST(DXMultiViewportSmoke, PoppedOutWindow_MainViewportStillDrawn) {
 
     auto* dxr = static_cast<unigui::DX11Renderer*>(unigui::GetActiveRenderer());
     ASSERT_NE(dxr, nullptr);
+    // Fractional-DPI wiring: the platform must have told ImGui the physical/logical
+    // ratio (DisplayFramebufferScale) — without it the back buffer is rasterized at
+    // the wrong physical size on any non-1.0 monitor.
+    {
+        const ImVec2 fs = ImGui::GetIO().DisplayFramebufferScale;
+        EXPECT_GT(fs.x, 0.0f);
+        EXPECT_GT(fs.y, 0.0f);
+        EXPECT_FLOAT_EQ(fs.x, fs.y);
+    }
     // This test pops windows around and runs under ctest's working directory — never
     // let the app persist window/table state to imgui.ini there: later tests create
     // their own contexts in the same directory and would inherit the popped-out
