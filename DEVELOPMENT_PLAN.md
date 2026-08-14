@@ -1,6 +1,6 @@
 # TeamkillerUniGUI — Long-Term Development Plan
 
-_Last updated: 2026-08-14 · Current version: 4.9.0_
+_Last updated: 2026-08-14 · Current version: 4.9.0 (next phase planned → 4.10)_
 
 This document lays out a long-horizon roadmap for the project. It is meant to be
 a living document: revisit it each release, check off what shipped, and re-scope
@@ -767,8 +767,9 @@ Track these over time to know the plan is working:
   (sanitizers, hard gates, interaction tests, doc-stamp gate — 4.5.0–4.6.0 + the audit
   closures), the **UI preset layer shipped** (4.6.0–4.8.0), the **web runtime proven in a
   real browser on every push** (H4a — the wasm smoke), and the **client-suite merged**
-  (multi-viewport + chart hardening + 47 new `im::` wrappers, 2026-08-14), the next
-  period's plan is below.
+  (multi-viewport + chart hardening + 47 new `im::` wrappers, 2026-08-14), the
+  client-suite hardening phase shipped as 4.9.0 and the next phase is planned below
+  (the completed phase is kept first as the record).
 
 ### Next phase — "client-suite hardening" (2026-08 → 4.9.0)
 
@@ -822,6 +823,49 @@ phase closes by cutting **4.9.0** from the merged work. Recommended order:
    registry/Conan), C ABI bindings, the designer/live-preview tool, fractional-DPI
    polish, plugin-ABI stabilisation. In-the-wild screen-reader validation (Narrator/
    VoiceOver/Orca) remains the human-in-the-loop a11y tail.
+
+### Next phase — "completeness sweep" (post-4.9 → 4.10)
+
+The post-4.9 tree is green across all three suites (1316 / 1356 / 1432) and both
+remotes carry the work. The next batch closes the last measurable completeness gaps
+rather than opening new surfaces. Recommended order:
+
+1. **P0 · S — `unigui::im` to 100% of the practical surface.** Exactly three functions
+   remain unwrapped (98.5% → 100%): `GetFontBaked` (baked font at the current size),
+   `GetItemFlags` (last-item generic flags — pairs with `BeginDisabled`), and
+   `TreeNodeGetOpen(ImGuiID)` (tree-node open state — pairs with `GetID`). Wrap them,
+   add the usual headless tests, and update the metric everywhere it is quoted
+   (README/README_zh/docs/IM_API.md/DEVELOPMENT_PLAN — "201 of 204 targets" becomes
+   "204 of 204"). The `--threshold 95` CI gate keeps protecting the figure.
+2. **P1 · M — Session-boundary X ticks** (the chart-family tail). When a
+   `SessionAxis` formatter is installed (intraday charts with lunch/overnight gaps
+   collapsed), the plain arithmetic `SetXAxisTickSpacing` labels land on round
+   numbers, not on the session starts a trader reads. Extend the tick generation with
+   a session-aligned mode: ticks snap to the session boundary grid
+   (`SessionAxis::ToAxis` of session starts, e.g. 09:30 / 10:30 / 13:00 …) with the
+   step as a minimum interval; pure math stays testable without an ImPlot frame.
+   Closes the only remaining item-3 tail.
+3. **P1 · M — Trading interaction tests.** The trading widgets have headless tests but
+   no engine-driven input coverage: `OrderTicket` (type a price/qty → `Validate()` →
+   `Submit()` fires `OnSubmit` only when valid), `DepthLadder` (click a bid/ask level →
+   `OnLevelClick(price, size)`), `CandlestickChart` (hover/crosshair sanity). Needs a
+   combined preset (`windows-msvc-debug-testengine-modules`: test engine + trading ON)
+   so the engine runs against the module-gated widgets — the first CI lane combining
+   the two.
+4. **P1 · S — Count audit + WIDGET_API depth pass.** Verify the headline numbers
+   against reality — widgets (docs claim 95; `src/widgets` holds 86 .cc + 3 trading +
+   header-only/preset classes), a11y-wired widgets (~44), im functions (248) — and fix
+   any badge/doc drift. Then deepen the thinnest `docs/WIDGET_API.md` sections for the
+   newest widgets (PriceTicker, cell renderers, tick spacing) so the 16-deep-vs-95
+   imbalance narrows at the frontier that just moved.
+5. **P2 · M — Quality gate measurement.** Run the clang-tidy preset locally to measure
+   the per-family advisory backlog; promote the next-cleanest family into the
+   hard-gated `WarningsAsErrors` set (currently `bugprone-*`), and record the
+   `COVERAGE_FLOOR` number the Linux lane should gate on (the flip itself needs the
+   CI runner). If the tidy backlog for a whole family is too large for one batch,
+   clear it incrementally and land the gate when it reaches zero.
+6. **P2 — Carry-over (unchanged):** backend runtime proof (GPU runner + golden
+   images), multi-context singletons, and the long-horizon backlog from item 8 above.
 
 - When you complete an item, check it off here, add a line to `CHANGELOG.md`, and
   update any affected docs/badges in the same PR.
