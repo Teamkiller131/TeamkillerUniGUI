@@ -58,7 +58,18 @@ void RiskBar::Render() {
         fillColor = inverted_ ? red : green;
     }
 
-    float targetWidth = static_cast<float>(fraction) * barWidth;
+    // When the secondary segment is on, the PRIMARY fill must exclude it:
+    // SetRatio() carries the TOTAL (e.g. holdings incl. money funds) while the
+    // secondary is the sub-part — drawing the primary at the full total and the
+    // secondary beside it double-counts the sub-part. Threshold colouring still
+    // uses ratio_ (the total), so warn/danger semantics are unchanged.
+    double secClamped = 0.0, secFraction = 0.0;
+    if (secondaryEnabled_) {
+        secClamped = std::max(0.0, std::min(secondaryRatio_, maxRatio_));
+        secFraction = (maxRatio_ > 0.0) ? (secClamped / maxRatio_) : 0.0;
+    }
+    const double mainFraction = std::max(0.0, fraction - secFraction);
+    float targetWidth = static_cast<float>(mainFraction) * barWidth;
 
     // ── Animation ────────────────────────────────────────────────────────
     if (animated_) {
@@ -79,12 +90,11 @@ void RiskBar::Render() {
     }
 
     // ── Secondary segment ────────────────────────────────────────────────
-    // Fixed informational colour, drawn to the right of the primary fill; the
-    // primary keeps threshold colouring on the TOTAL, so warn/danger semantics
-    // are unchanged. 1px separators make the split readable at small widths.
+    // Fixed informational colour, drawn to the right of the primary fill (the
+    // primary already shrunk by the secondary share above). 1px separators
+    // make the split readable at small widths.
     if (secondaryEnabled_) {
-        double secClamped = std::max(0.0, std::min(secondaryRatio_, maxRatio_));
-        double secFraction = (maxRatio_ > 0.0) ? (secClamped / maxRatio_) : 0.0;
+        // secClamped/secFraction already computed with the primary width above
         float secTarget = static_cast<float>(secFraction) * barWidth;
 
         if (animated_) {
