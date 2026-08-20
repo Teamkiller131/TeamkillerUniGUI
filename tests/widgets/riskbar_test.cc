@@ -262,3 +262,82 @@ TEST_F(RiskBarTest, PushPopID_SameName) {
     bar.Render();
     bar.Render();
 }
+
+// ---- secondary segment ----
+
+TEST_F(RiskBarTest, Secondary_DisabledByDefault) {
+    unigui::RiskBar bar("risk");
+    EXPECT_DOUBLE_EQ(bar.GetSecondaryRatio(), 0.0);
+    bar.SetRatio(0.6);
+    bar.SetSecondaryRatio(0.2);
+    // Not enabled: secondary value is stored but must not affect rendering
+    bar.Render();
+    EXPECT_DOUBLE_EQ(bar.GetSecondaryRatio(), 0.2);
+}
+
+TEST_F(RiskBarTest, Secondary_Renders) {
+    unigui::RiskBar bar("risk");
+    bar.SetRatio(0.6);
+    bar.SetSecondaryRatio(0.25);
+    bar.SetSecondaryEnabled(true);
+    bar.Render();
+}
+
+TEST_F(RiskBarTest, Secondary_GetSet) {
+    unigui::RiskBar bar("risk");
+    bar.SetSecondaryRatio(0.3);
+    EXPECT_DOUBLE_EQ(bar.GetSecondaryRatio(), 0.3);
+    bar.SetSecondaryRatio(-0.5); // caller may pass junk; getter echoes, render clamps
+    EXPECT_DOUBLE_EQ(bar.GetSecondaryRatio(), -0.5);
+}
+
+TEST_F(RiskBarTest, Secondary_TotalOverTrack) {
+    // main + secondary beyond maxRatio: rendering clamps, no crash, no overflow
+    unigui::RiskBar bar("risk");
+    bar.SetRatio(0.9);
+    bar.SetSecondaryRatio(0.9);
+    bar.SetSecondaryEnabled(true);
+    bar.Render();
+}
+
+TEST_F(RiskBarTest, Secondary_ZeroMain) {
+    // All usage in the secondary segment (e.g. 100% money funds)
+    unigui::RiskBar bar("risk");
+    bar.SetRatio(0.0);
+    bar.SetSecondaryRatio(0.7);
+    bar.SetSecondaryEnabled(true);
+    bar.Render();
+}
+
+TEST_F(RiskBarTest, Secondary_Animated) {
+    unigui::RiskBar bar("risk");
+    bar.SetAnimated(true);
+    bar.SetRatio(0.5);
+    bar.SetSecondaryRatio(0.2);
+    bar.SetSecondaryEnabled(true);
+    bar.Render();
+    bar.Render();
+    bar.Render();
+}
+
+TEST_F(RiskBarTest, Secondary_WithTextAndTooltip) {
+    unigui::RiskBar bar("risk");
+    bar.SetRatio(0.65);
+    bar.SetSecondaryRatio(0.15);
+    bar.SetSecondaryEnabled(true);
+    bar.SetDisplayText("65% + 15%");
+    bar.SetTooltip("main 65% / secondary 15% / idle 20%");
+    bar.Render();
+}
+
+TEST_F(RiskBarTest, Secondary_ReenableAfterDisable) {
+    unigui::RiskBar bar("risk");
+    bar.SetRatio(0.4);
+    bar.SetSecondaryRatio(0.1);
+    bar.SetSecondaryEnabled(true);
+    bar.Render();
+    bar.SetSecondaryEnabled(false);
+    bar.Render();
+    bar.SetSecondaryEnabled(true);
+    bar.Render();
+}

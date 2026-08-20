@@ -78,6 +78,45 @@ void RiskBar::Render() {
         dl->AddRectFilled(pos, ImVec2(pos.x + fillW, pos.y + size.y), fillColor, rounding);
     }
 
+    // ── Secondary segment ────────────────────────────────────────────────
+    // Fixed informational colour, drawn to the right of the primary fill; the
+    // primary keeps threshold colouring on the TOTAL, so warn/danger semantics
+    // are unchanged. 1px separators make the split readable at small widths.
+    if (secondaryEnabled_) {
+        double secClamped = std::max(0.0, std::min(secondaryRatio_, maxRatio_));
+        double secFraction = (maxRatio_ > 0.0) ? (secClamped / maxRatio_) : 0.0;
+        float secTarget = static_cast<float>(secFraction) * barWidth;
+
+        if (animated_) {
+            animSecondaryWidth_ =
+                animSecondaryWidth_ + (secTarget - animSecondaryWidth_) * 0.1f;
+            if (std::abs(animSecondaryWidth_ - secTarget) < 0.5f) {
+                animSecondaryWidth_ = secTarget;
+            }
+        } else {
+            animSecondaryWidth_ = secTarget;
+        }
+
+        // main + secondary must never exceed the track
+        float secW = std::max(0.0f, std::min(animSecondaryWidth_, barWidth - fillW));
+        if (secW > 0.0f) {
+            const ImU32 secColor = ImGui::GetColorU32(GetSemanticColor(Semantic::Info));
+            dl->AddRectFilled(ImVec2(pos.x + fillW, pos.y),
+                              ImVec2(pos.x + fillW + secW, pos.y + size.y),
+                              secColor, rounding);
+        }
+        // Separators on both edges of the secondary zone (subtle, theme-aware)
+        const ImU32 sepColor = ImGui::GetColorU32(ImGuiCol_Border, 0.9f);
+        if (fillW > 0.0f && fillW < barWidth) {
+            dl->AddLine(ImVec2(pos.x + fillW + 0.5f, pos.y),
+                        ImVec2(pos.x + fillW + 0.5f, pos.y + size.y), sepColor);
+        }
+        if (secW > 0.0f && fillW + secW < barWidth) {
+            dl->AddLine(ImVec2(pos.x + fillW + secW + 0.5f, pos.y),
+                        ImVec2(pos.x + fillW + secW + 0.5f, pos.y + size.y), sepColor);
+        }
+    }
+
     // ── Centered display text ────────────────────────────────────────────
     // The text spans both the coloured fill and the (theme-coloured) empty
     // track, so a single colour is always low-contrast over one of them. Pick a
@@ -132,6 +171,14 @@ void RiskBar::SetInverted(bool on) {
 }
 void RiskBar::SetAnimated(bool on) {
     animated_ = on;
+}
+
+void RiskBar::SetSecondaryRatio(double v) {
+    secondaryRatio_ = v;
+}
+
+void RiskBar::SetSecondaryEnabled(bool on) {
+    secondaryEnabled_ = on;
 }
 
 } // namespace unigui

@@ -21,7 +21,15 @@ public:
     void SetInverted(bool on);            // flip color logic (higher = greener)
     void SetAnimated(bool on);            // smooth width/color animation
 
+    // ── Second segment (e.g. money-market-fund holdings inside a usage bar) ──
+    // The primary fill (SetRatio) keeps its threshold colouring on the TOTAL;
+    // the secondary segment is drawn right of it in a fixed informational colour,
+    // visually splitting the fill into "main | secondary | idle".
+    // Disabled by default — existing call sites render identically until opted in.
+    void SetSecondaryRatio(double v);     // secondary share of maxRatio (clamped >= 0)
+    void SetSecondaryEnabled(bool on);    // default false
     double GetRatio() const { return ratio_; }
+    double GetSecondaryRatio() const { return secondaryRatio_; }
 
 private:
     double ratio_ = 0.0;
@@ -32,6 +40,10 @@ private:
     bool inverted_ = false;
     bool animated_ = false;
     float animWidth_ = 0.0f; // for animation
+
+    bool secondaryEnabled_ = false;
+    double secondaryRatio_ = 0.0;
+    float animSecondaryWidth_ = 0.0f; // secondary lerp target, shares animation toggle
 };
 
 } // namespace unigui
