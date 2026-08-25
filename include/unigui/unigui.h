@@ -120,6 +120,8 @@
 // Trading widgets (presentation layer).
 #include <unigui/trading/blotters.h>
 #include <unigui/trading/candlestick_chart.h>
+#include <unigui/trading/cell_editors.h>
+#include <unigui/trading/cell_renderers.h>
 #include <unigui/trading/depth_ladder.h>
 #include <unigui/trading/order_ticket.h>
 #endif

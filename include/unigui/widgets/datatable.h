@@ -192,6 +192,13 @@ public:
         else
             editableCols_.erase(col);
     }
+    /// Per-row conditional editing: when `pred` returns false for a row, that
+    /// row's cell in the column degrades to read-only (the SetCellFormatter
+    /// value is displayed; no double-click editor). Combines with SetCellEditable:
+    /// the column must be marked editable AND the per-row predicate must pass.
+    void SetCellEditableWhen(int col, std::function<bool(int row, const T&)> pred) {
+        editableWhen_[col] = std::move(pred);
+    }
     void SetOnCellCommit(CellCommitFn fn) { onCellCommit_ = std::move(fn); }
 
     // ── Checkbox column ───────────────────────────────────────────────
@@ -405,7 +412,17 @@ public:
 
                 std::string text = cellFmt_ ? cellFmt_(idx, col, srcAt(idx)) : std::to_string(idx);
 
-                bool isEditing = (editRow_ == idx && editCol_ == col);
+                // Per-row conditional editing: predicate false = this row's cell
+                // is read-only even if the column is marked editable.
+                bool rowEditable = editableCols_.count(col) > 0;
+                if (rowEditable) {
+                    auto ewIt = editableWhen_.find(col);
+                    if (ewIt != editableWhen_.end() && ewIt->second &&
+                        !ewIt->second(idx, srcAt(idx)))
+                        rowEditable = false;
+                }
+
+                bool isEditing = rowEditable && (editRow_ == idx && editCol_ == col);
                 if (isEditing) {
                     ImGui::SetKeyboardFocusHere();
                     char editLabel[64];
@@ -450,7 +467,7 @@ public:
                             rowClickCallback_(idx);
                         }
                         if (ImGui::IsMouseDoubleClicked(0)) {
-                            if (editableCols_.count(col)) {
+                            if (rowEditable) {
                                 editRow_ = idx;
                                 editCol_ = col;
                                 // Portable bounded copy (no deprecated strncpy):
@@ -736,6 +753,7 @@ private:
     std::unordered_map<int, CellCheckboxFn> checkboxCols_;
     std::unordered_map<int, std::pair<CellCheckboxGetFn, CellCheckboxSetFn>> checkboxValueCols_;
     std::unordered_map<int, CellRenderFn> cellRenderers_;
+    std::unordered_map<int, std::function<bool(int, const T&)>> editableWhen_;
     std::string emptyText_;
 };
 
