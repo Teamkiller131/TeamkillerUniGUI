@@ -359,9 +359,12 @@ bool Combo(std::string_view label, int* current, const std::vector<std::string>&
     // padding (see detail/combo_chevron.h for the full rationale).
     const auto frame = detail::CaptureComboFrame();
     const bool open =
-        ImGui::BeginCombo(Z(label).c_str(), preview, ImGuiComboFlags_NoArrowButton);
+            ImGui::BeginCombo(Z(label).c_str(), preview, ImGuiComboFlags_NoArrowButton);
+    // [2026-08-25 v2] Definitive hover fix: bypass IsItemHovered entirely —
+    // use IsMouseHoveringRect on the captured combo frame. This works regardless
+    // of ScrollY tables, child windows, popup stacking, or any ImGui hover-flag state.
     const bool hovered =
-            ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+            ImGui::IsMouseHoveringRect(frame.pos, ImVec2(frame.pos.x + frame.width, frame.pos.y + frame.height));
     detail::DrawComboChevron(frame, hovered || open);
     // Mouse-wheel quick-select (trader request 2026-07-07): while hovering the CLOSED
     // combo, scrolling cycles the selection in place without opening the popup — wheel

@@ -51,7 +51,31 @@ void ComboBox::Render() {
     const auto comboFrame = detail::CaptureComboFrame();
     const bool comboOpen = ImGui::BeginCombo(label_.c_str(), preview, ImGuiComboFlags_NoArrowButton);
     const bool comboFocused = ImGui::IsItemFocused(); // capture before dropdown items steal it
-    detail::DrawComboChevron(comboFrame, comboOpen || ImGui::IsItemHovered());
+    // [2026-08-25] Mouse-wheel quick-select — same behavior as im::Combo.
+    // Use IsMouseHoveringRect (direct geometric check) instead of IsItemHovered()
+    // to work inside ScrollY tables, child windows, and any hover-flag-blocked context.
+    const bool comboHovered =
+            ImGui::IsMouseHoveringRect(comboFrame.pos,
+                                       ImVec2(comboFrame.pos.x + comboFrame.width,
+                                              comboFrame.pos.y + comboFrame.height));
+    detail::DrawComboChevron(comboFrame, comboOpen || comboHovered);
+    // Wheel on closed combo = cycle selection; SetItemKeyOwner stops outer scroll region.
+    if (!comboOpen && comboHovered && items_.size() > 1) {
+        ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
+        const float wheel = ImGui::GetIO().MouseWheel;
+        if (wheel != 0.0f) {
+            int dir = wheel > 0.0f ? -1 : 1;
+            int next = selected_ + dir;
+            // Skip past the placeholder row when allowEmpty_
+            const int lo = allowEmpty_ ? -1 : 0;
+            if (next < lo) next = lo;
+            if (next >= (int) items_.size()) next = (int) items_.size() - 1;
+            if (next != selected_) {
+                selected_ = next;
+                if (on_change_) on_change_(selected_);
+            }
+        }
+    }
     if (comboOpen) {
         if (allowEmpty_) {
             const char* none = placeholder_.empty() ? "(none)" : placeholder_.c_str();
