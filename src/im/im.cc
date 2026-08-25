@@ -360,13 +360,18 @@ bool Combo(std::string_view label, int* current, const std::vector<std::string>&
     const auto frame = detail::CaptureComboFrame();
     const bool open =
         ImGui::BeginCombo(Z(label).c_str(), preview, ImGuiComboFlags_NoArrowButton);
-    const bool hovered = ImGui::IsItemHovered();
+    const bool hovered =
+            ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
     detail::DrawComboChevron(frame, hovered || open);
     // Mouse-wheel quick-select (trader request 2026-07-07): while hovering the CLOSED
     // combo, scrolling cycles the selection in place without opening the popup — wheel
-    // up = previous item, wheel down = next, clamped to range. SetItemKeyOwner claims
-    // the vertical wheel for this item so a surrounding scroll region (e.g. the pod
-    // table) does not also scroll. When the popup is open the wheel scrolls its list.
+    // up = previous item, wheel down = next, clamped to range.
+    //
+    // [2026-08-25] Robustness fix for ScrollY-table contexts: plain IsItemHovered()
+    // returned false inside tables whose scroll region was "active" (hover-flag blocked),
+    // silently disabling wheel-select for every combo in a pod table. The relaxed
+    // AllowWhenBlockedByActiveItem flag catches that case. SetItemKeyOwner still claims
+    // the vertical wheel so the surrounding table does not also scroll.
     if (!open && hovered && n > 1) {
         ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
         const float wheel = ImGui::GetIO().MouseWheel;
