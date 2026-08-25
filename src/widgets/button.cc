@@ -56,10 +56,17 @@ void Button::Render() {
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeCol);
 
     ImVec2 size(0, 0);
-    if (sz_ == Small)
-        size = ImVec2(80, 24);
-    else if (sz_ == Large)
-        size = ImVec2(180, 36);
+    // Fixed-size variants (Small/Large) guarantee a MINIMUM width — the label
+    // always fits because the width auto-expands to max(min, text + padding).
+    // The old hard-coded 80px/180px truncated CJK labels like "立即刷新" (4 chars
+    // ≈ 96px at 20px font). Height stays fixed per size variant.
+    if (sz_ == Small || sz_ == Large) {
+        const float minW  = (sz_ == Small) ? 80.f  : 180.f;
+        const float fixedH = (sz_ == Small) ? 24.f  : 36.f;
+        const float labelW = ImGui::CalcTextSize(label_.c_str()).x;
+        const float pad    = ImGui::GetStyle().FramePadding.x * 2.0f + 8.0f;
+        size = ImVec2((labelW + pad > minW) ? labelW + pad : minW, fixedH);
+    }
     ImGui::PushID(GetName().c_str());
     if (size.x > 0)
         clicked_ = ImGui::Button(label_.c_str(), size);
