@@ -91,8 +91,17 @@ public:
         // DisplayFramebufferScale. Without this the main viewport renders at the
         // wrong physical size and viewport/window coordinates disagree at any
         // non-1.0 DPI.
+        // [WIN-DPI-FIX 2026-08-30] ⚠ This "client = logical DIPs" premise holds on
+        // macOS/Wayland only. On Windows a DPI-aware process gets PHYSICAL client
+        // pixels from GLFW (no GLFW_SCALE_TO_MONITOR → framebuffer == window), so
+        // forcing DisplayFramebufferScale here double-counts the scale: projection =
+        // physical DisplaySize × 1.5 squeezes the UI into the top-left 1/1.5 of the
+        // window (2026-08-30 regression after the 4.9.1 merge). On Windows the
+        // impl_glfw fb/window ratio IS the truth — keep it.
         lastScale_ = ReadContentScale();
+#ifndef _WIN32
         ApplyScaleToIO(lastScale_);
+#endif
         initialized_ = true;
         return true;
     }
@@ -131,8 +140,15 @@ public:
             // window/window = 1.0, and letting it stand makes the projection render
             // at the wrong physical size on a non-1.0 monitor. Re-assert the live
             // monitor scale every frame.
+            // [WIN-DPI-FIX 2026-08-30] On Windows the premise is inverted: the client
+            // rect is PHYSICAL (DPI-aware process), our swapchain is sized at client
+            // size directly (see app.cc), so GLFW's fb/window ratio (1.0) is exactly
+            // right and re-asserting the monitor scale double-counts it. Only the
+            // logical-coordinate platforms (macOS/Wayland) need the re-assert.
+#ifndef _WIN32
             if (!needGL_)
                 ApplyScaleToIO(lastScale_);
+#endif
         }
     }
     void PollEvents() override { glfwPollEvents(); }

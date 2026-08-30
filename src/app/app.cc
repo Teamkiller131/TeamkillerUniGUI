@@ -162,13 +162,29 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         // swapchain at client size would be stretched. io.DisplayFramebufferScale
         // (= the same content scale, re-asserted every frame by the platform)
         // then maps the logical draw data onto the physical back buffer.
+        // [WIN-DPI-FIX 2026-08-30] On Windows the client rect of a DPI-aware process
+        // is ALREADY physical (GLFW reports physical pixels; no GLFW_SCALE_TO_MONITOR
+        // hint → framebuffer == window). Multiplying by the content scale here made
+        // the swapchain 1.5× the window, and combined with the (now removed) fb-scale
+        // re-assert squeezed the UI into the top-left corner. On Windows the client
+        // rect IS the physical back-buffer size.
         const float scale = g_platform->GetContentScale();
-        int pw = static_cast<int>((rc.right - rc.left) * scale + 0.5f);
-        int ph = static_cast<int>((rc.bottom - rc.top) * scale + 0.5f);
+        int pw = 0, ph = 0;
+#ifdef _WIN32
+        pw = static_cast<int>(rc.right - rc.left);
+        ph = static_cast<int>(rc.bottom - rc.top);
         if (pw <= 0) {
             pw = static_cast<int>(config.width * scale + 0.5f);
             ph = static_cast<int>(config.height * scale + 0.5f);
         }
+#else
+        pw = static_cast<int>((rc.right - rc.left) * scale + 0.5f);
+        ph = static_cast<int>((rc.bottom - rc.top) * scale + 0.5f);
+        if (pw <= 0) {
+            pw = static_cast<int>(config.width * scale + 0.5f);
+            ph = static_cast<int>(config.height * scale + 0.5f);
+        }
+#endif
         ID3D11Device* dev = nullptr;
         ID3D11DeviceContext* ctx = nullptr;
         IDXGISwapChain* swap = nullptr;
@@ -192,12 +208,21 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         int pw = 0, ph = 0;
         g_platform->GetClientSize(&pw, &ph);
         const float scale12 = g_platform->GetContentScale();
+        // [WIN-DPI-FIX 2026-08-30] Windows DPI-aware client size is already physical
+        // (see the DX11 twin above) — no ×scale, that double-counts.
+#ifdef _WIN32
+        if (pw <= 0) {
+            pw = static_cast<int>(config.width * scale12 + 0.5f);
+            ph = static_cast<int>(config.height * scale12 + 0.5f);
+        }
+#else
         pw = static_cast<int>(pw * scale12 + 0.5f);
         ph = static_cast<int>(ph * scale12 + 0.5f);
         if (pw <= 0) {
             pw = static_cast<int>(config.width * scale12 + 0.5f);
             ph = static_cast<int>(config.height * scale12 + 0.5f);
         }
+#endif
         ID3D12Device* dev = nullptr;
         ID3D12CommandQueue* queue = nullptr;
         ID3D12GraphicsCommandList* cmdList = nullptr;
@@ -448,13 +473,20 @@ bool NewFrame() {
         // Re-resize when the client size OR the monitor scale changes (the window
         // moved to a differently-scaled monitor — same client size, new physical
         // size). The swapchain takes PHYSICAL pixels; DisplaySize stays logical.
+        // [WIN-DPI-FIX 2026-08-30] On Windows cw/ch are already physical — no ×scale
+        // (mirrors the DX11 init fix above); the scale-change term stays so a monitor
+        // move that resizes the window still triggers the swapchain resize.
         if (cw > 0 && ch > 0 && (cw != lastW || ch != lastH || scale != lastScale)) {
             lastW = cw;
             lastH = ch;
             lastScale = scale;
             auto* dxr = static_cast<DX11Renderer*>(g_renderer.get());
+#ifdef _WIN32
+            if (dxr->ResizeSwapChain(cw, ch)) {
+#else
             if (dxr->ResizeSwapChain(static_cast<int>(cw * scale + 0.5f),
                                      static_cast<int>(ch * scale + 0.5f))) {
+#endif
                 ImGui::GetIO().DisplaySize = ImVec2((float) cw, (float) ch);
             }
         }
@@ -472,8 +504,12 @@ bool NewFrame() {
             lastH12 = ch;
             lastScale12 = scale;
             auto* dxr = static_cast<DX12Renderer*>(g_renderer.get());
+#ifdef _WIN32
+            if (dxr->ResizeSwapChain(cw, ch)) {
+#else
             if (dxr->ResizeSwapChain(static_cast<int>(cw * scale + 0.5f),
                                      static_cast<int>(ch * scale + 0.5f))) {
+#endif
                 ImGui::GetIO().DisplaySize = ImVec2((float) cw, (float) ch);
             }
         }
