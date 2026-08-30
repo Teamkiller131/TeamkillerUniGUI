@@ -3,11 +3,17 @@
 
 #include <string>
 namespace unigui {
-class Separator : public Widget {
+class Separator : public FluentWidget<Separator> {
 public:
     Separator(std::string name, std::string label = "");
     void Render() override;
     void SetLabel(std::string label);
+
+    // ── Fluent (chainable) helpers — return Separator& via CRTP base ───────
+    Separator& WithLabel(std::string label) {
+        SetLabel(std::move(label));
+        return *this;
+    }
 
 private:
     std::string label_;

@@ -8,7 +8,7 @@
 
 namespace unigui {
 
-class Window : public Widget {
+class Window : public FluentWidget<Window> {
 public:
     Window(std::string name, std::string title);
     void Render() override;
@@ -31,6 +31,32 @@ public:
     /// v3.2.6: layout persistence — saves/restores position + size to JSON string
     std::string SaveLayout() const;
     void RestoreLayout(const std::string& json);
+
+    // ── Fluent (chainable) helpers — return Window& via CRTP base ──────────
+    Window& WithSize(float width, float height) {
+        SetSize(width, height);
+        return *this;
+    }
+    Window& WithMenuBarEnabled(bool enabled) {
+        SetMenuBarEnabled(enabled);
+        return *this;
+    }
+    Window& WithOnClose(std::function<void()> callback) {
+        SetOnClose(std::move(callback));
+        return *this;
+    }
+    Window& WithPosition(float x, float y) {
+        SetPosition(x, y);
+        return *this;
+    }
+    Window& WithCloseToTray(bool on) {
+        SetCloseToTray(on);
+        return *this;
+    }
+    Window& WithDropCallback(std::function<void(std::vector<std::string>)> cb) {
+        SetDropCallback(std::move(cb));
+        return *this;
+    }
 
 private:
     std::string title_;

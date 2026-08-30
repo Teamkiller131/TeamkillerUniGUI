@@ -60,6 +60,20 @@ IPlugin* Manager::Load(const std::string& path) {
         return nullptr;
     }
 
+    // ABI gate: a plugin built against a different interface version has a different
+    // vtable/symbol contract and must never be instantiated. A missing version export
+    // counts as version 0 (the plugin predates versioning) and is rejected the same way.
+    auto vf = (InterfaceVersionFn) GetSymOS(h, "PluginInterfaceVersion");
+    const std::int32_t reported = vf ? vf() : 0;
+    if (!InterfaceVersionCompatible(reported)) {
+        UNIGUI_LOG_ERROR(
+                "Plugin interface version mismatch for {} (plugin={}, host={}) — rebuild "
+                "the plugin against this UniGUI version",
+                path, reported, (int) kPluginInterfaceVersion);
+        FreeLibOS(h);
+        return nullptr;
+    }
+
     IPlugin* raw = cf();
     if (!raw) {
         UNIGUI_LOG_ERROR("CreatePlugin returned null: {}", path);

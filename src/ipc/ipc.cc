@@ -27,9 +27,34 @@ namespace unigui::ipc {
 
 // ── ZMQ Helpers ─────────────────────────────────────────────────────────────
 
+// One process-wide ZMQ context, created on first use. Held in a struct with a
+// terminate hook so Shutdown() can tear it down for clean-shutdown / DLL-unload
+// scenarios (the OS reclaims it at process exit either way).
+struct ZmqCtxHolder {
+    void* ctx = zmq_ctx_new();
+};
+static ZmqCtxHolder& zmqCtxHolder() {
+    static ZmqCtxHolder holder;
+    return holder;
+}
 static void* zmqCtx() {
-    static void* ctx = zmq_ctx_new();
-    return ctx;
+    ZmqCtxHolder& h = zmqCtxHolder();
+    if (!h.ctx)
+        h.ctx = zmq_ctx_new(); // re-create after a Shutdown() so new channels still work
+    return h.ctx;
+}
+
+void Shutdown() {
+    ZmqCtxHolder& h = zmqCtxHolder();
+    if (h.ctx) {
+        // zmq_ctx_term blocks until every socket in the context is closed; all our
+        // sockets set ZMQ_LINGER=0 and close in their destructors, so this returns
+        // promptly. Null the handle so a second call (or a socket created afterward,
+        // which re-News via zmqCtx) is safe — but callers must not reuse channels
+        // across Shutdown().
+        zmq_ctx_term(h.ctx);
+        h.ctx = nullptr;
+    }
 }
 
 // ── Server ───────────────────────────────────────────────────────────────
@@ -71,6 +96,13 @@ bool Server::Send(const std::string& msg) {
 }
 
 void Server::OnReceive(std::function<void(const std::string&)> cb) {
+    // Server is a ZMQ_PUB (broadcast) socket — it cannot receive, so this callback
+    // would never fire. It exists only because Channel makes OnReceive pure-virtual;
+    // warn loudly rather than silently accept a dead handler. For a request/response
+    // topology, subscribe with a Client (ZMQ_SUB) on the other end.
+    if (cb)
+        UNIGUI_LOG_WARN("IPC Server (PUB socket) cannot receive — OnReceive is a no-op; "
+                        "use a Client (SUB) to receive published messages");
     onRecv_ = std::move(cb);
 }
 

@@ -246,13 +246,30 @@ Result<void> Store::LoadINI(const std::string& path) {
     if (!f)
         return Err(ErrorCode::FileNotFound);
     char buf[4096];
+    std::string section; // current [section]; keys become "section.key"
     while (fgets(buf, sizeof(buf), f)) {
         std::string line(buf);
         while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
             line.pop_back();
-        auto eq = line.find('=');
-        if (eq != std::string::npos)
-            data_[line.substr(0, eq)] = line.substr(eq + 1);
+        line = Trim(line);
+        // Skip blanks and comment lines (';' or '#' — both common INI conventions).
+        if (line.empty() || line[0] == ';' || line[0] == '#')
+            continue;
+        // [section] header: subsequent keys are stored as "section.key".
+        if (line.front() == '[' && line.back() == ']') {
+            section = Trim(line.substr(1, line.size() - 2));
+            continue;
+        }
+        const auto eq = line.find('=');
+        if (eq == std::string::npos)
+            continue; // not a key=value line
+        std::string key = Trim(line.substr(0, eq));
+        std::string value = Trim(line.substr(eq + 1));
+        if (key.empty())
+            continue;
+        if (!section.empty())
+            key = section + "." + key;
+        data_[key] = std::move(value);
     }
     fclose(f);
     UNIGUI_LOG_INFO("Store: loaded INI {} ({} keys)", path, (int) data_.size());

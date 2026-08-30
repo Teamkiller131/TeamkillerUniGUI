@@ -188,4 +188,26 @@ NodePtr For(int count, std::function<NodePtr(int)> builder);
 /// Render a DSL tree. Call once per frame.
 void Render(NodePtr root);
 
+/// Serialise a DSL tree back into the equivalent builder expression — the
+/// designer-tool "emit code" half. Produces a complete, compilable snippet:
+///
+///     using namespace unigui::dsl;
+///
+///     NodePtr ui =
+///         Window("Demo", VBox({
+///             Text("Welcome!"),
+///             ...
+///         }));
+///
+/// What round-trips exactly: structure, labels/text, numeric parameters
+/// (slider min/max, flex gap/weights/justify) and button variants. What does
+/// not: callbacks and conditions (`onClick`/`onToggle`/`onChange`/`If`
+/// conditions/`For` item builders/`Custom` bodies) — a `std::function` cannot
+/// be recovered, so those positions are emitted as *compilable* placeholder
+/// forms (`[] { return true; } /* condition */`, a `Label(std::to_string(i))`
+/// item builder, a `/* draw lambda */` body) and external bindings become a
+/// trailing `// bound to an external ...` note. Returns an empty string for a
+/// null root.
+std::string ToSource(const NodePtr& root);
+
 } // namespace unigui::dsl

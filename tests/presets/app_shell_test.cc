@@ -123,6 +123,40 @@ TEST_F(AppShellTest, Render_EmptyShell_DoesNotCrash) {
     EXPECT_EQ(shell.GetActivePage(), -1);
 }
 
+// ── Command palette integration ──────────────────────────────────────────────
+TEST_F(AppShellTest, Palette_DisabledByDefault) {
+    unigui::presets::AppShell shell("shell", "App");
+    EXPECT_FALSE(shell.HasCommandPalette());
+    EXPECT_FALSE(shell.IsCommandPaletteOpen());
+    shell.OpenCommandPalette(); // no-op while disabled
+    EXPECT_FALSE(shell.IsCommandPaletteOpen());
+}
+
+TEST_F(AppShellTest, Palette_EnableAndOpen) {
+    unigui::presets::AppShell shell("shell", "App");
+    shell.WithCommandPalette();
+    EXPECT_TRUE(shell.HasCommandPalette());
+    shell.OpenCommandPalette();
+    EXPECT_TRUE(shell.IsCommandPaletteOpen());
+}
+
+TEST_F(AppShellTest, Palette_AddCommand_ImpliesEnable) {
+    unigui::presets::AppShell shell("shell", "App");
+    shell.AddCommand("app.save", "Save workspace", [] {});
+    EXPECT_TRUE(shell.HasCommandPalette());
+}
+
+TEST_F(AppShellTest, Palette_RenderWithOpenPalette_DoesNotCrash) {
+    unigui::presets::AppShell shell("shell", "App");
+    shell.WithCommandPalette()
+        .AddPage("Home", [] { ImGui::TextUnformatted("home"); })
+        .AddPage("Logs", [] { ImGui::TextUnformatted("logs"); });
+    shell.AddCommand("app.quit", "Quit", [] {});
+    shell.OpenCommandPalette();
+    shell.Render();
+    EXPECT_TRUE(shell.IsCommandPaletteOpen());
+}
+
 // ── Render: fully-loaded shell does not crash ────────────────────────────────
 TEST_F(AppShellTest, Render_FullChrome_DoesNotCrash) {
     unigui::presets::AppShell shell("shell", "My App");

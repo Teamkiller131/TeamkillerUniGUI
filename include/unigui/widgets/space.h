@@ -3,7 +3,7 @@
 
 #include <string>
 namespace unigui {
-class DockSpace : public Widget {
+class DockSpace : public FluentWidget<DockSpace> {
 public:
     DockSpace(std::string name);
     void Render() override;

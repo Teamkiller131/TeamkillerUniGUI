@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 Dialog::Dialog(std::string name, std::string title, std::string message)
-        : Widget(std::move(name))
+        : FluentWidget<Dialog>(std::move(name))
         , title_(std::move(title))
         , message_(std::move(message)) {}
 void Dialog::Render() {

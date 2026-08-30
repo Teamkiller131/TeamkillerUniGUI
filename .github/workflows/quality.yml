@@ -3,12 +3,47 @@ name: Quality (clang-tidy & coverage)
 on: [push, pull_request]
 
 jobs:
+  # Doc version stamps must match core/version.h. Eleven docs sat stamped "v3.16.0"
+  # for multiple minor releases because nothing checked them (found by the project
+  # audit); this hard gate makes that class of drift fail CI. Only x.y.z stamps that
+  # name the CURRENT library are allowed in the version-stamp positions — historical
+  # references (CHANGELOG, release notes) are not scanned.
+  docs-version:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Doc stamps match core/version.h (hard gate)
+      run: |
+        ver=$(sed -n 's/#define UNIGUI_VERSION_STRING "\(.*\)"/\1/p' include/unigui/core/version.h)
+        echo "library version: $ver"
+        bad=0
+        # Any explicit UniGUI version stamp in docs/ or the READMEs must equal $ver.
+        # Stamps look like "TeamkillerUniGUI (v4.6.0)", "**Version 4.6.0**", "tracks
+        # UniGUI **4.6.0**", or the README version badge (version-4.6.0-...). Historical
+        # x.y.z references without those stamp prefixes are not scanned; the pinned
+        # imgui version is whitelisted.
+        for f in docs/*.md README.md README_zh.md; do
+          hits=$(grep -noE "(UniGUI[^0-9]{0,20}|Version[^0-9A-Za-z][^0-9]{0,4}|version-)[0-9]+\.[0-9]+\.[0-9]+" "$f" || true)
+          while IFS= read -r h; do
+            [ -z "$h" ] && continue
+            v=$(echo "$h" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
+            if [ "$v" != "$ver" ] && [ "$v" != "1.92.8" ]; then
+              echo "::error file=$f::stale version stamp: $h (library is $ver)"
+              bad=1
+            fi
+          done <<< "$hits"
+        done
+        exit $bad
+
   clang-tidy:
     runs-on: ubuntu-latest
-    # Advisory for now: clang-tidy findings are reported but don't block the
-    # pipeline. Flip to a hard gate (remove continue-on-error) once the
-    # baseline is clean.
-    continue-on-error: true
+    # Hard gate on the bug-catching family: `.clang-tidy` sets
+    # `WarningsAsErrors: 'bugprone-*'`, so clang-tidy exits non-zero (and this job
+    # fails) on any new bugprone finding. The other enabled families
+    # (readability/modernize/performance/cppcoreguidelines/misc) stay advisory —
+    # reported in the log but non-fatal — because the tree carries thousands of
+    # deliberate style deviations that are not bugs. There is no continue-on-error
+    # anymore; a bugprone regression must fail CI.
     steps:
     - uses: actions/checkout@v4
     - name: Install deps
@@ -49,17 +84,21 @@ jobs:
         clang-tidy-19 --version
         echo "Linting $(wc -l < tidy_files.txt) compiled first-party sources"
         # --extra-arg forces C++23 for the frontend regardless of how the compile DB
-        # records the standard, so <expected> is available. Style warnings are advisory
-        # (WarningsAsErrors is empty); only real clang-diagnostic-errors fail the step.
+        # records the standard, so <expected> is available. Style warnings are advisory;
+        # a bugprone-* finding (WarningsAsErrors in .clang-tidy) or a real
+        # clang-diagnostic-error makes clang-tidy exit non-zero and fails the step.
         xargs clang-tidy-19 -p build --config-file=.clang-tidy --extra-arg=-std=gnu++23 < tidy_files.txt
-    - name: Wrapper coverage vs ImGui (advisory)
-      # Reports the first-class-wrapped %% of ImGui's practical surface (the
-      # "Wrapper coverage" success metric in DEVELOPMENT_PLAN.md). Advisory for
-      # now; the trend should move up, never down. Once stable, add
-      # `--threshold N` to turn it into a hard regression gate.
+    - name: Wrapper coverage vs ImGui (hard gate ≥95%)
+      # Gates the first-class-wrapped %% of ImGui's practical surface (the
+      # "Wrapper coverage" success metric in DEVELOPMENT_PLAN.md). Current figure is
+      # 98.5% (201/204); the threshold sits at 95 so a deliberate vcpkg imgui bump
+      # (which adds new practical functions and dilutes the %%) can land first and the
+      # wrapping catch-up follow — while an actual regression (dropping wrappers)
+      # fails CI. The imgui surface is baseline-pinned in vcpkg.json, so the figure
+      # cannot drift on its own.
       run: |
         python3 scripts/coverage_vs_imgui.py \
-          --imgui build/vcpkg_installed/x64-linux/include/imgui.h --list
+          --imgui build/vcpkg_installed/x64-linux/include/imgui.h --list --threshold 95
 
   coverage:
     runs-on: ubuntu-latest

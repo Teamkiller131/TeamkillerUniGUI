@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 GroupBox::GroupBox(std::string name, std::string title)
-        : Widget(std::move(name))
+        : FluentWidget<GroupBox>(std::move(name))
         , title_(std::move(title)) {}
 void GroupBox::Render() {
     if (!IsVisible())

@@ -32,7 +32,7 @@ struct TreeNode {
     // plain fallback. Spans are rendered inline, left to right.
     std::vector<TextSpan> spans;
 };
-class TreeView : public Widget {
+class TreeView : public FluentWidget<TreeView> {
 public:
     TreeView(std::string name);
     void Render() override;
@@ -51,6 +51,29 @@ public:
     /// uses icon/suffix/progress/color fields on TreeNode.
     void SetRowRenderer(
         std::function<void(int id, int depth, const TreeNode& node, bool selected)> fn);
+
+    // ── Fluent (chainable) helpers — return TreeView& via CRTP base ──────────
+    TreeView& WithRoot(TreeNode root) {
+        SetRoot(std::move(root));
+        return *this;
+    }
+    TreeView& WithMultiSelect(bool on) {
+        SetMultiSelect(on);
+        return *this;
+    }
+    TreeView& WithHideRoot(bool on) {
+        SetHideRoot(on);
+        return *this;
+    }
+    TreeView& WithNodeRenderer(std::function<void(int id, int depth, const TreeNode& node)> fn) {
+        SetNodeRenderer(std::move(fn));
+        return *this;
+    }
+    TreeView& WithRowRenderer(
+        std::function<void(int id, int depth, const TreeNode& node, bool selected)> fn) {
+        SetRowRenderer(std::move(fn));
+        return *this;
+    }
 
 private:
     TreeNode root_;

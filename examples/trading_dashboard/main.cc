@@ -20,6 +20,8 @@
 #include <string_view>
 #include <vector>
 
+namespace im = unigui::im;
+
 using namespace unigui::trading;
 
 namespace {
@@ -144,40 +146,47 @@ int main(int argc, char** argv) {
         watch[0].last = last;
         positions[0].last = last;
 
-        ImGui::SetNextWindowSize(ImVec2(760, 520), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Chart");
-        chart.Render();
-        ImGui::End();
+        im::SetNextWindowSize(ImVec2(760, 520), ImGuiCond_FirstUseEver);
+        {
+            unigui::WindowScope window{"Chart"};
+            chart.Render();
+        }
 
-        ImGui::SetNextWindowSize(ImVec2(300, 520), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Depth of Market");
-        dom.Render();
-        ImGui::End();
+        im::SetNextWindowSize(ImVec2(300, 520), ImGuiCond_FirstUseEver);
+        {
+            unigui::WindowScope window{"Depth of Market"};
+            dom.Render();
+        }
 
-        ImGui::SetNextWindowSize(ImVec2(320, 520), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Order Ticket");
-        ticket.Render();
-        ImGui::End();
+        im::SetNextWindowSize(ImVec2(320, 520), ImGuiCond_FirstUseEver);
+        {
+            unigui::WindowScope window{"Order Ticket"};
+            ticket.Render();
+        }
 
-        ImGui::SetNextWindowSize(ImVec2(560, 240), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Positions");
-        positionsBlotter.Render();
-        ImGui::End();
+        im::SetNextWindowSize(ImVec2(560, 240), ImGuiCond_FirstUseEver);
+        {
+            unigui::WindowScope window{"Positions"};
+            positionsBlotter.Render();
+        }
 
-        ImGui::SetNextWindowSize(ImVec2(560, 240), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Watchlist");
-        watchlist.Render();
-        ImGui::End();
+        im::SetNextWindowSize(ImVec2(560, 240), ImGuiCond_FirstUseEver);
+        {
+            unigui::WindowScope window{"Watchlist"};
+            watchlist.Render();
+        }
 
-        ImGui::SetNextWindowSize(ImVec2(560, 240), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Orders");
-        ordersBlotter.Render();
-        ImGui::End();
+        im::SetNextWindowSize(ImVec2(560, 240), ImGuiCond_FirstUseEver);
+        {
+            unigui::WindowScope window{"Orders"};
+            ordersBlotter.Render();
+        }
 
-        ImGui::SetNextWindowSize(ImVec2(560, 240), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Time & Sales");
-        tradesTape.Render();
-        ImGui::End();
+        im::SetNextWindowSize(ImVec2(560, 240), ImGuiCond_FirstUseEver);
+        {
+            unigui::WindowScope window{"Time & Sales"};
+            tradesTape.Render();
+        }
 
         unigui::Render();
         ++frame;

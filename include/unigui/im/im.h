@@ -300,6 +300,8 @@ void SetWindowFontScale(float scale);
 //  GetWindowDrawList already live in the sections above — do not redeclare.)
 ImFont* GetFont();
 float GetFontSize();
+/// The baked font at the current size — the glyph-ready object behind GetFont().
+ImFontBaked* GetFontBaked();
 /// The live style block, e.g. to read FramePadding or a theme color.
 ImGuiStyle& GetStyle();
 /// The IO block — font scale, display size, input state.
@@ -444,6 +446,9 @@ bool IsAnyItemFocused();
 ImVec2 GetItemRectMin();
 ImVec2 GetItemRectMax();
 ImVec2 GetItemRectSize();
+/// Generic flags of the last item (e.g. ImGuiItemFlags_Disabled under
+/// BeginDisabled) — lets app code read back the state it pushed.
+ImGuiItemFlags GetItemFlags();
 
 // ── Keyboard queries ──────────────────────────────────────────────────────────
 bool IsKeyDown(ImGuiKey key);
@@ -549,6 +554,9 @@ bool TreeNodeEx(std::string_view label, ImGuiTreeNodeFlags flags = 0);
 void TreePop();
 /// Force the next tree node / collapsing header open/closed state.
 void SetNextItemOpen(bool isOpen, ImGuiCond cond = 0);
+/// Read a tree node's open/close state by its storage ID (from GetID) — pairs
+/// with SetNextItemOpen and the numeric-ID TreeNode/TreeNodeEx overloads.
+bool TreeNodeGetOpen(ImGuiID storageId);
 /// Collapsing header (a tree node styled as a full-width header).
 bool CollapsingHeader(std::string_view label, ImGuiTreeNodeFlags flags = 0);
 /// Collapsing header with a close ✕ button (bound to `pVisible`).

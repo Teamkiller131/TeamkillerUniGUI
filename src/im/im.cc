@@ -1,13 +1,14 @@
+#include <unigui/core/layout_direction.h>
 #include <unigui/im/im.h>
 
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "detail/combo_chevron.h"
-
 #include <algorithm>
 #include <cstdarg>
 #include <cstring>
+
+#include "detail/combo_chevron.h"
 
 namespace unigui::im {
 
@@ -17,6 +18,69 @@ namespace {
 // stay in std::string's small-buffer (no heap allocation).
 inline std::string Z(std::string_view s) {
     return std::string(s);
+}
+
+// RTL mirroring, increment 1: single-line text blocks right-align so RTL-script
+// UIs read right-to-left. The cursor is advanced to (right edge - measured
+// width), so the block ENDS where LTR text would end. Increment 2 adds
+// right-aligned WRAPPED text (TextWrappedRtl below — visual order only, no
+// bidi reordering). Still excluded (deep layout-engine concerns, documented in
+// DEVELOPMENT_PLAN §7): BulletText (the bullet marker lives at the cursor) and
+// control internals/table order/tree indents.
+inline void AlignTextRightIfRtl(std::string_view text) {
+    if (!unigui::IsRightToLeft())
+        return;
+    const float w = ImGui::CalcTextSize(text.data(), text.data() + text.size()).x;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - w);
+}
+
+// Right-aligned wrapped text: split on whitespace, break lines at the wrap
+// width, and flush each line right-aligned (so the line ENDS at the right
+// edge, like AlignTextRightIfRtl). '\n' is a hard line break. Visual order
+// only — for pure-RTL text (the actual use case) the words already read
+// right-to-left, and the mirroring is exactly the alignment.
+void TextWrappedRtl(std::string_view text) {
+    const float wrapWidth = ImGui::GetContentRegionAvail().x;
+    if (wrapWidth <= 0.0f) { // degenerate/zero-width region: draw as-is
+        ImGui::TextUnformatted(text.data(), text.data() + text.size());
+        return;
+    }
+    std::string line;
+    const auto flush = [&] {
+        if (line.empty())
+            return;
+        const float w = ImGui::CalcTextSize(line.c_str()).x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + wrapWidth - w);
+        ImGui::TextUnformatted(line.c_str());
+        line.clear();
+    };
+    while (!text.empty()) {
+        if (text[0] == '\n') { // hard break
+            flush();
+            text.remove_prefix(1);
+            continue;
+        }
+        const std::size_t sp = text.find_first_of(" \t\n");
+        const std::string_view word =
+            text.substr(0, sp == std::string_view::npos ? text.size() : sp);
+        if (!word.empty()) {
+            if (line.empty()) {
+                line.assign(word);
+            } else {
+                const std::string candidate = line + " " + std::string(word);
+                if (ImGui::CalcTextSize(candidate.c_str()).x <= wrapWidth) {
+                    line = candidate;
+                } else {
+                    flush();
+                    line.assign(word);
+                }
+            }
+        }
+        text.remove_prefix(word.size());
+        while (!text.empty() && (text[0] == ' ' || text[0] == '\t'))
+            text.remove_prefix(1); // collapse the separator run
+    }
+    flush();
 }
 
 inline ImVec4 Lighten(const ImVec4& c, float t) {
@@ -35,7 +99,7 @@ ImVec4 VariantColor(ButtonVariant v, const ImVec4& fallback) {
     case ButtonVariant::Success:
         return ImVec4(0.18f, 0.60f, 0.28f, 1.0f);
     case ButtonVariant::Warning:
-        return ImVec4(0.85f, 0.55f, 0.13f, 1.0f);  // amber — e.g. an exhausted/triggered-out action
+        return ImVec4(0.85f, 0.55f, 0.13f, 1.0f); // amber — e.g. an exhausted/triggered-out action
     default:
         return fallback;
     }
@@ -66,22 +130,29 @@ bool SmallButton(std::string_view label) {
 
 // ── Text ──────────────────────────────────────────────────────────────────────
 void Text(std::string_view text) {
+    AlignTextRightIfRtl(text);
     ImGui::TextUnformatted(text.data(), text.data() + text.size());
 }
 
 void TextWrapped(std::string_view text) {
+    if (unigui::IsRightToLeft()) {
+        TextWrappedRtl(text);
+        return;
+    }
     ImGui::PushTextWrapPos(0.0f);
     ImGui::TextUnformatted(text.data(), text.data() + text.size());
     ImGui::PopTextWrapPos();
 }
 
 void TextDisabled(std::string_view text) {
+    AlignTextRightIfRtl(text);
     ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
     ImGui::TextUnformatted(text.data(), text.data() + text.size());
     ImGui::PopStyleColor();
 }
 
 void TextColored(const ImVec4& color, std::string_view text) {
+    AlignTextRightIfRtl(text);
     ImGui::PushStyleColor(ImGuiCol_Text, color);
     ImGui::TextUnformatted(text.data(), text.data() + text.size());
     ImGui::PopStyleColor();
@@ -94,6 +165,9 @@ void BulletText(std::string_view text) {
 }
 
 void LabelText(std::string_view label, std::string_view text) {
+    // Right-align the whole "label: value" block as one unit.
+    const std::string combined = std::string(label) + ": " + std::string(text);
+    AlignTextRightIfRtl(combined);
     ImGui::LabelText(Z(label).c_str(), "%.*s", static_cast<int>(text.size()), text.data());
 }
 
@@ -241,17 +315,17 @@ void DrawActiveInputCaret() {
         return;
     ImGuiContext& g = *ImGui::GetCurrentContext();
     const ImGuiPlatformImeData& ime = g.PlatformImeData;
-    if (!ime.WantVisible)  // ImGui only sets this for the active, editable input
+    if (!ime.WantVisible) // ImGui only sets this for the active, editable input
         return;
     const float anim = g.InputTextState.CursorAnim;
-    const bool blinkOn = !g.IO.ConfigInputTextCursorBlink || anim <= 0.0f
-                         || ImFmod(anim, 1.20f) <= 0.80f;
+    const bool blinkOn =
+        !g.IO.ConfigInputTextCursorBlink || anim <= 0.0f || ImFmod(anim, 1.20f) <= 0.80f;
     if (!blinkOn)
         return;
     const float h = ime.InputLineHeight > 0.0f ? ime.InputLineHeight : g.FontSize;
     const ImVec2 top(ime.InputPos.x + 1.0f, ime.InputPos.y);
     const ImVec2 bottom(top.x, top.y + h);
-    const float thickness = ImMax(2.0f, g.FontSize * 0.09f);  // ~2-3px, scales with font/DPI
+    const float thickness = ImMax(2.0f, g.FontSize * 0.09f); // ~2-3px, scales with font/DPI
     ImGui::GetWindowDrawList()->AddLine(top, bottom, ImGui::GetColorU32(ImGuiCol_Text), thickness);
 }
 
@@ -294,8 +368,7 @@ bool InputText(std::string_view label, std::string* value, std::size_t maxLength
     return EditString(Z(label).c_str(), value, maxLength, /*multiline=*/false, ImVec2(0, 0), flags);
 }
 
-bool InputText(std::string_view label, char* buf, std::size_t bufSize,
-               ImGuiInputTextFlags flags) {
+bool InputText(std::string_view label, char* buf, std::size_t bufSize, ImGuiInputTextFlags flags) {
     const bool changed = ImGui::InputText(Z(label).c_str(), buf, bufSize, flags);
     DrawActiveInputCaret();
     return changed;
@@ -309,8 +382,8 @@ bool InputTextWithHint(std::string_view label, std::string_view hint, char* buf,
     return changed;
 }
 
-bool InputTextMultiline(std::string_view label, char* buf, std::size_t bufSize,
-                        const ImVec2& size, ImGuiInputTextFlags flags) {
+bool InputTextMultiline(std::string_view label, char* buf, std::size_t bufSize, const ImVec2& size,
+                        ImGuiInputTextFlags flags) {
     const bool changed = ImGui::InputTextMultiline(Z(label).c_str(), buf, bufSize, size, flags);
     DrawActiveInputCaret();
     return changed;
@@ -620,8 +693,8 @@ void SetTooltipF(const char* fmt, ...) {
 }
 
 // ── Tables ────────────────────────────────────────────────────────────────────
-bool BeginTable(std::string_view strId, int columns, ImGuiTableFlags flags,
-                const ImVec2& outerSize, float innerWidth) {
+bool BeginTable(std::string_view strId, int columns, ImGuiTableFlags flags, const ImVec2& outerSize,
+                float innerWidth) {
     return ImGui::BeginTable(Z(strId).c_str(), columns, flags, outerSize, innerWidth);
 }
 void EndTable() {
@@ -636,8 +709,8 @@ bool TableNextColumn() {
 bool TableSetColumnIndex(int columnN) {
     return ImGui::TableSetColumnIndex(columnN);
 }
-void TableSetupColumn(std::string_view label, ImGuiTableColumnFlags flags,
-                      float initWidthOrWeight, ImGuiID userId) {
+void TableSetupColumn(std::string_view label, ImGuiTableColumnFlags flags, float initWidthOrWeight,
+                      ImGuiID userId) {
     ImGui::TableSetupColumn(Z(label).c_str(), flags, initWidthOrWeight, userId);
 }
 void TableSetupScrollFreeze(int cols, int rows) {
@@ -695,6 +768,9 @@ ImFont* GetFont() {
 }
 float GetFontSize() {
     return ImGui::GetFontSize();
+}
+ImFontBaked* GetFontBaked() {
+    return ImGui::GetFontBaked();
 }
 ImGuiStyle& GetStyle() {
     return ImGui::GetStyle();
@@ -881,6 +957,9 @@ bool IsItemClicked(ImGuiMouseButton mouseButton) {
 }
 bool IsItemVisible() {
     return ImGui::IsItemVisible();
+}
+ImGuiItemFlags GetItemFlags() {
+    return ImGui::GetItemFlags();
 }
 bool IsItemEdited() {
     return ImGui::IsItemEdited();
@@ -1078,6 +1157,9 @@ void TreePop() {
 }
 void SetNextItemOpen(bool isOpen, ImGuiCond cond) {
     ImGui::SetNextItemOpen(isOpen, cond);
+}
+bool TreeNodeGetOpen(ImGuiID storageId) {
+    return ImGui::TreeNodeGetOpen(storageId);
 }
 bool CollapsingHeader(std::string_view label, ImGuiTreeNodeFlags flags) {
     return ImGui::CollapsingHeader(Z(label).c_str(), flags);

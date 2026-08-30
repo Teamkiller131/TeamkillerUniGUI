@@ -5,7 +5,7 @@
 namespace unigui {
 
 AlertBar::AlertBar(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<AlertBar>(std::move(name)) {}
 
 void AlertBar::Render() {
     if (!IsVisible())

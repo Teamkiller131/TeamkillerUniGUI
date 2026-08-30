@@ -59,7 +59,7 @@ inline int CompareSortCells(const std::string& a, const std::string& b, bool asc
 /// DataTable<T> — high-performance data table with virtual scrolling, sorting,
 /// row coloring, cell formatting, inline editing, and text filtering.
 /// References external data via pointer.
-template <typename T> class DataTable : public Widget {
+template <typename T> class DataTable : public FluentWidget<DataTable<T>> {
 public:
     struct ColumnDef {
         std::string name;
@@ -99,7 +99,7 @@ public:
     using CellRenderFn = std::function<void(int row, const T&)>;
 
     DataTable(std::string name, std::vector<ColumnDef> columns)
-            : Widget(std::move(name))
+            : FluentWidget<DataTable<T>>(std::move(name))
             , columns_(std::move(columns)) {}
 
     // ── Data source (zero-copy pointer) ───────────────────────────────────
@@ -240,9 +240,135 @@ public:
     void SetFrozenColumns(int n) { freezeCols_ = n < 0 ? 0 : n; }
     int GetFrozenColumns() const { return freezeCols_; }
 
+    // ── Fluent (chainable) helpers — return DataTable& via CRTP base ──────
+    DataTable& WithDataSource(const std::vector<T>* data) {
+        SetDataSource(data);
+        return *this;
+    }
+    DataTable& WithDataSource(std::size_t count, RowAccessor accessor) {
+        SetDataSource(count, std::move(accessor));
+        return *this;
+    }
+    DataTable& WithCellFormatter(CellFormatter fmt) {
+        SetCellFormatter(std::move(fmt));
+        return *this;
+    }
+    DataTable& WithRowColor(RowColorFn fn) {
+        SetRowColor(std::move(fn));
+        return *this;
+    }
+    DataTable& WithCellColor(CellColorFn fn) {
+        SetCellColor(std::move(fn));
+        return *this;
+    }
+    DataTable& WithCellBold(CellBoldFn fn) {
+        SetCellBold(std::move(fn));
+        return *this;
+    }
+    DataTable& WithCellSignColor(int col, std::function<double(int row, const T&)> valueOf) {
+        SetCellSignColor(col, std::move(valueOf));
+        return *this;
+    }
+    DataTable& WithSortCompare(int col, SortCompare cmp) {
+        SetSortCompare(col, std::move(cmp));
+        return *this;
+    }
+    DataTable& WithMultiSelect(bool on) {
+        SetMultiSelect(on);
+        return *this;
+    }
+    DataTable& WithOnSelect(SelectFn cb) {
+        SetOnSelect(std::move(cb));
+        return *this;
+    }
+    DataTable& WithOnDoubleClick(DoubleClickFn cb) {
+        SetOnDoubleClick(std::move(cb));
+        return *this;
+    }
+    DataTable& WithOnSelectionChanged(std::function<void()> cb) {
+        SetOnSelectionChanged(std::move(cb));
+        return *this;
+    }
+    DataTable& WithContextMenu(std::function<void(int row)> fn) {
+        SetContextMenu(std::move(fn));
+        return *this;
+    }
+    DataTable& WithRowClickCallback(std::function<void(int row)> fn) {
+        SetRowClickCallback(std::move(fn));
+        return *this;
+    }
+    DataTable& WithSelectedRow(int row) {
+        SetSelectedRow(row);
+        return *this;
+    }
+    DataTable& WithColumnMinWidth(int col, float minWidth) {
+        SetColumnMinWidth(col, minWidth);
+        return *this;
+    }
+    DataTable& WithColumnStretch(int col, float weight = 1.0f) {
+        SetColumnStretch(col, weight);
+        return *this;
+    }
+    DataTable& WithColumnAutoWidth(int col, bool on) {
+        SetColumnAutoWidth(col, on);
+        return *this;
+    }
+    DataTable& WithColumnReorderable(bool on) {
+        SetColumnReorderable(on);
+        return *this;
+    }
+    DataTable& WithGroups(const std::vector<GroupInfo>& groups) {
+        SetGroups(groups);
+        return *this;
+    }
+    DataTable& WithCellEditable(int col, bool editable) {
+        SetCellEditable(col, editable);
+        return *this;
+    }
+    DataTable& WithOnCellCommit(CellCommitFn fn) {
+        SetOnCellCommit(std::move(fn));
+        return *this;
+    }
+    DataTable& WithCellCheckbox(int col, CellCheckboxFn fn) {
+        SetCellCheckbox(col, std::move(fn));
+        return *this;
+    }
+    DataTable& WithCellCheckboxValue(int col, CellCheckboxGetFn get, CellCheckboxSetFn set) {
+        SetCellCheckboxValue(col, std::move(get), std::move(set));
+        return *this;
+    }
+    DataTable& WithCellRenderer(int col, CellRenderFn fn) {
+        SetCellRenderer(col, std::move(fn));
+        return *this;
+    }
+    DataTable& WithEmptyText(std::string text) {
+        SetEmptyText(std::move(text));
+        return *this;
+    }
+    DataTable& WithFilterText(const std::string& text) {
+        SetFilterText(text);
+        return *this;
+    }
+    DataTable& WithFilterFn(FilterFn fn) {
+        SetFilterFn(std::move(fn));
+        return *this;
+    }
+    DataTable& WithVirtualScroll(bool on) {
+        SetVirtualScroll(on);
+        return *this;
+    }
+    DataTable& WithStickyHeader(bool on) {
+        SetStickyHeader(on);
+        return *this;
+    }
+    DataTable& WithFrozenColumns(int n) {
+        SetFrozenColumns(n);
+        return *this;
+    }
+
     // ── Render ────────────────────────────────────────────────────────────
     void Render() override {
-        if (!IsVisible() || (!data_ && !accessor_))
+        if (!this->IsVisible() || (!data_ && !accessor_))
             return;
 
         // ── Header ──────────────────────────────────────────────────────
@@ -255,7 +381,8 @@ public:
 
         float tableH = (virtualScroll_ || stickyHeader_) ? ImGui::GetContentRegionAvail().y : 0.f;
 
-        if (!ImGui::BeginTable(GetName().c_str(), (int) columns_.size(), flags, ImVec2(0, tableH)))
+        if (!ImGui::BeginTable(this->GetName().c_str(), (int) columns_.size(), flags,
+                               ImVec2(0, tableH)))
             return;
 
         if (stickyHeader_ || freezeCols_ > 0)
@@ -489,7 +616,7 @@ public:
                     // screenful; IsEnabled() keeps the 100k-row hot path allocation-free
                     // when a11y is off.
                     if (a11y::IsEnabled())
-                        ReportAccessible(a11y::Role::ListItem, ImGui::IsItemFocused(), text);
+                        this->ReportAccessible(a11y::Role::ListItem, ImGui::IsItemFocused(), text);
                 } else {
                     // Cell-level styling. A returned color with alpha==0 means
                     // "no override" — keep the default text color instead of
@@ -702,7 +829,7 @@ public:
             const int sel = GetSelectedRow();
             if (sel >= 0)
                 v += ", row " + std::to_string(sel) + " selected";
-            ReportAccessible(a11y::Role::Table, ImGui::IsItemFocused(), v);
+            this->ReportAccessible(a11y::Role::Table, ImGui::IsItemFocused(), v);
         }
     }
 

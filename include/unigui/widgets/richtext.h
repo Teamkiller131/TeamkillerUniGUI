@@ -17,7 +17,7 @@ struct RichTextSpan {
 };
 
 /// Rich text widget: renders formatted text with bold/italic/color spans.
-class RichText : public Widget {
+class RichText : public FluentWidget<RichText> {
 public:
     RichText(std::string name, std::string text = "");
     void Render() override;
@@ -32,6 +32,16 @@ public:
     void AddSpan(std::string text, ImVec4 color, bool bold = false, bool italic = false);
 
     const std::vector<RichTextSpan>& GetSpans() const { return spans_; }
+
+    // ── Fluent (chainable) helpers — return RichText& via CRTP base ──────────
+    RichText& WithText(std::string text) {
+        SetText(std::move(text));
+        return *this;
+    }
+    RichText& WithSpans(std::vector<RichTextSpan> spans) {
+        SetSpans(std::move(spans));
+        return *this;
+    }
 
 private:
     std::string plain_text_;

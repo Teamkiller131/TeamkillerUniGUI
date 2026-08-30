@@ -42,7 +42,7 @@ bool ListDirectory(const std::string& dir, const std::vector<std::string>& exts,
 /// filtering, resolved-path computation) is exposed as plain methods so the
 /// behaviour is unit-testable against a real temp directory without a GL
 /// context; only the actual drawing needs ImGui.
-class FileDialog : public Widget {
+class FileDialog : public FluentWidget<FileDialog> {
 public:
     enum class Mode { OpenFile, SaveFile, SelectFolder };
 
@@ -90,6 +90,16 @@ public:
     void SetOnCancel(std::function<void()> fn) { onCancel_ = std::move(fn); }
     /// The path produced by the most recent confirm (empty until confirmed).
     const std::string& GetSelectedPath() const { return confirmedPath_; }
+
+    // ── Fluent (chainable) helpers — return FileDialog& via CRTP base ──────
+    FileDialog& WithOnConfirm(std::function<void(const std::string& path)> fn) {
+        SetOnConfirm(std::move(fn));
+        return *this;
+    }
+    FileDialog& WithOnCancel(std::function<void()> fn) {
+        SetOnCancel(std::move(fn));
+        return *this;
+    }
 
     // ── Navigation / state (headless-testable) ───────────────────────────────
     /// The current directory's filtered, sorted listing (no ".." entry).

@@ -5,6 +5,9 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <format>
+
+namespace im = unigui::im;
 
 int main(int argc, char** argv) {
     int max_frames = 0;
@@ -72,19 +75,21 @@ int main(int argc, char** argv) {
     int frame = 0;
     while (!unigui::ShouldClose()) {
         unigui::NewFrame();
-        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Ctrl", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-        ImGui::Text("Font: %.0fpx", big ? 24.f : 16.f);
-        if (ImGui::Button(big ? "Small" : "Big")) {
-            big = !big;
-            ImGui::GetIO().FontGlobalScale = big ? 24.f / baseFontSize : 1.f;
+        im::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+        {
+            unigui::WindowScope ctrl{"Ctrl", nullptr, ImGuiWindowFlags_AlwaysAutoResize};
+            im::Text(std::format("Font: {:.0f}px", big ? 24.f : 16.f));
+            if (im::Button(big ? "Small" : "Big")) {
+                big = !big;
+                ImGui::GetIO().FontGlobalScale = big ? 24.f / baseFontSize : 1.f;
+            }
         }
-        ImGui::End();
-        ImGui::SetNextWindowPos(ImVec2(10, 90), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(1280, 680), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Table", nullptr, ImGuiWindowFlags_NoSavedSettings);
-        t.Render();
-        ImGui::End();
+        im::SetNextWindowPos(ImVec2(10, 90), ImGuiCond_FirstUseEver);
+        im::SetNextWindowSize(ImVec2(1280, 680), ImGuiCond_FirstUseEver);
+        {
+            unigui::WindowScope table{"Table", nullptr, ImGuiWindowFlags_NoSavedSettings};
+            t.Render();
+        }
         unigui::Render();
         frame++;
         if (max_frames > 0 && frame >= max_frames)

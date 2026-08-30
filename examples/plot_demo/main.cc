@@ -7,6 +7,8 @@
 #include <string_view>
 #include <vector>
 
+namespace im = unigui::im;
+
 int main(int argc, char** argv) {
     int max_frames = 0;
     for (int i = 1; i < argc; i++) {
@@ -45,39 +47,36 @@ int main(int argc, char** argv) {
 
         // Line plot
         {
-            ImGui::SetNextWindowSize(ImVec2(500, 350), ImGuiCond_FirstUseEver);
-            ImGui::Begin("Line Plot");
+            im::SetNextWindowSize(ImVec2(500, 350), ImGuiCond_FirstUseEver);
+            unigui::WindowScope window{"Line Plot"};
             if (ImPlot::BeginPlot("##line")) {
                 ImPlot::SetupAxes("X", "Y");
                 ImPlot::PlotLine("Series 1", xs.data(), ys.data(), (int) xs.size());
                 ImPlot::PlotLine("Series 2", xs.data(), ys2.data(), (int) xs.size());
                 ImPlot::EndPlot();
             }
-            ImGui::End();
         }
 
         // Bar plot
         {
-            ImGui::SetNextWindowSize(ImVec2(500, 350), ImGuiCond_FirstUseEver);
-            ImGui::Begin("Bar Plot");
+            im::SetNextWindowSize(ImVec2(500, 350), ImGuiCond_FirstUseEver);
+            unigui::WindowScope window{"Bar Plot"};
             if (ImPlot::BeginPlot("##bar")) {
                 ImPlot::SetupAxes("Category", "Value");
                 ImPlot::PlotBars("Bars", ys.data(), (int) ys.size(), 0.5f);
                 ImPlot::EndPlot();
             }
-            ImGui::End();
         }
 
         // Scatter plot
         {
-            ImGui::SetNextWindowSize(ImVec2(500, 350), ImGuiCond_FirstUseEver);
-            ImGui::Begin("Scatter Plot");
+            im::SetNextWindowSize(ImVec2(500, 350), ImGuiCond_FirstUseEver);
+            unigui::WindowScope window{"Scatter Plot"};
             if (ImPlot::BeginPlot("##scatter")) {
                 ImPlot::SetupAxes("X", "Y");
                 ImPlot::PlotScatter("Random", scatterX, scatterY, 20);
                 ImPlot::EndPlot();
             }
-            ImGui::End();
         }
 
         unigui::Render();

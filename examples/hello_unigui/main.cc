@@ -1,7 +1,10 @@
 #include <unigui/unigui.h>
 
 #include <cstdlib>
+#include <format>
 #include <string_view>
+
+namespace im = unigui::im;
 
 // ── v3.4: demonstrate RunApp + fluent widget API ─────────────────────────────
 
@@ -12,10 +15,10 @@ static void BuildDemoWindow() {
         // ── Welcome panel ────────────────────────────────────────────────
         auto welcome = std::make_shared<unigui::Panel>("info", "Welcome");
         welcome->SetContentCallback([]() {
-            ImGui::TextWrapped("Welcome to UniGUI v" UNIGUI_VERSION_STRING "! "
-                               "A modern Dear ImGui C++ wrapper with 83+ widgets, "
-                               "dark/light theme, DPI auto-scaling, DX11/OpenGL/Vulkan backends, "
-                               "and full CJK font support.");
+            im::TextWrapped("Welcome to UniGUI v" UNIGUI_VERSION_STRING "! "
+                            "A modern Dear ImGui C++ wrapper with 83+ widgets, "
+                            "dark/light theme, DPI auto-scaling, DX11/OpenGL/Vulkan backends, "
+                            "and full CJK font support.");
         });
         window->AddPanel(welcome);
 
@@ -23,26 +26,25 @@ static void BuildDemoWindow() {
         auto wrapPanel = std::make_shared<unigui::Panel>("wrap", "Auto-Wrap Demo");
         wrapPanel->SetWrapEnabled(true);
         wrapPanel->SetContentCallback([]() {
-            ImGui::TextUnformatted("This panel has auto-wrap enabled. Long text will automatically "
-                                   "wrap to fit the panel width. No need to manually insert line "
-                                   "breaks or call TextWrapped.");
+            im::TextUnformatted("This panel has auto-wrap enabled. Long text will automatically "
+                                "wrap to fit the panel width. No need to manually insert line "
+                                "breaks or call TextWrapped.");
         });
         window->AddPanel(wrapPanel);
 
         // ── i18n panel ───────────────────────────────────────────────────
         auto i18nPanel = std::make_shared<unigui::Panel>("i18n", "i18n Test");
         i18nPanel->SetContentCallback([]() {
-            ImGui::TextUnformatted(
-                "English: Hello, world! This is a Dear ImGui C++ wrapper library.");
-            ImGui::Separator();
-            ImGui::TextUnformatted("Chinese: 你好，世界！这是一个 Dear ImGui C++ 封装库。");
-            ImGui::TextUnformatted("Japanese: こんにちは世界！これはImGuiのラッパーです。");
-            ImGui::TextUnformatted("Korean: 안녕하세요 세계! 이것은 ImGui 래퍼입니다.");
-            ImGui::Separator();
-            ImGui::TextUnformatted("Arabic: مرحبا بالعالم! هذا هو مغلف ImGui.");
-            ImGui::TextUnformatted("Thai: สวัสดีชาวโลก! นี่คือไลบรารี ImGui.");
-            ImGui::Separator();
-            ImGui::TextUnformatted("Emoji: 🎉 🚀 ✨ 💻 🎨 (emoji support test)");
+            im::TextUnformatted("English: Hello, world! This is a Dear ImGui C++ wrapper library.");
+            im::Separator();
+            im::TextUnformatted("Chinese: 你好，世界！这是一个 Dear ImGui C++ 封装库。");
+            im::TextUnformatted("Japanese: こんにちは世界！これはImGuiのラッパーです。");
+            im::TextUnformatted("Korean: 안녕하세요 세계! 이것은 ImGui 래퍼입니다.");
+            im::Separator();
+            im::TextUnformatted("Arabic: مرحبا بالعالم! هذا هو مغلف ImGui.");
+            im::TextUnformatted("Thai: สวัสดีชาวโลก! นี่คือไลบรารี ImGui.");
+            im::Separator();
+            im::TextUnformatted("Emoji: 🎉 🚀 ✨ 💻 🎨 (emoji support test)");
         });
         window->AddPanel(i18nPanel);
 
@@ -51,24 +53,23 @@ static void BuildDemoWindow() {
         localePanel->SetContentCallback([]() {
             static int curLocale = 0;
             const char* locales[] = {"en_US", "zh_CN", "ja_JP"};
-            if (ImGui::Combo("Locale", &curLocale, "English\0Chinese\0Japanese\0"))
+            if (im::Combo("Locale", &curLocale, {"English", "Chinese", "Japanese"}))
                 unigui::Locale::SetCurrent(locales[curLocale]);
-            ImGui::Text("App Title: %s", unigui::Locale::Tr("app.title").c_str());
-            ImGui::Text("File: %s | Edit: %s | Help: %s", unigui::Locale::Tr("menu.file").c_str(),
-                        unigui::Locale::Tr("menu.edit").c_str(),
-                        unigui::Locale::Tr("menu.help").c_str());
-            ImGui::Separator();
-            ImGui::Text("OK: %s | Cancel: %s | Close: %s", unigui::Locale::Tr("btn.ok").c_str(),
-                        unigui::Locale::Tr("btn.cancel").c_str(),
-                        unigui::Locale::Tr("btn.close").c_str());
-            ImGui::Separator();
-            if (ImGui::Button("Add this demo to MRU"))
+            im::Text(std::format("App Title: {}", unigui::Locale::Tr("app.title")));
+            im::Text(std::format("File: {} | Edit: {} | Help: {}", unigui::Locale::Tr("menu.file"),
+                                 unigui::Locale::Tr("menu.edit"), unigui::Locale::Tr("menu.help")));
+            im::Separator();
+            im::Text(std::format("OK: {} | Cancel: {} | Close: {}", unigui::Locale::Tr("btn.ok"),
+                                 unigui::Locale::Tr("btn.cancel"),
+                                 unigui::Locale::Tr("btn.close")));
+            im::Separator();
+            if (im::Button("Add this demo to MRU"))
                 unigui::Settings::Instance().AddRecentFile("hello_unigui.exe");
             auto recent = unigui::Settings::Instance().GetRecentFiles();
             if (!recent.empty()) {
-                ImGui::Text("Recent files:");
+                im::Text("Recent files:");
                 for (auto& f : recent)
-                    ImGui::BulletText("%s", f.c_str());
+                    im::BulletText(f);
             }
         });
         window->AddPanel(localePanel);

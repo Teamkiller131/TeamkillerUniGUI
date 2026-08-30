@@ -2,10 +2,10 @@
 
 #include <imgui.h>
 
-#include "detail/combo_chevron.h"
-
 #include <algorithm>
 #include <sstream>
+
+#include "detail/combo_chevron.h"
 
 namespace unigui {
 
@@ -23,7 +23,7 @@ float CalcComboWidth(const std::vector<std::string>& items, const std::string& p
 } // namespace
 
 MultiCombo::MultiCombo(std::string name, std::string label, std::vector<std::string> items)
-        : Widget(std::move(name))
+        : FluentWidget<MultiCombo>(std::move(name))
         , label_(std::move(label))
         , items_(std::move(items)) {}
 
@@ -34,7 +34,8 @@ void MultiCombo::Render() {
     std::string preview = GetPreview();
     ImGui::SetNextItemWidth(CalcComboWidth(items_, preview));
     const auto comboFrame = detail::CaptureComboFrame();
-    const bool comboOpen = ImGui::BeginCombo(label_.c_str(), preview.c_str(), ImGuiComboFlags_NoArrowButton);
+    const bool comboOpen =
+        ImGui::BeginCombo(label_.c_str(), preview.c_str(), ImGuiComboFlags_NoArrowButton);
     const bool comboFocused = ImGui::IsItemFocused(); // capture before dropdown items steal it
     detail::DrawComboChevron(comboFrame, comboOpen || ImGui::IsItemHovered());
     if (comboOpen) {

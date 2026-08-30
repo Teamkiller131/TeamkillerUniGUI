@@ -8,6 +8,10 @@
 #include <unigui/widgets/combobox.h>
 #include <unigui/widgets/dragfloat.h>
 #include <unigui/widgets/lineedit.h>
+#include <unigui/widgets/segmentedcontrol.h>
+#include <unigui/widgets/splitter.h>
+#include <unigui/widgets/tag.h>
+#include <unigui/widgets/treeview.h>
 
 #include <string>
 
@@ -110,6 +114,95 @@ TEST_F(KeyboardNavTest, EscapeClosesComboPopupWithoutChangingSelection) {
     EXPECT_TRUE(openAfterActivate);
     EXPECT_FALSE(openAfterEscape);
     EXPECT_EQ(fruit.GetSelectedIndex(), 0); // Escape must not commit a selection
+}
+
+// ── Keyboard-nav audit fixes (roadmap: keyboard-only nav audit) ──────────────
+// The four cheapest-to-drive of the 11 audited gaps; each was keyboard-dead
+// before its fix, so these tests pin the new keyboard paths.
+
+TEST_F(KeyboardNavTest, TagChipActivatesWithKeyboard) {
+    // Was: removeClicked_ = IsItemClicked() — mouse-only. Now the SmallButton's
+    // return value fires on nav-activation too.
+    unigui::Tag chip("chip", "urgent");
+    bool removedViaKeyboard = false;
+    const auto st = Run(
+        "kbnav_tag_activate",
+        [&] {
+            chip.Render();
+            // RemoveClicked() is per-frame transient — latch it in the render
+            // loop so the activation frame can't be missed by driver timing.
+            removedViaKeyboard = removedViaKeyboard || chip.RemoveClicked();
+        },
+        [&](ImGuiTestContext* ctx) {
+            ctx->SetRef("TW");
+            ctx->NavMoveTo("**/urgent");
+            ctx->NavActivate();
+            ctx->Yield();
+        });
+    EXPECT_EQ(st, ImGuiTestStatus_Success);
+    EXPECT_TRUE(removedViaKeyboard);
+}
+
+TEST_F(KeyboardNavTest, SegmentedControlSelectsWithKeyboard) {
+    // Was: InvisibleButton without EnableNav — segments unreachable by keyboard.
+    unigui::SegmentedControl view("view", {"List", "Grid", "Chart"});
+    const auto st = Run(
+        "kbnav_segmented_select", [&] { view.Render(); },
+        [&](ImGuiTestContext* ctx) {
+            ctx->SetRef("TW");
+            ctx->NavMoveTo("**/##seg");  // first segment
+            ctx->KeyPress(ImGuiKey_Tab); // nav to the second segment
+            ctx->NavActivate();          // Space selects it
+            ctx->Yield();
+        });
+    EXPECT_EQ(st, ImGuiTestStatus_Success);
+    EXPECT_EQ(view.GetSelected(), 1);
+}
+
+TEST_F(KeyboardNavTest, TreeViewEnterSelectsFocusedRow) {
+    // Was: selection required a mouse click; Enter now routes through the same
+    // state machine (Space keeps ImGui's expand/collapse on branches).
+    unigui::TreeView tree("tree");
+    unigui::TreeNode root;
+    root.label = "Root";
+    unigui::TreeNode a, b;
+    a.label = "Alpha";
+    b.label = "Beta";
+    root.children = {a, b};
+    tree.SetRoot(root);
+    // Hide the root so Alpha/Beta render as top-level rows — `expanded` is a data
+    // field, not applied at render, so rows under a collapsed root don't exist.
+    tree.SetHideRoot(true);
+    const auto st = Run(
+        "kbnav_tree_select", [&] { tree.Render(); },
+        [&](ImGuiTestContext* ctx) {
+            ctx->SetRef("TW");
+            ctx->NavMoveTo("**/Alpha");
+            ctx->KeyPress(ImGuiKey_Enter);
+            ctx->Yield();
+        });
+    EXPECT_EQ(st, ImGuiTestStatus_Success);
+    EXPECT_EQ(tree.GetSelectedNodes().size(), 1u);
+}
+
+TEST_F(KeyboardNavTest, SplitterArrowsMoveDividerWhileActive) {
+    // Was: divider moved only via MouseDelta. Now: nav-activate (hold Space)
+    // + Up/Down move it 2% of the pane span per press.
+    unigui::Splitter split("split", unigui::Splitter::Horizontal, 0.5f);
+    split.SetContentA([] {});
+    split.SetContentB([] {});
+    const auto st = Run(
+        "kbnav_splitter_arrows", [&] { split.Render(); },
+        [&](ImGuiTestContext* ctx) {
+            ctx->SetRef("TW");
+            ctx->NavMoveTo("**/##split");
+            ctx->KeyDown(ImGuiKey_Space); // nav-activate + hold: divider is active
+            ctx->KeyPress(ImGuiKey_DownArrow, 3);
+            ctx->KeyUp(ImGuiKey_Space);
+            ctx->Yield();
+        });
+    EXPECT_EQ(st, ImGuiTestStatus_Success);
+    EXPECT_GT(split.GetSplit(), 0.5f); // moved down = larger top pane ratio
 }
 
 TEST_F(KeyboardNavTest, NavFocusingCheckBoxReportsA11yCheckBoxRole) {

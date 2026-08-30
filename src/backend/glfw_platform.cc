@@ -15,6 +15,7 @@
 #define GLFW_EXPOSE_NATIVE_COCOA // exposes glfwGetCocoaWindow (NSWindow*) for Metal
 #include <GLFW/glfw3native.h>
 #endif
+#include <functional>
 #include <memory>
 
 namespace unigui {
@@ -84,6 +85,14 @@ public:
             return false;
         }
         UNIGUI_LOG_DEBUG("ImGui GLFW backend initialized");
+        // Report the framebuffer scale to ImGui: the client area is sized in logical
+        // pixels but the back buffer is physical (720×540 on a 150% monitor for a
+        // 480×360 client), and the render backends scale their projection by
+        // DisplayFramebufferScale. Without this the main viewport renders at the
+        // wrong physical size and viewport/window coordinates disagree at any
+        // non-1.0 DPI.
+        lastScale_ = ReadContentScale();
+        ApplyScaleToIO(lastScale_);
         initialized_ = true;
         return true;
     }
@@ -101,9 +110,37 @@ public:
         initialized_ = false;
     }
 
-    void NewFrame() override { ImGui_ImplGlfw_NewFrame(); }
+    void NewFrame() override {
+        ImGui_ImplGlfw_NewFrame();
+        // Runtime content-scale changes (the window moved to a differently-scaled
+        // monitor, OS zoom): poll every frame (cheap — one GLFW call) and fire the
+        // callback once per change, before the frame's layout runs.
+        if (window_) {
+            const float s = ReadContentScale();
+            if (s != lastScale_) {
+                lastScale_ = s;
+                ApplyScaleToIO(s);
+                if (scaleCb_)
+                    scaleCb_(s);
+            }
+            // ImGui_ImplGlfw_NewFrame OVERWRITES io.DisplayFramebufferScale with the
+            // GLFW framebuffer/window ratio. For the GL backends that ratio is the
+            // truth (GLFW owns the framebuffer). For the external-swapchain backends
+            // (DX11/DX12/Vulkan) the framebuffer is OUR swapchain, sized at
+            // client×content-scale — GLFW's ratio there is the meaningless
+            // window/window = 1.0, and letting it stand makes the projection render
+            // at the wrong physical size on a non-1.0 monitor. Re-assert the live
+            // monitor scale every frame.
+            if (!needGL_)
+                ApplyScaleToIO(lastScale_);
+        }
+    }
     void PollEvents() override { glfwPollEvents(); }
     bool ShouldClose() const override { return window_ ? glfwWindowShouldClose(window_) : false; }
+
+    void SetContentScaleCallback(std::function<void(float)> cb) override {
+        scaleCb_ = std::move(cb);
+    }
 
     void* GetWindowHandle() const override {
 #ifdef _WIN32
@@ -134,12 +171,46 @@ public:
         }
     }
 
-    float GetContentScale() const override {
-        if (!window_)
-            return 1.0f;
-        float xs = 1.0f, ys = 1.0f;
-        glfwGetWindowContentScale(window_, &xs, &ys); // 1.0 / 2.0 (retina) / 1.5 …
-        return xs > 0.f ? xs : 1.0f;
+    float GetContentScale() const override { return ReadContentScale(); }
+
+    std::vector<MonitorInfo> GetMonitors() const override {
+        std::vector<MonitorInfo> out;
+        if (!window_) // glfwGetMonitors needs an initialized library
+            return out;
+        int count = 0;
+        GLFWmonitor** monitors = glfwGetMonitors(&count);
+        if (!monitors)
+            return out;
+        out.reserve(static_cast<std::size_t>(count));
+        for (int i = 0; i < count; ++i) {
+            MonitorInfo m;
+            glfwGetMonitorPos(monitors[i], &m.x, &m.y);
+            const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
+            if (mode) {
+                m.width = mode->width;
+                m.height = mode->height;
+            }
+            // Work area (GLFW 3.3+): fall back to the full rect when the query
+            // fails or reports a zero area (GLFW issue #1761 on monitor changes).
+            int wx = m.x, wy = m.y, ww = m.width, wh = m.height;
+            glfwGetMonitorWorkarea(monitors[i], &wx, &wy, &ww, &wh);
+            if (ww > 0 && wh > 0) {
+                m.workX = wx;
+                m.workY = wy;
+                m.workWidth = ww;
+                m.workHeight = wh;
+            } else {
+                m.workX = m.x;
+                m.workY = m.y;
+                m.workWidth = m.width;
+                m.workHeight = m.height;
+            }
+            float sx = 1.0f, sy = 1.0f;
+            glfwGetMonitorContentScale(monitors[i], &sx, &sy);
+            m.dpiScale = sx > 0.f ? sx : 1.0f;
+            out.push_back(m);
+        }
+        return out;
     }
 
     void SetTitle(const char* title) override {
@@ -192,9 +263,46 @@ public:
     GLFWwindow* GetWindow() const { return window_; }
 
 private:
+    float ReadContentScale() const {
+        if (!window_)
+            return 1.0f;
+#ifdef _WIN32
+        // GLFW caches the Win32 content scale and refreshes it only on
+        // WM_DPICHANGED, which the OS delivers asynchronously after show — an
+        // immediate glfwGetWindowContentScale can be a stale 1.0 on a 150%
+        // monitor (observed on a 4×150% machine: the first frames rendered
+        // with a 1.0 projection on a 1.5 monitor). Query the LIVE per-monitor
+        // DPI of the window instead.
+        if (HWND hwnd = glfwGetWin32Window(window_)) {
+            using GetDpiForWindow_t = UINT(WINAPI*)(HWND);
+            static GetDpiForWindow_t pGetDpiForWindow = [] {
+                HMODULE user32 = GetModuleHandleA("user32.dll");
+                return (GetDpiForWindow_t) (user32 ? GetProcAddress(user32, "GetDpiForWindow")
+                                                   : nullptr);
+            }();
+            if (pGetDpiForWindow) {
+                const UINT dpi = pGetDpiForWindow(hwnd);
+                if (dpi > 0)
+                    return dpi / 96.0f;
+            }
+        }
+#endif
+        float xs = 1.0f, ys = 1.0f;
+        glfwGetWindowContentScale(window_, &xs, &ys);
+        return xs > 0.f ? xs : 1.0f;
+    }
+    static void ApplyScaleToIO(float s) {
+        // Tell ImGui the back buffer is `s`× the logical client size, so the render
+        // backends scale their projection and the main viewport renders at the correct
+        // physical resolution at any DPI.
+        ImGui::GetIO().DisplayFramebufferScale = ImVec2(s, s);
+    }
+
     GLFWwindow* window_ = nullptr;
     bool initialized_ = false;
     bool needGL_ = true;
+    float lastScale_ = 1.0f;
+    std::function<void(float)> scaleCb_;
 };
 
 } // anonymous namespace

@@ -5,7 +5,7 @@
 namespace unigui {
 
 RichText::RichText(std::string name, std::string text)
-        : Widget(std::move(name))
+        : FluentWidget<RichText>(std::move(name))
         , plain_text_(std::move(text)) {
     if (!plain_text_.empty())
         spans_.push_back({plain_text_});

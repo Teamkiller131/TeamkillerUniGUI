@@ -1,11 +1,11 @@
 # TeamkillerUniGUI Documentation
 
-> **Version 3.16.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
+> **Version 4.9.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
 
 English | [中文索引](README_zh.md)
 
 TeamkillerUniGUI is a C++23 Dear ImGui framework: a backend abstraction, a
-dark+light theme engine, ~95 retained widgets, a themed immediate layer
+dark+light theme engine, 92 retained widgets, a themed immediate layer
 (`unigui::im`), a declarative DSL + reactive **component framework**, a flexbox
 layout system, CSS-like styling, and optional modules (SQLite, config, IPC,
 networking, trading).
@@ -29,7 +29,7 @@ networking, trading).
 
 | Document | Description |
 |----------|-------------|
-| [IM_API.md](IM_API.md) | The immediate layer `unigui::im` — full grouped reference (~201 functions) |
+| [IM_API.md](IM_API.md) | The immediate layer `unigui::im` — full grouped reference (~250 functions) |
 | [DSL.md](DSL.md) | The declarative DSL (view language): builders, nodes, `Render`, `Custom` |
 | [THEMING.md](THEMING.md) | Theme engine (presets, surface styles, tokens) + the CSS styling engine & hot-reload |
 | [BACKENDS.md](BACKENDS.md) | The backend abstraction (platforms × renderers) and the application loop (`AppConfig`/`Init`/`Run`) |
@@ -51,6 +51,7 @@ networking, trading).
 | [MODULES.md](MODULES.md) | Optional modules — EventBus, plugins, Config (TOML/JSON), SQLite, IPC, networking, fonts |
 | [TRADING.md](TRADING.md) | Trading toolkit: financial formatting + models |
 | [PRESETS.md](PRESETS.md) | UI presets — prefab app scaffolds: a decent app in ~30 lines |
+| [C_API.md](C_API.md) | The stable C ABI (`unigui_capi.h`) for C / FFI / language-binding hosts |
 | [../INTEGRATION.md](../INTEGRATION.md) | Embed as a **Git submodule** + vcpkg (recommended) |
 | [API_STABILITY.md](API_STABILITY.md) | API contract: semver, stability tiers, deprecation policy |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Build / CRT / CI FAQ |
@@ -94,7 +95,7 @@ After building with `UNIGUI_BUILD_EXAMPLES=ON` (the default), examples accept
 
 ```text
 build/<preset>/examples/framework_demo/framework_demo --frames 10   # the framework idiom
-build/<preset>/examples/unigui_showcase/unigui_showcase --frames 10  # all 95 widgets
+build/<preset>/examples/unigui_showcase/unigui_showcase --frames 10  # all 92 widgets
 build/<preset>/examples/hello_unigui/hello_unigui --frames 10        # minimal
 ```
 

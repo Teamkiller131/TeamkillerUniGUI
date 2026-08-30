@@ -131,7 +131,7 @@ bool DrawSelectableAlignedText(std::string_view text, bool selected, float width
 } // namespace
 
 Table::Table(std::string name, std::vector<std::string> columns)
-        : Widget(std::move(name))
+        : FluentWidget<Table>(std::move(name))
         , columns_(std::move(columns))
         , alignments_(columns_.size(), Alignment::Left)
         , units_(columns_.size()) {}

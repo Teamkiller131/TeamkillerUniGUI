@@ -87,6 +87,9 @@ void MasterDetail::SetSelected(int index) {
 }
 
 float MasterDetail::GetSplit() const {
+    if (!splitter_) // always emplaced in the ctor; guard satisfies
+                    // bugprone-unchecked-optional-access
+        return kDefaultSplit;
     return splitter_->GetSplit();
 }
 
@@ -110,6 +113,8 @@ void MasterDetail::RenderDetailPane() {
 
 void MasterDetail::Render() {
     if (!IsVisible())
+        return;
+    if (!splitter_) // always emplaced in the ctor; guard before PushID keeps the ID stack balanced
         return;
     ImGui::PushID(GetName().c_str());
     splitter_->SetContentA([this] { list_.Render(); });

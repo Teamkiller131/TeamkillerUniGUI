@@ -10,7 +10,8 @@ namespace unigui::presets {
 AppShell::AppShell(std::string name, std::string title)
         : FluentWidget<AppShell>(std::move(name))
         , title_(std::move(title))
-        , statusBar_(GetName() + ".status", "Ready") {}
+        , statusBar_(GetName() + ".status", "Ready")
+        , palette_(GetName() + ".palette") {}
 
 // ── Chrome slots ─────────────────────────────────────────────────────────────
 
@@ -32,6 +33,8 @@ AppShell& AppShell::AddPage(std::string icon, std::string label, std::function<v
     pages_.push_back(Page{std::move(icon), std::move(label), std::move(content)});
     if (activePage_ < 0)
         activePage_ = 0; // first page becomes active (no announcement: initial state)
+    if (paletteEnabled_)
+        SyncPaletteNavCommands();
     return *this;
 }
 
@@ -48,6 +51,46 @@ AppShell& AppShell::WithStatus(std::string text) {
 AppShell& AppShell::WithOnPageChange(std::function<void(int)> fn) {
     onPageChange_ = std::move(fn);
     return *this;
+}
+
+AppShell& AppShell::WithCommandPalette(bool on) {
+    paletteEnabled_ = on;
+    if (on)
+        SyncPaletteNavCommands();
+    return *this;
+}
+
+AppShell& AppShell::AddCommand(std::string id, std::string title, std::function<void()> action) {
+    if (!paletteEnabled_) {
+        paletteEnabled_ = true; // registering a command implies wanting the palette
+        SyncPaletteNavCommands();
+    }
+    palette_.AddCommand(std::move(id), std::move(title), std::move(action));
+    return *this;
+}
+
+void AppShell::SyncPaletteNavCommands() {
+    // Idempotent: re-registering replaces the previous "Go to <label>" entries, so
+    // AddPage can call this after every append without duplicating commands.
+    for (int i = 0; i < (int) pages_.size(); ++i) {
+        const std::string id = "nav:" + std::to_string(i);
+        palette_.RemoveCommand(id);
+        CommandPalette::Command cmd;
+        cmd.id = id;
+        cmd.title = "Go to " + pages_[i].label;
+        cmd.category = "Navigate";
+        cmd.action = [this, i] { SetActivePage(i); };
+        palette_.AddCommand(std::move(cmd));
+    }
+}
+
+void AppShell::OpenCommandPalette() {
+    if (paletteEnabled_)
+        palette_.Open();
+}
+
+bool AppShell::IsCommandPaletteOpen() const {
+    return paletteEnabled_ && palette_.IsOpen();
 }
 
 // ── Live state ───────────────────────────────────────────────────────────────
@@ -128,6 +171,14 @@ void AppShell::Render() {
         ImGui::SameLine();
         RenderContent(bodyH);
         statusBar_.Render();
+
+        // Built-in command palette: Ctrl+P toggles (global — a palette should open even
+        // while a text field has focus); the popup centres itself over the viewport.
+        if (paletteEnabled_) {
+            if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_P))
+                palette_.Toggle();
+            palette_.Render();
+        }
     }
     ImGui::End();
     ImGui::PopID();

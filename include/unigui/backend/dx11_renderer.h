@@ -19,9 +19,15 @@ public:
     void RenderDrawData(ImDrawData* dd) override;
     void SetClearColor(float r, float g, float b, float a) override;
     bool ResizeSwapChain(int w, int h);
+    /// Result of the last render-verify readback (see RenderDrawData): true = the frame
+    /// actually drew non-clear pixels, false = blank, -1 = not run (env var unset).
+    /// Lets headless smokes assert "the main window is not blank" programmatically.
+    int LastVerifyDrawn() const { return lastVerifyDrawn_; }
 
 private:
+    void VerifyRenderIfEnabled();
     bool initialized_ = false;
     float clearR_ = 0.10f, clearG_ = 0.10f, clearB_ = 0.12f, clearA_ = 1.00f;
+    int lastVerifyDrawn_ = -1;
 };
 } // namespace unigui

@@ -14,7 +14,7 @@ struct WizardStep {
 };
 
 /// Multi-step wizard with Next/Previous navigation.
-class Wizard : public Widget {
+class Wizard : public FluentWidget<Wizard> {
 public:
     Wizard(std::string name, std::string title = "Wizard");
 
@@ -35,6 +35,16 @@ public:
 
     void SetOnFinish(std::function<void()> fn) { onFinish_ = std::move(fn); }
     void SetOnCancel(std::function<void()> fn) { onCancel_ = std::move(fn); }
+
+    // ── Fluent (chainable) helpers — return Wizard& via CRTP base ──────────
+    Wizard& WithOnFinish(std::function<void()> fn) {
+        SetOnFinish(std::move(fn));
+        return *this;
+    }
+    Wizard& WithOnCancel(std::function<void()> fn) {
+        SetOnCancel(std::move(fn));
+        return *this;
+    }
 
 private:
     std::string title_;

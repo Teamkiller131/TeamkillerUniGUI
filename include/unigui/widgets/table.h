@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace unigui {
-class Table : public Widget {
+class Table : public FluentWidget<Table> {
 public:
     enum class Alignment { Left, Center, Right };
 
@@ -62,6 +62,48 @@ public:
     std::string ExportCSV() const;
     /// Import table from CSV string. Returns true on success.
     bool ImportCSV(const std::string& csv);
+
+    // ── Fluent (chainable) helpers — return Table& via CRTP base ──────────
+    Table& WithOnSelect(std::function<void(int)> callback) {
+        SetOnSelect(std::move(callback));
+        return *this;
+    }
+    Table& WithSortable(bool on) {
+        SetSortable(on);
+        return *this;
+    }
+    Table& WithResizable(bool on) {
+        SetResizable(on);
+        return *this;
+    }
+    Table& WithColumnAlignment(int col, Alignment alignment) {
+        SetColumnAlignment(col, alignment);
+        return *this;
+    }
+    Table& WithColumnUnit(int col, std::string unit) {
+        SetColumnUnit(col, std::move(unit));
+        return *this;
+    }
+    Table& WithColumnWidth(int col, float width) {
+        SetColumnWidth(col, width);
+        return *this;
+    }
+    Table& WithColumnStretch(int col, float weight) {
+        SetColumnStretch(col, weight);
+        return *this;
+    }
+    Table& WithScrollX(bool on) {
+        SetScrollX(on);
+        return *this;
+    }
+    Table& WithCellRenderer(CellRenderer fn) {
+        SetCellRenderer(std::move(fn));
+        return *this;
+    }
+    Table& WithColumnSortComparator(int col, SortComparator cmp) {
+        SetColumnSortComparator(col, std::move(cmp));
+        return *this;
+    }
 
 private:
     void ApplySort(int col, bool ascending);

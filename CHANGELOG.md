@@ -1,32 +1,297 @@
 ## [Unreleased]
 
-### Deprecated
-- **`TimeSeriesChart::SetPanEnabled` / `SetZoomEnabled` — they never did anything.**
-  Both mapped to the *same* `ImPlotAxisFlags_NoMenus` bit and the computed flags were
-  `(void)`-ed in `Render`, so neither ever gated input. Someone trusted them and
-  shipped a "fixed" Y axis the user could still zoom. They are now `[[deprecated]]`
-  no-ops rather than deleted, because `include/unigui/**` is a semver contract —
-  removal waits for a major. The warning is the fix: it tells the caller the truth at
-  compile time, which a silently-ignored setter never did. Use `SetYAxisSpanLock(span)`
-  to pin the axis height while keeping pan, or `ImPlotAxisFlags_Lock` to freeze it
-  outright; ImPlot has no separate NoPan/NoZoom.
+### Added
+- **Cross-monitor runtime proof + `unigui::GetMonitors()`.** The fractional-DPI
+  tail is now verified on a real 4×150%-monitor machine — and the proof exposed
+  two real bugs, both fixed: (1) GLFW's Win32 content-scale cache lags
+  `WM_DPICHANGED`, so the first frames rendered with a 1.0 projection on a 1.5
+  monitor — the platform now reads the live per-monitor DPI (`GetDpiForWindow`);
+  (2) `imgui_impl_glfw` overwrites `io.DisplayFramebufferScale` every frame with
+  its framebuffer/window ratio, which is meaningless for the external-swapchain
+  backends — the platform re-asserts the real scale for non-GL backends. The
+  DX11/DX12 swapchains are now created and resized at PHYSICAL pixels
+  (client × content scale), so a 480×360 window on a 150% monitor gets a 720×540
+  back buffer instead of an OS-stretched one. New `unigui::GetMonitors()`
+  (`MonitorInfo`: virtual-desktop rects, work areas, per-monitor DPI) for
+  cross-monitor layout. `DXMultiMonitorSmoke` pins monitor-table agreement, a
+  real pop-out onto a second monitor with inherited viewport `DpiScale`, a
+  simulated-150% inheritance round-trip, and the physical swapchain invariant.
+  Known upstream gap documented (secondary OS windows are sized in logical
+  units by this ImGui fork — see docs/BACKENDS.md §7.2).
+
+## [4.9.1] - 2026-08-14
 
 ### Added
+- **Designer in-app scene editing (`dsl::ParseScene`).** Scenes can now be
+  written as text: an indentation-based scene format (`window`/`vbox`/`hbox`/
+  `flex`, text nodes, `button` variants, `checkbox`/`slider_float`/`input_text`,
+  `separator`/`spacing`, and `for` templates that clone per iteration) parses
+  via the new `dsl::ParseScene` (header `unigui/dsl/dsl_scene.h`) into a
+  renderable tree, with line-numbered errors instead of throws (`if`/`custom`
+  are rejected with a clear message — callbacks cannot live in text). The
+  designer example grows an in-app editor pane (type → Apply → live preview +
+  `ToSource`, inline red error), plus `--scene file.dsl` loading with mtime
+  hot-reload. Seven parser tests pin the grammar, round-trip through
+  `ToSource`, template cloning, escapes and every error path; the designer
+  smoke-runs headless with a scene file.
+- **C ABI v2 — form & layout tranche.** The C surface grows additively to
+  `UNIGUI_CAPI_ABI_VERSION 2` (v1 bindings stay compatible): `unigui_same_line` /
+  `unigui_spacing`, `unigui_radio_button`, `unigui_combo` (caller-owned item
+  array), `unigui_input_text` (caller-owned buffer — the binding-friendly form),
+  `unigui_input_int` / `unigui_input_float`, `unigui_slider_int`,
+  `unigui_progress_bar`, `unigui_set_tooltip` and `unigui_selectable`. The pure-C
+  TU proves every new symbol links from C (address-taking, no context needed);
+  pointer-guard contracts are pinned headless; the test engine clicks/selects/
+  types through each new call (radio selection, combo item pick, selectable
+  click, typed text landing in the caller buffer, full-tranche render smoke).
+- **RTL layout mirroring, increments 1–2.** `unigui::LayoutDirection` +
+  `SetLayoutDirection` (process-global, like the theme) is the mirroring switch:
+  under `RightToLeft` the single-line text primitives — `im::Text`,
+  `im::TextDisabled`, `im::TextColored`, `im::LabelText` — right-align against
+  the content region, and `im::TextWrapped` wraps with every line right-aligned
+  (visual order only — no bidi reordering, which suits pure-RTL text), so
+  RTL-script UIs read right-to-left (the DSL inherits this through the im
+  layer). Seven headless tests pin the direction state and the item-rect
+  geometry in both directions, including multi-line wrapping and hard `\n`
+  breaks. Deep mirroring (bidi line shaping, control internals, table column
+  order, tree indents) remains a layout-engine concern — see docs/IM_API.md and
+  DEVELOPMENT_PLAN §7.
+- **Designer tool, first increment (`examples/designer` + `dsl::ToSource`).** The
+  designer live-previews built-in DSL scenes (stateful controls stay interactive),
+  hot-reloads CSS on top of the preview (`--css`), and emits the scene's C++
+  builder expression — the new `dsl::ToSource` serialises a `Node` tree back into a
+  complete, compilable `NodePtr ui = ...` snippet (structure, labels, numeric
+  parameters and button variants round-trip exactly; callbacks/conditions become
+  compilable placeholder forms, external bindings get a trailing note). Ten
+  codegen tests pin the emission; the app smoke-runs headless with `--frames N`.
+- **Stable C ABI (`unigui_capi.h`, ABI v1).** A versioned C99 surface over the C++
+  library for C / FFI / language-binding hosts: ABI compatibility gate, version query,
+  app lifecycle (opaque handle, C frame callback, manual loop or `unigui_app_run`),
+  HiDPI content scale, native window handle, and an immediate-mode drawing subset
+  (begin/end, text, button, checkbox, slider, separator). The ABI grows additively
+  (docs/C_API.md documents the frozen-layout policy). Proven from pure C
+  (`tests/capi/capi_c_test.c` is compiled as C — the project now enables the C
+  language), through the test engine (real clicks across the boundary), and end-to-end
+  on a real DX11/WARP swapchain (create → draw from a C callback → capped run →
+  destroy). `unigui_export.h` now generates into the `unigui/` include subtree so it
+  resolves identically in build and install trees.
+- **Plugin ABI version gate.** `kPluginInterfaceVersion` plus a mandatory
+  `PluginInterfaceVersion()` export: the plugin manager rejects a version mismatch — or
+  a missing export, i.e. a plugin that predates versioning — before instantiation, with
+  a clear rebuild hint. The ABI policy is documented (frozen within a version,
+  additive-end-only growth, bump on any break); the example plugin exports the version
+  and the gate is pinned by tests.
+- **vcpkg-registry packaging, prepared and validated.** `registry/` (ports/unigui +
+  baseline + git-tree version database) plus
+  `scripts/packaging/prepare_vcpkg_registry.ps1` (assembles the registry repo at
+  release time, generates the version db, prints the consumer snippet). Validated
+  end-to-end against vcpkg 2026-03-04: a `vcpkg install` resolving unigui through the
+  generated registry builds and installs the package; the source-tarball SHA512 is left
+  as the accepted zero placeholder with pinning instructions (publishing waits for a
+  release tag).
+- **Windowed/swapchain WARP pass.** `UNIGUI_DX11_WARP=1` forces Microsoft's software
+  rasterizer in the DX11 device creation (hardware stays the default, WARP falls back to
+  hardware if unavailable), so a GPU-less runner gets a REAL device + swapchain +
+  present. `DXMultiViewportSmoke.WarpAdapter_RendersWithoutGPU` proves the adapter really
+  is the software one (Microsoft Basic Render Driver) and that real pixels land through
+  it — the app-level smokes can now hard-gate on headless Windows CI instead of skipping.
+- **Multi-context, first increment.** A `detail::ContextRegistry<T>` (per-ImGui-context
+  instance map, LRU-capped so test suites churning contexts stay bounded) now backs four
+  singletons — `fonts::Manager`, `fx::AnimationManager`, `styling::Engine` and `Toast`
+  (via an overridable factory that keeps its `_toast` widget name). Their public shape is
+  unchanged (`Instance()`), their default constructors are now public (documented for the
+  registry), the app loop resets per-context instances on Shutdown, and four isolation
+  tests pin per-context identity + the no-context default. Two independent UniGUI
+  surfaces in one process now get independent instances for these four; the remaining
+  five singletons are per-app/process by design.
+- **Runtime / fractional DPI.** Root cause of the fractional-DPI breakage found and
+  fixed: the GLFW platform never reported `io.DisplayFramebufferScale`, so the back
+  buffer rasterized at the wrong physical size on any non-1.0 monitor (the multi-viewport
+  smoke previously had to pin DPI to 1.0). The platform now reports it at bring-up and
+  polls the content scale every `NewFrame`, firing a new
+  `PlatformBackend::SetContentScaleCallback` on change; the app handler snaps
+  (`dpi::NormalizeContentScale`) and updates `FontScaleDpi` so fonts re-rasterize when the
+  window moves to a differently-scaled monitor. The multi-viewport smoke now runs at the
+  monitor's real scale (150% locally) and passes — pop-out coordinates stay consistent at
+  fractional DPI. Two platform tests pin the wiring.
+- **Golden-image pipeline.** `UNIGUI_GOLDEN_CAPTURE=<path>` writes the rendered back
+  buffer as dependency-free RAW RGBA (shared `src/detail/golden_capture.h`, wired into
+  the DX11 renderer and the GL path); `scripts/golden.py` (stdlib-zlib only) provides
+  `raw2png` (minimal PNG codec), `capture` (run an example → PNG) and `diff`
+  (per-channel threshold, changed-region summary, exit code) — the local half of the
+  visual-regression gate, ready for a GPU-capable CI runner.
+- **Singleton inventory.** The 9 `::Instance()` singletons are now inventoried in the
+  development plan with per-context candidacy (fonts/animation/styling/toast
+  per-context; theme registry a read-only catalog) — the design input for the deferred
+  multi-context refactor.
+- **`unigui::im` now wraps 100% of Dear ImGui's practical surface** — the last three
+  unwrapped functions landed: `GetFontBaked` (baked font at the current size),
+  `GetItemFlags` (last-item generic flags — read back `ImGuiItemFlags_Disabled` under
+  `BeginDisabled`), and `TreeNodeGetOpen(ImGuiID)` (tree-node open state, pairs with
+  `GetID`). The coverage script reads **204/204 = 100.0%** (its parser also learned
+  the `ImFontBaked*` / `ImGuiItemFlags` return types), and three headless tests pin
+  the new wrappers. README/README_zh now quote the full-coverage figure (251
+  first-class functions).
+- **`TimeSeriesChart::SetXAxisSessionTicks(bool)` — session-boundary X ticks.** On
+  intraday charts (`SetSessionAxis`), the explicit X tick grid now also anchors every
+  session boundary (span start/end), so labels land on session edges even when the step
+  does not divide the span — and a collapsed lunch boundary (11:30/13:00 sharing one
+  axis coordinate) produces a single tick. The pure math is `MakeSessionTicks(axis, lo,
+  hi, step, maxTicks)` (boundaries + budget-guarded step grid, sorted/deduped) — four
+  pure tests plus a frame smoke; the first frame's ±1e300 placeholder window is
+  budget-guarded before any allocation.
+- **Trading widgets get engine-driven input coverage** (new
+  `windows-msvc-debug-testengine-modules` preset — the first configuration combining the
+  test engine with the trading module). Three tests drive the real input path:
+  `OrderTicket` (valid draft → submit click → `OnSubmit` with the draft; invalid price →
+  the disabled button fires nothing) and `DepthLadder` (level click → `OnLevelClick` with
+  the level's side/price/size). `CandlestickChart` is deliberately not engine-driven:
+  ImPlot crashes under the engine's per-frame state manipulation (yield assert + access
+  violation) — documented in the test file, headless frame tests remain its coverage.
+- **Widget-count audit: 95 → 92.** The historical "95 widgets" did not reproduce from any
+  clean counting rule (the only rule that yielded 95 counted 20 helper classes and 2
+  model classes as widgets). The audited number is **92** = 86 `.cc`-backed widgets + 3
+  trading widgets + 3 header-only widgets (`DataTable<T>`, `ConnectionStatusBar`,
+  `DockSpace`). Badges, docs and the plan now quote 92, with the derivation rule written
+  into `docs/API_INDEX.md` / `docs/WIDGET_API.md` so it stays maintainable.
+- **Quality-gate measurement (local).** The local `windows-clang-tidy` build does not
+  reproduce CI (toolchain differences: fno-exceptions mismatch and a window.cc bugprone
+  finding the pinned Linux clang-tidy-19 does not flag) — per-family tidy promotion must
+  be based on the CI lane's numbers; deferred, with the wrapper-coverage gate already at
+  100%.
+- **`TimeSeriesChart::SetXAxisTickSpacing(step)` — explicit X gridline step** (the
+  X-axis counterpart of the 4.9.0 Y tick spacing). Keyed off the *visible* X window
+  (cached from the previous frame), so after pan/zoom the ticks follow the view instead
+  of marching off it; pairs naturally with `SetXAxisRange()`. The same
+  `kMaxXTicks` budget guard and multiplication-based generation (no accumulation
+  drift) apply. The pure tick math is exposed as the static `MakeTicks(lo, hi, step,
+  maxTicks)` and unit-tested (alignment, budget refusal, 3000-tick no-drift,
+  invalid-input identity).
+- **In-cell mini renderers for `DataTable<T>`** (`<unigui/trading/cell_renderers.h>` —
+  the custom-draw half of the long-standing "mini sparkline/bar in a blotter cell"
+  roadmap item; `SetCellRenderer` shipped the hook, these are the batteries):
+  - `SparklineCell<T>(valuesOf, width, height, colorOf)` — a 1.2 px polyline
+    normalized to the row's own min/max, theme `PlotLines` colour by default; rows
+    with fewer than two values only reserve the space.
+  - `BarCell<T>(valueOf, maxAbs, width, height, colorOf, pol)` — a signed horizontal
+    bar mapped into [−maxAbs, +maxAbs] from the cell centre, sign-aware `DeltaColor`
+    by default; flat rows draw nothing but keep their height.
+  Both end with a `Dummy(width, height)` so the row reserves the drawing's height;
+  covered by headless geometry tests (`tests/trading/cell_renderers_test.cc`).
+- **Presets driven-input coverage widened.** Three new engine-driven tests: a
+  `MasterDetail` row click fires `WithOnSelect` with the row index, a `Dashboard`
+  card-body button fires its callback, and typing into a `LogConsole` filter narrows
+  `FilteredSize()` — the presets' input path (composed widgets → preset state) is now
+  exercised for all five scaffolds.
+
+## [4.9.0] - 2026-08-14
+
+### Added
+- **Multi-viewport runtime proof (DX11).** The opt-in flag now has pixel-level CI
+  coverage, not just code review: `DXMultiViewportSmoke` runs the real app on a DX11
+  swapchain (WARP or hardware), pops a window out into its own OS viewport, reads the
+  main window's back buffer back, and asserts it is still drawn — the exact regression
+  the per-frame RTV rebind fixed (verified to fail against the pre-fix code). Pop-out →
+  stability → merge-back → no-flap all asserted. New supporting surface:
+  `AppConfig`-level `GetActiveRenderer()`, the DX11 renderer's `LastVerifyDrawn()`
+  readback result, and **`UNIGUI_RENDER_VERIFY=1` now works on DX11** (swapchain
+  readback mirroring the GL path; the readback flushes before mapping so it reads the
+  current frame, not a stale one).
+- **Backdrop-clear contract extended to secondary viewports** (§7.1
+  `docs/BACKENDS.md`). Upstream's per-backend `Renderer_RenderWindow` clears popped-out
+  windows to hardcoded black, which translucent (glass) theme materials would render
+  against. The app loop now paints the theme backdrop into each secondary viewport's
+  background draw list before `ImGui::Render()` — covering every viewport-capable
+  renderer with no per-backend hooks. Found while proving it: the fill must skip
+  orphaned viewports (see Fixed).
+- **`TimeSeriesChart::GetYAxisRange()`** — the Y range the axis *actually showed* after
+  the last frame (auto-fit output, applied manual range, or the user's pan/zoom),
+  rather than the last requested one; drives the new span-lock frame tests and
+  linked-axis readouts.
+- **`TimeSeriesChart::SetYAxisSpanLock` driven frame tests.** The pure `RestoreSpan`
+  math was unit-tested; the *integration* now is too — headless ImGui+ImPlot frames
+  inject a wheel-zoom via `SetNextAxesLimits` and assert the one-frame bounce restores
+  the locked span around the new centre, while a pure pan passes through untouched.
+- **Interaction coverage for the `im` wrapper batch.** Two engine-driven tests:
+  clicking a sortable table header arms `TableGetSortSpecs()`, and typing into an
+  `EnterReturnsTrue` input persists every keystroke (the flag only changes the return
+  value — never the write-back).
+- **Opt-in multi-viewport** — `AppConfig::multiViewport` (default off) lets ImGui windows be
+  dragged **outside** the main window, where each becomes a real OS window
+  (`ImGuiConfigFlags_ViewportsEnable`); dragging one back inside merges it into the main
+  viewport again. Deliberately opt-in: enabling it changes window handling for the whole
+  application (extra OS windows, per-viewport DPI, focus routing). The flag is set *before*
+  the backends initialise (both `ImGui_ImplGlfw_Init*` and `ImGui_ImplXxx_Init` read it at
+  that moment to decide whether to install their viewport interfaces), and a capability
+  self-check follows — if the backends did not report viewport support the app drops back
+  to single-viewport and warns rather than hand the user a half-installed setup (a blank,
+  off-screen main layout). The GL context save/restore around the secondary-window pass is
+  delegated to the platform via new `PlatformBackend::SaveRenderContext`/
+  `RestoreRenderContext` hooks (default no-ops — correct for DX11/DX12/Vulkan/Metal; GLFW
+  implements them for the GL renderers). Ignored on Emscripten, where a browser page has no
+  secondary OS windows. Independent of `DockingEnable`.
 - **`TimeSeriesChart::SetYAxisSpanLock(span)` — pin the Y axis *height* while
   still allowing the user to pan.** Panning only moves the centre, so it passes
   through untouched; zooming (wheel or rubber-band) changes the span and is
   undone on the next frame, keeping the view where the user put it at the height
   the caller demanded. This is what a "fixed Y axis" means to a trader: the
   height is a yardstick they read swings against, so a stray wheel click must
-  not silently rescale it. Neither `ImPlotAxisFlags_Lock` nor this widget's
+  not silently rescale it. Neither `ImPlotAxisFlags_Lock` nor the deprecated
   `SetPanEnabled`/`SetZoomEnabled` can express "pan yes, zoom no" — `Lock` kills
-  panning too, and those two setters only map to `ImPlotAxisFlags_NoMenus`
-  (the computed flags are `(void)`-ed in `Render`, so they never gate input at
-  all). The span is therefore restored after the fact; the visible cost is a
-  one-frame bounce on zoom. The pure math is exposed as the static
-  `RestoreSpan(lo, hi, span)` and is unit-tested, including the relative
-  tolerance that keeps the lock effective at large magnitudes (a 0.1-wide zoom
-  off a 50-unit span around 7000 would slip past a fixed absolute epsilon).
+  panning too, and ImPlot has no separate NoPan/NoZoom. The span is therefore
+  restored after the fact; the visible cost is a one-frame bounce on zoom. The
+  pure math is exposed as the static `RestoreSpan(lo, hi, span)` and is
+  unit-tested, including the relative tolerance that keeps the lock effective
+  at large magnitudes (a 0.1-wide zoom off a 50-unit span around 7000 would
+  slip past a fixed absolute epsilon).
+- **`TimeSeriesChart::SetYAxisTickSpacing(step)` — explicit Y gridline/label step.**
+  `1` labels 0,1,2,3…, `2` labels 0,2,4,6…; `0` (default) leaves ImPlot's automatic tick
+  selection alone. Only applies with auto-fit off (ticks must be declared during axis setup,
+  and the auto-fit range is not known until after it) — pair it with
+  `SetYAxisRange()`+`SetYAxisRangeLocked()`. Two guards: a step that would need more than
+  `kMaxYTicks` (200) labels for the current range falls back to automatic ticks (a step of 1
+  over a range of 100000 would otherwise push 100k labels through ImPlot and freeze the
+  frame), and ticks are generated by multiplication (`lo + step*i`), not accumulation, so
+  labels stay on round numbers over hundreds of iterations.
+- **`unigui::im` wrapper coverage grows** — the style stack (`PushStyleColor/…`,
+  `PopStyleColor/…`), the ID stack (`PushID`/`PopID`, `GetID`), clipboard helpers, viewport
+  queries (`GetMainViewport`, `GetWindowViewport`), table APIs (`BeginTable`/`TableSetupColumn`/
+  `TableNextRow`/`TableSetColumnIndex`/`TableGetColumnName`/`TableGetSortSpecs`/…),
+  printf-style text (`Text("%d", …)`), char-buffer input overloads, and the remaining
+  accessors (`GetFont`, `GetCurrentContext`, `GetStyle`, …) are now first-class `im::` calls
+  — the practical-surface coverage script tracks them against the 95% hard gate.
+
+### Changed
+- **Examples now use the `unigui` API, not raw Dear ImGui.** Every desktop and web
+  example previously mixed `ImGui::Text`/`Button`/`Begin`/`End`/… directly into
+  application code, which both undercut the wrapper's purpose and taught readers (and
+  AI coding agents) to reach for raw ImGui. All 13 examples were converted to
+  `unigui::im::*` immediate-mode helpers and the RAII `WindowScope`/`ChildScope`
+  guards; the only remaining `ImGui::` calls are genuinely ImGui-specific
+  (`ShowDemoWindow`, `GetIO`, `GetMainViewport`). printf-style `ImGui::Text("%d", …)`
+  became `im::Text(std::format(…))`. The flagship `hello_unigui` went from a ~50/50
+  ImGui/unigui mix to zero avoidable raw calls. All examples still build and pass their
+  headless `--frames` smoke run.
+- **`TimeSeriesChart::SetYAxisRange` now applies the range and then *releases* the axis.**
+  The range is re-imposed for exactly one frame when a *different* range is requested, then
+  the user owns the axis (pan/zoom freely) until the next change — re-asserting the same
+  values every frame from a render loop is harmless. This replaces the old `ImPlotCond_Once`
+  behaviour, where a range set after the plot was first drawn (a checkbox toggled, a value
+  edited) silently did nothing, and the same chart in another window — a new ID scope, e.g.
+  a panel popped out by multi-viewport — behaved differently from the docked one.
+  `SetYAxisRangeLocked(true)` keeps the old always-hold behaviour.
+
+### Deprecated
+- **`TimeSeriesChart::SetPanEnabled` / `SetZoomEnabled` (and `WithPanEnabled`/
+  `WithZoomEnabled`) — they never did anything.** Both mapped to the *same*
+  `ImPlotAxisFlags_NoMenus` bit and the computed flags were `(void)`-ed in `Render`, so
+  neither ever gated input. Someone trusted them and shipped a "fixed" Y axis the user
+  could still zoom. They are now `[[deprecated]]` no-ops rather than deleted, because
+  `include/unigui/**` is a semver contract — removal waits for a major. The warning is the
+  fix: it tells the caller the truth at compile time, which a silently-ignored setter never
+  did. Use `SetYAxisSpanLock(span)` to pin the axis height while keeping pan, or
+  `ImPlotAxisFlags_Lock` to freeze it outright. Keyboard pan/zoom on the focused plot (the
+  arrow-key navigation from 4.8.0) is unaffected and always available.
 
 ### Fixed
 - **`TimeSeriesChart` Y-axis auto-fit padding is now span-relative, not
@@ -48,8 +313,201 @@
   titles/filters rendered as mojibake. The dialog now goes through the wide
   (`W`) APIs, converting title/filter/initial path UTF-8 → UTF-16 on the way in
   and the selected path UTF-16 → UTF-8 on the way out.
+- **DX11: the main render target is now bound every frame.** It was bound once at device
+  creation (and on resize) and never again — invisible until multi-viewport, because
+  `ImGui_ImplDX11_RenderWindow()` binds each secondary window's RTV *without restoring the
+  previous one*. From the first frame a popped-out window rendered, the main window cleared
+  its own surface and then drew into the secondary one — nothing but the backdrop colour,
+  recovering only when a resize happened to rebind. Binding per frame is also what the
+  upstream DX11 example does.
+- **`im::InputText`/`InputTextWithHint` now persist typing with `EnterReturnsTrue`.** The
+  `std::string` write-back was keyed on the widget's return value, but with
+  `ImGuiInputTextFlags_EnterReturnsTrue` that fires *only on the Enter frame* — every
+  keystroke was thrown away and the text vanished the moment the field lost focus. That is
+  a password box you cannot type into; reported against a change-password dialog whose
+  three fields all carried the flag (Enter-to-submit). The write-back is now keyed on the
+  buffer actually differing, so the bound string simply stays in sync; the return value
+  keeps its documented submit-on-Enter meaning.
+- **Popped-out viewports are no longer leaked forever.** The backdrop fill for secondary
+  viewports initially painted *every* secondary viewport each frame — including orphans
+  left behind after a window merged back. A rendered viewport counts as active, and imgui
+  only destroys secondary viewports after ~3 inactive frames, so the fill kept the
+  orphan's OS window alive indefinitely (found by the new smoke's merge-back assert).
+  The fill now skips viewports that hosted no window this frame.
+- **The `EnterReturnsTrue` regression test now runs for real.** Its original form tripped
+  two latent issues only a Debug build exposes: a focus-stealing `InputText` with a
+  nullptr buffer (`IM_ASSERT(buf != NULL)`), and the frame that acquires keyboard focus
+  swallowing one character — the test now idles a frame after focusing and uses a real
+  buffer.
+
+### Documentation
+- `CLAUDE.md`: added a top-of-file rule — never call `ImGui::` in application code —
+  with an `ImGui::` → `unigui::im::` drop-in mapping table, and scoped the two places
+  raw ImGui is legitimate (`src/backend/`, widget internals). Removed a stray tag left
+  in the file. `README.md`: the core-loop quick-start now models `unigui::im` instead
+  of leading with a raw `ImGui::` call.
+
+## [4.8.0] - 2026-07-08
+- **Forms & validation in the component idiom** (roadmap — framework-idiom deepening).
+  New `dsl::FormComponent` + `dsl::FormField<T>` (`<unigui/dsl/form_component.h>`,
+  header-only like the rest of the component layer): a `FormField` is a validated
+  `State` cell — value, chainable rule list (`Required`/`MinLength`/`Range`/custom
+  `Rule`), a *touched* flag, and a reactive error message (first failing rule wins).
+  The component exposes `FormValid()` and the `Submit()` gate: touch everything (so
+  errors become visible — the standard appear-on-submit UX), revalidate, and call
+  `OnSubmit()` only when the whole form passes. `field.Node()` renders a ready-made
+  bound row (InputText/CheckBox + danger-coloured error line) for string/bool fields.
+  Field writes flow through the normal `State` dirty tracking, so the form re-Builds
+  exactly when needed. Documented in `docs/FRAMEWORK.md` §8; 10 headless tests.
+- **Keyboard-only navigation audit — all 86 retained widgets, 11 confirmed gaps fixed**
+  (roadmap — the last a11y item). A full adversarially-verified sweep classified every
+  widget (49 keyboard-OK by construction, 26 display-only) and confirmed 11 real gaps,
+  now all fixed:
+  - **keyboard-dead → operable**: `Tag` (activation now fires on nav-activate, not just
+    mouse click), `SegmentedControl` (segments are Tab-reachable via nav-enabled items
+    + focus ring), `Markdown` links (real `TextLink` items — focusable, Space/Enter
+    activates, underline + focus ring), `Splitter`/`MultiSplitter` (nav-activate the
+    divider, then arrows resize), `SliderBar` and `MultiHandleSlider` (Tab reaches the
+    bar; Up/Down cycle the handle — ring marks it; Left/Right adjust, Ctrl = fast step;
+    Home/End jump on SliderBar).
+  - **partial → complete**: `FileDialog` (Space/Enter on a focused row now enters a
+    directory / confirms a file — subfolders were unreachable in SelectFolder mode),
+    `SearchBox` (Down/Up move a highlight through the suggestions, Enter accepts;
+    the list is now a real window, which also makes mouse clicks work — tooltips
+    carry `NoInputs`, so clicking a suggestion NEVER worked), `TreeView` (Enter
+    selects the focused row through the same single/multi-select state machine;
+    Space keeps ImGui's expand/collapse), `TimeSeriesChart` (arrows pan, Up/Down zoom,
+    Home re-fits, Ctrl+arrows step an exact-value readout cursor across data points
+    with an in-plot annotation, plus a visible focus ring).
+  - 4 new driven keyboard tests on the test-engine harness (Tag, SegmentedControl,
+    TreeView, Splitter) alongside the existing 5; test-engine suite 1315/1315.
+- **Platform-aware system font fallback** (roadmap — the standing font item). The font
+  manager's system-font probing grew from "one hardcoded path + one Linux retry" into
+  per-platform candidate lists: `LoadSystemEmoji` now probes the common Noto Color Emoji
+  install locations across Debian/Ubuntu, Arch, Fedora and BSD layouts, and honors
+  `%WINDIR%` on Windows instead of assuming `C:/Windows`. New **`LoadSystemCJK()`** merges
+  a system CJK font (Microsoft YaHei/SimSun on Windows, PingFang/Hiragino on macOS,
+  Noto Sans CJK/WenQuanYi on Linux) into the default font as a glyph fallback — covering
+  CJK ideographs, kana, Hangul, CJK punctuation and full-width forms — and returns the
+  font (nullptr when no candidate exists; registered as `"cjk"`, idempotent). Both remain
+  documented no-ops on the web build (no system fonts on MEMFS).
+- **README hero screenshot** — `docs/assets/preset_demo.png`, a real capture of
+  `examples/preset_demo` (AppShell + Dashboard preset, dark theme), embedded in both
+  READMEs and `docs/PRESETS.md` so the preset layer sells itself visually (the last
+  presets-v2 tail item).
+
+### Fixed
+- **`CollapsingHeader` now tracks real expand/collapse state.** `Render()` passed
+  `&open_` as imgui's `p_visible` — the close-'X' / don't-render-at-all flag — and
+  discarded the return value that carries the actual expand state. Consequences:
+  constructing with `default_open=false` made the header *invisible* instead of
+  collapsed; clicking or keyboard-toggling the header never updated `open_`, so the
+  content callback kept rendering under a visually collapsed header and `onToggle_`
+  only fired from the stray 'X' button (which then vanished the header entirely).
+  The open state now flows `SetNextItemOpen(open_) → return value → open_`, so
+  `IsOpen()`/`SetOpen()` reflect expansion, `onToggle_` fires on expand/collapse, and
+  the content callback runs only while expanded. Two regression tests pin it
+  (verified to fail against the old code).
+- **`SearchBox` suggestions are now clickable at all.** The autocomplete list rendered
+  in a tooltip window — and tooltips carry `NoInputs`, so the `Selectable` rows never
+  received a click: picking a suggestion by mouse silently did nothing. The list is
+  now a real (input-participating) window; found by the keyboard-nav audit while
+  adding the keyboard path.
+- **`TimeSeriesChart` no longer calls `IsPlotHovered`/`GetPlotMousePos` after
+  `EndPlot()`.** The crosshair readout block ran outside the plot scope — an ImPlot
+  API misuse (debug assert) that stayed hidden only because the short-circuiting
+  `crosshairFmt_` guard rarely held. The readout moved inside the plot.
+- **`fonts::Manager::Unload` no longer double-frees font data.** Every file-loaded font
+  is registered with `FontDataOwnedByAtlas=true` (the atlas frees the buffer at
+  `DestroyContext`/rebuild), yet `Unload` also `IM_FREE`d it — an access violation
+  waiting in `DestroyContext` for any app that ever unloaded a file-loaded font.
+  Surfaced by the new system-font tests.
+- **`LoadSystemEmoji`/`LoadSystemCJK` no longer assert on an empty font atlas.** Calling
+  them before any font was loaded tripped imgui's "Cannot use MergeMode for the first
+  font"; the manager now seeds the atlas with the default font first (the same font
+  `NewFrame` would add lazily). An explicit merge size is also reconciled with imgui
+  1.92's implicit-reference-size fonts instead of asserting.
+
+## [4.7.0] - 2026-07-08
 
 ### Added
+- **Fluent `With*` API across the entire retained widget layer** (roadmap — the fluent
+  rollout). Every retained widget that still derived `Widget` directly — all **63** of
+  them, including the `DataTable<T>` / `BasketTicket<T>` class templates (CRTP-on-template)
+  — now derives `FluentWidget<T>`, and **+250 chainable `With*` helpers** landed as parity
+  for their existing `Set*` configuration. Two effects: (1) the base chainers
+  (`WithTooltip`/`WithEnabled`/`WithVisible`/…) now return the *derived* type everywhere,
+  so the CascadingCombo-style break — a base chainer mid-chain degrading the type to
+  `Widget&` and stopping the chain from continuing with a derived `With*` — is gone
+  layer-wide; (2) `w.WithLabel(…).WithOnClick(…)`-style one-expression configuration now
+  works on every widget, not ~12% of them. Purely additive (semver-minor): no signature
+  changed, no `Set*` removed. Pinned by `tests/widgets/fluent_rollout_test.cc` — a
+  compile-time `static_assert` per class that fails if any widget regresses to a plain
+  `Widget` base — plus runtime chain tests (suite: 1268/1268).
+- **CI: wrapper-coverage is now a hard gate** (`--threshold 95`). The
+  `coverage_vs_imgui.py` step in `quality.yml` fails the pipeline if the first-class
+  wrapped share of ImGui's practical surface drops below 95% (currently 98.5%; the
+  headroom lets a deliberate vcpkg imgui bump land before the wrapping catch-up).
+- **CI: WARP headless render smoke for the DX11/DX12 backends** (roadmap H4b — the last
+  unproven-backend surface). The DX backends previously only *compiled* in CI — the
+  assumption was that a D3D device needs a GPU the headless runner lacks. WARP
+  (Microsoft's software rasteriser, present on every supported Windows) disproves that:
+  the new `tests/backend/dx_warp_smoke_test.cc` creates a **real** D3D11 and D3D12 device on
+  the WARP adapter with **no GPU**, renders to an offscreen RGBA8 target, and reads the
+  pixels back off the GPU — asserting the cleared colour survived the round trip. It
+  exercises the same primitives the renderers use (`D3D11CreateDevice` /
+  `ClearRenderTargetView` / `Map` for DX11; DXGI factory → `EnumWarpAdapter` →
+  `D3D12CreateDevice` → command-list clear → `ExecuteCommandLists` → fence → texture→buffer
+  readback for DX12). The `windows-dx12` CI lane grew from a compile gate into a compile
+  **+ render** gate; the DX11 half also runs in the default `windows` lane. Each half
+  self-gates on `UNIGUI_HAS_DX11` / `UNIGUI_HAS_DX12`, so the file is empty when the backend
+  is off.
+- **Config / IPC / network module maturity** (roadmap #2 — hardening the optional modules).
+  - **`config::Store::LoadINI` now parses real-world INI**, not just bare `key=value`:
+    `;`- and `#`-prefixed comment lines and blank lines are skipped, keys and values are
+    whitespace-trimmed on both sides, and `[section]` headers namespace the keys that
+    follow them as `section.key` (keys before any section stay flat). Previously every
+    non-`=` line, comment, and stray whitespace was folded into the key/value verbatim.
+  - **`ipc::Shutdown()`** — a new free function that cleanly terminates the process-wide
+    ZMQ context (for a graceful exit or before unloading the module as a DLL). Idempotent,
+    and a fresh context is created lazily for any channel constructed afterward. The
+    context previously leaked until process teardown with no way to tear it down early.
+  - **First functional coverage of the ZMQ PUB/SUB path** — an in-process (`inproc://`)
+    `Server`→`Client` publish/subscribe round-trip test (the channel classes had *zero*
+    behavioural tests before), plus LoadINI comment/section/trim tests and a
+    Shutdown-then-reuse cycle test.
+  - **Live loopback transport tests for the network module** — an in-process httplib
+    server drives `HttpClient::Get`/`Post` (GET body, POST echo, a real 404), and an
+    in-process `ix::WebSocketServer` echo proves `WebSocketClient` completes a genuine
+    handshake and round-trips a frame. These are the module's first end-to-end transport
+    tests — it previously had only URL-splitting and callback-thread-safety coverage.
+    Both bind an OS-assigned free loopback port, so parallel CI jobs never collide.
+- **UI presets v2** (roadmap H5 · P1 — the adoption multiplier). Two new scaffolds plus a
+  built-in command palette, all on the existing `unigui::presets` module:
+  - **LoginPage** — a centred sign-in/connect card (logo slot, username, password with the
+    visibility toggle + strength meter, remember-me, full-width submit, status/error line).
+    Enter submits; a `SetBusy` state disables the form during auth; the password value never
+    reaches the a11y layer or announcements; error status announces assertively.
+  - **WizardFlow** — a validated multi-step flow: step indicator, `[Cancel] [Back]
+    [Next | Finish]` row, **per-step validation gating** (`Next()`/Finish disabled while a
+    step's `canAdvance` gate fails), localizable labels, and a11y announcements per step.
+  - **AppShell command palette** — `WithCommandPalette()` adds a built-in **Ctrl+P** palette;
+    every page auto-registers as "Go to <label>" and app commands attach via `AddCommand`.
+  - **Interaction tests for the presets** on the test-engine harness (driven clicks/typing
+    through AppShell sidebar, SettingsPage toggle, LoginPage submit, WizardFlow gating), plus
+    headless state/a11y tests. `examples/preset_demo` grew a login gate + a setup-wizard page.
+- **CI: headless-browser render smoke for the wasm artifacts** (roadmap H4a — the first
+  item of the re-scoped plan). `scripts/web_smoke.mjs` loads `web_demo` in headless
+  Chromium (Playwright + SwiftShader ANGLE for a deterministic software render), waits
+  for boot, screenshots the **canvas element**, and asserts the UI drew real pixels —
+  the browser twin of the native `UNIGUI_RENDER_VERIFY` gate. WebGL2 is a **hard gate**;
+  WebGPU runs best-effort (headless Chromium provided no GPU adapter locally — the app
+  degrades gracefully; the step flips hard once the runner proves an adapter). Building
+  the smoke validated its own design twice: a full-page screenshot *passed on a black
+  canvas* (the emscripten shell chrome faked the verdict — hence canvas-only), and
+  headless Chromium's default GL virtualization black-screened an artifact that renders
+  perfectly headed (hence SwiftShader). The wasm runtime was previously the only
+  platform with zero automated runtime signal.
 - **`im::Combo` mouse-wheel quick-select** — hovering the *closed* combo and
   scrolling now cycles the selection in place (wheel up = previous item, wheel
   down = next, clamped to range) without opening the popup, so dense forms of
@@ -58,7 +516,36 @@
   region does not also move; an open popup keeps normal list scrolling. Applies
   to every `im::Combo` call site.
 
+### Fixed
+- **`network::WebSocketClient` now connects on Windows out of the box.** The client never
+  initialised IXWebSocket's platform net stack (WSAStartup), so `Connect()` silently
+  failed on Windows unless the host app happened to call `ix::initNetSystem()` by hand.
+  `Connect()` now does it lazily on first use (once per process, thread-safe; a no-op on
+  POSIX). Surfaced by the new live WebSocket loopback test — the first code path that ever
+  opened a real connection.
+
 ### Changed
+- **clang-tidy is now a hard gate on the bug-catching family** (roadmap — the standing
+  quality-gate item). `.clang-tidy` sets `WarningsAsErrors: 'bugprone-*'` and the CI
+  `clang-tidy` job dropped its `continue-on-error`, so any *new* `bugprone-*` finding now
+  fails the pipeline. The other enabled families (readability/modernize/performance/
+  cppcoreguidelines/misc) stay advisory — the tree carries thousands of deliberate style
+  deviations (lowercase literal suffixes, brace-less statements, …) that aren't bugs, so
+  enforcing them would be gratuitous churn; families can be promoted into the gate as the
+  tree is cleaned under them. To reach a clean `bugprone-*` baseline, the pre-existing
+  findings were resolved: four `(int)(x + 0.5f)` truncations became `std::lround` (correct
+  rounding — `fx::elevation` alpha clamp, `Gauge`/`ProgressBar` percent labels, the app
+  backdrop clear colour); the two `Form::Deserialize` `json[pos++]` reads were lifted out
+  of their `&&` conditions (order-of-evaluation footgun, though short-circuit made them
+  safe); and `MasterDetail` gained guards on its always-emplaced `splitter_` optional. Two
+  sub-checks are excluded with rationale: `bugprone-branch-clone` (a conditional-compilation
+  false positive in `CreateBackend`) and `bugprone-crtp-constructor-accessibility` (stylistic
+  hardening not worth touching every fluent widget for).
+- **`ipc::Server::OnReceive` is now a documented no-op.** A `Server` is a ZMQ `PUB`
+  (broadcast) socket and can never receive, so passing it a callback now logs a
+  `UNIGUI_LOG_WARN` (pointing you at a `Client`/`SUB`) instead of silently accepting a
+  handler that could never fire. The `Channel` one-way PUB→SUB topology is now documented
+  in the header.
 - **`im::Combo` dropdown indicator restyled** — replaced ImGui's bulky
   full-height square arrow *button* with a slim, softened, DPI-scaled chevron
   painted in the right padding (`NoArrowButton` + custom draw). Smaller and

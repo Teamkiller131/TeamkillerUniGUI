@@ -9,7 +9,7 @@ namespace unigui {
 
 /// Virtual scrolling list. Only renders visible items — handles 100k+ entries.
 /// Uses ImGuiListClipper internally.
-class VirtualList : public Widget {
+class VirtualList : public FluentWidget<VirtualList> {
 public:
     VirtualList(std::string name, int itemCount = 0);
 
@@ -25,6 +25,24 @@ public:
 
     int GetSelected() const { return selected_; }
     void SetSelected(int idx) { selected_ = idx; }
+
+    // ── Fluent (chainable) helpers — return VirtualList& via CRTP base ──────────
+    VirtualList& WithItemCount(int n) {
+        SetItemCount(n);
+        return *this;
+    }
+    VirtualList& WithItemGetter(std::function<std::string(int)> fn) {
+        SetItemGetter(std::move(fn));
+        return *this;
+    }
+    VirtualList& WithOnSelect(std::function<void(int)> fn) {
+        SetOnSelect(std::move(fn));
+        return *this;
+    }
+    VirtualList& WithSelected(int idx) {
+        SetSelected(idx);
+        return *this;
+    }
 
 private:
     int count_ = 0;

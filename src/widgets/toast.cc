@@ -1,18 +1,26 @@
 #include <unigui/fx/animation.h>
 #include <unigui/widgets/toast.h>
 
+#include "../detail/context_registry.h"
+
 #include <imgui.h>
 #include <imgui_internal.h>
+
+namespace unigui::detail {
+template <>
+std::unique_ptr<Toast> ContextRegistry<Toast>::Make() {
+    return std::make_unique<Toast>("_toast");
+}
+} // namespace unigui::detail
 
 namespace unigui {
 
 Toast& Toast::Instance() {
-    static Toast t("_toast");
-    return t;
+    return detail::ContextRegistry<Toast>::Instance();
 }
 
 Toast::Toast(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<Toast>(std::move(name)) {}
 
 void Toast::SetPosition(int anchor, float offsetX, float offsetY) {
     anchor_ = anchor;

@@ -1,6 +1,10 @@
 # UniGUI Widget API Reference
 
-> **Version**: 3.16.0 (C++23) · **Widgets**: 95 · **Backend**: Dear ImGui (docking + multi-viewport)
+> **Version**: 4.9.0 (C++23) · **Widgets**: 92 · **Backend**: Dear ImGui (docking + multi-viewport)
+>
+> **How the count is derived**: 86 `.cc`-backed widgets (`src/widgets/`) + 3 trading widgets
+> (`CandlestickChart`, `DepthLadder`, `OrderTicket`) + 3 header-only widgets (`DataTable<T>`,
+> `ConnectionStatusBar`, `DockSpace`) — helper classes beside the widgets are not counted.
 >
 > **Documentation index**: [docs/README.md](README.md) · **Alphabetical index**: [API_INDEX.md](API_INDEX.md) · **Cookbook**: [EXAMPLES.md](EXAMPLES.md) · **Per-widget examples**: [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md)
 >
@@ -1342,9 +1346,14 @@ void SetMaxRenderPoints(int n);                 // LTTB-decimate huge series to 
 int GetSeriesPointCount(int seriesId) const;
 void SetSessionAxis(SessionAxis axis);          // gap-free intraday X axis, HH:MM labels
 void SetYAxisAutoFit(bool on); void SetYAxisRange(double min, double max);
+void SetYAxisRangeLocked(bool on);              // hold the manual range every frame
+void SetYAxisSpanLock(double span);             // pin Y height, keep panning (trader "fixed axis")
+void SetYAxisTickSpacing(double step);          // explicit Y gridline step (auto-fit off)
+void SetXAxisRange(double min, double max);     // fixed X window
+void SetXAxisTickSpacing(double step);          // explicit X gridline step (follows the visible window)
 void SetXAxisLabel(const std::string&); void SetYAxisLabel(const std::string&);
 void SetCrosshairEnabled(bool); void SetLegendEnabled(bool);
-void SetPanEnabled(bool); void SetZoomEnabled(bool); void SetRubberBandZoom(bool on);
+void SetRubberBandZoom(bool on);                // SetPanEnabled/SetZoomEnabled: DEPRECATED no-ops
 void SetGridColor(ImU32 c); void SetThemeBackground(bool on);
 void SetCrosshairFormatter(std::function<std::string(double,const std::vector<double>&)> fn);
 void SetXAxisFormatter(std::function<int(double,char*,int,void*)> fn);

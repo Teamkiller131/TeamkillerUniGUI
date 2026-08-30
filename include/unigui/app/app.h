@@ -4,6 +4,7 @@
 #include <unigui/theme/theme.h>
 
 #include <functional>
+#include <vector>
 
 namespace unigui {
 
@@ -68,6 +69,19 @@ int RunApp(const AppConfig& config, const std::function<void()>& callback, int m
 
 /// v1.9: Get native window handle. Returns HWND on Windows, GLFWwindow* elsewhere.
 void* GetNativeWindowHandle();
+
+/// Enumerate the connected displays (virtual-desktop rects, work areas, and
+/// per-monitor DPI scales) for cross-monitor layout: place a window on monitor
+/// 2, tile a dashboard across monitors, or react to per-monitor scaling.
+/// Empty before `Init` / after `Shutdown` (and on platforms that cannot
+/// report monitors — the GLFW/SDL3 backends can).
+std::vector<MonitorInfo> GetMonitors();
+
+/// The active renderer backend (nullptr before `Init` / after `Shutdown`).
+/// Advanced use: backend-specific capability queries (e.g. the DX11 renderer's
+/// `LastVerifyDrawn()` after a `UNIGUI_RENDER_VERIFY=1` run) and CI smoke asserts.
+class RendererBackend;
+RendererBackend* GetActiveRenderer();
 
 /// HiDPI content scale. Sets the per-viewport font DPI factor
 /// (`ImGuiStyle::FontScaleDpi`, Dear ImGui ≥1.92), so fonts re-rasterise crisply

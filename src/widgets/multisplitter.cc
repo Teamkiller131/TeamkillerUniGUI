@@ -10,7 +10,7 @@
 namespace unigui {
 
 MultiSplitter::MultiSplitter(std::string name, Orientation ori)
-        : Widget(std::move(name))
+        : FluentWidget<MultiSplitter>(std::move(name))
         , ori_(ori) {}
 
 void MultiSplitter::AddPanel(float ratio, std::function<void()> content) {
@@ -102,7 +102,8 @@ bool MultiSplitter::RestoreLayout(const std::string& s) {
     std::size_t i = 0;
     while (i < s.size()) {
         std::size_t comma = s.find(',', i);
-        const std::string tok = s.substr(i, comma == std::string::npos ? std::string::npos : comma - i);
+        const std::string tok =
+            s.substr(i, comma == std::string::npos ? std::string::npos : comma - i);
         const char* b = tok.c_str();
         char* e = nullptr;
         const float v = std::strtof(b, &e);
@@ -175,8 +176,16 @@ void MultiSplitter::Render() {
                 ImGui::Button(handleID, ImVec2(avail.x, kHandleThickness));
                 ImGui::PopStyleColor();
                 if (ImGui::IsItemActive()) {
-                    float deltaRatio =
-                        panelSpace > 0.0f ? ImGui::GetIO().MouseDelta.y / panelSpace : 0.0f;
+                    float deltaPx = ImGui::GetIO().MouseDelta.y;
+                    // Keyboard path: nav-activate the handle (hold Space/Enter),
+                    // then Up/Down resize; nav movement is suspended while the
+                    // item is active so the arrows are free. Mouse drag was the
+                    // only resize path before.
+                    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+                        deltaPx -= panelSpace * 0.02f;
+                    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+                        deltaPx += panelSpace * 0.02f;
+                    float deltaRatio = panelSpace > 0.0f ? deltaPx / panelSpace : 0.0f;
                     panels_[i].ratio += deltaRatio;
                     panels_[i + 1].ratio -= deltaRatio;
                     if (panels_[i].ratio < minRatio) {
@@ -195,8 +204,13 @@ void MultiSplitter::Render() {
                 ImGui::Button(handleID, ImVec2(kHandleThickness, avail.y));
                 ImGui::PopStyleColor();
                 if (ImGui::IsItemActive()) {
-                    float deltaRatio =
-                        panelSpace > 0.0f ? ImGui::GetIO().MouseDelta.x / panelSpace : 0.0f;
+                    float deltaPx = ImGui::GetIO().MouseDelta.x;
+                    // Keyboard path — see the horizontal branch above.
+                    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+                        deltaPx -= panelSpace * 0.02f;
+                    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+                        deltaPx += panelSpace * 0.02f;
+                    float deltaRatio = panelSpace > 0.0f ? deltaPx / panelSpace : 0.0f;
                     panels_[i].ratio += deltaRatio;
                     panels_[i + 1].ratio -= deltaRatio;
                     if (panels_[i].ratio < minRatio) {

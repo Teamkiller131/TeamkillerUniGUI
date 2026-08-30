@@ -57,8 +57,11 @@ public:
     /// Evaluate @media rules against current viewport/view preferences.
     void EvaluateMedia(float viewWidth, float viewHeight, bool darkMode = true);
 
-private:
+    /// Public for the context registry (src/detail/context_registry.h) — prefer
+    /// Instance(); direct construction bypasses the per-context lifetime.
     Engine() = default;
+
+private:
     std::vector<StyleRule> rules_;
     std::vector<MediaRule> mediaRules_;
     std::unordered_map<std::string, std::string> vars_;

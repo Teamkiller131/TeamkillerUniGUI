@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 Notification::Notification(std::string n)
-        : Widget(std::move(n)) {}
+        : FluentWidget<Notification>(std::move(n)) {}
 size_t Notification::PendingCount() const {
     return queue_.size();
 }

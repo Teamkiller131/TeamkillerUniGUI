@@ -6,7 +6,7 @@
 
 namespace unigui {
 
-class DirPath : public Widget {
+class DirPath : public FluentWidget<DirPath> {
 public:
     DirPath(std::string name, std::string label);
     void Render() override;
@@ -14,6 +14,20 @@ public:
     void SetPath(std::string path);
     void SetTitle(std::string title);
     void SetOnPathChanged(std::function<void(std::string)> cb);
+
+    // ── Fluent (chainable) helpers — return DirPath& via CRTP base ─────────
+    DirPath& WithPath(std::string path) {
+        SetPath(std::move(path));
+        return *this;
+    }
+    DirPath& WithTitle(std::string title) {
+        SetTitle(std::move(title));
+        return *this;
+    }
+    DirPath& WithOnPathChanged(std::function<void(std::string)> cb) {
+        SetOnPathChanged(std::move(cb));
+        return *this;
+    }
 
 private:
     std::string label_, path_, title_;

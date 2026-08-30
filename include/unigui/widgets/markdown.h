@@ -12,7 +12,7 @@ namespace unigui {
 ///   - bullet list items
 ///   --- horizontal rule
 ///   regular paragraph text (word-wrapped)
-class Markdown : public Widget {
+class Markdown : public FluentWidget<Markdown> {
 public:
     Markdown(std::string name, std::string markdown = "");
 
@@ -27,6 +27,20 @@ public:
 
     /// Set maximum width for text wrapping (0 = fill available).
     void SetMaxWidth(float w) { maxWidth_ = w; }
+
+    // ── Fluent (chainable) helpers — return Markdown& via CRTP base ──────────
+    Markdown& WithMarkdown(std::string md) {
+        SetMarkdown(std::move(md));
+        return *this;
+    }
+    Markdown& WithLinkCallback(std::function<void(const std::string& url)> cb) {
+        SetLinkCallback(std::move(cb));
+        return *this;
+    }
+    Markdown& WithMaxWidth(float w) {
+        SetMaxWidth(w);
+        return *this;
+    }
 
 private:
     void RenderLine(const std::string& line);

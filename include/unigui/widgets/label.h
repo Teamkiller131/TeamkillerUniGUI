@@ -7,12 +7,18 @@
 
 namespace unigui {
 
-class Label : public Widget {
+class Label : public FluentWidget<Label> {
 public:
     Label(std::string name, std::string text = "");
     void Render() override;
     void SetText(std::string text);
     const std::string& GetText() const;
+
+    // ── Fluent (chainable) helpers — return Label& via CRTP base ──────────
+    Label& WithText(std::string text) {
+        SetText(std::move(text));
+        return *this;
+    }
 
     // Address-sensitivity note: BindText() registers a `this`-capturing observer
     // in the source observable, so a *bound* Label must not be relocated. Unbound

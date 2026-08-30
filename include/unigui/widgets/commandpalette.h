@@ -35,7 +35,7 @@ bool FuzzyMatch(std::string_view pattern, std::string_view text, int& outScore);
 /// The query → ranked-results → execute pipeline is exposed directly
 /// (`SetQuery`, `Matches`, `Execute`) so the matching/ordering behaviour is
 /// testable without a GL context.
-class CommandPalette : public Widget {
+class CommandPalette : public FluentWidget<CommandPalette> {
 public:
     struct Command {
         std::string id;               ///< stable unique identifier
@@ -86,6 +86,16 @@ public:
     /// Run the command with the given id if it exists and is enabled; invokes
     /// its action, then closes the palette. Returns true if a command ran.
     bool Execute(const std::string& id);
+
+    // ── Fluent (chainable) helpers — return CommandPalette& via CRTP base ──
+    CommandPalette& WithPlaceholder(std::string s) {
+        SetPlaceholder(std::move(s));
+        return *this;
+    }
+    CommandPalette& WithMaxResults(int n) {
+        SetMaxResults(n);
+        return *this;
+    }
 
 private:
     struct Scored {

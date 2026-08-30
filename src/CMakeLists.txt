@@ -35,7 +35,7 @@ unigui_set_warnings(unigui)
 include(GenerateExportHeader)
 generate_export_header(unigui
     EXPORT_MACRO_NAME UNIGUI_API
-    EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/unigui_export.h
+    EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/unigui/unigui_export.h
 )
 
 # ── Dependencies (always) ─────────────────────────────────────────────────────
@@ -193,12 +193,14 @@ target_sources(unigui PRIVATE
     core/context.cc
     core/error.cc
     core/locale.cc
+    core/layout_direction.cc
     core/settings.cc
     core/strutil.cc
     core/log.cc
     core/main_thread.cc
     core/accessibility.cc
     core/a11y_bridge.cc
+    capi/unigui_capi.cc
     backend/glfw_platform.cc
     backend/opengl3_renderer.cc
     backend/backend_registry.cc
@@ -308,7 +310,7 @@ endif()
 # Each module's implementation lives in src/<module>/, mirroring its public
 # header under include/unigui/<module>/.
 if(UNIGUI_MODULE_DSL)
-    target_sources(unigui PRIVATE dsl/dsl.cc)
+    target_sources(unigui PRIVATE dsl/dsl.cc dsl/dsl_scene.cc)
     target_compile_definitions(unigui PUBLIC UNIGUI_HAS_DSL)
     message(STATUS "DSL module enabled")
 endif()
@@ -373,6 +375,8 @@ if(UNIGUI_MODULE_PRESETS)
             presets/dashboard.cc
             presets/master_detail.cc
             presets/log_console.cc
+            presets/login_page.cc
+            presets/wizard_flow.cc
         )
         target_compile_definitions(unigui PUBLIC UNIGUI_HAS_PRESETS)
         message(STATUS "UI presets enabled")
@@ -454,7 +458,7 @@ if(NOT EMSCRIPTEN)
     )
 
     install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/unigui_export.h
+        ${CMAKE_CURRENT_BINARY_DIR}/unigui/unigui_export.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unigui
     )
 endif()

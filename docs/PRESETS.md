@@ -2,6 +2,10 @@
 
 _Module: `UNIGUI_MODULE_PRESETS` (default **ON**) · namespace `unigui::presets` · headers `<unigui/presets/*.h>`_
 
+![preset_demo — AppShell scaffold hosting the Dashboard preset (dark theme)](assets/preset_demo.png)
+
+*`examples/preset_demo`: AppShell (menu bar, sidebar, status bar, Ctrl+P command palette) hosting Dashboard behind a LoginPage gate — about sixty lines of application code.*
+
 The preset layer sits **above** the widget library: prefab compositions of existing
 widgets with sensible theming, layout, and accessibility defaults, so a complete,
 decent-looking application takes minutes, not days. Every preset:
@@ -40,6 +44,7 @@ shell.Render();
 | `WithToolbar(fn)` | optional row under the menu bar |
 | `SetActivePage(i)` / `GetActivePage()` / `WithOnPageChange(fn)` | switching announces "<label> page" to a11y |
 | `SetStatus(text)` / `WithSidebarWidth(w)` | live status line, sidebar sizing |
+| `WithCommandPalette()` / `AddCommand(id, title, action)` | built-in **Ctrl+P** palette; every page auto-registers as "Go to <label>", app commands via `AddCommand` |
 
 ## SettingsPage — schema-driven settings
 
@@ -92,6 +97,40 @@ logs.Append(presets::LogConsole::Level::Error, "feed dropped");
 
 **Not thread-safe** — `Append` from the UI thread only (marshal worker-thread logs via
 `core/main_thread.h`).
+
+## LoginPage — sign-in / connect scaffold
+
+A centred credentials card: optional logo, title, username, password (with the
+PasswordInput visibility toggle + strength meter), optional remember-me, a full-width
+submit, and a status/error line. Enter submits; a busy state disables the form while the
+host authenticates.
+
+```cpp
+login.WithTitle("Connect to feed")
+     .WithOnSubmit([&](const std::string& user, const std::string& pass, bool remember) {
+         login.SetBusy(true);                 // disables the form, shows "Signing in…"
+         Authenticate(user, pass, remember);  // async → SetBusy(false) + SetStatus(...)
+     });                                      //         on the UI thread
+```
+
+The password value is **never** exposed to the accessibility layer or announced
+(`PasswordInput` reports presence only); the status line announces assertively on error.
+
+## WizardFlow — validated multi-step flow
+
+Step indicator (dots + "Step i of N — title"), the current step's content, and a
+`[Cancel] [Back] [Next | Finish]` button row. Adds what the bare `Wizard` widget lacks:
+**per-step validation gating**, localizable labels, and a11y announcements per transition.
+
+```cpp
+flow.AddStep("Welcome", [] { ImGui::TextUnformatted("hi"); })
+    .AddStep("License", [&] { ImGui::Checkbox("I agree", &agreed); },
+             [&] { return agreed; })            // Next disabled until the gate passes
+    .WithOnFinish([] { Install(); });
+```
+
+`Next()`/`Finish` respect the current step's gate; `GoTo(i)` is a deliberate jump that
+skips gates. Empty flow shows a friendly hint.
 
 ## Module gating
 

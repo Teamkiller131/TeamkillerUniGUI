@@ -1,6 +1,6 @@
 # Immediate-Mode API Reference — `unigui::im`
 
-> Reference for TeamkillerUniGUI **3.16.0** · header: [`include/unigui/im/im.h`](../include/unigui/im/im.h)
+> Reference for TeamkillerUniGUI **4.9.0** · header: [`include/unigui/im/im.h`](../include/unigui/im/im.h)
 
 The `unigui::im` namespace is TeamkillerUniGUI's **immediate-mode layer**: a
 thin, themed, allocation-light set of free functions that wrap Dear ImGui so the
@@ -118,6 +118,23 @@ enum class ButtonVariant { Default, Primary, Danger, Success, Warning };
 | `void TextUnformatted(std::string_view text)` | Raw text, no parsing — fastest path for long/literal strings. |
 | `bool TextLink(std::string_view label)` | Clickable text hyperlink; returns true on the frame it is clicked. |
 | `void TextLinkOpenURL(std::string_view label, std::string_view url = {})` | Hyperlink that opens `url` (defaults to the label) on click. |
+| `void TextF(const char* fmt, ...)` | printf-style formatted text (e.g. `im::TextF("frame %d", n)`). |
+| `void TextWrappedF(const char* fmt, ...)` | printf-style wrapped text. |
+| `void TextDisabledF(const char* fmt, ...)` | printf-style greyed-out text. |
+| `void TextColoredF(const ImVec4& color, const char* fmt, ...)` | printf-style text in an explicit color. |
+| `void LabelTextF(const char* label, const char* fmt, ...)` | printf-style framed label/value. |
+| `void BulletTextF(const char* fmt, ...)` | printf-style bullet text. |
+
+> **RTL layout mirroring (increments 1–2).** With
+> `unigui::SetLayoutDirection(unigui::LayoutDirection::RightToLeft)`, the
+> single-line `std::string_view` text primitives — `Text`, `TextDisabled`,
+> `TextColored`, `LabelText` — right-align against the content region, and
+> `TextWrapped` wraps with every line right-aligned (visual order only — no
+> bidi reordering, which suits pure-RTL text), so RTL-script UIs read
+> right-to-left. Not mirrored yet: the printf-style `*F` variants (use the
+> `string_view` forms, or `std::format` + `Text`), `BulletText` (the bullet
+> marker lives at the cursor), control internals, table column order and tree
+> indents. See `unigui::LayoutDirection` in `<unigui/core/layout_direction.h>`.
 
 ---
 
@@ -199,10 +216,17 @@ enum class ButtonVariant { Default, Primary, Danger, Success, Warning };
 | `bool InputText(std::string_view label, std::string* value, std::size_t maxLength = 256, ImGuiInputTextFlags flags = 0)` | Single-line text bound to a `std::string`. |
 | `bool InputTextWithHint(std::string_view label, std::string_view hint, std::string* value, std::size_t maxLength = 256, ImGuiInputTextFlags flags = 0)` | Single-line input with a greyed-out hint shown when empty. |
 | `bool InputTextMultiline(std::string_view label, std::string* value, const ImVec2& size = ImVec2(0,0), std::size_t maxLength = 4096, ImGuiInputTextFlags flags = 0)` | Multi-line text bound to a `std::string`. |
+| `bool InputText(std::string_view label, char* buf, std::size_t bufSize, ImGuiInputTextFlags flags = 0)` | Raw fixed-buffer overload (caller owns the buffer). |
+| `bool InputTextWithHint(std::string_view label, std::string_view hint, char* buf, std::size_t bufSize, ImGuiInputTextFlags flags = 0)` | Raw fixed-buffer overload with a hint. |
+| `bool InputTextMultiline(std::string_view label, char* buf, std::size_t bufSize, const ImVec2& size = ImVec2(0,0), ImGuiInputTextFlags flags = 0)` | Raw fixed-buffer multi-line overload. |
 | `void DrawActiveInputCaret()` | Overlay a DPI-correct, font-scaled caret on the active input. The `im::InputText*` helpers call this automatically; call it yourself after a raw `ImGui::InputText*` on the same item. |
 
 The `im::InputText*` functions take a `std::string*` directly — you do **not**
 manage a fixed `char[]` buffer. `maxLength` caps the resulting string length.
+The bound string stays in sync **on every keystroke**, including with
+`ImGuiInputTextFlags_EnterReturnsTrue` (whose return value fires only on the
+Enter frame; the write-back is keyed on the buffer differing, not on that
+return).
 
 ---
 
@@ -210,7 +234,7 @@ manage a fixed `char[]` buffer. `maxLength` caps the resulting string length.
 
 | Signature | Note |
 |-----------|------|
-| `bool Combo(std::string_view label, int* current, const std::vector<std::string>& items)` | High-level dropdown bound to an index into `items`; true when the selection changes. |
+| `bool Combo(std::string_view label, int* current, const std::vector<std::string>& items)` | High-level dropdown bound to an index into `items`; true when the selection changes. Draws the slim, hover-reactive chevron indicator (the library-wide combo look) and supports **mouse-wheel quick-select**: scrolling over the *closed* combo cycles the selection in place (clamped; the item claims the wheel, so a surrounding scroll region doesn't also move). |
 | `bool BeginCombo(std::string_view label, std::string_view preview, ImGuiComboFlags flags = 0)` | Low-level combo; emit `Selectable()` items inside, then `EndCombo()` when true. |
 | `void EndCombo()` | Close a `BeginCombo`. |
 | `bool BeginListBox(std::string_view label, const ImVec2& size = ImVec2(0,0))` | Scrolling list region; emit `Selectable()` items, then `EndListBox()` when true. |
@@ -348,6 +372,26 @@ manage a fixed `char[]` buffer. `maxLength` caps the resulting string length.
 
 ---
 
+## Style stack & ID stack
+
+| Signature | Note |
+|-----------|------|
+| `void PushStyleColor(ImGuiCol idx, ImU32 color)` | Push a style color (u32 form). |
+| `void PushStyleColor(ImGuiCol idx, const ImVec4& color)` | Push a style color (float form). |
+| `void PopStyleColor(int count = 1)` | Pop `count` pushed style colors. |
+| `void PushStyleVar(ImGuiStyleVar idx, float value)` | Push a float style variable. |
+| `void PushStyleVar(ImGuiStyleVar idx, const ImVec2& value)` | Push a vector style variable. |
+| `void PopStyleVar(int count = 1)` | Pop `count` pushed style variables. |
+| `void PushTextWrapPos(float wrapLocalPosX = 0.0f)` | Push a text wrap position (`0` = wrap at the content region). |
+| `void PopTextWrapPos()` | Pop the text wrap position. |
+| `void PushID(std::string_view strId)` | Push a string ID scope. |
+| `void PushID(int intId)` | Push an integer ID scope. |
+| `void PushID(const void* ptrId)` | Push a pointer ID scope. |
+| `void PopID()` | Pop the last pushed ID. |
+| `ImGuiID GetID(std::string_view strId)` | Hash a string to its ID (call inside an ID scope to scope it). |
+
+---
+
 ## Popups & modals
 
 | Signature | Note |
@@ -392,6 +436,30 @@ manage a fixed `char[]` buffer. `maxLength` caps the resulting string length.
 
 ---
 
+## Tables
+
+| Signature | Note |
+|-----------|------|
+| `bool BeginTable(std::string_view strId, int columns, ImGuiTableFlags flags = 0, const ImVec2& outerSize = ImVec2(0,0), float innerWidth = 0.0f)` | Begin a table; emit rows inside, then `EndTable()`. |
+| `void EndTable()` | Close a `BeginTable`. |
+| `void TableNextRow(ImGuiTableRowFlags rowFlags = 0, float minRowHeight = 0.0f)` | Start the next row. |
+| `bool TableNextColumn()` | Move to the next column; true when the column is visible. |
+| `bool TableSetColumnIndex(int columnN)` | Jump to column `columnN`. |
+| `void TableSetupColumn(std::string_view label, ImGuiTableColumnFlags flags = 0, float initWidthOrWeight = 0.0f, ImGuiID userId = 0)` | Declare a column (before the first row). |
+| `void TableSetupScrollFreeze(int cols, int rows)` | Freeze the first `cols` columns / `rows` header rows while scrolling. |
+| `void TableHeadersRow()` | Submit a standard header row for all declared columns. |
+| `void TableHeader(std::string_view label)` | Submit a header cell for the current column. |
+| `const char* TableGetColumnName(int columnN = -1)` | Column label (`-1` = current column). |
+| `ImGuiTableSortSpecs* TableGetSortSpecs()` | Sort specs when the user clicks a sortable header. |
+| `int TableGetColumnCount()` | Number of declared columns. |
+| `int TableGetColumnIndex()` | Index of the current column. |
+| `int TableGetRowIndex()` | Index of the current row. |
+| `void Columns(int count = 1, std::string_view id = {}, bool borders = true)` | Legacy columns API (prefer `BeginTable`). |
+| `void NextColumn()` | Legacy columns: next column. |
+| `void SetColumnWidth(int columnIndex, float width)` | Legacy columns: set a column width. |
+
+---
+
 ## Trees & collapsing headers
 
 | Signature | Note |
@@ -400,6 +468,7 @@ manage a fixed `char[]` buffer. `maxLength` caps the resulting string length.
 | `bool TreeNodeEx(std::string_view label, ImGuiTreeNodeFlags flags = 0)` | Tree node with flags. |
 | `void TreePop()` | Close a `TreeNode` / `TreeNodeEx`. |
 | `void SetNextItemOpen(bool isOpen, ImGuiCond cond = 0)` | Force the next tree node / header open or closed. |
+| `bool TreeNodeGetOpen(ImGuiID storageId)` | Read a tree node's open state by its storage ID (from `GetID`). |
 | `bool CollapsingHeader(std::string_view label, ImGuiTreeNodeFlags flags = 0)` | Full-width collapsing header. |
 | `bool CollapsingHeader(std::string_view label, bool* pVisible, ImGuiTreeNodeFlags flags = 0)` | Collapsing header with a close ✕ bound to `pVisible`. |
 
@@ -463,6 +532,7 @@ manage a fixed `char[]` buffer. `maxLength` caps the resulting string length.
 | `bool IsItemFocused()` | Last item is focused. |
 | `bool IsItemClicked(ImGuiMouseButton mouseButton = 0)` | Last item was clicked with the given button. |
 | `bool IsItemVisible()` | Last item is visible (not clipped). |
+| `ImGuiItemFlags GetItemFlags()` | Generic flags of the last item (e.g. `ImGuiItemFlags_Disabled` inside `BeginDisabled`). |
 | `bool IsItemEdited()` | Last item's value was edited this frame. |
 | `bool IsItemActivated()` | Last item was activated this frame. |
 | `bool IsItemDeactivated()` | Last item was deactivated this frame. |
@@ -533,6 +603,25 @@ manage a fixed `char[]` buffer. `maxLength` caps the resulting string length.
 | `ImDrawList* GetWindowDrawList()` | Draw list of the current window — append custom primitives here. |
 | `ImDrawList* GetBackgroundDrawList()` | Background draw list (rendered before all windows). |
 | `ImDrawList* GetForegroundDrawList()` | Foreground draw list (rendered on top of everything). |
+
+---
+
+## Context & platform accessors
+
+| Signature | Note |
+|-----------|------|
+| `ImGuiContext* GetCurrentContext()` | The active ImGui context (nullptr before `Init`). |
+| `ImGuiStyle& GetStyle()` | The current style (theme tokens are pushed through it). |
+| `ImGuiIO& GetIO()` | The IO struct (display size, inputs, config flags). |
+| `ImGuiViewport* GetMainViewport()` | The main viewport (owned by the platform backend). |
+| `ImFont* GetFont()` | The currently active font. |
+| `float GetFontSize()` | The active font size (DPI-scaled). |
+| `ImFontBaked* GetFontBaked()` | The baked font at the current size (the glyph-ready object behind `GetFont()`). |
+| `void SetWindowFontScale(float scale)` | Scale the font of the *next* window. |
+| `bool Begin(std::string_view name, bool* pOpen = nullptr, ImGuiWindowFlags flags = 0)` | Raw window begin (prefer the RAII `WindowScope` guard). |
+| `void End()` | Raw window end (only when `Begin` returned true). |
+| `void SetClipboardText(std::string_view text)` | Write the OS clipboard. |
+| `std::string GetClipboardText()` | Read the OS clipboard. |
 
 ---
 

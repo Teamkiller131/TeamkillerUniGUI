@@ -5,7 +5,7 @@
 namespace unigui {
 
 ListBox::ListBox(std::string name, std::string label, std::vector<std::string> items, int selected)
-        : Widget(std::move(name))
+        : FluentWidget<ListBox>(std::move(name))
         , label_(std::move(label))
         , items_(std::move(items))
         , selected_(selected)

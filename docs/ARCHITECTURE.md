@@ -1,6 +1,6 @@
 # UniGUI Architecture
 
-A big-picture tour of how **TeamkillerUniGUI** (v3.16.0) is put together — the
+A big-picture tour of how **TeamkillerUniGUI** (v4.9.0) is put together — the
 layers that sit between your application code and [Dear ImGui](https://github.com/ocornut/imgui),
 and how to choose the right one for any given piece of UI.
 
@@ -19,7 +19,7 @@ Everything is reachable through a single umbrella header:
 ```
 
 That header pulls in the backend factory, core utilities, the theme engine, all
-~95 retained widgets, the immediate-mode layer (`unigui::im`), the DSL +
+92 retained widgets, the immediate-mode layer (`unigui::im`), the DSL +
 component framework (`unigui::dsl`), the EventBus, styling, plugins, and — guarded
 by `UNIGUI_HAS_*` macros — whichever optional modules were compiled in.
 
@@ -237,7 +237,7 @@ highest. They coexist in the same frame, so you can mix them freely.
 
 ### 3a. Retained-mode widgets — `unigui::`
 
-The ~95 widget **classes** are the building blocks: persistent objects that hold
+The 92 widget **classes** are the building blocks: persistent objects that hold
 state, support validation, undo/redo, serialization, accessibility, shadows, and
 elevation. Every widget derives from `Widget` (`<unigui/widgets/widget_base.h>`),
 which provides the common surface — visibility, tooltips, focus, enabled state,
@@ -626,8 +626,8 @@ A typical UniGUI app:
 | Trading toolkit | [docs/TRADING.md](TRADING.md) |
 | Public-API stability contract | [docs/API_STABILITY.md](API_STABILITY.md) |
 
-*Reactive, layout, immediate-API, DSL, theming, and backend deep-dives
-(`REACTIVE.md`, `LAYOUT.md`, `IM_API.md`, `DSL.md`, `THEMING.md`, `BACKENDS.md`)
-are planned; until they land, the authoritative reference for each is the
-correspondingly documented header — `core/observable.h`, `core/flex_layout.h`,
-`im/im.h`, `dsl/dsl.h`, `theme/theme.h`, and `backend/*.h`.*
+*Per-layer deep-dives: [REACTIVE.md](REACTIVE.md), [LAYOUT.md](LAYOUT.md),
+[IM_API.md](IM_API.md), [DSL.md](DSL.md), [THEMING.md](THEMING.md),
+[BACKENDS.md](BACKENDS.md), [ACCESSIBILITY.md](ACCESSIBILITY.md), and
+[PRESETS.md](PRESETS.md). Each is header-verified; when in doubt, the documented
+header itself remains authoritative.*

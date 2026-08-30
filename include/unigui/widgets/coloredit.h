@@ -6,7 +6,7 @@
 
 namespace unigui {
 
-class ColorEdit : public Widget {
+class ColorEdit : public FluentWidget<ColorEdit> {
 public:
     ColorEdit(std::string name, std::string label, float r = 1.0f, float g = 1.0f, float b = 1.0f,
               float a = 1.0f);
@@ -16,6 +16,16 @@ public:
     bool WasChanged() const;
     const std::string& GetLabel() const;
     void SetOnChange(std::function<void(ImVec4)> fn);
+
+    // ── Fluent (chainable) helpers — return ColorEdit& via CRTP base ───────
+    ColorEdit& WithColor(float r, float g, float b, float a = 1.0f) {
+        SetColor(r, g, b, a);
+        return *this;
+    }
+    ColorEdit& WithOnChange(std::function<void(ImVec4)> fn) {
+        SetOnChange(std::move(fn));
+        return *this;
+    }
 
 private:
     std::string label_;

@@ -1,6 +1,7 @@
 #pragma once
-#include <unigui/widgets/menubar.h>   // MenuDef / MenuItem
-#include <unigui/widgets/statusbar.h> // composed status-bar footer
+#include <unigui/widgets/commandpalette.h> // built-in Ctrl+P palette
+#include <unigui/widgets/menubar.h>        // MenuDef / MenuItem
+#include <unigui/widgets/statusbar.h>      // composed status-bar footer
 #include <unigui/widgets/widget_base.h>
 
 #include <functional>
@@ -49,6 +50,13 @@ public:
     AppShell& WithStatus(std::string text);
     /// Called with the new page index whenever the active page changes.
     AppShell& WithOnPageChange(std::function<void(int)> fn);
+    /// Enable the built-in command palette (Ctrl+P out of the box). Every page
+    /// auto-registers as a "Go to <label>" command; app commands are added with
+    /// AddCommand. Off by default so zero-config shells stay minimal.
+    AppShell& WithCommandPalette(bool on = true);
+    /// Register an app command in the palette (implies WithCommandPalette(true)).
+    /// `id` must be stable + unique; `title` is what the user fuzzy-searches.
+    AppShell& AddCommand(std::string id, std::string title, std::function<void()> action);
 
     // ── Live state ──────────────────────────────────────────────────────
     /// Update the status-bar text (live, e.g. from an async job).
@@ -63,6 +71,10 @@ public:
     int GetPageCount() const;
     float GetSidebarWidth() const;
     const std::string& GetTitle() const;
+    /// Open the command palette programmatically (what Ctrl+P does).
+    void OpenCommandPalette();
+    bool IsCommandPaletteOpen() const;
+    bool HasCommandPalette() const { return paletteEnabled_; }
 
     void Render() override;
 
@@ -76,6 +88,9 @@ private:
     void RenderMenuBar();
     void RenderSidebar(float height);
     void RenderContent(float height);
+    /// (Re)register the per-page "Go to <label>" palette commands. Called when
+    /// the palette is enabled and whenever a page is added.
+    void SyncPaletteNavCommands();
 
     std::string title_;
     std::vector<MenuDef> menus_;
@@ -85,6 +100,8 @@ private:
     int activePage_ = -1;
     std::function<void(int)> onPageChange_;
     StatusBar statusBar_;
+    bool paletteEnabled_ = false;
+    CommandPalette palette_;
 };
 
 } // namespace unigui::presets

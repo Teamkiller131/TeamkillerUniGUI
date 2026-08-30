@@ -11,11 +11,17 @@ struct ToolBarItem {
     std::function<void()> action;
     bool enabled = true;
 };
-class ToolBar : public Widget {
+class ToolBar : public FluentWidget<ToolBar> {
 public:
     ToolBar(std::string name);
     void Render() override;
     void SetItems(std::vector<ToolBarItem> items);
+
+    // ── Fluent (chainable) helpers — return ToolBar& via CRTP base ──────────
+    ToolBar& WithItems(std::vector<ToolBarItem> items) {
+        SetItems(std::move(items));
+        return *this;
+    }
 
 private:
     std::vector<ToolBarItem> items_;

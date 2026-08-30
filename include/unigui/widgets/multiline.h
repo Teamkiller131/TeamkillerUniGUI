@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 namespace unigui {
-class MultiLine : public Widget {
+class MultiLine : public FluentWidget<MultiLine> {
 public:
     MultiLine(std::string name, std::string text = "", int maxLines = 10);
     void Render() override;
@@ -12,6 +12,21 @@ public:
     std::string GetText() const;
     void SetMaxLines(int n);
     void SetEditable(bool on);
+
+    // ── Fluent (chainable) helpers — return MultiLine& via CRTP base ──────────
+    MultiLine& WithText(std::string t) {
+        SetText(std::move(t));
+        return *this;
+    }
+    MultiLine& WithMaxLines(int n) {
+        SetMaxLines(n);
+        return *this;
+    }
+    MultiLine& WithEditable(bool on) {
+        SetEditable(on);
+        return *this;
+    }
+
     // Undo/redo
     void Undo();
     void Redo();

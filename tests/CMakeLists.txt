@@ -46,6 +46,24 @@ target_link_libraries(test_id_conflict PRIVATE
 target_compile_features(test_id_conflict PRIVATE cxx_std_23)
 gtest_discover_tests(test_id_conflict)
 
+# C ABI tests — the .c TU is compiled as plain C (proving the header is a real
+# C surface) and the .cc TU wraps its checks into gtest cases plus the windowed
+# lifecycle run (DX11/WARP, self-gated).
+add_executable(test_capi
+    capi/capi_test.cc
+    capi/capi_c_test.c
+)
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/capi/capi_c_test.c
+    PROPERTIES LANGUAGE C
+)
+target_link_libraries(test_capi PRIVATE
+    GTest::gtest
+    GTest::gtest_main
+    unigui
+)
+target_compile_features(test_capi PRIVATE cxx_std_23)
+gtest_discover_tests(test_capi)
+
 # Interaction-driven integration tests. With UNIGUI_TEST_ENGINE=ON (and the `testengine`
 # vcpkg manifest feature supplying imgui[test-engine]), the Dear ImGui test engine drives
 # real clicks/typing through widgets; otherwise the file compiles to a single visible
@@ -69,7 +87,7 @@ gtest_discover_tests(test_integration)
 # application framework, and keyboard-only navigation. These targets exist ONLY when
 # the engine is compiled in (unlike test_integration's always-present visible skip).
 if(UNIGUI_TEST_ENGINE)
-    foreach(_itest widgets framework keyboard)
+    foreach(_itest widgets framework keyboard presets im capi)
         add_executable(test_interaction_${_itest} interaction/${_itest}_interaction_test.cc)
         target_link_libraries(test_interaction_${_itest} PRIVATE
             GTest::gtest
@@ -81,6 +99,20 @@ if(UNIGUI_TEST_ENGINE)
         target_compile_definitions(test_interaction_${_itest} PRIVATE UNIGUI_TEST_ENGINE=1)
         gtest_discover_tests(test_interaction_${_itest})
     endforeach()
+    # Trading interaction tests — need the engine AND the trading module together
+    # (the windows-msvc-debug-testengine-modules preset provides the combination).
+    if(UNIGUI_MODULE_TRADING)
+        add_executable(test_interaction_trading interaction/trading_interaction_test.cc)
+        target_link_libraries(test_interaction_trading PRIVATE
+            GTest::gtest
+            GTest::gtest_main
+            unigui
+        )
+        target_include_directories(test_interaction_trading PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        target_compile_features(test_interaction_trading PRIVATE cxx_std_23)
+        target_compile_definitions(test_interaction_trading PRIVATE UNIGUI_TEST_ENGINE=1)
+        gtest_discover_tests(test_interaction_trading)
+    endif()
 endif()
 
 add_executable(test_backend_interface
@@ -107,6 +139,18 @@ target_link_libraries(test_glfw_gl3_backend PRIVATE
 )
 target_compile_features(test_glfw_gl3_backend PRIVATE cxx_std_23)
 gtest_discover_tests(test_glfw_gl3_backend)
+
+# WARP (software-rasteriser) headless render smoke for DX11/DX12 — real device
+# creation + offscreen clear + GPU readback with no GPU. Only meaningful when a DX
+# backend is on (Windows). The DX libs + UNIGUI_HAS_DX* defines arrive transitively
+# from the PUBLIC unigui link, so no extra d3d11/d3d12 wiring is needed here; each
+# half of the test self-gates on its UNIGUI_HAS_DX* macro.
+if(WIN32 AND (UNIGUI_BACKEND_DX11 OR UNIGUI_BACKEND_DX12))
+    add_executable(test_dx_warp backend/dx_warp_smoke_test.cc backend/dx_multiviewport_smoke_test.cc backend/dx_multimonitor_smoke_test.cc)
+    target_link_libraries(test_dx_warp PRIVATE GTest::gtest GTest::gtest_main unigui)
+    target_compile_features(test_dx_warp PRIVATE cxx_std_23)
+    gtest_discover_tests(test_dx_warp)
+endif()
 
 add_executable(test_theme
     theme/theme_test.cc
@@ -177,6 +221,15 @@ target_link_libraries(test_button PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_button PRIVATE cxx_std_23)
 gtest_discover_tests(test_button)
 
+# Fluent With* rollout: compile-time proof (static_asserts over every retained
+# widget) that base chainers preserve the derived type, + runtime chain checks.
+add_executable(test_fluent_rollout
+    widgets/fluent_rollout_test.cc
+)
+target_link_libraries(test_fluent_rollout PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_fluent_rollout PRIVATE cxx_std_23)
+gtest_discover_tests(test_fluent_rollout)
+
 add_executable(test_panel
     widgets/panel_test.cc
 )
@@ -232,7 +285,7 @@ if(UNIGUI_MODULE_WIDGETS)
 endif()
 
 # Core tests
-foreach(_core locale settings strutil undo_stack version format_num observable main_thread widget_pool session_axis decimate layout_store accessibility dpi path_util flex_layout)
+foreach(_core locale settings strutil undo_stack version format_num observable main_thread widget_pool session_axis decimate layout_store accessibility dpi path_util flex_layout context_registry layout_direction)
     add_executable(test_${_core} core/${_core}_test.cc)
     target_link_libraries(test_${_core} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_core} PRIVATE cxx_std_23)
@@ -241,7 +294,7 @@ endforeach()
 
 # Trading toolkit model tests — header-only models, so always built (they only
 # need the headers; no UNIGUI_MODULE_TRADING link dependency yet).
-foreach(_t order_book ohlc_series quote reactive)
+foreach(_t order_book ohlc_series quote reactive cell_renderers)
     add_executable(test_${_t} trading/${_t}_test.cc)
     target_link_libraries(test_${_t} PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_${_t} PRIVATE cxx_std_23)
@@ -268,7 +321,7 @@ endif()
 
 # UI preset scaffolds (headless: state/fluent/a11y assertions + render smoke).
 if(UNIGUI_MODULE_PRESETS AND UNIGUI_MODULE_WIDGETS)
-    foreach(_tp app_shell settings_page dashboard master_detail log_console)
+    foreach(_tp app_shell settings_page dashboard master_detail log_console login_page wizard_flow)
         add_executable(test_preset_${_tp} presets/${_tp}_test.cc)
         target_link_libraries(test_preset_${_tp} PRIVATE GTest::gtest GTest::gtest_main unigui)
         target_compile_features(test_preset_${_tp} PRIVATE cxx_std_23)
@@ -303,7 +356,7 @@ if(UNIGUI_MODULE_PLUGIN)
 endif()
 
 if(UNIGUI_MODULE_DSL)
-    foreach(_d dsl component dsl_app)
+    foreach(_d dsl component dsl_app form_component codegen scene_parser)
         add_executable(test_${_d} dsl/${_d}_test.cc)
         target_link_libraries(test_${_d} PRIVATE GTest::gtest GTest::gtest_main unigui)
         target_compile_features(test_${_d} PRIVATE cxx_std_23)
@@ -379,6 +432,18 @@ if(UNIGUI_MODULE_NETWORK)
     target_link_libraries(test_url_parse PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_url_parse PRIVATE cxx_std_23)
     gtest_discover_tests(test_url_parse)
+
+    # Live loopback transport tests: httplib + ixwebsocket propagate transitively from
+    # unigui (linked PUBLIC), so no extra find_package is needed here.
+    add_executable(test_http_loopback network/http_loopback_test.cc)
+    target_link_libraries(test_http_loopback PRIVATE GTest::gtest GTest::gtest_main unigui)
+    target_compile_features(test_http_loopback PRIVATE cxx_std_23)
+    gtest_discover_tests(test_http_loopback)
+
+    add_executable(test_ws_loopback network/ws_loopback_test.cc)
+    target_link_libraries(test_ws_loopback PRIVATE GTest::gtest GTest::gtest_main unigui)
+    target_compile_features(test_ws_loopback PRIVATE cxx_std_23)
+    gtest_discover_tests(test_ws_loopback)
 endif()
 
 # v3.0 fx tests
@@ -409,6 +474,12 @@ add_executable(test_im im/im_test.cc)
 target_link_libraries(test_im PRIVATE GTest::gtest GTest::gtest_main unigui)
 target_compile_features(test_im PRIVATE cxx_std_23)
 gtest_discover_tests(test_im)
+
+# RTL mirroring geometry (headless — layout math only, no render backend)
+add_executable(test_im_rtl im/im_rtl_test.cc)
+target_link_libraries(test_im_rtl PRIVATE GTest::gtest GTest::gtest_main unigui)
+target_compile_features(test_im_rtl PRIVATE cxx_std_23)
+gtest_discover_tests(test_im_rtl)
 
 # Usability layer: RAII scope guards (unigui::WindowScope, ...)
 add_executable(test_scope core/scope_test.cc)

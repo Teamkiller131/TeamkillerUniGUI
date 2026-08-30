@@ -18,6 +18,8 @@
 #include <memory>
 #include <string>
 
+namespace im = unigui::im;
+
 // Only the framework (DSL) names are brought in flat — `Button`/`VBox`/etc. here
 // are the *declarative* builders. The handful of app-loop names from `unigui`
 // (Init/Run/AppConfig/WindowScope/im) are qualified to avoid colliding with the

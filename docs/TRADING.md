@@ -280,6 +280,63 @@ blotter.SetFrozenColumns(2);   // pin the first two columns (freeze-pane)
 blotter.SetOnSelect([](int row){ /* ... */ });
 ```
 
+### In-cell mini renderers (`cell_renderers.h`)
+
+`<unigui/trading/cell_renderers.h>` (header-only) is the custom-draw half of the
+"mini sparkline/bar in a blotter cell" item: `DataTable::SetCellRenderer` shipped
+the per-cell hook, and these are the batteries built on it. Each factory returns a
+`CellRenderFn` that draws inside the cell rect and reserves its height:
+
+```cpp
+#include <unigui/trading/cell_renderers.h>
+
+using namespace unigui::trading;
+
+blotter.SetCellRenderer(/*col*/ 2, SparklineCell<Position>([](int row, const Position& p) {
+    return pnlHistory[row];                 // std::vector<float> per row
+}));
+
+blotter.SetCellRenderer(/*col*/ 3, BarCell<Position>(
+    [](int row, const Position& p) { return p.UnrealizedPnL(); }, 1000.0));
+```
+
+- `SparklineCell<T>(valuesOf, width = 64, height = 16, colorOf = nullptr)` — a
+  1.2 px polyline normalized to the row's own min/max; default colour is the
+  active theme's `PlotLines` token. Rows with fewer than two values only reserve
+  the space.
+- `BarCell<T>(valueOf, maxAbs, width = 64, height = 12, colorOf = nullptr, pol)`
+  — a signed horizontal bar mapped into [−maxAbs, +maxAbs] from the cell centre;
+  default colour is sign-aware `DeltaColor` (theme polarity). Flat rows draw
+  nothing (the height is still reserved).
+
+Both are theme-aware, per-frame allocation-light, and covered by headless
+geometry tests (`tests/trading/cell_renderers_test.cc`).
+
+## Price ticker (`PriceTicker`)
+
+The scrolling quote marquee is the general widget `unigui::PriceTicker`
+(`<unigui/widgets/priceticker.h>` — not trading-gated): one line that wraps
+seamlessly through `SYMBOL price ▲/▼` items, sign-tinted, with speed/pause
+controls:
+
+```cpp
+#include <unigui/widgets/priceticker.h>
+
+unigui::PriceTicker ticker("ticker");
+for (const auto& q : quotes)                 // std::vector<trading::Quote> from your feed
+    ticker.AddItem({q.symbol, format::Fixed(q.last, 2), (float) q.ChangePct() * 100.f});
+ticker.SetSpeed(80.0f);                      // px/s
+ticker.SetPaused(focused_other_ui);          // pause on demand
+
+// in the render loop:
+ticker.Render();
+```
+
+`Item{ symbol, price, change }` is plain data — the `change` sign drives the
+colour + arrow (theme green/red by default, overridable with `SetUpColor` /
+`SetDownColor`), the price is an already-formatted string, so the ticker works
+for any feed, not just the trading models.
+
 ## Putting it together: `examples/trading_dashboard`
 
 `examples/trading_dashboard` assembles the whole toolkit into one screen — the

@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 Breadcrumb::Breadcrumb(std::string n)
-        : Widget(std::move(n)) {}
+        : FluentWidget<Breadcrumb>(std::move(n)) {}
 void Breadcrumb::SetItems(std::vector<std::string> i) {
     items_ = std::move(i);
 }

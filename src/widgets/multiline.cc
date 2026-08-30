@@ -5,7 +5,7 @@
 #include <algorithm>
 namespace unigui {
 MultiLine::MultiLine(std::string n, std::string t, int ml)
-        : Widget(std::move(n))
+        : FluentWidget<MultiLine>(std::move(n))
         , text_(std::move(t))
         , maxLines_(ml) {
     size_t sz = std::min(text_.size(), sizeof(buf_) - 1);

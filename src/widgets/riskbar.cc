@@ -9,7 +9,7 @@
 namespace unigui {
 
 RiskBar::RiskBar(std::string name)
-        : Widget(std::move(name)) {}
+        : FluentWidget<RiskBar>(std::move(name)) {}
 
 void RiskBar::Render() {
     if (!IsVisible())

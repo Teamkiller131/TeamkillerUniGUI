@@ -1,6 +1,6 @@
 # TeamkillerUniGUI 文档索引
 
-> **3.16.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
+> **4.7.0** · C++23 · Dear ImGui 1.92 · [GitHub](https://github.com/Teamkiller131/TeamkillerUniGUI)
 
 ## 入门与总览
 
@@ -17,7 +17,7 @@
 | [FRAMEWORK.md](FRAMEWORK.md) | **应用框架**：Component + State + Store + Navigator 黄金路径 |
 | [REACTIVE.md](REACTIVE.md) | 响应式：Observable / Computed / Bind / State / Store / 控件绑定 |
 | [LAYOUT.md](LAYOUT.md) | 布局：SolveFlex / SolveFlexWrap / Layout::FlexRow 等 |
-| [IM_API.md](IM_API.md) | 即时层 `unigui::im` 完整参考（约 201 个函数） |
+| [IM_API.md](IM_API.md) | 即时层 `unigui::im` 完整参考（约 250 个函数） |
 | [DSL.md](DSL.md) | 声明式 DSL（视图语言）参考 |
 | [THEMING.md](THEMING.md) | 主题引擎 + CSS 样式 + 热重载 |
 | [BACKENDS.md](BACKENDS.md) | 后端抽象与应用主循环（平台 × 渲染器） |
@@ -31,6 +31,8 @@
 | [API_INDEX.md](API_INDEX.md) | 总索引：Widget + `im` + DSL + 核心 API |
 | [MODULES.md](MODULES.md) | CMake 可选模块（EventBus / 插件 / SQLite / IPC / 网络 …） |
 | [TRADING.md](TRADING.md) | 交易工具箱 |
+| [PRESETS.md](PRESETS.md) | UI 预设脚手架（AppShell / SettingsPage / Dashboard / MasterDetail / LogConsole）— 约 30 行代码搭出一个像样的应用 |
+| [ACCESSIBILITY.md](ACCESSIBILITY.md) | 无障碍层 `unigui::a11y` — 焦点追踪、元素树、朗读通告与屏幕阅读器桥 |
 | [../INTEGRATION.md](../INTEGRATION.md) | 子模块 + vcpkg 集成 |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | 构建排障 FAQ |
 
@@ -40,7 +42,7 @@
 2. 构建应用 → [FRAMEWORK.md](FRAMEWORK.md)（+ [REACTIVE.md](REACTIVE.md) / [LAYOUT.md](LAYOUT.md)）
 3. 查单个控件 → [WIDGET_EXAMPLES.md](WIDGET_EXAMPLES.md) / [API_INDEX.md](API_INDEX.md) → [WIDGET_API.md](WIDGET_API.md)
 
-**「95 widgets」** 指 `widgets/` 下保留式组件；另有约 **201** 个 `unigui::im` 函数、声明式 DSL 与组件框架、响应式与布局层等，见各专题文档。
+**「92 widgets」** 指 `widgets/` 下保留式组件；另有约 **250** 个 `unigui::im` 函数、声明式 DSL 与组件框架、响应式与布局层等，见各专题文档。
 
 ## 仓库
 

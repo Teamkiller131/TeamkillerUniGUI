@@ -5,7 +5,7 @@
 #include <string>
 
 namespace unigui {
-class Dialog : public Widget {
+class Dialog : public FluentWidget<Dialog> {
 public:
     Dialog(std::string name, std::string title, std::string message);
     void Render() override;
@@ -16,6 +16,20 @@ public:
     void SetOnOk(std::function<void()> callback);
     void SetOnCancel(std::function<void()> callback);
     bool WasOkClicked() const;
+
+    // ── Fluent (chainable) helpers — return Dialog& via CRTP base ──────────
+    Dialog& WithButtons(std::string okText, std::string cancelText = "") {
+        SetButtons(std::move(okText), std::move(cancelText));
+        return *this;
+    }
+    Dialog& WithOnOk(std::function<void()> callback) {
+        SetOnOk(std::move(callback));
+        return *this;
+    }
+    Dialog& WithOnCancel(std::function<void()> callback) {
+        SetOnCancel(std::move(callback));
+        return *this;
+    }
 
 private:
     std::string title_, message_, okText_ = "OK", cancelText_;

@@ -160,3 +160,35 @@ TEST_F(StoreTest, SaveTOML_CanonicalInt_RoundTrips) {
     EXPECT_EQ(Store::Instance().GetString("zero"), "0");
     std::filesystem::remove(p);
 }
+
+// ── LoadINI: comments, [sections], and whitespace trimming ──────────────────
+TEST_F(StoreTest, LoadINI_SkipsCommentsAndBlanks_TrimsWhitespace) {
+    const auto p = std::filesystem::temp_directory_path() / "unigui_cfg.ini";
+    std::ofstream(p) << "; a comment\n"
+                        "# another comment\n"
+                        "\n"
+                        "   name   =   Alice  \n"
+                        "port=8080\n"
+                        "not a kv line\n";
+    ASSERT_TRUE(Store::Instance().LoadINI(p.string()).has_value());
+    EXPECT_EQ(Store::Instance().GetString("name"), "Alice"); // trimmed both sides
+    EXPECT_EQ(Store::Instance().GetInt("port"), 8080);
+    EXPECT_FALSE(Store::Instance().Has(";")); // comment not parsed as a key
+    std::filesystem::remove(p);
+}
+
+TEST_F(StoreTest, LoadINI_SectionsBecomeDottedKeys) {
+    const auto p = std::filesystem::temp_directory_path() / "unigui_cfg_sec.ini";
+    std::ofstream(p) << "global=1\n"
+                        "[server]\n"
+                        "host = localhost\n"
+                        "port = 9000\n"
+                        "[ui]\n"
+                        "theme = dark\n";
+    ASSERT_TRUE(Store::Instance().LoadINI(p.string()).has_value());
+    EXPECT_EQ(Store::Instance().GetString("global"), "1"); // pre-section key stays flat
+    EXPECT_EQ(Store::Instance().GetString("server.host"), "localhost");
+    EXPECT_EQ(Store::Instance().GetInt("server.port"), 9000);
+    EXPECT_EQ(Store::Instance().GetString("ui.theme"), "dark");
+    std::filesystem::remove(p);
+}

@@ -5,7 +5,7 @@
 namespace unigui {
 
 ImageButton::ImageButton(std::string name, std::string label)
-        : Widget(std::move(name))
+        : FluentWidget<ImageButton>(std::move(name))
         , label_(std::move(label)) {}
 
 void ImageButton::Render() {

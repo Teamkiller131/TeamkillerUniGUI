@@ -10,7 +10,7 @@
 // There is intentionally **not a single raw `ImGui::` call** in this file — that
 // is the point of the wrapper. Run headless for CI:  ./unigui_showcase --frames 10
 //
-// All 95 widgets are exercised, grouped into ten tabs by category:
+// All 92 widgets are exercised, grouped into ten tabs by category:
 //   Buttons · Inputs · Text & Pickers · Display · Indicators · Data ·
 //   Layout · Charts & Trading · Overlays & Dialogs · Utilities
 // ─────────────────────────────────────────────────────────────────────────────
@@ -903,7 +903,7 @@ int main(int argc, char** argv) {
                 if (im::Combo("Surface", &surfaceIdx, surfaces))
                     reapplyTheme();
                 im::SameLine();
-                im::TextDisabled("95 widgets · immediate layer · zero raw ImGui");
+                im::TextDisabled("92 widgets · immediate layer · zero raw ImGui");
 
                 // ── tabs (grouped by category) ───────────────────────────────
                 if (TabBarScope bar{"sc_tabs"}) {

@@ -1,6 +1,6 @@
 # Backends & the Application Loop
 
-TeamkillerUniGUI (v3.16.0) runs Dear ImGui on top of a **pluggable backend
+TeamkillerUniGUI (v4.9.0) runs Dear ImGui on top of a **pluggable backend
 abstraction**: every window/input system is a `PlatformBackend` and every GPU
 API is a `RendererBackend`, and the two are combined into a backend *pair* by a
 single factory. The high-level application loop in `unigui::Init` / `Run` /
@@ -450,6 +450,7 @@ struct AppConfig {
     BackendType backend = BackendType::GLFW_GL3;
 #endif
     bool dpiScaleFonts = false;
+    bool multiViewport = false;                    // opt-in: windows can be dragged out of the main window
 };
 ```
 
@@ -664,6 +665,84 @@ the backdrop automatically.
 - The GLFW/OpenGL3 path clears + swaps in `Render()`; the DX/Vulkan renderers do
   it inside their own `RenderDrawData`. Either is fine as long as the stored
   backdrop color is the one used.
+
+### 7.1 Secondary viewports (multi-viewport)
+
+With `AppConfig::multiViewport`, windows dragged out of the main window become
+real OS windows. Upstream's per-backend `Renderer_RenderWindow` functions clear
+those secondary viewports to a **hardcoded black** (`imgui_impl_dx11.cpp` and
+`imgui_impl_opengl3.cpp` both do), which would make translucent materials on a
+popped-out window render against garbage.
+
+The app loop therefore extends the contract to every secondary viewport itself:
+before `ImGui::Render()` it paints a full-viewport backdrop rect into each
+secondary viewport's background draw list (flattened before all windows):
+
+```cpp
+if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+    const ImU32 bgCol = ImGui::GetColorU32(GetBackdropColor());
+    for (ImGuiViewport* vp : ImGui::GetPlatformIO().Viewports) {
+        if (vp == nullptr || vp == ImGui::GetMainViewport() ||
+            (vp->Flags & ImGuiViewportFlags_IsMinimized))
+            continue;
+        ImGui::GetBackgroundDrawList(vp)->AddRectFilled(
+            vp->Pos, vp->Pos + vp->Size, bgCol);
+    }
+}
+```
+
+This covers **every** renderer with viewport support (GL3, DX11, Vulkan, …) with
+no per-backend hooks, so a popped-out window honours the same backdrop contract
+as the main one. The black upstream clear underneath is simply never visible.
+
+### 7.2 Cross-monitor layout & per-monitor scale
+
+`unigui::GetMonitors()` (mirrored at platform level by
+`PlatformBackend::GetMonitors`) enumerates the connected displays —
+virtual-desktop rects, work areas, and per-monitor DPI scales — for
+cross-monitor layout: place a window on monitor 2, tile across monitors, or
+react to per-monitor scaling. Each entry is a `MonitorInfo`; the list agrees
+with what the GLFW backend reports to ImGui's own monitor table (pinned by
+`DXMultiMonitorSmoke` on a 4×150% machine).
+
+What the wrapper guarantees per monitor:
+
+- **Main window:** the DX11/DX12 swapchain is created and resized at
+  **physical pixels** (client × content scale) — a client-sized swapchain on
+  a 150% monitor would be stretched by the OS. `io.DisplayFramebufferScale`
+  carries the same scale, re-asserted every frame against
+  `imgui_impl_glfw`'s framebuffer-ratio overwrite (that ratio is only the
+  truth for GL-owned framebuffers). The content scale is read live via
+  `GetDpiForWindow` — GLFW's cached value lags `WM_DPICHANGED` by a frame or
+  two, which rendered the first frames with a 1.0 projection on a 1.5
+  monitor before this fix.
+- **Window moves between monitors:** the per-frame scale poll fires the
+  content-scale callback, which snaps and re-rasterises fonts
+  (`FontScaleDpi`); the swapchain re-resizes when the monitor scale changes
+  even at the same client size.
+- **Secondary viewports:** each popped-out viewport inherits the
+  `DpiScale` of the monitor it lands on (ImGui's per-viewport machinery,
+  proven by `DXMultiMonitorSmoke.PoppedOutWindow_LandsOnSecondMonitor_*`
+  and the simulated-fractional test). Physical sizing of secondary windows
+  at fractional DPI is a known upstream gap (this ImGui fork's GLFW/Win32
+  backends size secondary windows in logical units — see
+  `DEVELOPMENT_PLAN` §7).
+
+**Multi-viewport capability matrix** (runtime-verified = pixels asserted in CI):
+
+| Backend | Viewport support | Runtime-verified |
+|---------|------------------|------------------|
+| GLFW + OpenGL3 | ✅ (GLFW viewport windows) | ✅ Linux headless smoke (main window) |
+| GLFW + DX11 | ✅ | ✅ `DXMultiViewportSmoke` (pop-out → main still drawn → merge-back; WARP/GPU) |
+| GLFW + DX12 | ❌ upstream `imgui_impl_dx12` has no multi-viewport support — the flag is dropped by the capability self-check | — |
+| SDL3 + Vulkan | ✅ (SDL3 viewport windows) | build-only |
+| Metal | ✅ (build-only) | build-only |
+| Emscripten | ignored (browser page has no secondary OS windows) | — |
+
+The capability self-check in `BringUpBackend()` reports
+`ImGuiBackendFlags_PlatformHasViewports`/`RendererHasViewports` after init and
+drops back to single-viewport with a warning when a pair can't support it — a
+half-installed viewport setup does not degrade gracefully.
 
 ---
 

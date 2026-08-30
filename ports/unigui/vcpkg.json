@@ -1,7 +1,7 @@
 {
   "name": "unigui",
-  "version": "3.8.7",
-  "description": "Modern Dear ImGui C++ wrapper — SDL3+Vulkan + GLFW+OpenGL3 backends, theme engine, 95-widget library",
+  "version": "4.9.1",
+  "description": "Modern Dear ImGui C++ wrapper — SDL3+Vulkan + GLFW+OpenGL3 backends, theme engine, 92-widget library",
   "homepage": "https://github.com/Teamkiller131/TeamkillerUniGUI",
   "license": "MIT",
   "dependencies": [

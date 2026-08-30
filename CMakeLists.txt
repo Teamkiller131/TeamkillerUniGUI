@@ -16,7 +16,7 @@ project(unigui
     VERSION ${_unigui_vmajor}.${_unigui_vminor}.${_unigui_vpatch}
     DESCRIPTION "Modular Dear ImGui C++ wrapper — core + backends + optional modules"
     HOMEPAGE_URL "https://github.com/Teamkiller131/TeamkillerUniGUI"
-    LANGUAGES CXX
+    LANGUAGES C CXX
 )
 
 # ── Module Options ───────────────────────────────────────────────────────────
@@ -90,6 +90,9 @@ elseif(UNIGUI_BUILD_EXAMPLES)
     endif()
     add_subdirectory(examples/form_demo)
     add_subdirectory(examples/plot_demo)
+    if(UNIGUI_MODULE_DSL)
+        add_subdirectory(examples/designer)
+    endif()
     if(UNIGUI_MODULE_WIDGETS AND UNIGUI_MODULE_TRADING)
         add_subdirectory(examples/trading_dashboard)
     endif()

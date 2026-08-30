@@ -24,7 +24,7 @@ struct ToastMessage {
 };
 
 /// Singleton notification popup system. Call Show() from anywhere.
-class Toast : public Widget {
+class Toast : public FluentWidget<Toast> {
 public:
     static Toast& Instance();
     Toast(std::string name = "toast");
@@ -38,6 +38,12 @@ public:
 
     /// v1.9: Set anchor position. 0=top-left, 1=top-right, 2=bottom-right(default), 3=bottom-left
     void SetPosition(int anchor, float offsetX = 10, float offsetY = 10);
+
+    // ── Fluent (chainable) helpers — return Toast& via CRTP base ──────────
+    Toast& WithPosition(int anchor, float offsetX = 10, float offsetY = 10) {
+        SetPosition(anchor, offsetX, offsetY);
+        return *this;
+    }
 
 private:
     std::deque<ToastMessage> queue_;

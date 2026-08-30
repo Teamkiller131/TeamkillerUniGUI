@@ -1,5 +1,7 @@
 #include <unigui/fx/animation.h>
 
+#include "../detail/context_registry.h"
+
 #include <algorithm>
 
 namespace unigui::fx {
@@ -70,8 +72,7 @@ float AnimationState::UpdateFromStart(float timeSinceStart) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 AnimationManager& AnimationManager::Instance() {
-    static AnimationManager am;
-    return am;
+    return detail::ContextRegistry<AnimationManager>::Instance();
 }
 
 int AnimationManager::Register(AnimationState* state) {

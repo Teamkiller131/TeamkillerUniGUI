@@ -156,6 +156,57 @@ NodePtr Build() override {
 
 ---
 
+## 8. Forms and validation
+
+`FormComponent` (from `<unigui/dsl/form_component.h>`) brings validated forms into
+the component idiom. A `FormField<T>` is a validated `State` cell: a value, a chain
+of rules, a *touched* flag, and a reactive error message. The component exposes
+whole-form validity and a submission gate.
+
+```cpp
+class Signup : public dsl::FormComponent {
+    dsl::FormField<std::string> user_{this, "Username"};
+    dsl::FormField<std::string> mail_{this, "Email"};
+    dsl::FormField<bool>        terms_{this, "Accept terms"};
+public:
+    Signup() {
+        user_.Required().MinLength(3);
+        mail_.Required().Rule([](const std::string& v) {
+            return v.find('@') == std::string::npos ? "Not an email" : "";
+        });
+        terms_.Required("You must accept the terms");
+    }
+    void OnSubmit() override { /* every field is valid here */ }
+    dsl::NodePtr Build() override {
+        return dsl::VBox({
+            user_.Node(), mail_.Node(), terms_.Node(),
+            dsl::Button("Create account", [this] { Submit(); }),
+        });
+    }
+};
+```
+
+The pieces:
+
+- **Rules** chain and run in order; the first failing rule's message becomes the
+  field's `Error()`. Built-ins: `Required()` (non-empty string / true bool),
+  `MinLength(n)`, `Range(lo, hi)` for numeric fields, and `Rule(fn)` for anything
+  custom (`fn` returns `""` when the value is OK).
+- **Touched semantics**: errors exist as soon as a rule fails, but the ready-made
+  `Node()` row only *shows* them once the field is touched (edited, or touched in
+  bulk by `Submit()`) — the standard "errors appear on submit" UX with no
+  per-frame plumbing.
+- **`Submit()`** touches every field, revalidates, and calls your `OnSubmit()`
+  only when the whole form passes (`OnSubmitRejected()` otherwise). `FormValid()`
+  answers "could it submit right now?" — e.g. to disable the button.
+- **`Node()`** renders a bound input + danger-coloured error line for
+  `std::string` (InputText) and `bool` (CheckBox) fields; compose other types
+  manually from the field's value and `Error()`.
+- Field writes mark the owning component dirty through the normal `State`
+  machinery, so the form re-Builds exactly when something the view shows changed.
+
+---
+
 ## Worked example
 
 [`examples/framework_demo`](../examples/framework_demo/main.cc) is a complete

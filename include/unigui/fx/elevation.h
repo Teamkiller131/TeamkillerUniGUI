@@ -4,6 +4,8 @@
 
 #include <imgui.h>
 
+#include <cmath>
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme-driven elevation (UI beautification — Step 4)
 //
@@ -80,7 +82,7 @@ inline ElevationTokens ElevationBase(Elevation level) {
 }
 
 inline int ClampAlpha(float a) {
-    int v = static_cast<int>(a + 0.5f);
+    int v = static_cast<int>(std::lround(a));
     return v < 0 ? 0 : (v > 255 ? 255 : v);
 }
 

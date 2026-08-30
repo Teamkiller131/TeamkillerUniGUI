@@ -23,7 +23,7 @@ float CalcComboWidth(const std::vector<std::string>& items, const char* preview)
 
 ComboBox::ComboBox(std::string name, std::string label, std::vector<std::string> items,
                    int selected)
-        : Widget(std::move(name))
+        : FluentWidget<ComboBox>(std::move(name))
         , label_(std::move(label))
         , items_(std::move(items))
         , selected_(selected) {}
@@ -49,7 +49,8 @@ void ComboBox::Render() {
     // NoArrowButton：去掉右侧那个突兀的下拉三角，整个预览框仍可点击展开；
     // 统一的 UniGUI 下拉指示 = 右侧内边距里的细 ˅（见 detail/combo_chevron.h）。
     const auto comboFrame = detail::CaptureComboFrame();
-    const bool comboOpen = ImGui::BeginCombo(label_.c_str(), preview, ImGuiComboFlags_NoArrowButton);
+    const bool comboOpen =
+        ImGui::BeginCombo(label_.c_str(), preview, ImGuiComboFlags_NoArrowButton);
     const bool comboFocused = ImGui::IsItemFocused(); // capture before dropdown items steal it
     // [2026-08-25] Mouse-wheel quick-select — same behavior as im::Combo.
     // Use IsMouseHoveringRect (direct geometric check) instead of IsItemHovered()

@@ -1,6 +1,6 @@
 # CMake Modules & Optional Sub-systems
 
-TeamkillerUniGUI (v3.16.0) is built as a **single library target** (`unigui`) whose
+TeamkillerUniGUI (v4.9.0) is built as a **single library target** (`unigui`) whose
 feature surface is sliced into **modules**. Each module is a `UNIGUI_MODULE_*`
 CMake option that toggles a group of source files in `src/CMakeLists.txt` and,
 where relevant, pulls in extra [vcpkg](https://vcpkg.io) dependencies. Modules
@@ -24,7 +24,7 @@ and a runnable usage example.
 
 | CMake option | Default | Namespace | Purpose | Extra vcpkg deps |
 |---|---|---|---|---|
-| `UNIGUI_MODULE_WIDGETS` | **ON** | `unigui::` | ~95 retained-mode widgets (tables, trees, charts, dialogs, …) | — |
+| `UNIGUI_MODULE_WIDGETS` | **ON** | `unigui::` | 92 retained-mode widgets (tables, trees, charts, dialogs, …) | — |
 | `UNIGUI_MODULE_DSL` | **ON** | `unigui::dsl` | Declarative UI builders + component framework | — |
 | `UNIGUI_MODULE_STYLING` | **ON** | `unigui::styling` | CSS-like style engine | — |
 | `UNIGUI_MODULE_FONTS` | **ON** | `unigui::fonts` | Font manager, fallback chains, emoji, gradient text | — |
@@ -301,8 +301,26 @@ public:
 extern "C" {
     __declspec(dllexport) unigui::plugin::IPlugin* CreatePlugin() { return new MyPlugin(); }
     __declspec(dllexport) void DestroyPlugin(unigui::plugin::IPlugin* p) { delete p; }
+    __declspec(dllexport) std::int32_t PluginInterfaceVersion() { return unigui::plugin::kPluginInterfaceVersion; }
 }
 ```
+
+### The ABI version gate
+
+The plugin interface is C++ (a vtable contract), so it is compiler-ABI-sensitive:
+a plugin DLL built by a different toolchain or against a different interface
+revision must never be instantiated. The gate:
+
+- `kPluginInterfaceVersion` (in `plugin_interface.h`) is the frozen interface
+  revision. Within a version the interface is immutable; **only additive changes
+  appended to the END of `IPlugin`** are allowed without a bump.
+- Every plugin DLL exports `PluginInterfaceVersion()` (see above). The manager
+  resolves it before calling `CreatePlugin` and rejects a mismatch with a clear
+  log line — a missing export counts as version 0 (a plugin that predates
+  versioning) and is rejected the same way.
+- Bump `kPluginInterfaceVersion` on ANY ABI-breaking change (adding/removing/
+  reordering virtuals, changing the exported symbol set), and re-export the new
+  version from every plugin.
 
 ### Host side
 
@@ -855,7 +873,7 @@ points.
 
 ### Widgets — `UNIGUI_MODULE_WIDGETS` (default ON)
 
-The retained-mode widget library — roughly 95 widget classes in `unigui::`
+The retained-mode widget library — 92 widget classes in `unigui::`
 (tables, tree/list views, color pickers, date pickers, charts, dialogs, toasts,
 command palette, etc.). The fundamental primitives (`Button`, `Label`, `Panel`,
 `Form`, `Window`, `Checkbox`, …) are compiled into the **core** group and are

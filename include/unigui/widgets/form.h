@@ -27,7 +27,7 @@ struct FormError {
     std::string message;
 };
 
-class Form : public Widget {
+class Form : public FluentWidget<Form> {
 public:
     Form(std::string name, std::string title);
     void Render() override;
@@ -53,6 +53,25 @@ public:
     std::string Serialize() const;
     /// Deserialize form state from a simple JSON string.
     bool Deserialize(const std::string& json);
+
+    // ── Fluent (chainable) helpers — return Form& via CRTP base ──────────
+    Form& WithFieldValue(const std::string& name, std::string value) {
+        SetFieldValue(name, std::move(value));
+        return *this;
+    }
+    Form& WithOnSubmit(std::function<void()> callback) {
+        SetOnSubmit(std::move(callback));
+        return *this;
+    }
+    Form& WithFieldValidatorRegex(const std::string& name, std::string pattern,
+                                  std::string errorMsg) {
+        SetFieldValidatorRegex(name, std::move(pattern), std::move(errorMsg));
+        return *this;
+    }
+    Form& WithFieldMinMax(const std::string& name, double min, double max) {
+        SetFieldMinMax(name, min, max);
+        return *this;
+    }
 
 private:
     struct FieldValidator {

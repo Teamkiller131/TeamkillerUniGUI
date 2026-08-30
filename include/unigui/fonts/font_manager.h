@@ -54,14 +54,33 @@ public:
     /// once — this avoids pointer churn.
     void Build();
 
-    /// Load the system emoji font and set it as a fallback of the default font.
-    /// size=0 uses the current default font size. On Windows loads
-    /// "Segoe UI Emoji", on macOS "Apple Color Emoji", on Linux attempts
-    /// "Noto Color Emoji".
+    /// Load the system emoji font and merge it into the default font as a glyph
+    /// fallback. size=0 uses the current default font size. Platform-aware: probes
+    /// "Segoe UI Emoji" under %WINDIR% on Windows, "Apple Color Emoji" on macOS, and
+    /// the common "Noto Color Emoji" install locations across Linux distros. A no-op
+    /// on the web build (no system fonts); registered as "emoji" (see Get()) on
+    /// success. Idempotent.
     void LoadSystemEmoji(float size = 0);
 
-private:
+    /// Load a system CJK (Chinese/Japanese/Korean) font and merge it into the default
+    /// font as a glyph fallback — covers CJK ideographs, kana, Hangul, CJK punctuation
+    /// and full-width forms. size=0 uses the current default font size. Platform-aware:
+    /// probes Microsoft YaHei/SimSun under %WINDIR% on Windows, PingFang/Hiragino on
+    /// macOS, and Noto Sans CJK/WenQuanYi locations across Linux distros. Returns the
+    /// merged font, or nullptr when no candidate exists (always on the web build — load
+    /// a CJK font explicitly there). Registered as "cjk"; idempotent.
+    ImFont* LoadSystemCJK(float size = 0);
+
+    /// Public for the context registry (src/detail/context_registry.h) — prefer
+    /// Instance(); direct construction bypasses the per-context lifetime.
     Manager() = default;
+
+private:
+    /// Probe candidates in order, merge the first hit into the default font over
+    /// `ranges`, register it as `regName`. Returns the existing entry when already
+    /// loaded, nullptr when nothing was found.
+    ImFont* loadSystemMerged(const std::string& regName, const std::vector<std::string>& candidates,
+                             float size, const ImWchar* ranges);
     std::unordered_map<std::string, FontEntry> fonts_;
 };
 

@@ -41,6 +41,18 @@ TEST_F(PluginTest, Unload_RemovesPlugin) {
     EXPECT_TRUE(Manager::Instance().List().empty());
 }
 
+// ── ABI version gate (the interface contract) ─────────────────────────────────
+
+TEST_F(PluginTest, InterfaceVersion_ExactMatchIsCompatible) {
+    EXPECT_TRUE(InterfaceVersionCompatible(kPluginInterfaceVersion));
+}
+
+TEST_F(PluginTest, InterfaceVersion_MismatchOrLegacyIsRejected) {
+    EXPECT_FALSE(InterfaceVersionCompatible(kPluginInterfaceVersion + 1));
+    EXPECT_FALSE(InterfaceVersionCompatible(kPluginInterfaceVersion - 1));
+    EXPECT_FALSE(InterfaceVersionCompatible(0)); // missing export = predates versioning
+}
+
 // ── Reload (DLL-lifetime pointer swap) — the classic stale-handle UAF surface ──
 
 TEST_F(PluginTest, Reload_Unknown_ReturnsNull) {

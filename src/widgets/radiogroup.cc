@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 RadioGroup::RadioGroup(std::string name, std::vector<std::string> options, int selected)
-        : Widget(std::move(name))
+        : FluentWidget<RadioGroup>(std::move(name))
         , options_(std::move(options))
         , selected_(selected) {}
 void RadioGroup::Render() {

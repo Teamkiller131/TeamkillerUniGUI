@@ -11,6 +11,8 @@
 
 #include <unigui/unigui.h>
 
+#include <format>
+
 #ifdef UNIGUI_HAS_STYLING
 #include <unigui/styling/style_engine.h>
 #endif
@@ -18,6 +20,8 @@
 #include <cstdio>
 #include <fstream>
 #include <string>
+
+namespace im = unigui::im;
 
 int main(int argc, char** argv) {
     int maxFrames = 0;
@@ -63,101 +67,101 @@ int main(int argc, char** argv) {
         }
 #endif
 
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-        ImGui::Begin("Theme Editor", nullptr,
-                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+        im::SetNextWindowPos(ImVec2(0, 0));
+        im::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+        {
+            unigui::WindowScope window{"Theme Editor", nullptr,
+                                       ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                           ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse};
 
-        // ── Controls column ───────────────────────────────────────────────
-        ImGui::BeginChild("controls", ImVec2(320, 0), ImGuiChildFlags_Borders);
-        ImGui::SeparatorText("Palette");
+            // ── Controls column ───────────────────────────────────────────────
+            im::BeginChild("controls", ImVec2(320, 0), ImGuiChildFlags_Borders);
+            im::SeparatorText("Palette");
 
-        int preset = static_cast<int>(theme.preset);
-        if (ImGui::RadioButton("Dark", &preset, 0) || ImGui::RadioButton("Light", &preset, 1)) {
-            theme.preset = static_cast<unigui::ThemePreset>(preset);
-            applyTheme();
-        }
-
-        ImGui::SeparatorText("Surface material");
-        for (std::size_t i = 0; i < surfaces.size(); ++i) {
-            int sel = static_cast<int>(theme.surface);
-            if (ImGui::RadioButton(unigui::theme::SurfaceStyleName(surfaces[i]),
-                                   sel == static_cast<int>(surfaces[i]))) {
-                theme.surface = surfaces[i];
+            int preset = static_cast<int>(theme.preset);
+            if (im::RadioButton("Dark", &preset, 0) || im::RadioButton("Light", &preset, 1)) {
+                theme.preset = static_cast<unigui::ThemePreset>(preset);
                 applyTheme();
             }
-        }
 
-        ImGui::SeparatorText("Typography");
-        if (ImGui::SliderFloat("Font px", &theme.font_size, 10.0f, 28.0f, "%.0f"))
-            applyTheme(); // takes effect on the next font rebuild
-
-        ImGui::SeparatorText("Import / Export");
-        if (ImGui::Button("Export JSON")) {
-            lastExport = unigui::ExportThemeJSON();
-            std::ofstream(kExportFile) << lastExport;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Import JSON")) {
-            std::ifstream f(kExportFile);
-            if (f) {
-                std::string json((std::istreambuf_iterator<char>(f)),
-                                 std::istreambuf_iterator<char>());
-                unigui::ImportThemeJSON(json);
+            im::SeparatorText("Surface material");
+            for (std::size_t i = 0; i < surfaces.size(); ++i) {
+                int sel = static_cast<int>(theme.surface);
+                if (im::RadioButton(unigui::theme::SurfaceStyleName(surfaces[i]),
+                                    sel == static_cast<int>(surfaces[i]))) {
+                    theme.surface = surfaces[i];
+                    applyTheme();
+                }
             }
-        }
-        ImGui::TextWrapped("Export size: %zu bytes", lastExport.size());
+
+            im::SeparatorText("Typography");
+            if (im::SliderFloat("Font px", &theme.font_size, 10.0f, 28.0f, "%.0f"))
+                applyTheme(); // takes effect on the next font rebuild
+
+            im::SeparatorText("Import / Export");
+            if (im::Button("Export JSON")) {
+                lastExport = unigui::ExportThemeJSON();
+                std::ofstream(kExportFile) << lastExport;
+            }
+            im::SameLine();
+            if (im::Button("Import JSON")) {
+                std::ifstream f(kExportFile);
+                if (f) {
+                    std::string json((std::istreambuf_iterator<char>(f)),
+                                     std::istreambuf_iterator<char>());
+                    unigui::ImportThemeJSON(json);
+                }
+            }
+            im::TextWrapped(std::format("Export size: {} bytes", lastExport.size()));
 
 #ifdef UNIGUI_HAS_STYLING
-        ImGui::SeparatorText("CSS hot-reload");
-        if (cssPath.empty()) {
-            ImGui::TextDisabled("Run with --css <file> to live-edit CSS.");
-        } else {
-            ImGui::Text("Watching: %s", cssPath.c_str());
-            ImGui::Text("Reloads: %d", cssReloads);
-            ImGui::TextDisabled("Edit the file on disk to see it apply.");
-        }
+            im::SeparatorText("CSS hot-reload");
+            if (cssPath.empty()) {
+                im::TextDisabled("Run with --css <file> to live-edit CSS.");
+            } else {
+                im::Text(std::format("Watching: {}", cssPath));
+                im::Text(std::format("Reloads: {}", cssReloads));
+                im::TextDisabled("Edit the file on disk to see it apply.");
+            }
 #endif
-        ImGui::EndChild();
+            im::EndChild();
 
-        // ── Live preview column ───────────────────────────────────────────
-        ImGui::SameLine();
-        ImGui::BeginChild("preview", ImVec2(0, 0), ImGuiChildFlags_Borders);
-        ImGui::SeparatorText("Live preview");
-        unigui::im::Button("Primary", unigui::im::ButtonVariant::Primary);
-        ImGui::SameLine();
-        unigui::im::Button("Danger", unigui::im::ButtonVariant::Danger);
-        ImGui::SameLine();
-        unigui::im::Button("Success", unigui::im::ButtonVariant::Success);
+            // ── Live preview column ───────────────────────────────────────────
+            im::SameLine();
+            im::BeginChild("preview", ImVec2(0, 0), ImGuiChildFlags_Borders);
+            im::SeparatorText("Live preview");
+            unigui::im::Button("Primary", unigui::im::ButtonVariant::Primary);
+            im::SameLine();
+            unigui::im::Button("Danger", unigui::im::ButtonVariant::Danger);
+            im::SameLine();
+            unigui::im::Button("Success", unigui::im::ButtonVariant::Success);
 
-        static float slider = 0.5f;
-        unigui::im::SliderFloat("Slider", &slider, 0.f, 1.f);
-        static bool toggle = true;
-        unigui::im::Checkbox("Checkbox", &toggle);
+            static float slider = 0.5f;
+            unigui::im::SliderFloat("Slider", &slider, 0.f, 1.f);
+            static bool toggle = true;
+            unigui::im::Checkbox("Checkbox", &toggle);
 
-        float pct = static_cast<float>(frame % 120) / 120.0f;
-        unigui::im::ProgressBar(pct);
+            float pct = static_cast<float>(frame % 120) / 120.0f;
+            unigui::im::ProgressBar(pct);
 
-        if (unigui::im::BeginTabBar("preview_tabs")) {
-            if (unigui::im::BeginTabItem("Text")) {
-                unigui::im::TextWrapped("The quick brown fox jumps over the lazy dog.");
-                unigui::im::TextDisabled("Disabled text sample.");
-                unigui::im::EndTabItem();
-            }
-            if (unigui::im::BeginTabItem("Tree")) {
-                if (unigui::im::TreeNode("Root")) {
-                    unigui::im::Text("Child A");
-                    unigui::im::Text("Child B");
-                    unigui::im::TreePop();
+            if (unigui::im::BeginTabBar("preview_tabs")) {
+                if (unigui::im::BeginTabItem("Text")) {
+                    unigui::im::TextWrapped("The quick brown fox jumps over the lazy dog.");
+                    unigui::im::TextDisabled("Disabled text sample.");
+                    unigui::im::EndTabItem();
                 }
-                unigui::im::EndTabItem();
+                if (unigui::im::BeginTabItem("Tree")) {
+                    if (unigui::im::TreeNode("Root")) {
+                        unigui::im::Text("Child A");
+                        unigui::im::Text("Child B");
+                        unigui::im::TreePop();
+                    }
+                    unigui::im::EndTabItem();
+                }
+                unigui::im::EndTabBar();
             }
-            unigui::im::EndTabBar();
+            im::EndChild();
         }
-        ImGui::EndChild();
-
-        ImGui::End();
         unigui::Render();
 
         if (maxFrames > 0 && ++frame >= maxFrames)

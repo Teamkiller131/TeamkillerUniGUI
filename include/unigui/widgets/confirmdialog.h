@@ -10,7 +10,7 @@ namespace unigui {
 
 /// ConfirmDialog — modal confirmation popup with optional danger styling.
 /// Uses PushID/PopID for ID safety.
-class ConfirmDialog : public Widget {
+class ConfirmDialog : public FluentWidget<ConfirmDialog> {
 public:
     explicit ConfirmDialog(std::string name);
 
@@ -35,6 +35,40 @@ public:
     const std::string& GetTitle() const { return title_; }
     const std::string& GetMessage() const { return message_; }
     bool IsOpen() const { return open_; }
+
+    // ── Fluent (chainable) helpers — return ConfirmDialog& via CRTP base ───
+    ConfirmDialog& WithOnConfirm(std::function<void()> cb) {
+        SetOnConfirm(std::move(cb));
+        return *this;
+    }
+    ConfirmDialog& WithTitle(std::string title) {
+        SetTitle(std::move(title));
+        return *this;
+    }
+    ConfirmDialog& WithMessage(std::string msg) {
+        SetMessage(std::move(msg));
+        return *this;
+    }
+    ConfirmDialog& WithIcon(std::string icon) {
+        SetIcon(std::move(icon));
+        return *this;
+    }
+    ConfirmDialog& WithConfirmLabel(std::string lbl) {
+        SetConfirmLabel(std::move(lbl));
+        return *this;
+    }
+    ConfirmDialog& WithCancelLabel(std::string lbl) {
+        SetCancelLabel(std::move(lbl));
+        return *this;
+    }
+    ConfirmDialog& WithConfirmColor(ImU32 color) {
+        SetConfirmColor(color);
+        return *this;
+    }
+    ConfirmDialog& WithDangerStyle(bool on) {
+        SetDangerStyle(on);
+        return *this;
+    }
 
 private:
     bool open_ = false;

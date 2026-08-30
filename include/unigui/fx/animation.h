@@ -76,8 +76,11 @@ public:
     void SetPaused(bool paused) { paused_ = paused; }
     bool IsPaused() const { return paused_; }
 
-private:
+    /// Public for the context registry (src/detail/context_registry.h) — prefer
+    /// Instance(); direct construction bypasses the per-context lifetime.
     AnimationManager() = default;
+
+private:
     std::vector<AnimationState*> states_;
     bool paused_ = false;
 };

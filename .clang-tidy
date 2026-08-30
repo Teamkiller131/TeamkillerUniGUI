@@ -6,12 +6,23 @@
 #   cmake --build build/... --target lint  # lint only (fast)
 #   run-clang-tidy -p build/...            # manual run
 
+# NB: `Checks` below is a YAML `>` folded block scalar — `#` does NOT start a comment
+# inside it (a `#` line would be folded into the check string and silently break the
+# list). Keep the block bare; rationale for the non-obvious exclusions lives here:
+#   -bugprone-branch-clone  — false positive under conditional compilation: with
+#       backends disabled, every CreateBackend() switch case collapses to
+#       `return {nullptr, nullptr}`; the branches diverge once a backend is enabled.
+#   -bugprone-crtp-constructor-accessibility — stylistic hardening on
+#       FluentWidget<Derived>; making the CRTP base ctor private + friending each
+#       Derived would touch every fluent widget for no correctness gain.
 Checks: >
   -*,
   bugprone-*,
   -bugprone-easily-swappable-parameters,
   -bugprone-narrowing-conversions,
   -bugprone-implicit-widening-of-multiplication-result,
+  -bugprone-branch-clone,
+  -bugprone-crtp-constructor-accessibility,
   performance-*,
   -performance-avoid-endl,
   modernize-*,
@@ -34,7 +45,13 @@ Checks: >
   -misc-const-correctness,
   -misc-no-recursion
 
-WarningsAsErrors: ''
+# Hard gate: the bug-catching family is enforced as errors (CI fails on any new
+# bugprone finding). The rest of the enabled checks — readability/modernize/
+# performance/cppcoreguidelines/misc — stay advisory (reported, non-fatal) because
+# the tree carries thousands of deliberate style deviations (lowercase literal
+# suffixes, brace-less single statements, …) that are not bugs. Curate more families
+# into this list as the tree is cleaned under them.
+WarningsAsErrors: 'bugprone-*'
 
 HeaderFilterRegex: 'include/unigui/.*\.h$'
 

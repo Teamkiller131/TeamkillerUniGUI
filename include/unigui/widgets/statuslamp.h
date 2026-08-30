@@ -8,7 +8,7 @@ namespace unigui {
 
 /// StatusLamp — glossy circular status indicator (LED style) with a soft glow
 /// halo, specular highlight, tooltip, and per-state animation.
-class StatusLamp : public Widget {
+class StatusLamp : public FluentWidget<StatusLamp> {
 public:
     /// Lamp states. Off/Running/Draft preserved for backward compatibility;
     /// Error/Warning/Paused added for richer status reporting.
@@ -36,6 +36,32 @@ public:
     State GetState() const { return state_; }
     float GetRadius() const { return radius_; }
     const std::string& GetTooltip() const { return tooltip_; }
+
+    // ── Fluent (chainable) helpers — return StatusLamp& via CRTP base ──────────
+    StatusLamp& WithState(State s) {
+        SetState(s);
+        return *this;
+    }
+    StatusLamp& WithRadius(float r) {
+        SetRadius(r);
+        return *this;
+    }
+    StatusLamp& WithColor(ImU32 rgba) {
+        SetColor(rgba);
+        return *this;
+    }
+    StatusLamp& WithGlowEnabled(bool on) {
+        SetGlowEnabled(on);
+        return *this;
+    }
+    StatusLamp& WithCenterInCell(bool on) {
+        SetCenterInCell(on);
+        return *this;
+    }
+    StatusLamp& WithCaption(std::string text) {
+        SetCaption(std::move(text));
+        return *this;
+    }
 
 private:
     State state_ = Off;

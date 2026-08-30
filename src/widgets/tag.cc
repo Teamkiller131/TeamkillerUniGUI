@@ -3,7 +3,7 @@
 #include <imgui.h>
 namespace unigui {
 Tag::Tag(std::string n, std::string t, std::array<float, 3> c)
-        : Widget(std::move(n))
+        : FluentWidget<Tag>(std::move(n))
         , text_(std::move(t))
         , color_(c) {}
 void Tag::SetText(std::string t) {
@@ -25,8 +25,10 @@ void Tag::Render() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color_[0], color_[1], color_[2], 1));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
                           ImVec4(color_[0] * 1.2f, color_[1] * 1.2f, color_[2] * 1.2f, 1));
-    ImGui::SmallButton(text_.c_str());
-    removeClicked_ = ImGui::IsItemClicked();
+    // The button's return value fires for BOTH mouse release and keyboard
+    // nav-activation (Space/Enter on the focused chip); IsItemClicked was
+    // mouse-only, leaving the tag keyboard-dead.
+    removeClicked_ = ImGui::SmallButton(text_.c_str());
     ImGui::PopStyleColor(2);
     ImGui::PopID();
 }

@@ -5,6 +5,9 @@
 #include <unigui/core/main_thread.h>
 #include <unigui/theme/presets/registry.h>
 #include <unigui/theme/theme.h>
+
+#include "../detail/context_singletons.h"
+#include "../detail/golden_capture.h"
 #ifdef UNIGUI_HAS_WIDGETS
 #include <unigui/widgets/toast.h>
 #endif
@@ -20,8 +23,10 @@
 #include <glad/glad.h>
 #endif
 #include <imgui.h>
+#include <imgui_internal.h> // ImGuiViewportP::Window — skip orphaned viewports in the backdrop fill
 #include <implot.h>
 
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
@@ -63,6 +68,10 @@ static void CleanupAppResources(bool destroy_imgui_context) {
         g_platform->Shutdown();
         g_platform.reset();
     }
+    // Drop the per-context singleton instances bound to this context (they live in
+    // ContextRegistry keyed by the ImGui context — see src/detail/context_registry.h).
+    if (ImGui::GetCurrentContext())
+        detail::ResetContextSingletons(ImGui::GetCurrentContext());
     if (ImPlot::GetCurrentContext())
         ImPlot::DestroyContext();
     if (destroy_imgui_context && ImGui::GetCurrentContext())
@@ -116,6 +125,16 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
     }
     g_platform->SetTitle(config.title);
     g_platform->SetSize(config.width, config.height);
+    // Runtime content-scale changes (window moved to a differently-scaled monitor, OS
+    // zoom): the platform reports them during NewFrame; update the global font scale
+    // (the dynamic font system re-rasterizes) snapped to a crisp step. The one-shot
+    // bring-up read below still applies the initial scale.
+    g_platform->SetContentScaleCallback([](float rawScale) {
+        const float snapped = dpi::NormalizeContentScale(rawScale);
+        UNIGUI_LOG_INFO("Content scale changed to {:.3f} -> snapped {:.3f} (fonts re-rasterized)",
+                        rawScale, snapped);
+        SetContentScale(snapped);
+    });
 
     float dpi = config.theme.dpi_scale; // 0 = auto-detect once the window is up
     if (dpi <= 0) {
@@ -138,10 +157,17 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         auto hwnd = g_platform->GetWindowHandle();
         RECT rc;
         GetClientRect((HWND) hwnd, &rc);
-        int pw = rc.right - rc.left, ph = rc.bottom - rc.top;
+        // The swapchain must be sized at PHYSICAL pixels: the client rect is
+        // logical (DIPs) and the OS scales the window on a non-1.0 monitor, so a
+        // swapchain at client size would be stretched. io.DisplayFramebufferScale
+        // (= the same content scale, re-asserted every frame by the platform)
+        // then maps the logical draw data onto the physical back buffer.
+        const float scale = g_platform->GetContentScale();
+        int pw = static_cast<int>((rc.right - rc.left) * scale + 0.5f);
+        int ph = static_cast<int>((rc.bottom - rc.top) * scale + 0.5f);
         if (pw <= 0) {
-            pw = config.width;
-            ph = config.height;
+            pw = static_cast<int>(config.width * scale + 0.5f);
+            ph = static_cast<int>(config.height * scale + 0.5f);
         }
         ID3D11Device* dev = nullptr;
         ID3D11DeviceContext* ctx = nullptr;
@@ -165,9 +191,12 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         auto hwnd = g_platform->GetWindowHandle();
         int pw = 0, ph = 0;
         g_platform->GetClientSize(&pw, &ph);
+        const float scale12 = g_platform->GetContentScale();
+        pw = static_cast<int>(pw * scale12 + 0.5f);
+        ph = static_cast<int>(ph * scale12 + 0.5f);
         if (pw <= 0) {
-            pw = config.width;
-            ph = config.height;
+            pw = static_cast<int>(config.width * scale12 + 0.5f);
+            ph = static_cast<int>(config.height * scale12 + 0.5f);
         }
         ID3D12Device* dev = nullptr;
         ID3D12CommandQueue* queue = nullptr;
@@ -283,7 +312,8 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         const bool platformOk = (io.BackendFlags & ImGuiBackendFlags_PlatformHasViewports) != 0;
         const bool rendererOk = (io.BackendFlags & ImGuiBackendFlags_RendererHasViewports) != 0;
         if (platformOk && rendererOk) {
-            UNIGUI_LOG_INFO("Multi-viewport enabled (windows can be dragged out of the main window)");
+            UNIGUI_LOG_INFO(
+                "Multi-viewport enabled (windows can be dragged out of the main window)");
         } else {
             // Fail loud, then fail safe. A half-installed viewport setup does not degrade
             // gracefully — it mispositions every window — so drop back to single-viewport
@@ -413,11 +443,18 @@ bool NewFrame() {
         int cw = 0, ch = 0;
         g_platform->GetClientSize(&cw, &ch);
         static int lastW = 0, lastH = 0;
-        if (cw > 0 && ch > 0 && (cw != lastW || ch != lastH)) {
+        static float lastScale = 0.0f;
+        const float scale = g_platform->GetContentScale();
+        // Re-resize when the client size OR the monitor scale changes (the window
+        // moved to a differently-scaled monitor — same client size, new physical
+        // size). The swapchain takes PHYSICAL pixels; DisplaySize stays logical.
+        if (cw > 0 && ch > 0 && (cw != lastW || ch != lastH || scale != lastScale)) {
             lastW = cw;
             lastH = ch;
+            lastScale = scale;
             auto* dxr = static_cast<DX11Renderer*>(g_renderer.get());
-            if (dxr->ResizeSwapChain(cw, ch)) {
+            if (dxr->ResizeSwapChain(static_cast<int>(cw * scale + 0.5f),
+                                     static_cast<int>(ch * scale + 0.5f))) {
                 ImGui::GetIO().DisplaySize = ImVec2((float) cw, (float) ch);
             }
         }
@@ -428,11 +465,15 @@ bool NewFrame() {
         int cw = 0, ch = 0;
         g_platform->GetClientSize(&cw, &ch);
         static int lastW12 = 0, lastH12 = 0;
-        if (cw > 0 && ch > 0 && (cw != lastW12 || ch != lastH12)) {
+        static float lastScale12 = 0.0f;
+        const float scale = g_platform->GetContentScale();
+        if (cw > 0 && ch > 0 && (cw != lastW12 || ch != lastH12 || scale != lastScale12)) {
             lastW12 = cw;
             lastH12 = ch;
+            lastScale12 = scale;
             auto* dxr = static_cast<DX12Renderer*>(g_renderer.get());
-            if (dxr->ResizeSwapChain(cw, ch)) {
+            if (dxr->ResizeSwapChain(static_cast<int>(cw * scale + 0.5f),
+                                     static_cast<int>(ch * scale + 0.5f))) {
                 ImGui::GetIO().DisplaySize = ImVec2((float) cw, (float) ch);
             }
         }
@@ -451,12 +492,15 @@ bool NewFrame() {
 // the screen stays the clear colour (the 4.3.1 black-screen bug). GL backends only; inert
 // unless the env var is set, so zero cost in normal runs. Must be called after
 // RenderDrawData and before SwapBuffers (it reads the rendered back buffer).
+// UNIGUI_GOLDEN_CAPTURE=<path> additionally writes the raw framebuffer (see
+// src/detail/golden_capture.h) — the CI/dev golden-image pipeline.
 static void VerifyRenderIfEnabled() {
     static const bool verify = [] {
         const char* e = std::getenv("UNIGUI_RENDER_VERIFY");
         return e && e[0] == '1';
     }();
-    if (!verify)
+    const char* golden = detail::GoldenCapturePath();
+    if (!verify && !golden)
         return;
 
     const GLenum err = glGetError();
@@ -472,8 +516,14 @@ static void VerifyRenderIfEnabled() {
     std::vector<unsigned char> buf((size_t) w * (size_t) h * 4u);
     glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, buf.data());
 
+    if (golden)
+        detail::SaveGoldenRaw(golden, w, h, buf.data());
+
+    if (!verify)
+        return;
+
     const ImVec4 bg = GetBackdropColor();
-    auto to8 = [](float v) { return (int) (v * 255.0f + 0.5f); };
+    auto to8 = [](float v) { return (int) std::lround(v * 255.0f); };
     const int cr = to8(bg.x), cg = to8(bg.y), cb = to8(bg.z);
 
     // Sample a coarse grid (cheap) and count pixels that differ from the clear colour.
@@ -499,6 +549,33 @@ void Render() {
 #ifdef UNIGUI_HAS_WIDGETS
     unigui::Toast::Instance().Render();
 #endif
+    // Backdrop-clear contract for secondary viewports (§7 of docs/BACKENDS.md): the
+    // per-backend RenderWindow functions upstream ships clear popped-out windows to a
+    // hardcoded *black*, which translucent (glass) theme materials would render
+    // against. Paint the theme backdrop into each secondary viewport's background draw
+    // list — flattened before every window — so a popped-out window honours the same
+    // GetBackdropColor() contract as the main one, on every backend with viewport
+    // support (no per-renderer hooks needed). Must run before ImGui::Render() (the
+    // background list is flattened there); viewport coordinates are absolute screen
+    // space (the list clips to the viewport rect).
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        const ImU32 bgCol = ImGui::GetColorU32(GetBackdropColor());
+        for (ImGuiViewport* vp : ImGui::GetPlatformIO().Viewports) {
+            if (vp == nullptr || vp == ImGui::GetMainViewport() ||
+                (vp->Flags & ImGuiViewportFlags_IsMinimized))
+                continue;
+            // Skip secondary viewports that hosted no window THIS frame (orphans after
+            // a merge-back): drawing into their background list would keep them alive
+            // forever — a rendered viewport counts as active, and imgui only destroys
+            // secondary viewports after ~3 inactive frames. A window's Begin refreshes
+            // its viewport's LastFrameActive (internal field; the public alternative
+            // would leak orphaned viewports).
+            if (((ImGuiViewportP*) vp)->LastFrameActive < (int) ImGui::GetFrameCount())
+                continue;
+            ImGui::GetBackgroundDrawList(vp)->AddRectFilled(
+                vp->Pos, ImVec2(vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y), bgCol);
+        }
+    }
     ImGui::Render();
     ImDrawData* dd = ImGui::GetDrawData();
     // Clear to the theme-derived backdrop so translucent (glass) surfaces read
@@ -539,8 +616,14 @@ void Render() {
 bool ShouldClose() {
     return g_platform ? g_platform->ShouldClose() : true;
 }
+RendererBackend* GetActiveRenderer() {
+    return g_renderer.get();
+}
 void* GetNativeWindowHandle() {
     return g_platform ? g_platform->GetNativeWindowHandle() : nullptr;
+}
+std::vector<MonitorInfo> GetMonitors() {
+    return g_platform ? g_platform->GetMonitors() : std::vector<MonitorInfo>{};
 }
 void SetContentScale(float scale) {
     if (ImGui::GetCurrentContext())

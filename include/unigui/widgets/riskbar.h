@@ -7,7 +7,7 @@
 
 namespace unigui {
 
-class RiskBar : public Widget {
+class RiskBar : public FluentWidget<RiskBar> {
 public:
     explicit RiskBar(std::string name);
 
@@ -30,6 +30,36 @@ public:
     void SetSecondaryEnabled(bool on);    // default false
     double GetRatio() const { return ratio_; }
     double GetSecondaryRatio() const { return secondaryRatio_; }
+
+    // ── Fluent (chainable) helpers — return RiskBar& via CRTP base ──────────
+    RiskBar& WithRatio(double ratio) {
+        SetRatio(ratio);
+        return *this;
+    }
+    RiskBar& WithMaxRatio(double max) {
+        SetMaxRatio(max);
+        return *this;
+    }
+    RiskBar& WithDisplayText(std::string txt) {
+        SetDisplayText(std::move(txt));
+        return *this;
+    }
+    RiskBar& WithWarnThreshold(double v) {
+        SetWarnThreshold(v);
+        return *this;
+    }
+    RiskBar& WithDangerThreshold(double v) {
+        SetDangerThreshold(v);
+        return *this;
+    }
+    RiskBar& WithInverted(bool on) {
+        SetInverted(on);
+        return *this;
+    }
+    RiskBar& WithAnimated(bool on) {
+        SetAnimated(on);
+        return *this;
+    }
 
 private:
     double ratio_ = 0.0;

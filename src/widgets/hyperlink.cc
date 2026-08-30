@@ -8,7 +8,7 @@
 #endif
 namespace unigui {
 Hyperlink::Hyperlink(std::string n, std::string l, std::string u)
-        : Widget(std::move(n))
+        : FluentWidget<Hyperlink>(std::move(n))
         , label_(std::move(l))
         , url_(std::move(u)) {}
 void Hyperlink::SetURL(std::string u) {

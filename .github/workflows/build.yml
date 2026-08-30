@@ -23,12 +23,15 @@ jobs:
     - name: Test
       run: ctest --preset windows-msvc-release --output-on-failure
 
-  # DX12 compile coverage. UNIGUI_BACKEND_DX12 defaults OFF and every other CI lane sets it
-  # OFF, so dx12_renderer.cc (250+ lines of D3D12) and the app.cc UNIGUI_HAS_DX12 paths compile
-  # NOWHERE in CI and could rot until someone builds them by hand. This lane turns DX12 ON
-  # (alongside the default DX11) and builds the library so a break fails CI — mirroring how
-  # linux-modules covers the module + POSIX-shmem sources. It's a COMPILE gate: DX12 device
-  # creation needs a real GPU the headless runner lacks, so the render path isn't run here.
+  # DX12 compile + WARP-render coverage. UNIGUI_BACKEND_DX12 defaults OFF and every other
+  # CI lane sets it OFF, so dx12_renderer.cc (250+ lines of D3D12) and the app.cc
+  # UNIGUI_HAS_DX12 paths compile NOWHERE else in CI and could rot until someone builds them
+  # by hand. This lane turns DX12 ON (alongside the default DX11) and builds the library so a
+  # break fails CI — mirroring how linux-modules covers the module sources. It is ALSO a
+  # render gate: the headless runner has no GPU, but WARP (Microsoft's software rasteriser)
+  # creates a real D3D11/D3D12 device without one, so the test_dx_warp smoke actually creates
+  # a device, renders to an offscreen target, and reads the pixels back — proving the
+  # device/command-list/fence path executes, not merely that it compiles.
   windows-dx12:
     runs-on: windows-latest
     steps:
@@ -46,6 +49,10 @@ jobs:
       run: cmake --preset windows-msvc-debug -DUNIGUI_BACKEND_DX12=ON
     - name: Build the library (compiles dx12_renderer.cc + the app.cc DX12 paths)
       run: cmake --build --preset windows-msvc-debug --target unigui
+    - name: Build the WARP render smoke (DX11 + DX12)
+      run: cmake --build --preset windows-msvc-debug --target test_dx_warp
+    - name: Run the WARP render smoke (real device + offscreen render + readback, no GPU)
+      run: ctest --preset windows-msvc-debug --output-on-failure -R DXWarpSmoke
 
   linux:
     runs-on: ubuntu-latest
@@ -278,9 +285,12 @@ jobs:
     - name: Build (compiles the module sources incl. the POSIX shmem path)
       run: cmake --build build
     - name: Test the module suites (headless-safe; module failures gate CI)
+      # Includes the live loopback round-trips (ZMQ inproc PUB/SUB, HTTP GET/POST, WS echo)
+      # so the transport paths are proven on Linux, not just compiled — they bind an
+      # OS-assigned free loopback port, so they're safe on the shared runner.
       run: |
         ctest --test-dir build --output-on-failure \
-          -R "^DBOpen|^DBTest|^DBMove|^StoreTest|^IPCTest|^ShmemTest|^UrlParseTest|^WebSocketClientTest"
+          -R "^DBOpen|^DBTest|^DBMove|^StoreTest|^IPCTest|^IPCChannelTest|^ShmemTest|^UrlParseTest|^WebSocketClientTest|^HttpLoopbackTest|^WebSocketLoopbackTest"
 
   # Interaction-test lane: the Dear ImGui test engine drives real clicks/typing/tab
   # switches through UniGUI widgets (tests/integration_test.cc) — behavior coverage the
@@ -400,8 +410,8 @@ jobs:
           build_web/examples/web_demo/web_demo.js
           build_web/examples/web_demo/web_demo.wasm
     # Second wasm build: the WebGPU renderer path (--use-port=emdawnwebgpu +
-    # imgui_impl_wgpu). Build/link is a hard gate; the in-browser runtime is validated
-    # manually with the uploaded artifact (CI has no GPU/browser).
+    # imgui_impl_wgpu). Build/link is a hard gate; the in-browser runtime gets a
+    # best-effort headless smoke below (WebGL2's smoke is a hard gate).
     - name: Configure (wasm + WebGPU)
       run: |
         emcmake cmake -B build_web_wgpu -S . -G Ninja -DCMAKE_BUILD_TYPE=Release \
@@ -424,3 +434,32 @@ jobs:
           build_web_wgpu/examples/web_demo/web_demo.html
           build_web_wgpu/examples/web_demo/web_demo.js
           build_web_wgpu/examples/web_demo/web_demo.wasm
+
+    # ── Headless-browser render smoke (roadmap H4a) ────────────────────────────
+    # Until now the wasm RUNTIME was "validated manually" — the only platform with
+    # zero automated runtime signal. scripts/web_smoke.mjs loads the artifact in
+    # headless Chromium, waits for boot, screenshots the CANVAS ELEMENT (the page
+    # chrome must not fake a "drawn" verdict), and asserts real pixels — the browser
+    # twin of the native UNIGUI_RENDER_VERIFY gate. SwiftShader ANGLE gives a
+    # deterministic software render (headless Chromium's default GL virtualization
+    # black-screened while the same artifact rendered fine headed).
+    - name: Install browser-smoke deps
+      run: |
+        npm install --no-save playwright pngjs
+        npx playwright install --with-deps chromium
+    - name: Browser render smoke — WebGL2 (hard gate)
+      run: node scripts/web_smoke.mjs --dir build_web/examples/web_demo --out smoke_webgl2.png
+    - name: Browser render smoke — WebGPU (best-effort)
+      # WebGPU needs a GPU adapter headless Chromium may not provide (locally on
+      # Windows: "No available adapters" → the app degrades gracefully but draws
+      # nothing). Kept non-blocking until the runner proves it can supply an adapter
+      # via SwiftShader Vulkan; flip to a hard gate if it runs green consistently.
+      continue-on-error: true
+      run: node scripts/web_smoke.mjs --webgpu --dir build_web_wgpu/examples/web_demo --out smoke_webgpu.png
+    - name: Upload smoke screenshots
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-smoke-screenshots
+        path: smoke_*.png
+        if-no-files-found: ignore
