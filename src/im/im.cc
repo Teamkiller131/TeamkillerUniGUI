@@ -448,7 +448,15 @@ bool Combo(std::string_view label, int* current, const std::vector<std::string>&
     // silently disabling wheel-select for every combo in a pod table. The relaxed
     // AllowWhenBlockedByActiveItem flag catches that case. SetItemKeyOwner still claims
     // the vertical wheel so the surrounding table does not also scroll.
-    if (!open && hovered && n > 1) {
+    //
+    // [2026-09-16] Disabled guard: wheel-select used to fire even when the caller had
+    // the combo under BeginDisabled() — e.g. a POD-started locked dropdown could still
+    // be re-selected by scrolling (client bug report). 1.92 has no public
+    // IsItemDisabled(), so query the disable-stack depth via the internal context
+    // (im.cc already includes imgui_internal.h). While disabled we also skip
+    // SetItemKeyOwner so the wheel passes through and scrolls the table normally.
+    const bool itemDisabled = ImGui::GetCurrentContext()->DisabledStackSize > 0;
+    if (!open && hovered && n > 1 && !itemDisabled) {
         ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
         const float wheel = ImGui::GetIO().MouseWheel;
         if (wheel != 0.0f) {

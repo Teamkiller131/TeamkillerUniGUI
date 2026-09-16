@@ -61,7 +61,10 @@ void ComboBox::Render() {
                                               comboFrame.pos.y + comboFrame.height));
     detail::DrawComboChevron(comboFrame, comboOpen || comboHovered);
     // Wheel on closed combo = cycle selection; SetItemKeyOwner stops outer scroll region.
-    if (!comboOpen && comboHovered && items_.size() > 1) {
+    // [2026-09-16] Disabled guard (`disabled` captured at the top): a locked combo could
+    // still be re-selected by scrolling (same client bug as im::Combo). While disabled we
+    // also skip SetItemKeyOwner so the wheel scrolls the surrounding table normally.
+    if (!comboOpen && comboHovered && items_.size() > 1 && !disabled) {
         ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
         const float wheel = ImGui::GetIO().MouseWheel;
         if (wheel != 0.0f) {
