@@ -149,4 +149,53 @@ public:
 private:
     int colorCount_ = 0, varCount_ = 0;
 };
+
+/// PlotThemeScope — derives ImPlot colors from the CURRENT ImGui theme so
+/// plots follow light/dark preset switches (ApplyTheme restyles ImGui only;
+/// ImPlot style colors are per-plot and must be pushed by the chart).
+class PlotThemeScope {
+public:
+    PlotThemeScope() {
+        const ImGuiStyle& st = ImGui::GetStyle();
+        const ImVec4 text  = st.Colors[ImGuiCol_Text];
+        const ImVec4 win   = st.Colors[ImGuiCol_WindowBg];
+        const ImVec4 child = st.Colors[ImGuiCol_ChildBg];
+        const ImVec4 border= st.Colors[ImGuiCol_Border];
+        const bool dark = win.x + win.y + win.z < 0.9f;
+        const ImVec4 plotBg = dark
+            ? ImVec4(child.x * 0.75f, child.y * 0.75f, child.z * 0.75f, 1.0f)
+            : ImVec4(0.5f + child.x * 0.5f, 0.5f + child.y * 0.5f, 0.5f + child.z * 0.5f, 1.0f);
+        const ImVec4 grid = ImVec4(text.x, text.y, text.z, dark ? 0.12f : 0.20f);
+        const ImVec4 frame = dark
+            ? ImVec4(win.x * 1.6f, win.y * 1.6f, win.z * 1.6f, 1.0f)
+            : ImVec4(win.x * 0.94f, win.y * 0.94f, win.z * 0.94f, 1.0f);
+        Push(ImPlotCol_PlotBg, plotBg);
+        Push(ImPlotCol_PlotBorder, border);
+        Push(ImPlotCol_LegendBg, frame);
+        Push(ImPlotCol_LegendBorder, border);
+        Push(ImPlotCol_LegendText, text);
+        Push(ImPlotCol_TitleText, text);
+        Push(ImPlotCol_InlayText, text);
+        Push(ImPlotCol_AxisText, text);
+        Push(ImPlotCol_AxisGrid, grid);
+        Push(ImPlotCol_AxisBgHovered, ImVec4(text.x, text.y, text.z, 0.20f));
+        Push(ImPlotCol_AxisBgActive, ImVec4(text.x, text.y, text.z, 0.35f));
+        Push(ImPlotCol_PlotBorder, border);
+    }
+    ~PlotThemeScope() { ImPlot::PopStyleColor(n_); }
+    PlotThemeScope(const PlotThemeScope&) = delete;
+    PlotThemeScope& operator=(const PlotThemeScope&) = delete;
+private:
+    void Push(ImPlotCol idx, const ImVec4& c) { ImPlot::PushStyleColor(idx, c); ++n_; }
+    int n_ = 0;
+};
+
+/// Custom tick/format passthroughs (index-space trading axes).
+inline void PlotSetupAxisFormat(ImAxis axis, ImPlotFormatter fmt, void* data = nullptr) {
+    ImPlot::SetupAxisFormat(axis, fmt, data);
+}
+inline void PlotSetupAxisTicks(ImAxis axis, const double* values, int count,
+                               const char* const labels[] = nullptr, bool keepDefault = false) {
+    ImPlot::SetupAxisTicks(axis, values, count, labels, keepDefault);
+}
 } // namespace unigui
