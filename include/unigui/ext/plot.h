@@ -198,4 +198,18 @@ inline void PlotSetupAxisTicks(ImAxis axis, const double* values, int count,
                                const char* const labels[] = nullptr, bool keepDefault = false) {
     ImPlot::SetupAxisTicks(axis, values, count, labels, keepDefault);
 }
+inline void PlotShaded(const char* label, const double* xs, const double* ys1,
+                       const double* ys2, int count, const ImPlotSpec& spec = ImPlotSpec()) {
+    ImPlot::PlotShaded(label, xs, ys1, ys2, count, spec);
+}
+inline void PlotShaded(const char* label, std::span<const double> xs,
+                       std::span<const double> ys1, std::span<const double> ys2,
+                       const ImPlotSpec& spec = ImPlotSpec()) {
+    const int n = (int)std::min(xs.size(), std::min(ys1.size(), ys2.size()));
+    ImPlot::PlotShaded(label, xs.data(), ys1.data(), ys2.data(), n, spec);
+}
+/// Fill spec shorthand (shaded bands).
+inline ImPlotSpec PlotFillSpec(const ImVec4& col) {
+    return ImPlotSpec(ImPlotProp_FillColor, col);
+}
 } // namespace unigui
