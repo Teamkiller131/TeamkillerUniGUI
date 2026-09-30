@@ -448,7 +448,8 @@ target_include_directories(unigui PRIVATE ${FONT_GEN_DIR})
 # Skipped on Emscripten: the wasm lib links the FetchContent dep targets PUBLIC-ly,
 # so install(EXPORT) would demand they be exported too. There is no downstream
 # find_package(unigui) story for wasm, so we don't install at all.
-if(NOT EMSCRIPTEN)
+# UNIGUI_INSTALL=OFF additionally skips this for embedders (see root CMakeLists).
+if(NOT EMSCRIPTEN AND UNIGUI_INSTALL)
     install(TARGETS unigui
         EXPORT unigui-targets
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
