@@ -448,9 +448,13 @@ public:
         int totalRows = (int) srcSize();
 
         // ── Scroll-to-row gesture ────────────────────────────────────────
+        // 行高必须含表格 CellPadding(TableNextRow 的实际行高 = 行文本高 +
+        // CellPadding.y×2)。只传 GetTextLineHeightWithSpacing 会低估行高 →
+        // ListClipper 的滚动总高不足 → 虚拟滚动的最后 N 行永远滚不到。
+        const float vRowH = ImGui::GetTextLineHeightWithSpacing() +
+                            ImGui::GetStyle().CellPadding.y * 2.0f;
         if (scrollToRow_ >= 0 && scrollToRow_ < totalRows) {
-            float rowH = ImGui::GetTextLineHeightWithSpacing();
-            ImGui::SetScrollY(scrollToRow_ * rowH);
+            ImGui::SetScrollY(scrollToRow_ * vRowH);
             scrollToRow_ = -1;
         }
 
@@ -681,7 +685,9 @@ public:
 
             if (virtualScroll_ && !stickyHeader_) {
                 ImGuiListClipper clipper;
-                clipper.Begin((int) displayRows.size(), ImGui::GetTextLineHeightWithSpacing());
+                // 行高含 CellPadding(见上方 vRowH 注释) — 低估会让滚动总高
+                // 不足, 尾部行不可达(实测 58 行丢最后 13 行)。
+                clipper.Begin((int) displayRows.size(), vRowH);
                 while (clipper.Step()) {
                     for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
                         renderRow(displayRows[row]);
