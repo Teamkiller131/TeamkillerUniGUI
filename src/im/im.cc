@@ -452,10 +452,23 @@ bool Combo(std::string_view label, int* current, const std::vector<std::string>&
     // [2026-09-16] Disabled guard: wheel-select used to fire even when the caller had
     // the combo under BeginDisabled() — e.g. a POD-started locked dropdown could still
     // be re-selected by scrolling (client bug report). 1.92 has no public
-    // IsItemDisabled(), so query the disable-stack depth via the internal context
+    // IsItemDisabled(), so query the live disabled state via the internal context
     // (im.cc already includes imgui_internal.h). While disabled we also skip
     // SetItemKeyOwner so the wheel passes through and scrolls the table normally.
-    const bool itemDisabled = ImGui::GetCurrentContext()->DisabledStackSize > 0;
+    //
+    // [2026-09-17] v2 — fixed the WRONG counter: v1 read DisabledStackSize, which
+    // counts **unmatched Begin/EndDisabled pairs** — and BeginDisabled(false) also
+    // pushes it. POD/threshold tables wrap every combo in BeginDisabled(editLocked):
+    // when NOT locked the pair-depth is 1 while the combo is actually ENABLED, so v1
+    // killed wheel-select for exactly the enabled combos (trader report 09-17 morning).
+    // The true state is the item-flags stack top: BeginDisabled(true) pushes the
+    // ImGuiItemFlags_Disabled bit, BeginDisabled(false) pushes a clean copy.
+    //
+    // [2026-10-14] v2 restored — 600a56a had accidentally reverted this hunk back to
+    // v1 inside its DataTable row-height change (trader report: FSA combos lost
+    // wheel-select again after the 2026.10.14.1630 client build).
+    const bool itemDisabled =
+        (ImGui::GetCurrentContext()->ItemFlagsStack.back() & ImGuiItemFlags_Disabled) != 0;
     if (!open && hovered && n > 1 && !itemDisabled) {
         ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
         const float wheel = ImGui::GetIO().MouseWheel;
