@@ -1,6 +1,7 @@
 #include <unigui/widgets/cascadingcombo.h>
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include <algorithm>
 #include <cstdio>
@@ -60,6 +61,34 @@ void CascadingCombo::Render() {
                     ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
+        }
+        // [2026-10-14] Mouse-wheel quick-select — bring this widget to parity with
+        // im::Combo / ComboBox: hover the closed combo and scroll to cycle the
+        // selection in place (trader workflow; AA 比价表级联下拉此前无此能力).
+        // Hover = geometric rect check (works inside ScrollY tables / child windows,
+        // where IsItemHovered's hover flag can be blocked). Disabled guard mirrors
+        // im.cc v2 [2026-09-17]: read the item-flags stack top, NOT DisabledStackSize —
+        // the latter misreads BeginDisabled(false) wrappers as disabled and kills
+        // wheel-select on enabled combos.
+        const bool comboHovered = ImGui::IsMouseHoveringRect(
+                comboFrame.pos,
+                ImVec2(comboFrame.pos.x + comboFrame.width,
+                       comboFrame.pos.y + comboFrame.height));
+        if (!comboOpen && comboHovered && level.options.size() > 1 && IsEnabled()) {
+            const bool itemDisabled =
+                    (ImGui::GetCurrentContext()->ItemFlagsStack.back() & ImGuiItemFlags_Disabled) != 0;
+            if (!itemDisabled) {
+                ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
+                const float wheel = ImGui::GetIO().MouseWheel;
+                if (wheel != 0.0f) {
+                    int next = level.selectedIndex + (wheel > 0.0f ? -1 : 1);
+                    next = next < 0 ? 0
+                                    : (next >= (int) level.options.size()
+                                           ? (int) level.options.size() - 1 : next);
+                    if (next != level.selectedIndex)
+                        level.selectedIndex = next;
+                }
+            }
         }
         if (!showLabels_ && !level.label.empty() && ImGui::IsItemHovered())
             ImGui::SetTooltip("%s", level.label.c_str());
