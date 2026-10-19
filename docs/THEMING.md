@@ -8,6 +8,8 @@ TeamkillerUniGUI (v4.9.0) ships a layered theming system on top of Dear ImGui's
 3. **Surface material** — a translucency/"glass" layer applied on top of any palette (`theme::SurfaceStyle`).
 4. **Accent & semantic tokens** — a single base accent that drives the `accent → hover → active` interaction colours plus the semantic `success/warning/danger/info` palette (`theme::ColorTokens`).
 
+Above these four layers sits the **v0 design-token vocabulary** (`unigui::theme::tokens`, header `unigui/theme/tokens.h`): semantic colour roles (`bg`/`surface`/`text`/`accent`/`danger`/...), 4 px spacing scale, radii, font sizes, control heights and motion durations. The values there are the v0 default skin and may be swapped by a skin; names are the stable contract. See [design-tokens.md](design-tokens.md) for units, the WCAG AA contrast requirements, the installer-shell page mapping and the suite/basket/ChartForge reuse rules.
+
 On top of those, an optional **CSS-like styling engine** (`unigui::styling::Engine`) lets you load a
 `.css` file from disk, hot-reload it while the app runs, and apply CSS-style selectors to the global
 ImGui style.
