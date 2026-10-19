@@ -19,6 +19,21 @@
   Known upstream gap documented (secondary OS windows are sized in logical
   units by this ImGui fork — see docs/BACKENDS.md §7.2).
 
+## [4.10.1] - 2026-10-19
+
+### Changed
+- **Light-first default theme.** `ThemeConfig` now defaults to `ThemePreset::Light` and the
+  default backdrop / token palettes are light-first. `unigui::theme` ships paired
+  `kDarkPalette` / `kLightPalette`; `TokenTheme` resolves the palette from the active preset
+  name (only `Dark` / `Exchange Blue` select dark). This is a deliberate visual behavior
+  change: applications that relied on the old dark default must set
+  `cfg.theme.preset = ThemePreset::Dark` explicitly. Installer shells and the suite clients now
+  default to Light.
+
+### Notes
+- `v4.10.0` remains tagged on the S1 design-tokens/native-DPI commit (`7a1188f`); the
+  light-first defaults landed in `30556fd` / `d020f61` and are first tagged here. No API
+  signatures changed.
 ## [4.10.0] - 2026-10-19
 
 ### Added
