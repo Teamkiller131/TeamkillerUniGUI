@@ -19,6 +19,49 @@
   Known upstream gap documented (secondary OS windows are sized in logical
   units by this ImGui fork — see docs/BACKENDS.md §7.2).
 
+## [4.10.0] - 2026-10-19
+
+### Added
+- **Embedded OFL CJK font fallback (S0 font hardening, D37).** `libunigui` now
+  ships a 2.25 MB Noto Sans SC subset (`fonts/UniGUISansSC-OFL-Subset-Regular.ttf`,
+  GB2312 + kana/punctuation, SIL OFL 1.1, renamed to "UniGUI Sans SC" per the
+  OFL Reserved Font Name rule — license in `fonts/OFL-NotoSansSC.txt`). CJK text
+  therefore renders on hosts with no system CJK font (servers, CI, minimal
+  Windows) instead of tofu boxes. System CJK fonts are still preferred when
+  present. Reproducible via `tools/subset_cjk_font.py` (documented in
+  `fonts/README.md`); when the asset is absent the build warns and ships
+  system-font-only CJK support (documented gap, never fake font data).
+- **Injectable font probing + explicit font diagnostics.** `fonts::Manager` gained
+  `SetSearchPaths`/`AddSearchPath`, `SetCJKPath`/`SetEmojiPath`,
+  `SetSystemProbeEnabled`, `SetEmbeddedFallbackEnabled`, `ProbeCJK`/`ProbeEmoji`,
+  `CJKProbePlan`, `LoadChecked` (returns `FontLoadResult{ok, error}`),
+  `LoadSystemCJKEx`/`LoadSystemEmojiEx` (return `FontProbe{found, source, path,
+  probed, error}`), `Reset()` (atlas-rebuild lifecycle) and `Diagnostics()`
+  (`FontDiagnostics::Summary()` = the no-font-environment fallback report).
+  Probe order is explicit (`UNIGUI_CJK_FONT` env → `SetCJKPath` → search paths →
+  `UNIGUI_FONT_DIRS`) → embedded asset → system fonts (`%WINDIR%\Fonts` derived,
+  no more hard-coded `C:/Windows/Fonts` string). Failures log `ERROR` with the
+  full probe list — `LoadSystemCJK` no longer fails silently.
+- **Configurable font families in the theme.** `ThemeConfig` gained
+  `body_font_path`/`heading_font_path`/`mono_font_path`, plus
+  `ConfigureFontChain`/`GetFontChain`, `GetBodyFont`/`GetHeadingFont`/
+  `GetMonoFont` and `GetFontFallbackReport()`.
+
+### Changed
+- `theme::LoadDefaultFont()` now routes the CJK fallback through
+  `fonts::Manager` (respecting configured families and probe overrides) instead
+  of the hard-coded per-platform `C:/Windows/Fonts/...` merge loop.
+  `ThemeConfig::font_path` keeps working as the explicit CJK override.
+- Version 4.9.1 → 4.10.0.
+
+### Fixed
+- **Stale `ImFont*` after a DPI/font-size atlas rebuild.** `Manager::Reset()` is
+  called right after `ImFonts::Clear()`, so the registry can no longer return
+  pointers into the destroyed atlas.
+- **DPI rebuild dropped the configured font path/families.**
+  `ApplyPendingFontRebuild()` reuses the stored `FontChainConfig` instead of
+  rebuilding with `nullptr` (which silently fell back to the embedded default).
+
 ## [4.9.1] - 2026-08-14
 
 ### Added

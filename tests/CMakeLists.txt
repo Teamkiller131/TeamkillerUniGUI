@@ -385,10 +385,30 @@ if(UNIGUI_MODULE_STYLING)
 endif()
 
 if(UNIGUI_MODULE_FONTS)
+    # Repo font fixtures (CMake-style forward slashes keep the -D string literal
+    # valid on Windows too).
+    file(TO_CMAKE_PATH "${PROJECT_SOURCE_DIR}/fonts/JetBrainsMonoNerdFont-Regular.ttf"
+         UNIGUI_TEST_FONT_FILE)
+    file(TO_CMAKE_PATH "${PROJECT_SOURCE_DIR}/fonts/UniGUISansSC-OFL-Subset-Regular.ttf"
+         UNIGUI_TEST_CJK_FONT_FILE)
+
     add_executable(test_fontmgr fonts/font_test.cc)
     target_link_libraries(test_fontmgr PRIVATE GTest::gtest GTest::gtest_main unigui)
     target_compile_features(test_fontmgr PRIVATE cxx_std_23)
+    target_compile_definitions(test_fontmgr PRIVATE
+        UNIGUI_TEST_FONT_FILE="${UNIGUI_TEST_FONT_FILE}"
+        UNIGUI_TEST_CJK_FONT_FILE="${UNIGUI_TEST_CJK_FONT_FILE}")
     gtest_discover_tests(test_fontmgr)
+
+    # Font families (body/heading/mono), fallback report and DPI-rebuild chain
+    # preservation (S0/D4–D5).
+    add_executable(test_font_chain theme/font_chain_test.cc)
+    target_link_libraries(test_font_chain PRIVATE GTest::gtest GTest::gtest_main unigui)
+    target_compile_features(test_font_chain PRIVATE cxx_std_23)
+    target_compile_definitions(test_font_chain PRIVATE
+        UNIGUI_TEST_FONT_FILE="${UNIGUI_TEST_FONT_FILE}"
+        UNIGUI_TEST_CJK_FONT_FILE="${UNIGUI_TEST_CJK_FONT_FILE}")
+    gtest_discover_tests(test_font_chain)
 endif()
 
 if(UNIGUI_MODULE_CONFIG)
