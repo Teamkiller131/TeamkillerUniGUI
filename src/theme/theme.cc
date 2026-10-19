@@ -285,8 +285,9 @@ void ApplyTheme(const ThemeConfig& config) {
     float dpi = config.dpi_scale;
     if (dpi <= 0)
         dpi = 1.0f; // caller should have set dpi before calling
-    UNIGUI_LOG_INFO("Theme: preset={} surface={} dpi={:.2f} font={}px", (int) config.preset,
-                    theme::SurfaceStyleName(config.surface), dpi, (int) (config.font_size * dpi));
+    UNIGUI_LOG_INFO("Theme: preset={} surface={} dpi={:.2f} font={}px (logical {} @ {:.2f}x)",
+                    (int) config.preset, theme::SurfaceStyleName(config.surface), dpi,
+                    (int) (config.font_size * dpi), (int) config.font_size, dpi);
     // ── Style base values (shared geometry tokens) ───────────────────────
     // Unified rounding/spacing/border language shared with every theme preset.
     ApplyStyleTokens(style);
@@ -466,11 +467,13 @@ void ApplyTheme(const ThemeConfig& config) {
         ConfigureFontChain(chain);
     }
 
-    // Runtime font size change: defer atlas rebuild (can't do it mid-frame)
+    // Runtime font size change: defer atlas rebuild (can't do it mid-frame).
+    // Keep this LOGICAL: the per-monitor content scale (style.FontScaleDpi) is applied by
+    // the dynamic font system on top, so baking dpi in here would double-scale.
     static float lastFontSize = 0.f;
-    float targetSize = config.font_size * dpi;
+    float targetSize = config.font_size;
     if (lastFontSize > 0.f && std::abs(targetSize - lastFontSize) > 0.5f) {
-        UNIGUI_LOG_INFO("Theme: font size change {}→{}px — queued for next NewFrame",
+        UNIGUI_LOG_INFO("Theme: logical font size change {}→{}px — queued for next NewFrame",
                         (int) lastFontSize, (int) targetSize);
         pendingFontRebuild_ = true;
         pendingFontSize_ = targetSize;

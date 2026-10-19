@@ -149,8 +149,52 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         if (dpi < 0.5f)
             dpi = 1.0f;
     }
+    // Diagnostic override: simulate a monitor scale without changing the display.
+    // Used by CI/screenshot jobs to verify 100/125/150/200% rendering on one machine.
+    if (const char* forced = std::getenv("UNIGUI_DPI_SCALE")) {
+        const float v = static_cast<float>(std::atof(forced));
+        if (v >= 0.5f && v <= 4.0f) {
+            UNIGUI_LOG_INFO("DPI scale forced by UNIGUI_DPI_SCALE: {:.2f} -> {:.2f}", dpi, v);
+            dpi = v;
+        }
+    }
     UNIGUI_LOG_INFO("DPI scale: {:.2f}", dpi);
-    LoadDefaultFont(config.theme.font_size * dpi, config.theme.font_path);
+#ifdef _WIN32
+    // Per-monitor-aware process: GLFW window sizes are PHYSICAL pixels. AppConfig
+    // width/height are logical design pixels → size the OS window for the monitor DPI
+    // (`ApplyWindowMode` style app code may refine it later).
+    {
+        int pw = static_cast<int>(config.width * dpi + 0.5f);
+        int ph = static_cast<int>(config.height * dpi + 0.5f);
+        // Never create a window larger than the monitor work area (a 1480×920 logical
+        // design at 150% would be 2220×1380 physical on a 1920×1080 screen).
+        const auto monitors = GetMonitors();
+        const MonitorInfo* target = nullptr;
+        for (const auto& m : monitors) {
+            if (std::fabs(m.dpiScale - dpi) < 0.01f) {
+                target = &m;
+                break;
+            }
+        }
+        if (!target && !monitors.empty())
+            target = &monitors[0];
+        if (target) {
+            if (pw > target->workWidth)
+                pw = target->workWidth;
+            if (ph > target->workHeight)
+                ph = target->workHeight;
+        }
+        g_platform->SetSize(pw, ph);
+        ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(pw), static_cast<float>(ph));
+        UNIGUI_LOG_INFO("HiDPI window: {}x{} logical → {}x{} physical (dpi={:.2f})",
+                        config.width, config.height, pw, ph, dpi);
+    }
+#endif
+    // Fonts are loaded at the LOGICAL size. Dear ImGui's dynamic font system re-rasterizes
+    // them through style.FontScaleDpi (= the same dpi used for geometry). Pre-multiplying
+    // here as well double-scaled text (13 → 29px at 150% instead of 19.5px), which is what
+    // made low-DPI text look oversized/blurry.
+    LoadDefaultFont(config.theme.font_size, config.theme.font_path);
 
 #ifdef UNIGUI_HAS_DX11
     if (type == BackendType::DX11) {
@@ -325,6 +369,10 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
     ThemeConfig tc = config.theme;
     tc.dpi_scale = dpi;
     ApplyTheme(tc);
+    // One explicit font-scale application for the same dpi (base font is logical). Apps
+    // with `dpiScaleFonts` also get this from ImGui per frame; this keeps the non-opt-in
+    // path and the very first frame consistent.
+    SetContentScale(dpi);
     if (g_backend != BackendType::DX11)
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     // Keyboard navigation (Tab / Shift-Tab / arrows / Space-Enter to activate) — the
@@ -364,7 +412,9 @@ bool Init(const AppConfig& config) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     // HiDPI: opt into Dear ImGui's dynamic per-monitor font DPI scaling (≥1.92).
-    if (config.dpiScaleFonts)
+    // When UNIGUI_DPI_SCALE forces a scale for testing, let the forced value win instead
+    // of ImGui overwriting FontScaleDpi from the real monitor each frame.
+    if (config.dpiScaleFonts && std::getenv("UNIGUI_DPI_SCALE") == nullptr)
         ImGui::GetIO().ConfigDpiScaleFonts = true;
     unigui::theme::RegisterAllThemes();
 
@@ -460,6 +510,22 @@ bool NewFrame() {
     g_renderer->NewFrame();
     g_platform->NewFrame();
     ImGui::NewFrame();
+    // [HiDPI-DIAG] One line per content-scale change proves the scaling chain:
+    // logical FontSizeBase × FontScaleDpi = effective GetFontSize pixels.
+    {
+        static float loggedScale = -1.0f;
+        static float loggedFontPx = -1.0f;
+        const float cs = GetContentScale();
+        const float fontPx = ImGui::GetFontSize();
+        if (std::abs(cs - loggedScale) > 0.001f || std::abs(fontPx - loggedFontPx) > 0.5f) {
+            loggedScale = cs;
+            loggedFontPx = fontPx;
+            const ImGuiStyle& st = ImGui::GetStyle();
+            UNIGUI_LOG_INFO("HiDPI: contentScale={:.2f} FontSizeBase={:.1f} FontScaleDpi={:.2f} "
+                            "fontPx={:.1f}",
+                            cs, st.FontSizeBase, st.FontScaleDpi, fontPx);
+        }
+    }
     a11y::BeginFrame(); // reset the per-frame accessibility tree before widgets render
     ProcessMainThreadTasks();
     // Check for window resize (DX11 needs swapchain resize)

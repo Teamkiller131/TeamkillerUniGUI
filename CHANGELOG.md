@@ -19,6 +19,26 @@
   Known upstream gap documented (secondary OS windows are sized in logical
   units by this ImGui fork — see docs/BACKENDS.md §7.2).
 
+## [4.10.2] - 2026-10-19
+
+### Fixed
+- **HiDPI double font scaling.** Fonts were rasterized at `font_size × dpi` and then
+  Dear ImGui's per-monitor `FontScaleDpi` multiplied them again, so a 150% monitor drew
+  13 px text at ~29 px instead of 19.5 px; 125% users saw oversized / clipped glyphs.
+  Fonts now load at the LOGICAL size and the content scale is applied exactly once via
+  `style.FontScaleDpi` (the diagnostic line
+  `HiDPI: contentScale=… FontSizeBase=… FontScaleDpi=… fontPx=…` is logged when it changes).
+- **Windows window sizing on non-100% DPI.** `AppConfig::width/height` are logical design
+  pixels; the OS window is now sized at `width × dpi` physical pixels and clamped to the
+  monitor work area, so a large design cannot create an off-screen window.
+- `ThemeConfig::font_size` now defaults to **13 px** (was 16), matching the unified
+  installer/client UI.
+
+### Added
+- `UNIGUI_DPI_SCALE` (test/diagnostic only) forces a render scale so 100/125/150/200%
+  can be captured and verified on one machine. The wizard-style installer shell honours
+  the same override for its layout scale.
+
 ## [4.10.1] - 2026-10-19
 
 ### Changed
