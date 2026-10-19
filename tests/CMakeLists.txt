@@ -196,6 +196,19 @@ target_link_libraries(test_color_tokens PRIVATE
 target_compile_features(test_color_tokens PRIVATE cxx_std_23)
 gtest_discover_tests(test_color_tokens)
 
+# S1-05 design tokens v0: constexpr values, name mapping, WCAG AA contrast
+# contract (see include/unigui/theme/tokens.h + docs/design-tokens.md).
+add_executable(test_tokens
+    theme/tokens_test.cc
+)
+target_link_libraries(test_tokens PRIVATE
+    GTest::gtest
+    GTest::gtest_main
+    unigui
+)
+target_compile_features(test_tokens PRIVATE cxx_std_23)
+gtest_discover_tests(test_tokens)
+
 add_executable(test_widget_base
     widgets/widget_base_test.cc
 )

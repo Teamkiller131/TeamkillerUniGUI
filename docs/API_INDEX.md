@@ -34,6 +34,7 @@ Master lookup for the **entire public surface** of TeamkillerUniGUI 4.9.0.
 | `InvokeOnMainThread` | `core/main_thread.h` | Thread-safe UI dispatch |
 | `ApplyTheme` | `theme/theme.h` | Colors, fonts, DPI, surfaces |
 | `ThemeRegistry` | `theme/presets/registry.h` | Named presets (`RegisterAllThemes`) |
+| `theme::tokens` | `theme/tokens.h` | v0 semantic design tokens (colour/spacing/radius/type/control/motion) |
 
 ---
 
