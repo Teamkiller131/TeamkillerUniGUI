@@ -72,6 +72,48 @@ inline constexpr NamedColor kColors[] = {
 };
 inline constexpr int kColorCount = static_cast<int>(sizeof(kColors) / sizeof(kColors[0]));
 
+// -- Palette variants (v0.1: default light) -----------------------------------
+// The flat constants above remain the v0 DARK skin for source compatibility.
+// Product default theme is now LIGHT, so consumers must select a palette by the
+// active theme name instead of treating the dark values as the only truth.
+// Light values meet WCAG 2.2 AA (body/background >= 7:1, muted >= 4.5:1).
+struct Palette {
+    bool dark;
+    ImVec4 bg;
+    ImVec4 surface;
+    ImVec4 surfaceAlt;
+    ImVec4 text;
+    ImVec4 textMuted;
+    ImVec4 border;
+    ImVec4 accent;
+    ImVec4 accentHover;
+    ImVec4 danger;
+    ImVec4 warning;
+    ImVec4 success;
+    ImVec4 focus;
+};
+
+inline constexpr Palette kDarkPalette{true, bg, surface, surfaceAlt, text, textMuted,
+                                      border, accent, accentHover, danger, warning,
+                                      success, focus};
+
+inline constexpr Palette kLightPalette{
+    false,
+    ImVec4{0.965f, 0.968f, 0.976f, 1.000f},  // bg
+    ImVec4{1.000f, 1.000f, 1.000f, 1.000f},  // surface
+    ImVec4{0.925f, 0.933f, 0.945f, 1.000f},  // surfaceAlt
+    ImVec4{0.114f, 0.126f, 0.149f, 1.000f},  // text
+    ImVec4{0.380f, 0.400f, 0.440f, 1.000f},  // textMuted
+    ImVec4{0.780f, 0.800f, 0.840f, 1.000f},  // border
+    ImVec4{0.153f, 0.361f, 0.780f, 1.000f},  // accent
+    ImVec4{0.208f, 0.443f, 0.890f, 1.000f},  // accentHover
+    ImVec4{0.780f, 0.153f, 0.176f, 1.000f},  // danger
+    ImVec4{0.620f, 0.440f, 0.020f, 1.000f},  // warning
+    ImVec4{0.106f, 0.522f, 0.290f, 1.000f},  // success
+    ImVec4{0.196f, 0.478f, 0.910f, 1.000f}   // focus
+};
+
+
 // ── Spacing (logical px, 4 px base scale) ────────────────────────────────────
 inline constexpr float s4 = 4.0f;   // 图标与文字、紧凑内边距
 inline constexpr float s8 = 8.0f;   // 控件内边距、相关元素间距

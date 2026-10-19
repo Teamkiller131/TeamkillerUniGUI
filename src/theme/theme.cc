@@ -25,8 +25,8 @@ namespace unigui {
 static bool pendingFontRebuild_ = false;
 static float pendingFontSize_ = 16.f;
 // Opaque backdrop/clear colour for the active theme + surface material. Defaults
-// to the Dark window background until the first ApplyTheme() call updates it.
-static ImVec4 backdropColor_ = ImVec4(0.10f, 0.10f, 0.12f, 1.00f);
+// to the Light window background until the first ApplyTheme() call updates it.
+static ImVec4 backdropColor_ = ImVec4(0.96f, 0.96f, 0.98f, 1.00f);
 // Font families configured by the last ApplyTheme() (reused by DPI/font-size
 // rebuilds) and the chain actually used by the last LoadDefaultFont().
 static FontChainConfig g_chain;
