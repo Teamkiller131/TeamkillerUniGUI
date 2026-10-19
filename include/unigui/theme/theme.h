@@ -16,7 +16,7 @@ enum class ThemePreset {
 };
 
 struct ThemeConfig {
-    ThemePreset preset = ThemePreset::Dark;
+    ThemePreset preset = ThemePreset::Light;
     float dpi_scale = 0.0f;          // 0 = auto-detect from system DPI
     float font_size = 16.0f;         // logical px at 96 DPI (scaled by auto-DPI)
     const char* font_path = nullptr; // CJK glyph-fallback override; nullptr = auto
@@ -113,7 +113,7 @@ bool ImportThemeJSON(const std::string& json);
 /// Translucent surface materials (Glass/Frosted/Acrylic) reveal whatever is drawn
 /// behind ImGui windows, so backends should clear to this tinted backdrop instead
 /// of black for the glass effect to read correctly. Updated on every ApplyTheme();
-/// defaults to the Dark window background before the first ApplyTheme() call.
+/// defaults to the Light window background before the first ApplyTheme() call.
 ImVec4 GetBackdropColor();
 
 /// Active accent & semantic colour tokens for the current theme (Step 3). Updated
