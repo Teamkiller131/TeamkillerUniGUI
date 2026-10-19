@@ -442,6 +442,28 @@ embed_font(unigui
     ${FONT_GEN_DIR}/jb_mono_font.h
     jb_mono
 )
+
+# Embedded OFL CJK subset (S0/D37): guarantees CJK glyph coverage on hosts with no
+# system CJK font at all. Noto Sans SC, GB2312 subset, renamed to "UniGUI Sans SC"
+# per the SIL OFL Reserved-Font-Name rule; license: fonts/OFL-NotoSansSC.txt.
+set(UNIGUI_EMBEDDED_CJK_FONT ${PROJECT_SOURCE_DIR}/fonts/UniGUISansSC-OFL-Subset-Regular.ttf)
+if(EXISTS ${UNIGUI_EMBEDDED_CJK_FONT})
+    embed_font(unigui
+        ${UNIGUI_EMBEDDED_CJK_FONT}
+        ${FONT_GEN_DIR}/unigui_cjk_font.h
+        unigui_cjk
+    )
+    target_compile_definitions(unigui PRIVATE UNIGUI_HAS_EMBEDDED_CJK=1)
+    message(STATUS "UniGUI: embedding OFL CJK subset: ${UNIGUI_EMBEDDED_CJK_FONT}")
+else()
+    # Documented gap, never a fake font: system-font-only CJK fallback, reported
+    # explicitly through fonts::Manager::Diagnostics() / theme::GetFontFallbackReport().
+    message(WARNING
+        "UniGUI: ${UNIGUI_EMBEDDED_CJK_FONT} is missing — building without the embedded "
+        "OFL CJK subset (system CJK fonts only). Regenerate with "
+        "'py -3 tools/subset_cjk_font.py <NotoSansSC-VF.ttf> "
+        "fonts/UniGUISansSC-OFL-Subset-Regular.ttf'; see fonts/README.md.")
+endif()
 target_include_directories(unigui PRIVATE ${FONT_GEN_DIR})
 
 # ── Install ───────────────────────────────────────────────────────────────────
