@@ -176,6 +176,13 @@ public:
     /// ignored (auto ticks are used instead) rather than honoured: the guard is against a
     /// user typing 1 with a range of 100000 and freezing the UI while ImPlot lays out
     /// 100k labels. Silently drawing a black smear of overlapping text would be no better.
+    ///
+    /// Since v4.10.3 the *pixel* budget is enforced too: with a large font (26px body
+    /// baseline) or a short plot the requested step is widened along the 1–2–5 ladder
+    /// until the labels fit the actual plot height, and ticks sitting on the top/bottom
+    /// edge are dropped so their labels are not clipped (see MakeThinnedTicks). At the
+    /// default 13px/desktop size the step is normally already within budget, so tick
+    /// placement is unchanged.
     void SetYAxisTickSpacing(double step) { yTickSpacing_ = step > 0.0 ? step : 0.0; }
     static constexpr int kMaxYTicks = 200;
     /// The Y range the axis *actually showed* after the last frame (auto-fit output, the
@@ -220,6 +227,27 @@ public:
     /// share one coordinate and produce a single tick (formatted as the next open).
     static std::vector<double> MakeSessionTicks(const SessionAxis& axis, double lo, double hi,
                                                 double step, int maxTicks);
+
+    /// ── Label-budget thinning (W6-type, 4K@150% at 26px) ─────────────────────
+    /// A fixed tick step is a data decision, not a pixel decision: `step = 1` is
+    /// readable over a 4-unit range but turns into a black smear over a 40-unit one
+    /// once the labels grow to 26px. These three helpers make the axis obey the
+    /// *pixels* it actually has.
+    ///
+    /// One label is assumed to occupy `kTickLabelLineFactor` × the font line height
+    /// (the glyphs plus the gap to the neighbouring label). `MaxTickLabels()` turns
+    /// an axis length in pixels into a label budget; `ChooseTickStep()` widens the
+    /// requested step along the 1–2–5×10ⁿ ladder (2, 5, 10, 20, 50, …) until the
+    /// labels in [lo, hi] fit that budget; `MakeThinnedTicks()` is the render-path
+    /// variant: ceil-aligned/multiply-generated like MakeTicks, never more than
+    /// `maxLabels` ticks, and ticks closer than `edgeInset` (data units) to either
+    /// end of the range are dropped — a label centred exactly on the top/bottom edge
+    /// renders half-clipped, which is what the old explicit Y path did.
+    static constexpr float kTickLabelLineFactor = 1.6f;
+    static int MaxTickLabels(float pixels, float font_px);
+    static double ChooseTickStep(double lo, double hi, double requested_step, int max_labels);
+    static std::vector<double> MakeThinnedTicks(double lo, double hi, double requested_step,
+                                                int max_labels, double edge_inset = 0.0);
 
     /// X axis label.
     void SetXAxisLabel(const std::string& label);

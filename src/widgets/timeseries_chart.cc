@@ -113,6 +113,76 @@ std::vector<double> TimeSeriesChart::MakeSessionTicks(const SessionAxis& axis, d
         return {}; // budget guard: fall back to automatic ticks
     return ticks;
 }
+
+int TimeSeriesChart::MaxTickLabels(float pixels, float font_px) {
+    // Degenerate inputs (no frame yet, zero-sized plot) must not yield 0 labels or a
+    // divide-by-zero; two labels is the least an axis can show and still be an axis.
+    if (!(pixels > 0.0f) || !(font_px > 0.0f))
+        return 2;
+    const float slot = font_px * kTickLabelLineFactor;
+    return std::max(2, (int) std::floor(pixels / slot));
+}
+
+double TimeSeriesChart::ChooseTickStep(double lo, double hi, double requested_step,
+                                       int max_labels) {
+    if (!(requested_step > 0.0) || !(hi > lo) || max_labels < 2)
+        return requested_step;
+    // Tick count for a candidate step, exactly the way MakeTicks generates them
+    // (ceil-align the first tick, then multiply) — the budget must be measured on the
+    // ticks the render path will actually emit, not on the ideal span/step ratio.
+    auto count = [lo, hi](double step) -> int {
+        const double first = std::ceil(lo / step) * step;
+        if (first > hi)
+            return 0;
+        return (int) std::floor((hi - first) / step) + 1;
+    };
+    if (count(requested_step) <= max_labels)
+        return requested_step;
+    // 1–2–5 ladder × 10ⁿ. The ladder (rather than plain doubling) keeps the surviving
+    // labels on human-readable round values: 2, 5, 10, 20, 50, 100, …
+    for (int n = 0; n <= 12; ++n) {
+        const double decade = std::pow(10.0, n);
+        for (double m : {1.0, 2.0, 5.0}) {
+            const double step = requested_step * m * decade;
+            if (count(step) <= max_labels)
+                return step;
+        }
+    }
+    // 12 decades is far past any real axis; return a step that trivially fits one label.
+    return (hi - lo) * 2.0;
+}
+
+std::vector<double> TimeSeriesChart::MakeThinnedTicks(double lo, double hi,
+                                                      double requested_step, int max_labels,
+                                                      double edge_inset) {
+    if (!(requested_step > 0.0) || !(hi > lo) || max_labels < 2)
+        return {};
+    const double step = ChooseTickStep(lo, hi, requested_step, max_labels);
+    const double first = std::ceil(lo / step) * step;
+    if (first > hi)
+        return {};
+    const int rawCount = (int) std::floor((hi - first) / step) + 1;
+    if (rawCount <= 0 || rawCount > 100000) // hard backstop; budget check already narrowed
+        return {};
+    std::vector<double> ticks;
+    ticks.reserve((size_t) rawCount + 1);
+    const double inset = std::max(0.0, edge_inset);
+    for (int i = 0; i < rawCount; ++i) {
+        const double v = first + step * i;
+        // Drop labels that would be centred on (or half-clipped by) the axis ends.
+        if (v - lo < inset || hi - v < inset)
+            continue;
+        ticks.push_back(v);
+    }
+    // An inset larger than the whole range can eat every label; that would leave the
+    // axis bare, so fall back to the thinned-but-uninset set. Callers pass a one-label
+    // worth of margin, so this only triggers on degenerate (sub-label) plot heights.
+    if (ticks.empty() && inset > 0.0) {
+        for (int i = 0; i < rawCount; ++i)
+            ticks.push_back(first + step * i);
+    }
+    return ticks;
+}
 void TimeSeriesChart::SetXAxisLabel(const std::string& l) {
     xLabel_ = l;
 }
@@ -228,6 +298,12 @@ void TimeSeriesChart::Render() {
     ImGui::PushID(GetName().c_str());
 
     frameCounter_ += ImGui::GetIO().DeltaTime;
+
+    // Height the widget is about to get (the plot fills the remaining region with
+    // ImVec2(-1,-1)). Measured BEFORE BeginPlot — ImPlot::GetPlotSize() may only be
+    // queried in the setup phase of some versions and asserts otherwise. This is the
+    // pixel budget for the explicit Y tick labels (W6-type thinning).
+    const float plotHeightEstimate = ImGui::GetContentRegionAvail().y;
 
     ImPlotFlags plotFlags =
         (crosshair_ ? ImPlotFlags_Crosshairs : 0) | (legend_ ? 0 : ImPlotFlags_NoLegend);
@@ -421,23 +497,23 @@ void TimeSeriesChart::Render() {
                 const double tickLo = (lastYMax_ > lastYMin_) ? lastYMin_ : yMin_;
                 const double tickHi = (lastYMax_ > lastYMin_) ? lastYMax_ : yMax_;
                 if (yTickSpacing_ > 0.0 && tickHi > tickLo) {
-                    const double step = yTickSpacing_;
-                    const double lo = std::ceil(tickLo / step) * step;
-                    // Count first, emit second: a step of 1 over a range of 100000 would
-                    // otherwise push 100k labels through ImPlot and hang the frame. Over
-                    // budget = fall back to automatic ticks; a black smear of overlapping
-                    // labels would be no more useful than the wrong step.
-                    const double spanTicks = (tickHi - lo) / step;
-                    if (spanTicks >= 0.0 && spanTicks < (double) kMaxYTicks) {
-                        yTickBuf_.clear();
-                        // Multiply rather than accumulate: `v += step` drifts over hundreds
-                        // of iterations and the labels stop landing on round numbers.
-                        for (int i = 0; i <= (int) spanTicks; ++i)
-                            yTickBuf_.push_back(lo + step * i);
-                        if (!yTickBuf_.empty())
-                            ImPlot::SetupAxisTicks(ImAxis_Y1, yTickBuf_.data(),
-                                                   (int) yTickBuf_.size());
-                    }
+                    // W6-type: a fixed step is a data decision, but the label count must
+                    // fit the pixels. At 4K@150%/26px the old path emitted step=1 labels
+                    // for the whole range and they overlapped into a smear (and the
+                    // top/bottom tick was clipped by the plot edge). Thin the step along
+                    // the 1–2–5 ladder and keep labels off the axis ends instead.
+                    const float plotH = plotHeightEstimate;
+                    const float fontPx = ImGui::GetFontSize();
+                    const int maxLabels = MaxTickLabels(plotH, fontPx);
+                    const double edgeInset =
+                        (plotH > 1.0f && fontPx > 0.0f)
+                            ? (tickHi - tickLo) * ((double) fontPx / (double) plotH)
+                            : 0.0;
+                    yTickBuf_ = MakeThinnedTicks(tickLo, tickHi, yTickSpacing_, maxLabels,
+                                                 edgeInset);
+                    if (!yTickBuf_.empty())
+                        ImPlot::SetupAxisTicks(ImAxis_Y1, yTickBuf_.data(),
+                                               (int) yTickBuf_.size());
                 }
             }
         }

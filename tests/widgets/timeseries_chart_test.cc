@@ -400,3 +400,67 @@ TEST(TimeSeriesChartTest, MakeTicks_InvalidInputs_ReturnEmpty) {
     EXPECT_TRUE(TimeSeriesChart::MakeTicks(10.0, 10.0, 1.0, 200).empty());  // hi <= lo
     EXPECT_TRUE(TimeSeriesChart::MakeTicks(0.0, 10.0, 1.0, 0).empty());     // maxTicks <= 0
 }
+
+// ── Label-budget thinning (W6-type: 4K@150% with a 26px body font) ─────────────
+// The explicit Y step is a data decision; the label count must still fit the pixels.
+// A 400px-tall plot at 26px fits floor(400 / (26 * 1.6)) = 9 labels, so a step of 1
+// over a 100-unit range has to widen to 20 — 2, 5 and 10 all still overflow.
+
+TEST(TimeSeriesChartTest, MaxTickLabels_UsesFontLineBudget) {
+    EXPECT_EQ(TimeSeriesChart::MaxTickLabels(400.0f, 26.0f), 9);   // 400 / 41.6
+    EXPECT_EQ(TimeSeriesChart::MaxTickLabels(800.0f, 26.0f), 19);  // 800 / 41.6
+    EXPECT_EQ(TimeSeriesChart::MaxTickLabels(400.0f, 13.0f), 19);  // legacy font fits more
+    // Degenerate frames (no size, no font) must not divide by zero or yield < 2 labels.
+    EXPECT_EQ(TimeSeriesChart::MaxTickLabels(0.0f, 26.0f), 2);
+    EXPECT_EQ(TimeSeriesChart::MaxTickLabels(400.0f, 0.0f), 2);
+}
+
+TEST(TimeSeriesChartTest, ChooseTickStep_WidensAlong125Ladder) {
+    // 0..99 at step 1 = 100 labels. Budget 9 ⇒ 2 gives 50, 5 gives 20, 10 gives 10 —
+    // all still over — so the first fitting rung is 20 (5 labels).
+    EXPECT_DOUBLE_EQ(TimeSeriesChart::ChooseTickStep(0.0, 99.0, 1.0, 9), 20.0);
+    // A 20-label budget is exactly what step 5 produces (0,5,…,95 = 20 labels), so the
+    // first fitting rung is 5; only a 10-label budget widens it to 10.
+    EXPECT_DOUBLE_EQ(TimeSeriesChart::ChooseTickStep(0.0, 99.0, 1.0, 20), 5.0);
+    EXPECT_DOUBLE_EQ(TimeSeriesChart::ChooseTickStep(0.0, 99.0, 1.0, 10), 10.0);
+    // Already within budget ⇒ the caller's step is preserved untouched.
+    EXPECT_DOUBLE_EQ(TimeSeriesChart::ChooseTickStep(0.0, 99.0, 1.0, 100), 1.0);
+    EXPECT_DOUBLE_EQ(TimeSeriesChart::ChooseTickStep(58.0, 62.0, 1.0, 8), 1.0);
+}
+
+TEST(TimeSeriesChartTest, MakeThinnedTicks_RespectsBudgetAndAlignment) {
+    // No edge inset: pure thinning. 0..99/step1 over a 9-label budget ⇒ step 20,
+    // ticks 0,20,40,60,80 — ceil-aligned multiples, multiply-generated (no drift).
+    auto t = TimeSeriesChart::MakeThinnedTicks(0.0, 99.0, 1.0, 9, 0.0);
+    ASSERT_EQ(t.size(), 5u);
+    for (size_t i = 0; i < t.size(); ++i)
+        EXPECT_DOUBLE_EQ(t[i], 20.0 * (double) i);
+    EXPECT_LE((int) t.size(), 9);
+    EXPECT_GE(t.front(), 0.0);   // never outside the visible range
+    EXPECT_LE(t.back(), 99.0);
+}
+
+TEST(TimeSeriesChartTest, MakeThinnedTicks_DropsEdgeLabelsAndStaysInRange) {
+    // 58..62 at step 1 would put labels on both axis ends (the half-clipped ticks the
+    // 26px trader chart showed at the top). A one-label inset (0.25 data units) must
+    // drop 58 and 62 while leaving the interior 59/60/61 intact.
+    auto t = TimeSeriesChart::MakeThinnedTicks(58.0, 62.0, 1.0, 100, 0.25);
+    ASSERT_EQ(t.size(), 3u);
+    EXPECT_DOUBLE_EQ(t[0], 59.0);
+    EXPECT_DOUBLE_EQ(t[1], 60.0);
+    EXPECT_DOUBLE_EQ(t[2], 61.0);
+    for (double v : t) {
+        EXPECT_GE(v, 58.0);               // no tick outside the axis range
+        EXPECT_LE(v, 62.0);
+        EXPECT_GE(v - 58.0, 0.25 - 1e-9); // kept ticks clear the inset margin
+        EXPECT_GE(62.0 - v, 0.25 - 1e-9);
+    }
+    EXPECT_NE(t.front(), 58.0);  // the problematic edge ticks are gone
+    EXPECT_NE(t.back(), 62.0);
+}
+
+TEST(TimeSeriesChartTest, MakeThinnedTicks_InvalidInputs_ReturnEmpty) {
+    EXPECT_TRUE(TimeSeriesChart::MakeThinnedTicks(0.0, 10.0, 0.0, 9).empty());
+    EXPECT_TRUE(TimeSeriesChart::MakeThinnedTicks(10.0, 10.0, 1.0, 9).empty());
+    EXPECT_TRUE(TimeSeriesChart::MakeThinnedTicks(0.0, 10.0, 1.0, 1).empty());
+}
