@@ -458,13 +458,13 @@ struct AppConfig {
 |-------|---------|---------|
 | `width`, `height` | `1280 × 720` | Initial client size in pixels |
 | `title` | `"UniGUI Application"` | Window title |
-| `theme` | Dark, auto-DPI, 16px | A `ThemeConfig` (see `theme/theme.h`): `preset`, `dpi_scale` (0 = auto-detect), `font_size`, `font_path`, `emoji_fallback`, `surface` |
+| `theme` | Dark, auto-DPI, 26px | A `ThemeConfig` (see `theme/theme.h`): `preset`, `dpi_scale` (0 = auto-detect), `font_size`, `font_path`, `emoji_fallback`, `surface` |
 | `backend` | `DX11` (Win) / `GLFW_GL3` (other) | Which `BackendType` to bring up |
 | `dpiScaleFonts` | `false` | Opt into Dear ImGui ≥1.92 dynamic per-monitor font DPI scaling (`io.ConfigDpiScaleFonts`) — recommended for fractional/multi-monitor DPI |
 
 The default `theme` uses positional aggregate initialisation of the first three
 `ThemeConfig` fields (`preset = ThemePreset::Dark`, `dpi_scale = 0.0f`,
-`font_size = 16.0f`); the remaining fields (`font_path`, `emoji_fallback`,
+`font_size = 26.0f`); the remaining fields (`font_path`, `emoji_fallback`,
 `surface`) take their own in-class defaults — `font_path = nullptr` (auto-detect
 CJK font), `emoji_fallback = true`, and `surface = theme::SurfaceStyle::Glass`.
 `ThemePreset` has exactly two values: `Dark` and `Light`.

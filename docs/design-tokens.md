@@ -18,7 +18,7 @@ name → value → usage table used by tests and (later) by the skin generator.
 | Colour roles | lowerCamelCase, semantic role, no material/lightness words | `bg`, `surfaceAlt`, `textMuted`, `accentHover`, `danger` |
 | Spacing | `s<px>` on the 4 px scale | `s4`, `s8`, `s12`, `s16`, `s24` |
 | Radius | `radius<px>` | `radius4` (controls), `radius6` (cards/panels) |
-| Typography | role + base size in px @ 96 DPI | `body16`, `caption13`, `title20`, `hint12` |
+| Typography | role + base size in px @ 96 DPI | `body26`, `caption20`, `title34`, `hint18` |
 | Control height | `control<px>` | `control32` (default), `control36` (primary action bar) |
 | Motion | `duration<ms>` | `duration120` (micro-interaction), `duration180` (page/progress) |
 
@@ -44,12 +44,31 @@ Rules:
 - **Motion**: **milliseconds** (`int`). ImGui animation APIs take seconds — use
   `tokens::SecondsFromMillis(tokens::duration180)`.
 
+## Typography baseline (v4.10.3, W6-type)
+
+The 4K@150% desktop baseline keeps the **window sizes as designed** and doubles
+the body text: `ThemeConfig::font_size` defaults to **26 logical px** (39 px
+physical at 150%). Control heights, paddings and bar/title heights derive from
+the font metrics (`ImGui::GetFrameHeight()` / `GetTextLineHeight()`), so the
+layout reflows instead of scaling the whole window.
+
+| Token | Size (logical px @ 96 DPI) | Use |
+|---|---|---|
+| `body26` | 26 | body text, form values, table cells |
+| `caption20` | 20 | secondary text, percentages, metadata |
+| `title34` | 34 | page/header titles |
+| `hint18` | 18 | smallest hint/footnote, chart ticks |
+
+Legacy `body16` / `caption13` / `title20` / `hint12` remain constexpr aliases
+of their old v0 sizes for source compatibility with pre-4.10.3 integrations;
+new code uses the tokens above (they are *names*, not the old px values).
+
 ## Minimum contrast (WCAG 2.2 AA)
 
 | Content | Minimum ratio | Applies to |
 |---|---|---|
 | Body text | **4.5 : 1** | `text`, `textMuted` on `bg`/`surface`/`surfaceAlt` |
-| Large text (≥ 24 px, or ≥ 19 px bold) | 3 : 1 | `title20` at large scale, progress percentage |
+| Large text (≥ 24 px, or ≥ 19 px bold) | 3 : 1 | `title34` at large scale, progress percentage |
 | UI component & focus indicator | **3 : 1** | `accent` fills, `focus` ring, control boundaries, status icons |
 | Decorative separators | exempt | `border` hairlines (must never be the only signal) |
 | Disabled text | exempt | disabled controls only |
@@ -77,17 +96,17 @@ The installer shell consumes tokens; it must not introduce literals.
 | Page / element | Tokens |
 |---|---|
 | App frame / backdrop | `bg`; content card `surface` with `radius6` |
-| Header / page title | `title20`, `text`, page padding `s24`, title→body gap `s12` |
-| Body / description | `body16`, `text`; spacing after title `s12`, between blocks `s16` |
-| Secondary text (version, path, size) | `caption13` / `hint12`, `textMuted` |
+| Header / page title | `title34`, `text`, page padding `s24`, title→body gap `s12` |
+| Body / description | `body26`, `text`; spacing after title `s12`, between blocks `s16` |
+| Secondary text (version, path, size) | `caption20` / `hint18`, `textMuted` |
 | Primary button (Next/Install/Finish) | `accent` fill, `bg` label (5.7:1 on accent — re-check if a skin changes `accent`), `control36`, `radius4`, hover `accentHover`; transition `duration120` |
 | Secondary button (Back/Cancel) | `surfaceAlt` fill, `text`, `control32`, `radius4`, hover: lightened `surfaceAlt` + `border` outline |
 | Keyboard focus | `focus` ring, 2 px, `radius4`, `duration120` |
-| Welcome page | `surface` card, `title20` greeting, `body16` explanation, primary action `accent`; `s24` outer / `s16` inner |
-| Progress page | `surface` content, progress bar fill `accent`, track `surfaceAlt`, percent text `caption13`/`textMuted`, indeterminate pulse `duration180`; status line `body16`/`text` |
-| Done page | `success` status icon + checkmark, `title20`/`text` headline, summary rows `surfaceAlt` with `radius4`, `caption13`/`textMuted` labels |
-| Fail page | `danger` status icon + headline accent, body `text`, details `caption13`/`textMuted`, primary retry `accent`, secondary "open log" `surfaceAlt` |
-| Restart-required page | `warning` status icon + headline, `body16`/`text` explanation, primary "Restart" `accent` (`control36`), secondary "Later" `surfaceAlt` (`control32`) |
+| Welcome page | `surface` card, `title34` greeting, `body26` explanation, primary action `accent`; `s24` outer / `s16` inner |
+| Progress page | `surface` content, progress bar fill `accent`, track `surfaceAlt`, percent text `caption20`/`textMuted`, indeterminate pulse `duration180`; status line `body26`/`text` |
+| Done page | `success` status icon + checkmark, `title34`/`text` headline, summary rows `surfaceAlt` with `radius4`, `caption20`/`textMuted` labels |
+| Fail page | `danger` status icon + headline accent, body `text`, details `caption20`/`textMuted`, primary retry `accent`, secondary "open log" `surfaceAlt` |
+| Restart-required page | `warning` status icon + headline, `body26`/`text` explanation, primary "Restart" `accent` (`control36`), secondary "Later" `surfaceAlt` (`control32`) |
 | Footer action bar | `surface` or `surfaceAlt`, `s16` padding, button gap `s8`, divider `border` |
 
 ## Reuse across suite / basket / ChartForge
@@ -100,7 +119,7 @@ The token set is the shared design-language contract, not installer-only:
   `text`/`spacing`/`control` unchanged; only its status semantics
   (`success`/`warning`/`danger`) appear in different places.
 - **basket** (cart/checkout-style flows) reuses the same control heights and
-  `accent`/`accentHover`; its totals row may use `surfaceAlt` + `caption13`.
+  `accent`/`accentHover`; its totals row may use `surfaceAlt` + `caption20`.
 - **ChartForge** reuses `surface`/`surfaceAlt` for chart backgrounds, `text`/
   `textMuted` for axes/labels, `accent`/`success`/`warning`/`danger` for series
   and thresholds. Chart colours that must remain distinguishable beyond the

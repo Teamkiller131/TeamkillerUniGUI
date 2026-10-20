@@ -36,11 +36,15 @@ void ConfirmDialog::Render() {
     }
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(420, 0), ImGuiCond_Appearing);
+    // W6-type: dialog width tracks the body font (26 px default) so wrapped
+    // messages and the action buttons keep their breathing room.
+    const ImGuiStyle& style = ImGui::GetStyle();
+    const float dlgW = ImGui::GetFontSize() * 20.0f > 420.0f ? ImGui::GetFontSize() * 20.0f : 420.0f;
+    ImGui::SetNextWindowSize(ImVec2(dlgW, 0), ImGuiCond_Appearing);
     if (ImGui::BeginPopupModal("##confirm", &open_, ImGuiWindowFlags_AlwaysAutoResize)) {
         // 固定内容宽度。绝不能用 GetWindowWidth() 做右对齐：AlwaysAutoResize 下窗口宽度由
         // 内容范围决定，而内容范围又依赖窗口宽度，会形成逐帧反馈回路导致弹窗持续变大。
-        const float kContentW = 404.0f; // = 初始宽度 420 - 左右 WindowPadding(8×2)
+        const float kContentW = dlgW - style.WindowPadding.x * 2.0f; // = 初始宽度 - 左右 padding
         if (dangerStyle_) {
             ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(233, 69, 96, 255));
             ImGui::BeginChild("##topbar", ImVec2(kContentW, 4));
@@ -55,15 +59,20 @@ void ConfirmDialog::Render() {
         ImGui::TextWrapped("%s", message_.c_str());
         ImGui::PopTextWrapPos();
         ImGui::Spacing();
-        // 右对齐两个 80 宽按钮（中间 ItemSpacing≈8）：80+8+80 = 168
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + kContentW - 168.0f);
-        if (ImGui::Button(cancelLabel_.c_str(), ImVec2(80, 0))) {
+        // 右对齐两个按钮；宽度按标签文本 + FramePadding 计算，保证 26 px 字体下不裁字。
+        const float btnGap = style.ItemSpacing.x;
+        const float cancelW = ImGui::CalcTextSize(cancelLabel_.c_str()).x + style.FramePadding.x * 2.0f + 12.0f;
+        const float confirmW = ImGui::CalcTextSize(confirmLabel_.c_str()).x + style.FramePadding.x * 2.0f + 12.0f;
+        const float btnW = cancelW > 80.0f ? cancelW : 80.0f;
+        const float btnW2 = confirmW > 80.0f ? confirmW : 80.0f;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + kContentW - (btnW + btnGap + btnW2));
+        if (ImGui::Button(cancelLabel_.c_str(), ImVec2(btnW, 0))) {
             open_ = false;
         }
         ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.91f, 0.27f, 0.38f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.95f, 0.35f, 0.45f, 1.0f));
-        if (ImGui::Button(confirmLabel_.c_str(), ImVec2(80, 0))) {
+        if (ImGui::Button(confirmLabel_.c_str(), ImVec2(btnW2, 0))) {
             confirmed_ = true;
             open_ = false;
             if (onConfirm_) {

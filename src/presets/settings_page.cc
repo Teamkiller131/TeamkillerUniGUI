@@ -14,9 +14,17 @@
 namespace unigui::presets {
 
 namespace {
-constexpr float kSectionListWidth = 160.f;  // narrow section list, px
+// W6-type: section list / control column scale with the body font (26 px default)
+// instead of assuming the old 13 px text metrics.
+inline float SectionListWidth() {
+    const float byFont = ImGui::GetFontSize() * 9.0f;
+    return byFont > 160.f ? byFont : 160.f;
+}
+inline float ControlColumnMin() {
+    const float byFont = ImGui::GetFontSize() * 7.0f;
+    return byFont > 140.f ? byFont : 140.f;
+}
 constexpr float kControlColumnRatio = 0.4f; // label column share of the row...
-constexpr float kControlColumnMin = 140.f;  // ...but never narrower than this
 constexpr size_t kTextBufSize = 512;        // bounded text edit buffer
 
 // Register one settings row in the per-frame a11y tree (no-op when a11y is
@@ -157,7 +165,7 @@ void SettingsPage::Render() {
 }
 
 void SettingsPage::RenderSectionList() {
-    ImGui::BeginChild("##sections", ImVec2(kSectionListWidth, 0), ImGuiChildFlags_Borders);
+    ImGui::BeginChild("##sections", ImVec2(SectionListWidth(), 0), ImGuiChildFlags_Borders);
     for (int i = 0; i < GetSectionCount(); ++i) {
         const std::string& label = sections_[static_cast<size_t>(i)];
         ImGui::PushID(i);
@@ -178,7 +186,7 @@ void SettingsPage::RenderRows() {
         ImGui::PopStyleColor();
     }
     const float controlX =
-        std::max(kControlColumnMin, ImGui::GetContentRegionAvail().x * kControlColumnRatio);
+        std::max(ControlColumnMin(), ImGui::GetContentRegionAvail().x * kControlColumnRatio);
     for (int r = 0; r < GetRowCount(); ++r)
         if (rows_[static_cast<size_t>(r)].section == active_)
             RenderRow(r, controlX);

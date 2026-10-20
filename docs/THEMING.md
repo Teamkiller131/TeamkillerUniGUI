@@ -128,7 +128,7 @@ queued font-atlas rebuild.
 struct ThemeConfig {
     ThemePreset preset = ThemePreset::Dark;
     float dpi_scale = 0.0f;          // 0 = auto-detect from system DPI
-    float font_size = 16.0f;         // logical px at 96 DPI (scaled by auto-DPI)
+    float font_size = 26.0f;         // logical px at 96 DPI (4K@150% body baseline; scaled by auto-DPI)
     const char* font_path = nullptr; // nullptr = auto-detect system CJK font
     bool emoji_fallback = true;      // auto-load system emoji font
     theme::SurfaceStyle surface = theme::SurfaceStyle::Glass;
@@ -153,11 +153,11 @@ int main() {
         return 1;
 
     // Dark palette with the frosted-glass surface material (the project default),
-    // 16 logical px font, auto-detected DPI.
+    // 26 logical px font (4K@150% body baseline), auto-detected DPI.
     unigui::ThemeConfig theme;
     theme.preset  = unigui::ThemePreset::Dark;
     theme.surface = unigui::theme::SurfaceStyle::Glass;
-    theme.font_size = 16.0f;
+    theme.font_size = 26.0f;
     unigui::ApplyTheme(theme);
 
     while (!unigui::ShouldClose()) {

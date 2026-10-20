@@ -16,7 +16,8 @@ void FuturesRiskBar::Render() {
 
     ImGui::PushID(GetName().c_str());
 
-    const float barHeight = 30.0f;
+    // Bar height follows the font (W6-type 26 px body); 30 px is the old minimum.
+    const float barHeight = std::max(30.0f, ImGui::GetFrameHeight());
     float barWidth = ImGui::GetContentRegionAvail().x;
     if (barWidth < 1.0f)
         barWidth = 1.0f;
@@ -118,7 +119,9 @@ void FuturesRiskBar::Render() {
 
     // ── Bottom legend ──────────────────────────────────────────────────────
     {
-        const float legendHeight = 18.0f;
+        // Legend height and markers scale with the font so 26 px labels fit.
+        const float legendHeight = ImGui::GetTextLineHeight() + ImGui::GetStyle().ItemSpacing.y;
+        const float dotRadius = std::max(3.0f, ImGui::GetTextLineHeight() * 0.16f);
         const ImVec2 cursor = ImGui::GetCursorScreenPos();
         auto* dl = ImGui::GetWindowDrawList();
 
@@ -126,7 +129,6 @@ void FuturesRiskBar::Render() {
         {
             const char* text = "实际  ";
             const ImVec2 textSize = ImGui::CalcTextSize(text);
-            const float dotRadius = 3.0f;
             const float dotX = cursor.x + dotRadius + 2.0f;
             const float dotY = cursor.y + legendHeight * 0.5f;
             const float textY = cursor.y + (legendHeight - textSize.y) * 0.5f;

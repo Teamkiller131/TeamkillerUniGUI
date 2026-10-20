@@ -69,9 +69,14 @@ void HeroSection::Render() {
 
     // ── CTA Button ──────────────────────────────────────────────────
     if (!actionLabel_.empty()) {
+        // W6-type: size the CTA from its label + frame metrics, not the old fixed 120×32.
+        const ImGuiStyle& style = ImGui::GetStyle();
+        const ImVec2 labelSz = ImGui::CalcTextSize(actionLabel_.c_str());
+        const ImVec2 btnSz(labelSz.x + style.FramePadding.x * 2.0f + 24.0f,
+                           ImGui::GetFrameHeight());
         float btnY = cursor.y + height_ * 0.7f;
-        ImGui::SetCursorScreenPos(ImVec2(cx - 60.f, btnY));
-        if (ImGui::Button(actionLabel_.c_str(), ImVec2(120, 32))) {
+        ImGui::SetCursorScreenPos(ImVec2(cx - btnSz.x * 0.5f, btnY));
+        if (ImGui::Button(actionLabel_.c_str(), btnSz)) {
             if (actionCallback_)
                 actionCallback_();
         }

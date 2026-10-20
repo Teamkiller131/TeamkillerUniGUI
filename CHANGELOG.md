@@ -19,6 +19,30 @@
   Known upstream gap documented (secondary OS windows are sized in logical
   units by this ImGui fork — see docs/BACKENDS.md §7.2).
 
+## [4.10.3] - 2026-10-20
+
+### Changed
+- **W6-type: 26 px body baseline for 4K@150%.** `ThemeConfig::font_size` now defaults
+  to **26 logical px** (39 px physical at 150%) and `AppConfig`'s default theme follows;
+  window sizes stay as designed and the text is drawn at 2× the old 13 px. Apps can
+  still pass an explicit `theme.font_size`.
+- **Layout reflows with the font.** Controls that carried fixed pixel assumptions now
+  derive their height/size from font metrics: `PanelBox` title bar, `RiskBar`,
+  `FuturesRiskBar` (bar + legend), `SliderBar` (bar + handle), `Notification` toast
+  width/anchor, `ConfirmDialog` width + action buttons, `Dashboard` metric tiles,
+  `HeroSection` CTA, `Badge` (dot/count/label), `CommandPalette` results list,
+  `SettingsPage` section list / control column.
+- `theme/tokens.h` typography tokens are now `body26` / `caption20` / `title34` /
+  `hint18`; the v0 names (`body16` / `caption13` / `title20` / `hint12`) stay as
+  constexpr aliases for source compatibility.
+
+### Added
+- **`AppConfig::allowOversizeWindow`** (default `false`) plus the
+  `UNIGUI_ALLOW_OVERSIZE=1` environment variable: a documented test/screenshot escape
+  hatch that skips the initial window clamp to the monitor work area. Normal runs keep
+  clamping; oversize use is logged as a warning. Replaces the ad-hoc raw
+  `std::getenv` bypass in `app.cc`.
+
 ## [4.10.2] - 2026-10-19
 
 ### Fixed

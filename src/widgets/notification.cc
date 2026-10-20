@@ -24,8 +24,12 @@ void Notification::Render() {
         return;
     }
     auto& n = queue_.front();
-    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 320, 20), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(300, 80), ImGuiCond_Always);
+    // W6-type: toast width and anchor derive from the font instead of the old
+    // fixed 300 px / DisplaySize.x-320 assumptions (13 px body).
+    const float toastW = ImGui::GetFontSize() * 20.0f > 300.0f ? ImGui::GetFontSize() * 20.0f : 300.0f;
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - toastW - 20.0f, 20.0f),
+                            ImGuiCond_Always);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(toastW, 0.0f), ImVec2(toastW, 100000.0f));
     ImGui::Begin("##notify", nullptr,
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::TextUnformatted(n.title.c_str());

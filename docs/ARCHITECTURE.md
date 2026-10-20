@@ -180,7 +180,7 @@ enum class ThemePreset { Dark, Light };
 struct ThemeConfig {
     ThemePreset preset = ThemePreset::Dark;
     float dpi_scale = 0.0f;            // 0 = auto-detect from system DPI
-    float font_size = 16.0f;          // logical px at 96 DPI
+    float font_size = 26.0f;          // logical px at 96 DPI (4K@150% body baseline)
     const char* font_path = nullptr;  // nullptr = auto-detect system CJK font
     bool emoji_fallback = true;
     theme::SurfaceStyle surface = theme::SurfaceStyle::Glass; // default material

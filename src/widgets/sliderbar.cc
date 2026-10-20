@@ -47,8 +47,10 @@ void SliderBar::Render() {
 
     ImGui::PushID(GetName().c_str());
 
-    const float barHeight = 20.0f;
-    const float handleRadius = 8.0f;
+    // W6-type: bar and handle scale with the 26 px body font instead of the
+    // old fixed 20 px bar / 8 px handle.
+    const float barHeight = ImGui::GetFrameHeight();
+    const float handleRadius = barHeight * 0.4f;
     const float leftPanelWidth = leftPanelWidth_;
     const float spacing = 6.0f;
     const bool hasLeftPanel = leftPanelWidth > 0.0f;

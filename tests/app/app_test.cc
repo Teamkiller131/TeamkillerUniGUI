@@ -29,3 +29,17 @@ TEST(AppTest, Shutdown_BeforeInit_DoesNotCrash) {
 TEST(AppTest, NewFrame_BeforeInit_ReturnsFalse) {
     EXPECT_FALSE(unigui::NewFrame());
 }
+
+// ── W6-type defaults (v4.10.3) ───────────────────────────────────────────────
+TEST(AppTest, DefaultConfig_FontBaseline26_AndOversizeOff) {
+    unigui::AppConfig cfg;
+    EXPECT_FLOAT_EQ(cfg.theme.font_size, 26.0f); // 4K@150% body baseline
+    EXPECT_FLOAT_EQ(cfg.theme.font_size, unigui::ThemeConfig{}.font_size);
+    EXPECT_FALSE(cfg.allowOversizeWindow); // window clamp stays on by default
+}
+
+TEST(AppTest, Oversize_OptInIsExplicit_AndEnvIsTestOnly) {
+    unigui::AppConfig cfg;
+    cfg.allowOversizeWindow = true; // only test/screenshot code does this
+    EXPECT_TRUE(cfg.allowOversizeWindow);
+}

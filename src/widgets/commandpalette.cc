@@ -253,7 +253,9 @@ void CommandPalette::Render() {
 
         // ── Results list ────────────────────────────────────────────────────
         std::string toRun;
-        ImGui::BeginChild("##cmdresults", ImVec2(0, 320), false);
+        // W6-type: list height follows the font (≈10 rows) instead of a fixed 320 px.
+        const float resultsH = ImGui::GetTextLineHeightWithSpacing() * 10.0f;
+        ImGui::BeginChild("##cmdresults", ImVec2(0, resultsH), false);
         for (int r = 0; r < static_cast<int>(results.size()); ++r) {
             const Command& c = commands_[results[r].index];
             const bool isSel = (r == selected_);

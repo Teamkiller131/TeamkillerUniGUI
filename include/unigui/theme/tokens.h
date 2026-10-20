@@ -126,10 +126,20 @@ inline constexpr float radius4 = 4.0f; // 输入框、按钮、标签
 inline constexpr float radius6 = 6.0f; // 卡片、面板、弹窗
 
 // ── Typography sizes (logical px @ 96 DPI) ───────────────────────────────────
-inline constexpr float body16 = 16.0f;    // 正文
-inline constexpr float caption13 = 13.0f; // 说明文字/进度百分比
-inline constexpr float title20 = 20.0f;   // 页面标题
-inline constexpr float hint12 = 12.0f;    // 最小提示/脚注
+// W6-type baseline (v4.10.3): 4K@150% — window sizes stay as designed and the
+// body text is drawn at 26 px (2× the v0 13 px). Keeps the same semantic names;
+// apps may still pick an explicit font_size on ThemeConfig.
+inline constexpr float body26 = 26.0f;    // 正文（框架默认字体）
+inline constexpr float caption20 = 20.0f; // 说明文字/进度百分比
+inline constexpr float title34 = 34.0f;   // 页面标题
+inline constexpr float hint18 = 18.0f;    // 最小提示/脚注
+
+// v0 legacy sizes (13 px baseline, pre-4.10.3). Kept for source compatibility
+// with older integrations; new code should use the tokens above.
+inline constexpr float body16 = 16.0f;    // 旧正文
+inline constexpr float caption13 = 13.0f; // 旧说明文字/进度百分比
+inline constexpr float title20 = 20.0f;   // 旧页面标题
+inline constexpr float hint12 = 12.0f;    // 旧最小提示/脚注
 
 // ── Control heights (logical px) ─────────────────────────────────────────────
 inline constexpr float control32 = 32.0f; // 默认按钮、输入框

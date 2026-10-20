@@ -220,7 +220,7 @@ struct AppConfig {
 struct ThemeConfig {
     ThemePreset preset = ThemePreset::Dark;     // Dark | Light
     float dpi_scale = 0.0f;                      // 0 = auto-detect system DPI
-    float font_size = 16.0f;                     // logical px at 96 DPI
+    float font_size = 26.0f;                     // logical px at 96 DPI (4K@150% body baseline)
     const char* font_path = nullptr;             // nullptr = auto-detect CJK font
     bool emoji_fallback = true;                  // auto-load system emoji font
     theme::SurfaceStyle surface = theme::SurfaceStyle::Glass; // Glass material default
@@ -540,7 +540,7 @@ The theme is part of `AppConfig`, so it's applied during `Init`:
 ```cpp
 unigui::AppConfig cfg;
 cfg.theme.preset    = unigui::ThemePreset::Light;          // Dark | Light
-cfg.theme.font_size = 16.0f;                                // logical px at 96 DPI
+cfg.theme.font_size = 26.0f;                                // logical px at 96 DPI (26 = 4K@150% baseline)
 cfg.theme.surface   = unigui::theme::SurfaceStyle::Glass;   // surface material
 unigui::RunApp(cfg, drawUi);
 ```

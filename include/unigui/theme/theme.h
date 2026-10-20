@@ -18,7 +18,10 @@ enum class ThemePreset {
 struct ThemeConfig {
     ThemePreset preset = ThemePreset::Light;
     float dpi_scale = 0.0f;          // 0 = auto-detect from system DPI
-    float font_size = 13.0f;         // logical px at 96 DPI (FontScaleDpi re-rasterizes per monitor)
+    // Logical px at 96 DPI (FontScaleDpi re-rasterises per monitor). W6-type:
+    // 4K@150% body baseline — window sizes stay as designed, text is drawn at
+    // 2× the old 13 px; apps may still override with an explicit value.
+    float font_size = 26.0f;
     const char* font_path = nullptr; // CJK glyph-fallback override; nullptr = auto
     bool emoji_fallback = true;      // auto-load system emoji font
     // Surface material applied on top of the palette. Frosted glass / glassmorphism

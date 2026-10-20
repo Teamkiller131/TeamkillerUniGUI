@@ -20,8 +20,11 @@ void PanelBox::Render() {
     ImVec2 cursor = ImGui::GetCursorScreenPos();
     float availW = ImGui::GetContentRegionAvail().x;
 
-    // ── Title bar (dark bg #1e1e24, 28px tall) ──────────────────────────
-    const float titleBarH = 28.f;
+    // ── Title bar (dark bg #1e1e24). Height follows the font so 26 px body
+    //    text (W6-type) is never clipped by the old fixed 28 px bar. ───────
+    const ImGuiStyle& style = ImGui::GetStyle();
+    const float titleBarH = std::max(ImGui::GetFrameHeight(),
+                                     ImGui::GetTextLineHeight() + style.FramePadding.y * 2.0f);
     ImVec2 titleBarTopLeft = cursor;
     ImVec2 titleBarBotRight = ImVec2(cursor.x + availW, cursor.y + titleBarH);
 
@@ -33,7 +36,7 @@ void PanelBox::Render() {
 
     // Title text (bold white, centered vertically in title bar)
     float fontSize = ImGui::GetFontSize();
-    float textX = cursor.x + 10.f; // left padding
+    float textX = cursor.x + style.FramePadding.x + 2.f; // font-scaled left padding
     float textY = cursor.y + (titleBarH - fontSize) * 0.5f;
     dl->AddText(ImVec2(textX, textY), IM_COL32_WHITE, title_.c_str());
 

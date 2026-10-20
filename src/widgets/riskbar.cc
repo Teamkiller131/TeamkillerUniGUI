@@ -17,7 +17,9 @@ void RiskBar::Render() {
 
     ImGui::PushID(GetName().c_str());
 
-    const float barHeight = 28.0f;
+    // Bar height follows the font so the centred label stays readable at the
+    // 26 px body size (W6-type); clamp to keep the old 28 px minimum.
+    const float barHeight = std::max(28.0f, ImGui::GetFrameHeight());
     float barWidth = ImGui::GetContentRegionAvail().x;
     if (barWidth < 1.0f)
         barWidth = 1.0f;

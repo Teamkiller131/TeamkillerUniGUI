@@ -12,7 +12,7 @@ struct AppConfig {
     int width = 1280;
     int height = 720;
     const char* title = "UniGUI Application";
-    ThemeConfig theme = {ThemePreset::Dark, 0.0f, 16.0f}; // auto-DPI, 16px logical
+    ThemeConfig theme = {ThemePreset::Dark, 0.0f, 26.0f}; // auto-DPI, 26px logical body
 #ifdef _WIN32
     BackendType backend = BackendType::DX11; // DX11 is stable on Windows
 #else
@@ -40,6 +40,12 @@ struct AppConfig {
     /// pair with viewport support — every backend here qualifies except Emscripten,
     /// where the flag is ignored (a browser page has no secondary OS windows).
     bool multiViewport = false;
+    /// Test/screenshot escape hatch: when true — or when the environment variable
+    /// `UNIGUI_ALLOW_OVERSIZE=1` is set — the initial window is NOT clamped to the
+    /// monitor work area, so CI can capture layouts larger than the screen. This
+    /// only affects window creation; it never changes rendering or normal runs.
+    /// Production apps should leave it false.
+    bool allowOversizeWindow = false;
 };
 
 bool Init(const AppConfig& config);

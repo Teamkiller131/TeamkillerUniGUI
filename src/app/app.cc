@@ -167,7 +167,9 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         int pw = static_cast<int>(config.width * dpi + 0.5f);
         int ph = static_cast<int>(config.height * dpi + 0.5f);
         // Never create a window larger than the monitor work area (a 1480×920 logical
-        // design at 150% would be 2220×1380 physical on a 1920×1080 screen).
+        // design at 150% would be 2220×1380 physical on a 1920×1080 screen). Test and
+        // screenshot runs can opt out through AppConfig::allowOversizeWindow or the
+        // UNIGUI_ALLOW_OVERSIZE=1 environment variable; production apps keep the clamp.
         const auto monitors = GetMonitors();
         const MonitorInfo* target = nullptr;
         for (const auto& m : monitors) {
@@ -178,16 +180,24 @@ static bool BringUpBackend(BackendType type, const AppConfig& config, float& dpi
         }
         if (!target && !monitors.empty())
             target = &monitors[0];
-        if (target) {
+        const bool allowOversize =
+            config.allowOversizeWindow || std::getenv("UNIGUI_ALLOW_OVERSIZE") != nullptr;
+        const bool overWorkArea =
+            target && (pw > target->workWidth || ph > target->workHeight);
+        if (target && !allowOversize) {
             if (pw > target->workWidth)
                 pw = target->workWidth;
             if (ph > target->workHeight)
                 ph = target->workHeight;
+        } else if (overWorkArea) {
+            UNIGUI_LOG_WARN("Oversize window allowed ({}x{} physical > work area {}x{}); "
+                            "test/screenshot mode only",
+                            pw, ph, target->workWidth, target->workHeight);
         }
         g_platform->SetSize(pw, ph);
         ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(pw), static_cast<float>(ph));
-        UNIGUI_LOG_INFO("HiDPI window: {}x{} logical → {}x{} physical (dpi={:.2f})",
-                        config.width, config.height, pw, ph, dpi);
+        UNIGUI_LOG_INFO("HiDPI window: {}x{} logical → {}x{} physical (dpi={:.2f}, clamped={})",
+                        config.width, config.height, pw, ph, dpi, allowOversize ? "no" : "yes");
     }
 #endif
     // Fonts are loaded at the LOGICAL size. Dear ImGui's dynamic font system re-rasterizes

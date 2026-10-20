@@ -3,6 +3,7 @@
 #include <unigui/theme/style_scope.h>
 #include <unigui/theme/style_tokens.h>
 #include <unigui/theme/theme.h>
+#include <unigui/theme/tokens.h>
 #include <unigui/unigui.h>
 
 #include <imgui.h>
@@ -169,4 +170,39 @@ TEST_F(ThemeTest, ImportThemeJSON_RoundTripPreservesColors) {
 TEST_F(ThemeTest, ImportThemeJSON_LongPathologicalInput_DoesNotThrow) {
     EXPECT_NO_THROW(unigui::ImportThemeJSON("{\"WindowBg\":[" + std::string(100000, '9')));
     EXPECT_NO_THROW(unigui::ImportThemeJSON("{\"WindowBg\":" + std::string(100000, 'x')));
+}
+
+// ── W6-type: 26 px body baseline (v4.10.3) ──────────────────────────────────
+
+TEST_F(ThemeTest, Tokens_TypographyBaseline_Is26) {
+    using namespace unigui::theme::tokens;
+    static_assert(body26 == 26.0f && caption20 == 20.0f && title34 == 34.0f && hint18 == 18.0f,
+                  "W6-type typography tokens drifted from the 26 px baseline");
+    // Legacy v0 names stay at their old values for pre-4.10.3 integrations.
+    static_assert(body16 == 16.0f && caption13 == 13.0f && title20 == 20.0f && hint12 == 12.0f,
+                  "legacy typography aliases must keep their v0 values");
+    EXPECT_FLOAT_EQ(body26, 26.0f);
+}
+
+TEST_F(ThemeTest, DefaultThemeConfig_FontSize_MatchesBody26Token) {
+    // Defaults are what consumers get without an explicit override: 26 px
+    // logical body text, DPI still auto-detected.
+    EXPECT_FLOAT_EQ(unigui::ThemeConfig{}.font_size, unigui::theme::tokens::body26);
+    EXPECT_FLOAT_EQ(unigui::ThemeConfig{}.dpi_scale, 0.0f);
+}
+
+TEST_F(ThemeTest, ApplyTheme_FontSizeStaysLogical_AtNonUnitDpi) {
+    // 4.10.2 fixed the double-scaling bug: the font request is LOGICAL px and the
+    // physical scale is applied separately by ImGui's dynamic font system, so the
+    // queued rebuild size must not be font_size × dpi. We can only observe the
+    // public queue flag here: with the same logical size queued repeatedly, no
+    // rebuild should remain pending (a dpi-multiplied target would flip it).
+    unigui::ApplyTheme({unigui::ThemePreset::Light, 1.5f, 26.0f});
+    EXPECT_FLOAT_EQ(ImGui::GetStyle().ItemSpacing.x, 12.0f); // geometry IS dpi-scaled
+    // Drain any pending rebuild queued by earlier tests, then re-apply the same
+    // logical size: it must not queue again.
+    if (unigui::HasPendingFontRebuild())
+        unigui::ApplyPendingFontRebuild();
+    unigui::ApplyTheme({unigui::ThemePreset::Light, 1.5f, 26.0f});
+    EXPECT_FALSE(unigui::HasPendingFontRebuild());
 }

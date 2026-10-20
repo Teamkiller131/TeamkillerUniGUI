@@ -12,7 +12,12 @@ namespace unigui::presets {
 namespace {
 
 // Fixed tile height for metric cards (custom cards auto-size to content).
-constexpr float kMetricCardHeight = 140.f;
+// W6-type: proportional to the body font (26 px default → 182 px) so the
+// title/separator/value/delta/subtext stack is never clipped.
+inline float MetricCardHeight() {
+    const float byFont = ImGui::GetFontSize() * 7.0f;
+    return byFont > 140.0f ? byFont : 140.0f;
+}
 
 // "▲ +1.25" / "▼ -1.25" / "0.00" — the colouring itself comes from the theme
 // Up/Down tokens inside MetricCard::WithDelta.
@@ -110,7 +115,7 @@ void Dashboard::Render() {
                     const double d = card.deltaFn();
                     card.metric->WithDelta(d, FormatDelta(d));
                 }
-                card.metric->WithSize(cardW, kMetricCardHeight);
+                card.metric->WithSize(cardW, MetricCardHeight());
                 card.metric->Render();
             } else {
                 // ── Custom card: themed bordered child + title row ──────
