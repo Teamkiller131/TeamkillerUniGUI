@@ -216,3 +216,93 @@ TEST_F(TableTest, DataTable_SignColorColumn_Renders) {
     dt.SetCellSignColor(1, [](int, const DtRow& r) { return r.pnl; });
     EXPECT_NO_THROW(dt.Render());
 }
+
+// --- POD 分组改造配套：可变行高 / 行底色 / 行矩形命中（2026-10-27） ---------
+// 这几个能力是给「POD 表里插分组标题行、折叠、拖拽排序」用的：Table 原来假设
+// 所有行等高（clipper 虚拟化），分组标题行要 34px、POD 行 26px，所以新增了
+// row_height_provider_，并且要把每行矩形记下来给拖拽做命中。
+
+namespace {
+void RenderInHostWindow(unigui::Table& tbl) {
+    ImGui::SetNextWindowSize(ImVec2(640.0f, 480.0f));
+    ImGui::Begin("tbl_host", nullptr, ImGuiWindowFlags_NoSavedSettings);
+    tbl.Render();
+    ImGui::End();
+}
+} // namespace
+
+TEST_F(TableTest, RowHeightProvider_LaysOutVariableRowHeights) {
+    unigui::Table tbl("tbl_rh", {"A", "B"});
+    for (int i = 0; i < 3; ++i)
+        tbl.AddRow({std::to_string(i), "x"});
+    // 第 0 行当「分组标题行」34px，其余 POD 行 26px。
+    tbl.SetRowHeightProvider([](int row) { return row == 0 ? 34.0f : 26.0f; });
+    RenderInHostWindow(tbl);
+    ImVec2 mn0, mx0, mn1, mx1;
+    ASSERT_TRUE(tbl.GetRowRect(0, mn0, mx0));
+    ASSERT_TRUE(tbl.GetRowRect(1, mn1, mx1));
+    EXPECT_GE(mx0.y - mn0.y, 33.5f);
+    EXPECT_LE(mx0.y - mn0.y, 40.0f);
+    EXPECT_GE(mx1.y - mn1.y, 25.5f);
+    EXPECT_LE(mx1.y - mn1.y, 30.0f);
+    EXPECT_LT(mx1.y - mn1.y, mx0.y - mn0.y);
+}
+
+TEST_F(TableTest, RowHeightProvider_MakesRowsContiguous) {
+    unigui::Table tbl("tbl_rh2", {"A"});
+    for (int i = 0; i < 3; ++i)
+        tbl.AddRow({std::to_string(i)});
+    tbl.SetRowHeightProvider([](int) { return 26.0f; });
+    RenderInHostWindow(tbl);
+    ImVec2 mn, mx;
+    for (int r = 1; r < 3; ++r) {
+        ImVec2 pmn, pmx;
+        ASSERT_TRUE(tbl.GetRowRect(r - 1, pmn, pmx));
+        ASSERT_TRUE(tbl.GetRowRect(r, mn, mx));
+        EXPECT_NEAR(mn.y, pmx.y, 0.5f);  // 行与行之间不能留缝，否则拖拽落点会错
+    }
+}
+
+TEST_F(TableTest, RowBgProvider_SeesEveryVisibleRow) {
+    unigui::Table tbl("tbl_bg", {"A"});
+    for (int i = 0; i < 3; ++i)
+        tbl.AddRow({std::to_string(i)});
+    std::vector<int> seen;
+    const ImVec4 band(0.20f, 0.30f, 0.45f, 0.08f);
+    tbl.SetRowBgProvider([&](int row, ImVec4& out) {
+        seen.push_back(row);
+        out = band;
+        return row != 0;  // 第 0 行不染色（分组标题行自己画）
+    });
+    RenderInHostWindow(tbl);
+    ASSERT_EQ(seen.size(), 3u);
+    EXPECT_EQ(seen[0], 0);
+    EXPECT_EQ(seen[1], 1);
+    EXPECT_EQ(seen[2], 2);
+}
+
+TEST_F(TableTest, GetRowRect_ReportsNoGeometryBeforeRender) {
+    unigui::Table tbl("tbl_norect", {"A"});
+    tbl.AddRow({"1"});
+    ImVec2 mn, mx;
+    EXPECT_FALSE(tbl.GetRowRect(0, mn, mx));
+    EXPECT_EQ(tbl.GetRowAtScreenY(100.0f), -1);
+}
+
+TEST_F(TableTest, GetRowAtScreenY_HitsTheRowThatWasLaidOut) {
+    unigui::Table tbl("tbl_hit", {"A"});
+    tbl.AddRow({"1"});
+    tbl.AddRow({"2"});
+    RenderInHostWindow(tbl);
+    ImVec2 mn, mx;
+    ASSERT_TRUE(tbl.GetRowRect(1, mn, mx));
+    EXPECT_EQ(tbl.GetRowAtScreenY(mn.y + (mx.y - mn.y) * 0.5f), 1);
+    EXPECT_EQ(tbl.GetRowAtScreenY(mn.y - 100000.0f), -1);
+}
+
+TEST_F(TableTest, ProviderSetters_ReportState) {
+    unigui::Table tbl("tbl_flags", {"A"});
+    EXPECT_FALSE(tbl.HasRowHeightProvider());
+    tbl.SetRowHeightProvider([](int) { return 0.0f; });
+    EXPECT_TRUE(tbl.HasRowHeightProvider());
+}

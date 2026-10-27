@@ -50,6 +50,29 @@ public:
     using CellRenderer = std::function<bool(int row, int col)>;
     void SetCellRenderer(CellRenderer fn) { cell_renderer_ = std::move(fn); }
 
+    /// Per-row height provider (pixels). Return <= 0 to keep the default
+    /// single-line row height. Setting one disables list clipping
+    /// (ImGuiListClipper assumes uniform row heights), so use it for tables with
+    /// a modest row count — e.g. grouping/separator rows that are taller than
+    /// the data rows around them.
+    using RowHeightProvider = std::function<float(int row)>;
+    void SetRowHeightProvider(RowHeightProvider fn) { row_height_provider_ = std::move(fn); }
+    bool HasRowHeightProvider() const { return row_height_provider_ != nullptr; }
+
+    /// Per-row background painter. Return true to override this row's band
+    /// colour (ImGuiTableBgTarget_RowBg0) with `out`. Used to paint grouping /
+    /// separator bands without giving up the table's default zebra striping on
+    /// the rows that do not opt in.
+    using RowBgProvider = std::function<bool(int row, ImVec4& out)>;
+    void SetRowBgProvider(RowBgProvider fn) { row_bg_provider_ = std::move(fn); }
+
+    /// Screen-space rect of a row laid out during the last rendered frame.
+    /// Returns false when the row was not laid out (clipped, or out of range).
+    /// Lets callers draw drag/drop indicators and hit-test rows by mouse Y.
+    bool GetRowRect(int row, ImVec2& out_min, ImVec2& out_max) const;
+    /// Row whose band contains screen-space Y; -1 when none does.
+    int GetRowAtScreenY(float y) const;
+
     /// Custom comparator for sorting a column. Receives the raw cell strings of
     /// two rows for that column and returns true if 'a' should sort before 'b'
     /// (ascending). If none is set, a numeric-aware comparison is used.
@@ -118,6 +141,11 @@ private:
     std::function<void(int)> on_select_;
     std::vector<float> saved_widths_;
     CellRenderer cell_renderer_;
+    RowHeightProvider row_height_provider_;
+    RowBgProvider row_bg_provider_;
+    /// Per-row screen rect laid out in the last frame: (x0, y0, x1, y1).
+    /// Rows clipped away keep a zero rect so GetRowRect() reports "not laid out".
+    std::vector<ImVec4> row_rects_;
     std::unordered_map<int, SortComparator> sort_comparators_;
     std::vector<float> col_widths_;
     std::vector<float> col_stretches_;

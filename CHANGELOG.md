@@ -1,6 +1,17 @@
 ## [Unreleased]
 
 ### Added
+- **Table: variable row heights, per-row background, row hit-testing.** Three
+  opt-in capabilities a grouped table needs but the uniform-row assumption made
+  impossible. `SetRowHeightProvider(std::function<float(int row)>)` gives each row
+  its own height (34 px group header above 26 px data rows); it switches the row
+  loop off `ImGuiListClipper` (which can only clip equal-height rows) and lays
+  rows out one by one. `SetRowBgProvider` paints a per-row background via
+  `TableSetBgColor(RowBg0, …)`, so banding states (group tint, hover, drop
+  target) no longer need a fake column. `GetRowRect` / `GetRowAtScreenY` expose
+  the laid-out geometry so drag-and-drop can hit-test a row by mouse Y. All three
+  are opt-in: with no provider set the table renders exactly as before.
+
 - **Cross-monitor runtime proof + `unigui::GetMonitors()`.** The fractional-DPI
   tail is now verified on a real 4×150%-monitor machine — and the proof exposed
   two real bugs, both fixed: (1) GLFW's Win32 content-scale cache lags

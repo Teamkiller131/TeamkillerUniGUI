@@ -284,6 +284,29 @@ void Table::RestoreColumnWidths() {
             ImGui::SetColumnWidth(c, saved_widths_[c]);
     }
 }
+bool Table::GetRowRect(int row, ImVec2& out_min, ImVec2& out_max) const {
+    if (row < 0 || row >= (int) row_rects_.size())
+        return false;
+    const ImVec4& rect = row_rects_[row];
+    // A zero-width rect means the row was not laid out this frame (clipped
+    // away by the row clipper) — report it as "no geometry" rather than as an
+    // empty rect at the origin.
+    if (rect.z <= rect.x)
+        return false;
+    out_min = ImVec2(rect.x, rect.y);
+    out_max = ImVec2(rect.z, rect.w);
+    return true;
+}
+int Table::GetRowAtScreenY(float y) const {
+    for (int r = 0; r < (int) row_rects_.size(); r++) {
+        const ImVec4& rect = row_rects_[r];
+        if (rect.z <= rect.x)
+            continue;
+        if (y >= rect.y && y < rect.w)
+            return r;
+    }
+    return -1;
+}
 void Table::Render() {
     if (!IsVisible())
         return;
@@ -331,36 +354,66 @@ void Table::Render() {
         // current scroll viewport are laid out and drawn, so a Table with 100k
         // rows costs about the same per frame as one with a screenful. This
         // assumes uniform row heights (single-line cells or frame-height custom
-        // renderers), which is how Table lays its cells out.
-        ImGuiListClipper clipper;
-        clipper.Begin((int) rows_.size());
-        while (clipper.Step()) {
-            for (int r = clipper.DisplayStart; r < clipper.DisplayEnd; r++) {
-                ImGui::TableNextRow();
-                for (int c = 0; c < (int) columns_.size(); c++) {
-                    ImGui::TableSetColumnIndex(c);
-                    ImGui::PushID(r * 1000 + c);
-                    bool handled = false;
-                    if (cell_renderer_)
-                        handled = cell_renderer_(r, c);
-                    if (!handled) {
-                        std::string scratch; // owns only the rare unit-append case
-                        const std::string_view display =
-                            FormatCellText(CellText(r, c), GetColumnUnit(c), scratch);
-                        const float width = std::max(0.0f, ImGui::GetContentRegionAvail().x);
-                        if (c == 0) {
-                            if (DrawSelectableAlignedText(display, r == selected_, width,
-                                                          GetColumnAlignment(c))) {
-                                selected_ = r;
-                                if (on_select_)
-                                    on_select_(r);
-                            }
-                        } else {
-                            DrawAlignedText(display, width, GetColumnAlignment(c));
+        // renderers), which is how Table lays its cells out. A RowHeightProvider
+        // breaks that assumption (grouping/separator rows are taller), so when
+        // one is installed the clipper is skipped and every row is laid out.
+        row_rects_.assign(rows_.size(), ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        float row_x0 = 0.0f;
+        float row_x1 = 0.0f;
+        {
+            const ImVec2 win_pos = ImGui::GetWindowPos();
+            const ImVec2 region_min = ImGui::GetWindowContentRegionMin();
+            const ImVec2 region_max = ImGui::GetWindowContentRegionMax();
+            row_x0 = win_pos.x + region_min.x;
+            row_x1 = win_pos.x + region_max.x;
+        }
+        auto render_row = [&](int r) {
+            const float wanted = row_height_provider_ ? row_height_provider_(r) : 0.0f;
+            ImGui::TableNextRow(ImGuiTableRowFlags_None, wanted > 0.0f ? wanted : 0.0f);
+            if (row_bg_provider_) {
+                ImVec4 band;
+                if (row_bg_provider_(r, band))
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(band));
+            }
+            const float row_y0 = ImGui::GetCursorScreenPos().y;
+            for (int c = 0; c < (int) columns_.size(); c++) {
+                ImGui::TableSetColumnIndex(c);
+                ImGui::PushID(r * 1000 + c);
+                bool handled = false;
+                if (cell_renderer_)
+                    handled = cell_renderer_(r, c);
+                if (!handled) {
+                    std::string scratch; // owns only the rare unit-append case
+                    const std::string_view display =
+                        FormatCellText(CellText(r, c), GetColumnUnit(c), scratch);
+                    const float width = std::max(0.0f, ImGui::GetContentRegionAvail().x);
+                    if (c == 0) {
+                        if (DrawSelectableAlignedText(display, r == selected_, width,
+                                                      GetColumnAlignment(c))) {
+                            selected_ = r;
+                            if (on_select_)
+                                on_select_(r);
                         }
+                    } else {
+                        DrawAlignedText(display, width, GetColumnAlignment(c));
                     }
-                    ImGui::PopID();
                 }
+                ImGui::PopID();
+            }
+            float row_y1 = ImGui::GetCursorScreenPos().y;
+            if (wanted > 0.0f)
+                row_y1 = std::max(row_y1, row_y0 + wanted);
+            row_rects_[r] = ImVec4(row_x0, row_y0, row_x1, row_y1);
+        };
+        if (row_height_provider_) {
+            for (int r = 0; r < (int) rows_.size(); r++)
+                render_row(r);
+        } else {
+            ImGuiListClipper clipper;
+            clipper.Begin((int) rows_.size());
+            while (clipper.Step()) {
+                for (int r = clipper.DisplayStart; r < clipper.DisplayEnd; r++)
+                    render_row(r);
             }
         }
         ImGui::EndTable();
