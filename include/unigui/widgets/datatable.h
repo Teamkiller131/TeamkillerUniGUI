@@ -448,11 +448,16 @@ public:
         int totalRows = (int) srcSize();
 
         // ── Scroll-to-row gesture ────────────────────────────────────────
-        // 行高必须含表格 CellPadding(TableNextRow 的实际行高 = 行文本高 +
-        // CellPadding.y×2)。只传 GetTextLineHeightWithSpacing 会低估行高 →
-        // ListClipper 的滚动总高不足 → 虚拟滚动的最后 N 行永远滚不到。
-        const float vRowH = ImGui::GetTextLineHeightWithSpacing() +
-                            ImGui::GetStyle().CellPadding.y * 2.0f;
+        // [CO-SCROLL-20261021] 行高不再用公式估算：含复选框/InputInt 的行实际高
+        // = GetFrameHeight() + CellPadding.y×2，远大于
+        // GetTextLineHeightWithSpacing() + CellPadding.y×2（token 主题下 40 vs 28px）。
+        // 把估算值喂给 ListClipper 会让它算出的内容总高偏小，导致「滚到底」时
+        // 最后 N 行永远露不出来（1000 行篮子实测卡在第 988 行）。
+        // 现在让 clipper 用首行实测高（Begin 不传高度），并把量到的值缓存到
+        // rowHPitch_，供 scrollToRow_ 定位复用。
+        const float vRowH = rowHPitch_ > 0.0f ? rowHPitch_
+                            : (ImGui::GetTextLineHeightWithSpacing() +
+                               ImGui::GetStyle().CellPadding.y * 2.0f);
         if (scrollToRow_ >= 0 && scrollToRow_ < totalRows) {
             ImGui::SetScrollY(scrollToRow_ * vRowH);
             scrollToRow_ = -1;
@@ -685,14 +690,17 @@ public:
 
             if (virtualScroll_ && !stickyHeader_) {
                 ImGuiListClipper clipper;
-                // 行高含 CellPadding(见上方 vRowH 注释) — 低估会让滚动总高
-                // 不足, 尾部行不可达(实测 58 行丢最后 13 行)。
-                clipper.Begin((int) displayRows.size(), vRowH);
+                // [CO-SCROLL-20261021] 不传 ItemsHeight：让 clipper 在 Step 0 用
+                // 首行实测行高（imgui.cpp 里的 auto-measure 分支）。传公式估算值
+                // 会低估含控件行（40px vs 28px），使内容总高偏小、尾部行滚不到。
+                clipper.Begin((int) displayRows.size());
                 while (clipper.Step()) {
                     for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
                         renderRow(displayRows[row]);
                     }
                 }
+                if (clipper.ItemsHeight > 0.0f)
+                    rowHPitch_ = clipper.ItemsHeight;
             } else {
                 for (int idx : displayRows)
                     renderRow(idx);
@@ -858,6 +866,9 @@ private:
     bool sortAscending_ = true;
     bool virtualScroll_ = true;
     int scrollToRow_ = -1;
+    // [CO-SCROLL-20261021] 上一帧 clipper 实测到的真实行高（含控件行）。
+    // 0 = 尚未量到，退回旧的公式估算。
+    float rowHPitch_ = 0.0f;
     bool stickyHeader_ = false;
     int freezeCols_ = 0;
     SelectFn onSelect_;
