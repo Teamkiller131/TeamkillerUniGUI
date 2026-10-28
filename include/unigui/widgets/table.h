@@ -34,6 +34,15 @@ public:
     /// Enable horizontal scrolling for the table.
     void SetScrollX(bool on) { scrollX_ = on; }
     bool GetScrollX() const { return scrollX_; }
+    /// Body scrolling. Default true: fixed-height viewport with an internal
+    /// scroll child. Set false to grow to content height and let the enclosing
+    /// panel scroll instead — row geometry then lives in the panel window, so
+    /// GetRowRect / GetRowAtScreenY stay aligned with what the user clicks.
+    void SetBodyScroll(bool on) { bodyScroll_ = on; }
+    bool GetBodyScroll() const { return bodyScroll_; }
+    /// 是否绘制列头行。多表拼接（分组区块）时，只有顶部那张表需要列头。
+    void SetHeaderVisible(bool on) { headerVisible_ = on; }
+    bool GetHeaderVisible() const { return headerVisible_; }
     void SaveColumnWidths();
     void RestoreColumnWidths();
 
@@ -150,5 +159,7 @@ private:
     std::vector<float> col_widths_;
     std::vector<float> col_stretches_;
     bool scrollX_ = false;
+    bool bodyScroll_ = true;
+    bool headerVisible_ = true;
 };
 } // namespace unigui

@@ -312,14 +312,19 @@ void Table::Render() {
         return;
     ImGui::PushID(GetName().c_str());
     ImGuiTableFlags flags =
-        ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
+        ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+    if (bodyScroll_)
+        flags |= ImGuiTableFlags_ScrollY;
     if (scrollX_)
         flags |= ImGuiTableFlags_ScrollX;
     if (sortable_)
         flags |= ImGuiTableFlags_Sortable;
     if (resizable_)
         flags |= ImGuiTableFlags_Resizable;
-    if (ImGui::BeginTable(GetName().c_str(), (int) columns_.size(), flags)) {
+    // 不启用表体滚动时，把宽度钉在可用宽度上，避免列宽把表格撑出面板可视区。
+    const ImVec2 outer = bodyScroll_ ? ImVec2(0.0f, 0.0f)
+                                    : ImVec2(ImGui::GetContentRegionAvail().x, 0.0f);
+    if (ImGui::BeginTable(GetName().c_str(), (int) columns_.size(), flags, outer)) {
         for (int ci = 0; ci < (int) columns_.size(); ++ci) {
             float cs = (ci < (int) col_stretches_.size()) ? col_stretches_[ci] : 0.0f;
             float cw = (ci < (int) col_widths_.size()) ? col_widths_[ci] : 0.0f;
@@ -337,7 +342,8 @@ void Table::Render() {
             }
             ImGui::TableSetupColumn(columns_[ci].c_str(), colFlags, initWidth);
         }
-        ImGui::TableHeadersRow();
+        if (headerVisible_)
+            ImGui::TableHeadersRow();
 
         // ── Apply user sorting requests ───────────────────────────────
         if (sortable_) {
