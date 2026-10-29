@@ -436,7 +436,13 @@ bool Combo(std::string_view label, int* current, const std::vector<std::string>&
     // [2026-08-25 v2] Definitive hover fix: bypass IsItemHovered entirely —
     // use IsMouseHoveringRect on the captured combo frame. This works regardless
     // of ScrollY tables, child windows, popup stacking, or any ImGui hover-flag state.
+    // [WHEEL-OVERLAY-20261029] 几何命中必须再叠一层「当前窗口是不是真的悬停窗口」：
+    // 只看矩形的话，被别的窗口（例如补全篮子浮窗）盖住时仍然命中，滚轮会改到后面那张
+    // 界面里看不见的 combo —— 交易员实测就是这么把正常交易界面的下拉滚掉了。
+    const bool hoveredWindow =
+            ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
     const bool hovered =
+            hoveredWindow &&
             ImGui::IsMouseHoveringRect(frame.pos, ImVec2(frame.pos.x + frame.width, frame.pos.y + frame.height));
     detail::DrawComboChevron(frame, hovered || open);
     // Mouse-wheel quick-select (trader request 2026-07-07): while hovering the CLOSED

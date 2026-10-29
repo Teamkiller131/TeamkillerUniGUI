@@ -70,10 +70,13 @@ void CascadingCombo::Render() {
         // im.cc v2 [2026-09-17]: read the item-flags stack top, NOT DisabledStackSize —
         // the latter misreads BeginDisabled(false) wrappers as disabled and kills
         // wheel-select on enabled combos.
-        const bool comboHovered = ImGui::IsMouseHoveringRect(
-                comboFrame.pos,
-                ImVec2(comboFrame.pos.x + comboFrame.width,
-                       comboFrame.pos.y + comboFrame.height));
+        // [WHEEL-OVERLAY-20261029] 几何命中 + 真悬停窗口，避免被浮窗遮住时仍吃滚轮。
+        const bool comboHovered =
+                ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) &&
+                ImGui::IsMouseHoveringRect(
+                        comboFrame.pos,
+                        ImVec2(comboFrame.pos.x + comboFrame.width,
+                               comboFrame.pos.y + comboFrame.height));
         if (!comboOpen && comboHovered && level.options.size() > 1 && IsEnabled()) {
             const bool itemDisabled =
                     (ImGui::GetCurrentContext()->ItemFlagsStack.back() & ImGuiItemFlags_Disabled) != 0;

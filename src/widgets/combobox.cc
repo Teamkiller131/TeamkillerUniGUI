@@ -55,7 +55,10 @@ void ComboBox::Render() {
     // [2026-08-25] Mouse-wheel quick-select — same behavior as im::Combo.
     // Use IsMouseHoveringRect (direct geometric check) instead of IsItemHovered()
     // to work inside ScrollY tables, child windows, and any hover-flag-blocked context.
+    // [WHEEL-OVERLAY-20261029] 同上：几何命中要叠「窗口真的被悬停」，否则被浮窗盖住的
+    // combo 仍会吃滚轮，把看不见的下拉改掉。
     const bool comboHovered =
+            ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) &&
             ImGui::IsMouseHoveringRect(comboFrame.pos,
                                        ImVec2(comboFrame.pos.x + comboFrame.width,
                                               comboFrame.pos.y + comboFrame.height));
