@@ -18,6 +18,24 @@ namespace {
 void touch(const fs::path& p) {
     std::ofstream(p) << "x";
 }
+
+// 组件契约: 字符串边界一律 UTF-8。Windows 下 fs::path::string() 是 ACP(GBK),
+// 中文用户名的临时目录会喂进错误编码 — 测试侧同样显式转 UTF-8。
+std::string Utf8(const fs::path& p) {
+#ifdef _WIN32
+    const std::u8string u = p.u8string();
+    return std::string(u.begin(), u.end());
+#else
+    return p.string();
+#endif
+}
+fs::path FromUtf8(const std::string& s) {
+#ifdef _WIN32
+    return fs::path(std::u8string(s.begin(), s.end()));
+#else
+    return fs::path(s);
+#endif
+}
 } // namespace
 
 // ── Pure extension filter ────────────────────────────────────────────────────
@@ -59,7 +77,7 @@ protected:
 
 TEST_F(FileDialogFsTest, ListDirectorySortsDirsFirstAndFiltersHidden) {
     std::vector<DirEntry> out;
-    ASSERT_TRUE(ListDirectory(root_.string(), {}, /*showHidden=*/false, out));
+    ASSERT_TRUE(ListDirectory(Utf8(root_), {}, /*showHidden=*/false, out));
     ASSERT_FALSE(out.empty());
     EXPECT_TRUE(out.front().isDir); // "sub" directory comes first
     EXPECT_EQ(out.front().name, "sub");
@@ -70,7 +88,7 @@ TEST_F(FileDialogFsTest, ListDirectorySortsDirsFirstAndFiltersHidden) {
 
 TEST_F(FileDialogFsTest, ListDirectoryShowHidden) {
     std::vector<DirEntry> out;
-    ASSERT_TRUE(ListDirectory(root_.string(), {}, /*showHidden=*/true, out));
+    ASSERT_TRUE(ListDirectory(Utf8(root_), {}, /*showHidden=*/true, out));
     bool sawHidden = false;
     for (const auto& e : out)
         if (e.name == ".hidden")
@@ -80,7 +98,7 @@ TEST_F(FileDialogFsTest, ListDirectoryShowHidden) {
 
 TEST_F(FileDialogFsTest, ListDirectoryExtensionFilterKeepsDirs) {
     std::vector<DirEntry> out;
-    ASSERT_TRUE(ListDirectory(root_.string(), {".csv"}, false, out));
+    ASSERT_TRUE(ListDirectory(Utf8(root_), {".csv"}, false, out));
     int files = 0, dirs = 0;
     for (const auto& e : out) {
         if (e.isDir)
@@ -96,13 +114,13 @@ TEST_F(FileDialogFsTest, ListDirectoryExtensionFilterKeepsDirs) {
 
 TEST_F(FileDialogFsTest, ListDirectoryMissingReturnsFalse) {
     std::vector<DirEntry> out{{"stale", false, 0}};
-    EXPECT_FALSE(ListDirectory((root_ / "does_not_exist").string(), {}, false, out));
+    EXPECT_FALSE(ListDirectory(Utf8(root_ / "does_not_exist"), {}, false, out));
     EXPECT_TRUE(out.empty()); // cleared on failure
 }
 
 TEST_F(FileDialogFsTest, EntriesRespectMode) {
     FileDialog fd;
-    fd.SetDirectory(root_.string()).SetFilters({".csv"});
+    fd.SetDirectory(Utf8(root_)).SetFilters({".csv"});
 
     fd.SetMode(FileDialog::Mode::OpenFile);
     bool sawCsv = false, sawPng = false;
@@ -123,42 +141,42 @@ TEST_F(FileDialogFsTest, EntriesRespectMode) {
 
 TEST_F(FileDialogFsTest, NavigateIntoAndUp) {
     FileDialog fd;
-    fd.SetDirectory(root_.string());
-    EXPECT_EQ(fs::path(fd.GetDirectory()).filename(), "unigui_filedialog_test");
+    fd.SetDirectory(Utf8(root_));
+    EXPECT_EQ(FromUtf8(fd.GetDirectory()).filename(), "unigui_filedialog_test");
 
     EXPECT_TRUE(fd.NavigateInto("sub"));
-    EXPECT_EQ(fs::path(fd.GetDirectory()).filename(), "sub");
+    EXPECT_EQ(FromUtf8(fd.GetDirectory()).filename(), "sub");
     EXPECT_FALSE(fd.NavigateInto("nope")); // not a directory
 
     EXPECT_TRUE(fd.NavigateUp());
-    EXPECT_EQ(fs::path(fd.GetDirectory()).filename(), "unigui_filedialog_test");
+    EXPECT_EQ(FromUtf8(fd.GetDirectory()).filename(), "unigui_filedialog_test");
 }
 
 TEST_F(FileDialogFsTest, ResolvedPathPerMode) {
     FileDialog fd;
-    fd.SetDirectory(root_.string());
+    fd.SetDirectory(Utf8(root_));
 
     // OpenFile: empty until a file is selected.
     fd.SetMode(FileDialog::Mode::OpenFile);
     EXPECT_TRUE(fd.ResolvedPath().empty());
     fd.SelectFile("a.csv");
-    EXPECT_EQ(fs::path(fd.ResolvedPath()).filename(), "a.csv");
+    EXPECT_EQ(FromUtf8(fd.ResolvedPath()).filename(), "a.csv");
 
     // SaveFile: derives from the filename field.
     fd.SetMode(FileDialog::Mode::SaveFile);
     fd.SetFilename("");
     EXPECT_TRUE(fd.ResolvedPath().empty());
     fd.SetFilename("out.csv");
-    EXPECT_EQ(fs::path(fd.ResolvedPath()).filename(), "out.csv");
+    EXPECT_EQ(FromUtf8(fd.ResolvedPath()).filename(), "out.csv");
 
     // SelectFolder: the current directory itself.
     fd.SetMode(FileDialog::Mode::SelectFolder);
-    EXPECT_EQ(fs::path(fd.ResolvedPath()).filename(), "unigui_filedialog_test");
+    EXPECT_EQ(FromUtf8(fd.ResolvedPath()).filename(), "unigui_filedialog_test");
 }
 
 TEST_F(FileDialogFsTest, ConfirmFiresCallbackAndCloses) {
     FileDialog fd;
-    fd.SetDirectory(root_.string()).SetMode(FileDialog::Mode::OpenFile);
+    fd.SetDirectory(Utf8(root_)).SetMode(FileDialog::Mode::OpenFile);
     std::string got;
     fd.SetOnConfirm([&](const std::string& p) { got = p; });
     fd.Open();
@@ -182,7 +200,7 @@ TEST_F(FileDialogFsTest, RenderDoesNotCrash) {
     ImGui::GetIO().Fonts->Build();
 
     FileDialog fd;
-    fd.SetDirectory(root_.string()).SetMode(FileDialog::Mode::SaveFile).SetFilename("x.csv");
+    fd.SetDirectory(Utf8(root_)).SetMode(FileDialog::Mode::SaveFile).SetFilename("x.csv");
     fd.Open();
 
     for (int frame = 0; frame < 3; ++frame) {
@@ -191,4 +209,33 @@ TEST_F(FileDialogFsTest, RenderDoesNotCrash) {
         ImGui::Render();
     }
     ImGui::DestroyContext();
+}
+
+// ── 中文路径回归(2026-11-13: ListDirectory/NavigateInto/ResolvedPath 的 ACP 乱码修复) ──
+
+TEST_F(FileDialogFsTest, ChineseNamesRoundTripUtf8) {
+    // 建中文目录 + 中文文件名(经宽字符路径, 与编码无关地创建)
+    const fs::path cdir = root_ / fs::path(std::u8string(u8"中文目录"));
+    std::error_code ec;
+    fs::create_directories(cdir, ec);
+    ASSERT_FALSE(ec) << "create 中文目录 failed";
+    touch(cdir / fs::path(std::u8string(u8"策略.cpp")));
+
+    // 列表: 条目名必须是合法 UTF-8 的中文名(不能是 GBK 字节或 U+FFFD)
+    std::vector<DirEntry> out;
+    ASSERT_TRUE(ListDirectory(Utf8(root_), {".cpp"}, false, out));
+    ASSERT_FALSE(out.empty());
+    ASSERT_EQ(out.front().name, std::string(u8"中文目录")) << "列表第一项应为中文目录";
+    // 能进入中文目录并列出其中的中文文件
+    FileDialog fd;
+    fd.SetDirectory(Utf8(root_)).SetMode(FileDialog::Mode::OpenFile).SetFilters({".cpp"});
+    ASSERT_TRUE(fd.NavigateInto(std::string(u8"中文目录")));
+    std::vector<DirEntry> inner;
+    ASSERT_TRUE(ListDirectory(fd.GetDirectory(), {".cpp"}, false, inner));
+    ASSERT_EQ(inner.size(), 1u);
+    EXPECT_EQ(inner[0].name, std::string(u8"策略.cpp"));
+    // 选中后确认路径逐字节回环: UTF-8 串 → fs::path → 与真实路径相等
+    fd.SelectFile(std::string(u8"策略.cpp"));
+    const std::string resolved = fd.ResolvedPath();
+    EXPECT_TRUE(fs::equivalent(FromUtf8(resolved), cdir / fs::path(std::u8string(u8"策略.cpp"))));
 }

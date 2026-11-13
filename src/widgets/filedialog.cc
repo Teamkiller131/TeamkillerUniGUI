@@ -12,6 +12,30 @@ namespace fs = std::filesystem;
 
 namespace unigui {
 
+namespace {
+
+// Windows 的 fs::path::string()/path("窄串") 走 ACP(中文系统=GBK), 而本组件与应用
+// 约定字符串边界一律 UTF-8(ImGui 渲染也是 UTF-8)。不做转换会出现两种症状:
+// 目录名渲染成 U+FFFD 乱码; 确认路径返回 GBK 串被调用方当 UTF-8 用 → 中文路径打不开。
+fs::path PathFromUtf8(const std::string& s) {
+#ifdef _WIN32
+    return fs::path(std::u8string(s.begin(), s.end()));
+#else
+    return fs::path(s);   // POSIX 原生窄编码即 UTF-8
+#endif
+}
+
+std::string PathToUtf8(const fs::path& p) {
+#ifdef _WIN32
+    const std::u8string u = p.u8string();
+    return std::string(u.begin(), u.end());
+#else
+    return p.string();
+#endif
+}
+
+} // namespace
+
 namespace detail {
 
 namespace {
@@ -25,7 +49,10 @@ std::string toLower(std::string s) {
 bool ExtensionMatches(const std::string& filename, const std::vector<std::string>& exts) {
     if (exts.empty())
         return true;
-    const std::string ext = toLower(fs::path(filename).extension().string());
+    // 纯 ASCII 层面取扩展名(避免 UTF-8 文件名经 fs::path 的 ACP 误解码;
+    // GBK 误读时多字节对可能吞掉相邻的 '.')
+    const size_t dot = filename.find_last_of('.');
+    const std::string ext = toLower(dot == std::string::npos ? std::string() : filename.substr(dot));
     for (const auto& e : exts) {
         if (toLower(e) == ext)
             return true;
@@ -37,7 +64,7 @@ bool ListDirectory(const std::string& dir, const std::vector<std::string>& exts,
                    std::vector<DirEntry>& out) {
     out.clear();
     std::error_code ec;
-    fs::directory_iterator it(dir, fs::directory_options::skip_permission_denied, ec);
+    fs::directory_iterator it(PathFromUtf8(dir), fs::directory_options::skip_permission_denied, ec);
     if (ec)
         return false;
     const fs::directory_iterator end;
@@ -45,7 +72,7 @@ bool ListDirectory(const std::string& dir, const std::vector<std::string>& exts,
         if (ec)
             break; // stop on iteration error, keep what we have
         const fs::directory_entry& de = *it;
-        const std::string name = de.path().filename().string();
+        const std::string name = PathToUtf8(de.path().filename());
         if (name.empty())
             continue;
         if (!showHidden && name[0] == '.')
@@ -83,7 +110,7 @@ namespace {
 std::string currentPathOr(const std::string& fallback) {
     std::error_code ec;
     const fs::path p = fs::current_path(ec);
-    return ec ? fallback : p.string();
+    return ec ? fallback : PathToUtf8(p);
 }
 } // namespace
 
@@ -94,8 +121,9 @@ FileDialog::FileDialog(std::string name)
 
 FileDialog& FileDialog::SetDirectory(const std::string& dir) {
     std::error_code ec;
-    if (fs::is_directory(dir, ec) && !ec)
-        dir_ = fs::path(dir).lexically_normal().string();
+    const fs::path p = PathFromUtf8(dir);
+    if (fs::is_directory(p, ec) && !ec)
+        dir_ = PathToUtf8(p.lexically_normal());
     return *this;
 }
 
@@ -127,21 +155,22 @@ std::vector<detail::DirEntry> FileDialog::Entries() const {
 }
 
 bool FileDialog::NavigateInto(const std::string& dirName) {
-    const fs::path target = fs::path(dir_) / dirName;
+    // dirName 来自 UTF-8 目录列表; 直接 path/窄串 会经 ACP 误解码, 中文目录进不去
+    const fs::path target = PathFromUtf8(dir_) / PathFromUtf8(dirName);
     std::error_code ec;
     if (!fs::is_directory(target, ec) || ec)
         return false;
-    dir_ = target.lexically_normal().string();
+    dir_ = PathToUtf8(target.lexically_normal());
     selected_.clear();
     return true;
 }
 
 bool FileDialog::NavigateUp() {
-    const fs::path cur = fs::path(dir_);
+    const fs::path cur = PathFromUtf8(dir_);
     const fs::path parent = cur.parent_path();
     if (parent.empty() || parent == cur)
         return false; // at a root
-    dir_ = parent.lexically_normal().string();
+    dir_ = PathToUtf8(parent.lexically_normal());
     selected_.clear();
     return true;
 }
@@ -159,16 +188,16 @@ bool FileDialog::MatchesFilter(const std::string& filename) const {
 std::string FileDialog::ResolvedPath() const {
     switch (mode_) {
     case Mode::SelectFolder:
-        return fs::path(dir_).lexically_normal().string();
+        return PathToUtf8(PathFromUtf8(dir_).lexically_normal());
     case Mode::OpenFile:
         if (selected_.empty())
             return {};
-        return (fs::path(dir_) / selected_).lexically_normal().string();
+        return PathToUtf8((PathFromUtf8(dir_) / PathFromUtf8(selected_)).lexically_normal());
     case Mode::SaveFile: {
         const std::string fn = nameBuf_;
         if (fn.empty())
             return {};
-        return (fs::path(dir_) / fn).lexically_normal().string();
+        return PathToUtf8((PathFromUtf8(dir_) / PathFromUtf8(fn)).lexically_normal());
     }
     }
     return {};
